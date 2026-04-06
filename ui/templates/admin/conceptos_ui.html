@@ -1,0 +1,57 @@
+<article>
+    <header>
+        <h3>Catálogo: Conceptos Maestros (SUNAT)</h3>
+    </header>
+    <div class="grid">
+        <div>
+            <h4>Importación Masiva (CSV)</h4>
+            <p><small>Columnas requeridas: CODIGO, DESCRIPCION, TIPO, AFECTA_A (opcional, separado por comas).</small>
+            </p>
+
+            <form hx-post="/admin/conceptos/importar" hx-encoding="multipart/form-data" hx-target="#lista-conceptos"
+                hx-swap="innerHTML">
+                <input type="file" name="archivo_csv" accept=".csv" required>
+                <button type="submit" class="secondary">Importar Conceptos</button>
+            </form>
+        </div>
+
+        <div>
+            <div id="lista-conceptos" hx-get="/admin/conceptos/lista" hx-trigger="load">
+                <p aria-busy="true">Cargando conceptos...</p>
+            </div>
+        </div>
+    </div>
+</article>
+
+{{define "tabla_conceptos"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Código</th>
+            <th>Descripción</th>
+            <th>Tipo</th>
+            <th>Jerarquía</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td><strong>{{.Codigo}}</strong></td>
+            <td>{{.Descripcion}}</td>
+            <td><mark>{{.Tipo}}</mark></td>
+            <td>
+                {{if .ParentID}}
+                <small>Hijo</small>
+                {{else}}
+                <strong>Padre (00)</strong>
+                {{end}}
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="4" style="text-align: center;">No hay conceptos registrados.</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}

@@ -1,0 +1,36 @@
+<article>
+    <header>
+        <h2>Inquilinos Registrados</h2>
+    </header>
+
+    <table class="striped">
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Nombre de la Entidad</th>
+                <th scope="col">RUC</th>
+                <th scope="col">Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .}}
+            <tr>
+                <td>{{.ID}}</td>
+                <td>{{.Nombre}}</td>
+                <td>{{.Ruc}}</td>
+                <td>
+                    {{if .Activo}}
+                    <ins>Activo</ins>
+                    {{else}}
+                    <del>Inactivo</del>
+                    {{end}}
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="4" style="text-align: center;">No hay inquilinos registrados aún.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</article>

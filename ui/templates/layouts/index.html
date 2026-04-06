@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        /* Reducimos el tamaño base de la fuente de toda la aplicación */
+        html {
+            font-size: 14px;
+            /* El valor original suele ser 16px o más */
+        }
+
+        /* Estilos para el Layout Principal */
+        .layout-admin {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            /* El menú mide 260px, el contenido toma el resto */
+            gap: 2rem;
+            align-items: start;
+        }
+
+        /* Diseño responsivo: En pantallas móviles (tablets/celulares) se pone uno debajo del otro */
+        @media (max-width: 768px) {
+            .layout-admin {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+                min-height: auto;
+                padding-bottom: 1rem;
+            }
+        }
+
+        /* Estilos visuales del menú lateral */
+        .sidebar {
+            border-right: 1px solid #e0e0e0;
+            padding-right: 1rem;
+            min-height: 80vh;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            color: var(--pico-color);
+        }
+
+        .sidebar a:hover {
+            background-color: var(--pico-form-element-background-color);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="container-fluid" style="border-bottom: 1px solid #e0e0e0; margin-bottom: 2rem;">
+        <ul>
+            <li><strong>💼 Planillas RGM</strong></li>
+        </ul>
+        <ul>
+            <li>Panel Súper Admin</li>
+        </ul>
+    </nav>
+
+    <main class="container-fluid">
+        <div class="layout-admin">
+            <aside class="sidebar">
+                <nav>
+                    <ul>
+                        <li><small><strong>ADMINISTRACIÓN</strong></small></li>
+                        <li><a href="#" hx-get="/admin/ui/inquilinos" hx-target="#contenido-principal">🏢 Inquilinos</a>
+                        </li>
+                        <li>
+                            <hr>
+                        </li>
+                        <li><small><strong>CATÁLOGOS GLOBALES</strong></small></li>
+                        <li><a href="#" hx-get="/admin/ui/mef" hx-target="#contenido-principal">📊 Clasificadores
+                                MEF</a></li>
+                        <li><a href="#" hx-get="/admin/ui/conceptos" hx-target="#contenido-principal">💰 Conceptos de
+                                Planilla</a></li>
+                        <li><a href="#" style="opacity: 0.5; cursor: not-allowed;">⚙️ Parámetros Globales (Pronto)</a>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <div id="contenido-principal" style="padding-left: 1rem;">
+                <article>
+                    <h2>Bienvenido al Panel Admin</h2>
+                    <p>Seleccione un módulo en el menú lateral izquierdo para comenzar.</p>
+                </article>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>

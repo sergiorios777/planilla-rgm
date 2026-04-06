@@ -1,0 +1,28 @@
+<article>
+    <header>
+        <h3>Gestión de Inquilinos (Municipalidades)</h3>
+    </header>
+    <div class="grid">
+        <div>
+            <h4>Registrar Nueva Entidad</h4>
+            <form hx-post="/admin/inquilinos/crear" hx-target="#lista-inquilinos" hx-swap="innerHTML">
+                <label for="nombre">Nombre de la Municipalidad</label>
+                <input type="text" id="nombre" name="nombre" placeholder="Ej: Municipalidad Provincial de..." required>
+
+                <label for="ruc">Número de RUC</label>
+                <input type="text" id="ruc" name="ruc" maxlength="11" placeholder="Ej: 20123456789" required>
+
+                <label>
+                    <input type="checkbox" name="activo" checked> Entidad Activa
+                </label>
+                <button type="submit">Guardar Entidad</button>
+            </form>
+        </div>
+
+        <div>
+            <div id="lista-inquilinos" hx-get="/admin/inquilinos" hx-trigger="load">
+                <p aria-busy="true">Cargando inquilinos...</p>
+            </div>
+        </div>
+    </div>
+</article>
