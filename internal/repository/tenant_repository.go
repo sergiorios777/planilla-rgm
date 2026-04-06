@@ -57,3 +57,21 @@ func (r *TenantRepository) Crear(t *models.Tenant) error {
 
 	return nil
 }
+
+// ObtenerPorID busca un inquilino específico
+func (r *TenantRepository) ObtenerPorID(id int) (*models.Tenant, error) {
+	var t models.Tenant
+	query := `SELECT id, nombre, ruc, activo FROM tenants WHERE id = $1`
+	err := r.db.QueryRow(query, id).Scan(&t.ID, &t.Nombre, &t.Ruc, &t.Activo)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+// Actualizar guarda los cambios de un inquilino existente
+func (r *TenantRepository) Actualizar(t *models.Tenant) error {
+	query := `UPDATE tenants SET nombre = $1, ruc = $2, activo = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4`
+	_, err := r.db.Exec(query, t.Nombre, t.Ruc, t.Activo, t.ID)
+	return err
+}

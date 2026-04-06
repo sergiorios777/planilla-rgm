@@ -1,0 +1,68 @@
+<article>
+    <header>
+        <h3>Gestión de Parámetros Globales</h3>
+    </header>
+    <div class="grid">
+        <div>
+            <h4>Registrar o Actualizar</h4>
+            <p><small>Deja "Fecha Hasta" en blanco si el valor está vigente actualmente.</small></p>
+            <form hx-post="/admin/parametros/guardar" hx-target="#lista-parametros" hx-swap="innerHTML">
+                <input type="text" name="clave" placeholder="Clave (Ej. RMV)" required>
+                <input type="number" step="0.01" name="valor" placeholder="Valor Numérico (Ej. 1130.00)" required>
+
+                <div class="grid">
+                    <label>
+                        Vigente Desde
+                        <input type="date" name="fecha_desde" required>
+                    </label>
+                    <label>
+                        Vigente Hasta (Opcional)
+                        <input type="date" name="fecha_hasta">
+                    </label>
+                </div>
+
+                <input type="text" name="descripcion" placeholder="Descripción breve" required>
+
+                <button type="submit">Guardar Parámetro</button>
+            </form>
+        </div>
+
+        <div>
+            <div id="lista-parametros" hx-get="/admin/parametros/lista" hx-trigger="load">
+                <p aria-busy="true">Cargando parámetros...</p>
+            </div>
+        </div>
+    </div>
+</article>
+
+{{define "tabla_parametros"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Clave</th>
+            <th>Valor</th>
+            <th>Vigencia</th>
+            <th>Descripción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td><strong><mark>{{.Clave}}</mark></strong></td>
+            <td>{{.Valor}}</td>
+            <td>
+                <small>
+                    Desde: {{.FechaDesde}}<br>
+                    Hasta: {{if .FechaHasta}}{{.FechaHasta}}{{else}}<em>Actualidad</em>{{end}}
+                </small>
+            </td>
+            <td><small>{{.Descripcion}}</small></td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="4" style="text-align: center;">No hay parámetros registrados.</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}

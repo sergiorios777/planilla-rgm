@@ -1,22 +1,11 @@
 <article>
     <header>
-        <h3>Gestión de Inquilinos (Municipalidades)</h3>
+        <h3 style="margin-bottom: 0;">🏢 Gestión de Inquilinos (Municipalidades)</h3>
     </header>
     <div class="grid">
-        <div>
-            <h4>Registrar Nueva Entidad</h4>
-            <form hx-post="/admin/inquilinos/crear" hx-target="#lista-inquilinos" hx-swap="innerHTML">
-                <label for="nombre">Nombre de la Municipalidad</label>
-                <input type="text" id="nombre" name="nombre" placeholder="Ej: Municipalidad Provincial de..." required>
 
-                <label for="ruc">Número de RUC</label>
-                <input type="text" id="ruc" name="ruc" maxlength="11" placeholder="Ej: 20123456789" required>
-
-                <label>
-                    <input type="checkbox" name="activo" checked> Entidad Activa
-                </label>
-                <button type="submit">Guardar Entidad</button>
-            </form>
+        <div id="contenedor-formulario">
+            {{template "formulario_crear"}}
         </div>
 
         <div>
@@ -26,3 +15,93 @@
         </div>
     </div>
 </article>
+
+{{define "formulario_crear"}}
+<details open>
+    <summary role="button" class="secondary outline">➕ Registrar Nueva Entidad</summary>
+    <div style="padding-top: 1rem;">
+        <form hx-post="/admin/inquilinos/crear" hx-target="#lista-inquilinos" hx-swap="innerHTML">
+            <label for="nombre">Nombre de la Municipalidad</label>
+            <input type="text" id="nombre" name="nombre" placeholder="Ej: Municipalidad Provincial de..." required>
+
+            <label for="ruc">Número de RUC</label>
+            <input type="text" id="ruc" name="ruc" maxlength="11" placeholder="Ej: 20123456789" required>
+
+            <label>
+                <input type="checkbox" name="activo" checked> Entidad Activa
+            </label>
+            <button type="submit">Guardar Entidad</button>
+        </form>
+    </div>
+</details>
+{{end}}
+
+{{define "formulario_editar"}}
+<details open>
+    <summary role="button" class="contrast outline">✏️ Editando: {{.Nombre}}</summary>
+    <div style="padding-top: 1rem;">
+        <form hx-post="/admin/inquilinos/actualizar" hx-target="#contenido-principal" hx-swap="innerHTML">
+            <input type="hidden" name="id" value="{{.ID}}">
+
+            <label for="nombre">Nombre de la Municipalidad</label>
+            <input type="text" id="nombre" name="nombre" value="{{.Nombre}}" required>
+
+            <label for="ruc">Número de RUC</label>
+            <input type="text" id="ruc" name="ruc" maxlength="11" value="{{.Ruc}}" required>
+
+            <label>
+                <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Entidad Activa
+            </label>
+
+            <div class="grid">
+                <button type="submit">Actualizar</button>
+                <button type="button" class="secondary outline" hx-get="/admin/ui/inquilinos"
+                    hx-target="#contenido-principal">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</details>
+{{end}}
+
+{{define "tabla_inquilinos"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Municipalidad</th>
+            <th>RUC</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td>{{.ID}}</td>
+            <td><strong>{{.Nombre}}</strong></td>
+            <td>{{.Ruc}}</td>
+            <td>
+                {{if .Activo}}
+                <mark
+                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Activo</mark>
+                {{else}}
+                <mark
+                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Inactivo</mark>
+                {{end}}
+            </td>
+            <td>
+                <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                    hx-get="/admin/inquilinos/editar_ui?id={{.ID}}" hx-target="#contenedor-formulario"
+                    hx-swap="innerHTML">
+                    Editar
+                </button>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="5" style="text-align: center;">No hay inquilinos registrados.</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}

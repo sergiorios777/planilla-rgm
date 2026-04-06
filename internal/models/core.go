@@ -67,3 +67,13 @@ type ConceptoAfectacion struct {
 	ConceptoBaseID     int `json:"concepto_base_id"`
 	ConceptoDerivadoID int `json:"concepto_derivado_id"`
 }
+
+// ParametroGlobal define valores anuales que afectan a todas las planillas (UIT, RMV, etc.)
+type ParametroGlobal struct {
+	ID          int     `json:"id"`
+	Clave       string  `json:"clave"`
+	Valor       float64 `json:"valor"`
+	FechaDesde  string  `json:"fecha_desde"` // Formato YYYY-MM-DD
+	FechaHasta  *string `json:"fecha_hasta"` // Puntero para permitir nulos (vigente actualmente)
+	Descripcion string  `json:"descripcion"`
+}

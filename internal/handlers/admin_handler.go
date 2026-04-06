@@ -6,6 +6,8 @@ import (
 
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
+
+	"strconv"
 )
 
 // AdminHandler agrupa las funciones web del panel del Super Admin
@@ -23,14 +25,14 @@ func (h *AdminHandler) ListarInquilinos(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// 2. Cargamos el archivo HTML que diseñaremos en el siguiente paso
-	tmpl, err := template.ParseFiles("ui/templates/admin/tenants.html")
+	tmpl, err := template.ParseFiles("ui/templates/admin/inquilinos_ui.html")
 	if err != nil {
 		http.Error(w, "Error cargando la vista HTML", http.StatusInternalServerError)
 		return
 	}
 
 	// 3. Renderizamos el HTML enviándole la lista de inquilinos
-	tmpl.Execute(w, tenants)
+	tmpl.ExecuteTemplate(w, "tabla_inquilinos", tenants)
 }
 
 // CrearInquilino recibe los datos del formulario HTMX y guarda la entidad
@@ -70,4 +72,40 @@ func (h *AdminHandler) CrearInquilino(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 	tmpl, _ := template.ParseFiles("ui/templates/admin/inquilinos_ui.html")
 	tmpl.Execute(w, nil)
+}
+
+// EditarUI devuelve solo el formulario de edición cargado con los datos
+func (h *AdminHandler) EditarUI(w http.ResponseWriter, r *http.Request) {
+	// Obtenemos el ID de la URL (ej: /admin/inquilinos/editar?id=5)
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+
+	inquilino, err := h.Repo.ObtenerPorID(id)
+	if err != nil {
+		http.Error(w, "Inquilino no encontrado", http.StatusNotFound)
+		return
+	}
+
+	tmpl, _ := template.ParseFiles("ui/templates/admin/inquilinos_ui.html")
+	// Ejecutamos solo el bloque "formulario_editar"
+	tmpl.ExecuteTemplate(w, "formulario_editar", inquilino)
+}
+
+// ActualizarInquilino procesa el formulario y devuelve la vista limpia
+func (h *AdminHandler) ActualizarInquilino(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	id, _ := strconv.Atoi(r.FormValue("id"))
+
+	inquilino := models.Tenant{
+		ID:     id,
+		Nombre: r.FormValue("nombre"),
+		Ruc:    r.FormValue("ruc"),
+		Activo: r.FormValue("activo") == "on",
+	}
+
+	h.Repo.Actualizar(&inquilino)
+
+	// Después de actualizar, recargamos toda la UI de inquilinos
+	// para que la tabla se actualice y el formulario vuelva a ser el de "Crear"
+	h.VistaUI(w, r)
 }

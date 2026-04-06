@@ -66,6 +66,12 @@
         </ul>
         <ul>
             <li>Panel Súper Admin</li>
+            <li>
+                <button class="outline secondary" style="padding: 0.25rem 0.75rem; font-size: 0.85rem;"
+                    hx-post="/logout">
+                    🚪 Salir
+                </button>
+            </li>
         </ul>
     </nav>
 
@@ -85,8 +91,8 @@
                                 MEF</a></li>
                         <li><a href="#" hx-get="/admin/ui/conceptos" hx-target="#contenido-principal">💰 Conceptos de
                                 Planilla</a></li>
-                        <li><a href="#" style="opacity: 0.5; cursor: not-allowed;">⚙️ Parámetros Globales (Pronto)</a>
-                        </li>
+                        <li><a href="#" hx-get="/admin/ui/parametros" hx-target="#contenido-principal">⚙️ Parámetros
+                                Globales</a></li>
                     </ul>
                 </nav>
             </aside>
