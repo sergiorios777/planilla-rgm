@@ -36,6 +36,15 @@ func main() {
 	parametroHandler := handlers.ParametroHandler{Repo: parametroRepo}
 	usuarioRepo := repository.NewUsuarioRepository(db)
 	authHandler := handlers.AuthHandler{Repo: usuarioRepo}
+	usuarioHandler := handlers.UsuarioHandler{
+		UserRepo:   usuarioRepo,
+		TenantRepo: tenantRepo,
+	}
+	tenantHandler := handlers.TenantHandler{Repo: tenantRepo}
+
+	// Servir archivos estáticos (CSS, JS, Imágenes)
+	fs := http.FileServer(http.Dir("ui/static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// 2. Ruta principal: Renderiza la interfaz de HTMX + Pico.css
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -92,10 +101,6 @@ func main() {
 	http.HandleFunc("/admin/mef/importar", middleware.RequireAuth(mefHandler.ImportarCSV))
 	http.HandleFunc("/admin/mef/vincular", middleware.RequireAuth(mefHandler.VincularJerarquiaManual))
 
-	// Rutas de interfaz (Sirven el marco HTML del módulo)
-	
-	
-
 	// Rutas de Conceptos Maestros
 	http.HandleFunc("/admin/ui/conceptos", middleware.RequireAuth(conceptoHandler.VistaUI))
 	http.HandleFunc("/admin/conceptos/lista", middleware.RequireAuth(conceptoHandler.ListarConceptos))
@@ -105,6 +110,27 @@ func main() {
 	http.HandleFunc("/admin/ui/parametros", middleware.RequireAuth(parametroHandler.VistaUI))
 	http.HandleFunc("/admin/parametros/lista", middleware.RequireAuth(parametroHandler.Listar))
 	http.HandleFunc("/admin/parametros/guardar", middleware.RequireAuth(parametroHandler.Guardar))
+
+	// Rutas protegidas de Usuarios
+	http.HandleFunc("/admin/ui/usuarios", middleware.RequireAuth(usuarioHandler.VistaUI))
+	http.HandleFunc("/admin/usuarios/lista", middleware.RequireAuth(usuarioHandler.Listar))
+	http.HandleFunc("/admin/usuarios/crear", middleware.RequireAuth(usuarioHandler.Crear))
+	http.HandleFunc("/admin/usuarios/editar_ui", middleware.RequireAuth(usuarioHandler.EditarUI))
+	http.HandleFunc("/admin/usuarios/actualizar", middleware.RequireAuth(usuarioHandler.ActualizarUsuario))
+
+	// === RUTA PRINCIPAL DEL INQUILINO (Protegida) ===
+	http.HandleFunc("/tenant", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		tmpl, err := template.ParseFiles("ui/templates/layouts/tenant_index.html")
+		if err != nil {
+			http.Error(w, "Error cargando la vista principal del inquilino", http.StatusInternalServerError)
+			return
+		}
+		tmpl.Execute(w, nil)
+	}))
+
+	// Rutas de Inquilino
+	http.HandleFunc("/tenant/ui/perfil", middleware.RequireAuth(tenantHandler.PerfilUI))
+	http.HandleFunc("/tenant/perfil/actualizar", middleware.RequireAuth(tenantHandler.ActualizarPerfil))
 
 	// 4. Iniciar el servidor
 	log.Println("🚀 Servidor iniciado en http://localhost:8080")

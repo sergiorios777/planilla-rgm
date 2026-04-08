@@ -4,23 +4,29 @@ import "time"
 
 // Tenant representa a las entidades/inquilinos que usan tu SaaS
 type Tenant struct {
-	ID        int       `json:"id"`
-	Nombre    string    `json:"nombre"`
-	Ruc       string    `json:"ruc"`
-	Activo    bool      `json:"activo"`
-	CreatedAt time.Time `json:"created_at"`
+	ID           int       `json:"id"`
+	Nombre       string    `json:"nombre"`
+	Ruc          string    `json:"ruc"`
+	Direccion    *string   `json:"direccion"`
+	FraseGestion *string   `json:"frase_gestion"`
+	LogoURL      *string   `json:"logo_url"`
+	Slug         *string   `json:"slug"`
+	Activo       bool      `json:"activo"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 // Usuario representa a las personas que inician sesión.
 // El campo TenantID es un puntero (*int) para permitir valores "null" en la base de datos.
 // Si TenantID es null, significa que es un usuario "Súper Admin" del SaaS.
 type Usuario struct {
-	ID       int    `json:"id"`
-	TenantID *int   `json:"tenant_id"` // Clave foránea hacia Tenant
-	Nombre   string `json:"nombre"`
-	Email    string `json:"email"`
-	Password string `json:"-"`   // El guion evita que la contraseña se envíe en respuestas JSON
-	Rol      string `json:"rol"` // Ej: "admin_saas", "rrhh_local", "planillero"
+	ID           int    `json:"id"`
+	TenantID     *int   `json:"tenant_id"` // Clave foránea hacia Tenant
+	Nombre       string `json:"nombre"`
+	Email        string `json:"email"`
+	Password     string `json:"-"`   // El guion evita que la contraseña se envíe en respuestas JSON
+	Rol          string `json:"rol"` // Ej: "admin_saas", "rrhh_local", "planillero"
+	Activo       bool   `json:"activo"`
+	TenantNombre string `json:"tenant_nombre,omitempty"`
 }
 
 // ClasificadorMEF representa el catálogo universal gestionado por el administrador SaaS.

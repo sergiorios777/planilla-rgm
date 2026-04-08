@@ -49,6 +49,10 @@ func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 			ctx := context.WithValue(r.Context(), UsuarioIDKey, claims["usuario_id"])
 			ctx = context.WithValue(ctx, RolKey, claims["rol"])
 
+			if tid, exists := claims["tenant_id"]; exists {
+				ctx = context.WithValue(ctx, "tenant_id", tid)
+			}
+
 			// Cabeceras de Seguridad Anti-Caché
 			// Obligamos al navegador a destruir la página al salir
 			w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")

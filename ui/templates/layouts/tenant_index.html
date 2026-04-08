@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Panel Municipal - Planillas RGM</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        /* Reducimos el tamaño base de la fuente de toda la aplicación */
+        html {
+            font-size: 14px;
+            /* El valor original suele ser 16px o más */
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="container-fluid" style="border-bottom: 1px solid #e0e0e0; margin-bottom: 2rem; padding: 1rem;">
+        <ul>
+            <li><strong>🏛️ Mi Municipalidad</strong></li>
+        </ul>
+        <ul>
+            <li><small>Operador de Planillas</small></li>
+            <li>
+                <button class="outline secondary" style="padding: 0.25rem 0.75rem; font-size: 0.85rem;"
+                    hx-post="/logout">
+                    🚪 Salir
+                </button>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="container-fluid">
+        <div class="grid" style="grid-template-columns: 250px 1fr; gap: 2rem;">
+
+            <aside>
+                <nav>
+                    <ul>
+                        <li><small><strong>MI ENTIDAD</strong></small></li>
+                        <li><a href="#" hx-get="/tenant/ui/perfil" hx-target="#contenido-tenant">🏢 Perfil
+                                Institucional</a></li>
+
+                        <hr style="margin: 1rem 0;">
+
+                        <li><small><strong>RECURSOS HUMANOS</strong></small></li>
+                        <li><a href="#" style="opacity: 0.5;">👥 Trabajadores (Legajo)</a></li>
+                        <li><a href="#" style="opacity: 0.5;">📄 Contratos</a></li>
+
+                        <hr style="margin: 1rem 0;">
+
+                        <li><small><strong>CÁLCULO Y PLANILLAS</strong></small></li>
+                        <li><a href="#" style="opacity: 0.5;">💰 Conceptos Locales</a></li>
+                        <li><a href="#" style="opacity: 0.5;">📊 Procesar Planilla</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <section id="contenido-tenant">
+                <article>
+                    <header>
+                        <h2>Bienvenido a su Panel de Gestión</h2>
+                    </header>
+                    <p>Seleccione una opción en el menú lateral para comenzar. Recuerde revisar y completar el
+                        <strong>Perfil Institucional</strong> de su municipalidad.
+                    </p>
+                </article>
+            </section>
+
+        </div>
+    </main>
+</body>
+
+</html>

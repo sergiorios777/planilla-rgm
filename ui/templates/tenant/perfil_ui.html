@@ -1,0 +1,50 @@
+<article>
+    <header>
+        <h3>Perfil Institucional</h3>
+    </header>
+
+    <form hx-post="/tenant/perfil/actualizar" hx-encoding="multipart/form-data" hx-target="#contenido-tenant">
+
+        <input type="hidden" name="id" value="{{.ID}}">
+
+        <div class="grid">
+            <div>
+                <label>Nombre Institucional
+                    <input type="text" name="nombre" value="{{.Nombre}}" required>
+                </label>
+                <label>RUC (No editable)
+                    <input type="text" value="{{.Ruc}}" readonly>
+                </label>
+            </div>
+            <div style="text-align: center;">
+                <label>Logo Institucional</label>
+                {{if .LogoURL}}
+                <img src="{{.LogoURL}}" alt="Logo" style="max-height: 100px; margin-bottom: 1rem;">
+                {{else}}
+                <div
+                    style="height: 100px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                    Sin Logo
+                </div>
+                {{end}}
+                <input type="file" name="logo" accept="image/*">
+            </div>
+        </div>
+
+        <label>Dirección Física
+            <input type="text" name="direccion" value="{{if .Direccion}}{{.Direccion}}{{end}}"
+                placeholder="Av. Principal 123...">
+        </label>
+
+        <label>Frase de Gestión (Aparecerá en reportes y boletas)
+            <input type="text" name="frase_gestion" value="{{if .FraseGestion}}{{.FraseGestion}}{{end}}"
+                placeholder="Ej: 'Trabajando por el desarrollo...'">
+        </label>
+
+        <label>Slug (URL personalizada para el futuro portal)
+            <input type="text" name="slug" value="{{if .Slug}}{{.Slug}}{{end}}" placeholder="ej: muni-lima">
+            <small>Solo letras, números y guiones.</small>
+        </label>
+
+        <button type="submit">Guardar Cambios del Perfil</button>
+    </form>
+</article>

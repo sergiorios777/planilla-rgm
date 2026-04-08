@@ -1,0 +1,169 @@
+<article>
+    <header>
+        <h3 style="margin-bottom: 0;">👥 Gestión de Usuarios (Operadores)</h3>
+    </header>
+    <div class="grid">
+        <div id="contenedor-formulario">
+            {{template "formulario_crear" .}}
+        </div>
+
+        <div>
+            <div id="lista-usuarios" hx-get="/admin/usuarios/lista" hx-trigger="load">
+                <p aria-busy="true">Cargando usuarios...</p>
+            </div>
+        </div>
+    </div>
+</article>
+
+{{define "formulario_crear"}}
+<details close>
+    <summary role="button" class="secondary outline">➕ Registrar Nuevo Usuario</summary>
+    <div style="padding-top: 1rem;">
+        <form hx-post="/admin/usuarios/crear" hx-target="#lista-usuarios" hx-swap="innerHTML">
+
+            <label for="tenant_id">Asignar a Municipalidad</label>
+            <select name="tenant_id">
+                <option value="">-- Súper Administrador del Sistema --</option>
+                {{range .}}
+                {{if .Activo}}
+                <option value="{{.ID}}">{{.Nombre}}</option>
+                {{end}}
+                {{end}}
+            </select>
+
+            <label>Nombre Completo
+                <input type="text" name="nombre" placeholder="Ej. Juan Pérez" required>
+            </label>
+
+            <label>Correo Electrónico (Login)
+                <input type="email" name="email" placeholder="juan@municipalidad.gob.pe" required>
+            </label>
+
+            <div class="grid">
+                <label>Contraseña
+                    <input type="password" name="password" required>
+                </label>
+                <label>Rol
+                    <select name="rol" required>
+                        <option value="admin_municipal">Admin Municipal</option>
+                        <option value="operador">Operador de Planilla</option>
+                        <option value="super_admin">Súper Admin (SaaS)</option>
+                    </select>
+                </label>
+                <label>
+                    <input type="checkbox" name="activo" checked> Usuario Activo
+                </label>
+            </div>
+
+            <button type="submit">Guardar Usuario</button>
+        </form>
+    </div>
+</details>
+{{end}}
+
+{{define "formulario_editar"}}
+<details open>
+    <summary role="button" class="contrast outline">✏️ Editando: {{.Usuario.Nombre}}</summary>
+    <div style="padding-top: 1rem;">
+        <form hx-post="/admin/usuarios/actualizar" hx-target="#contenido-principal" hx-swap="innerHTML">
+            <input type="hidden" name="id" value="{{.Usuario.ID}}">
+
+            <label for="tenant_id">Asignar a Municipalidad</label>
+            {{$tActual := .TenantActual}}
+            <select name="tenant_id">
+                <option value="">-- Súper Administrador del Sistema --</option>
+                {{range .Inquilinos}}
+                {{if .Activo}}
+                <option value="{{.ID}}" {{if eq .ID $tActual}}selected{{end}}>{{.Nombre}}</option>
+                {{end}}
+                {{end}}
+            </select>
+
+            <label>Nombre Completo
+                <input type="text" name="nombre" value="{{.Usuario.Nombre}}" required>
+            </label>
+
+            <label>Correo Electrónico
+                <input type="email" name="email" value="{{.Usuario.Email}}" required>
+            </label>
+
+            <div class="grid">
+                <label>Nueva Contraseña
+                    <input type="password" name="password" placeholder="Dejar en blanco para no cambiar">
+                </label>
+                <label>Rol
+                    <select name="rol" required>
+                        <option value="admin_municipal" {{if eq .Usuario.Rol "admin_municipal" }}selected{{end}}>Admin
+                            Municipal</option>
+                        <option value="operador" {{if eq .Usuario.Rol "operador" }}selected{{end}}>Operador de Planilla
+                        </option>
+                        <option value="super_admin" {{if eq .Usuario.Rol "super_admin" }}selected{{end}}>Súper Admin
+                            (SaaS)</option>
+                    </select>
+                </label>
+                <label>
+                    <input type="checkbox" name="activo" {{if .Usuario.Activo}}checked{{end}}> Usuario Activo
+                </label>
+            </div>
+
+            <div class="grid">
+                <button type="submit">Actualizar</button>
+                <button type="button" class="secondary outline" hx-get="/admin/ui/usuarios"
+                    hx-target="#contenido-principal">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</details>
+{{end}}
+
+{{define "tabla_usuarios"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Entidad</th>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td>
+                {{if eq .TenantNombre "Súper Admin (SaaS)"}}
+                <mark style="background-color: #e1bee7; color: #4a148c; padding: 2px 6px; border-radius: 4px;">SaaS
+                    Admin</mark>
+                {{else}}
+                <small><strong>{{.TenantNombre}}</strong></small>
+                {{end}}
+            </td>
+            <td>{{.Nombre}}</td>
+            <td>{{.Email}}</td>
+            <td><small>{{.Rol}}</small></td>
+            <td>
+                {{if .Activo}}
+                <mark
+                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Activo</mark>
+                {{else}}
+                <mark
+                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Inactivo</mark>
+                {{end}}
+            </td>
+            <td>
+                <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                    hx-get="/admin/usuarios/editar_ui?id={{.ID}}" hx-target="#contenedor-formulario"
+                    hx-swap="innerHTML">
+                    Editar
+                </button>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="6" style="text-align: center;">No hay usuarios registrados.</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}

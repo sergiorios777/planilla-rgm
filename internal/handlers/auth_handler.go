@@ -38,14 +38,20 @@ func (h *AuthHandler) ProcesarLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Contraseña correcta: Generamos el JWT
+	// 3. Verificamos si el usuario está activo
+	if !usuario.Activo {
+		http.Error(w, "Cuenta desactivada. Contacte al administrador.", http.StatusForbidden)
+		return
+	}
+
+	// 4. Contraseña correcta: Generamos el JWT
 	tokenString, err := service.GenerarJWT(usuario)
 	if err != nil {
 		http.Error(w, "Error interno del servidor", http.StatusInternalServerError)
 		return
 	}
 
-	// 4. Creamos la Cookie HttpOnly (El "pasaporte" seguro)
+	// 5. Creamos la Cookie HttpOnly (El "pasaporte" seguro)
 	http.SetCookie(w, &http.Cookie{
 		Name:     "rgm_auth_token",
 		Value:    tokenString,
@@ -56,8 +62,14 @@ func (h *AuthHandler) ProcesarLogin(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	// 5. Truco de HTMX: Le decimos al navegador que haga una redirección completa al panel
-	w.Header().Set("HX-Redirect", "/admin")
+	// 6. Le decimos al navegador que haga una redirección completa al panel
+
+	// Redirección inteligente basada en el rol
+	if usuario.Rol == "super_admin" {
+		w.Header().Set("HX-Redirect", "/admin")
+	} else {
+		w.Header().Set("HX-Redirect", "/tenant")
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
