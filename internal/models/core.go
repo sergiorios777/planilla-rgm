@@ -43,19 +43,6 @@ type ClasificadorMEF struct {
 	ParentID        *int   `json:"parent_id"`
 }
 
-// Trabajador representa a un empleado de un inquilino específico.
-// Aquí aplicamos estrictamente el tenant_id.
-type Trabajador struct {
-	ID             int       `json:"id"`
-	TenantID       int       `json:"tenant_id"` // A qué entidad pertenece
-	Dni            string    `json:"dni"`
-	Nombres        string    `json:"nombres"`
-	Apellidos      string    `json:"apellidos"`
-	RegimenLaboral string    `json:"regimen_laboral"` // Ej: "CAS", "276", "728"
-	FechaIngreso   time.Time `json:"fecha_ingreso"`
-	Activo         bool      `json:"activo"`
-}
-
 // ConceptoMaestro representa el catálogo global de ingresos, retenciones y aportes.
 type ConceptoMaestro struct {
 	ID          int    `json:"id"`
@@ -82,4 +69,48 @@ type ParametroGlobal struct {
 	FechaDesde  string  `json:"fecha_desde"` // Formato YYYY-MM-DD
 	FechaHasta  *string `json:"fecha_hasta"` // Puntero para permitir nulos (vigente actualmente)
 	Descripcion string  `json:"descripcion"`
+}
+
+// Trabajador representa a un empleado registrado en una municipalidad (Inquilino)
+type Trabajador struct {
+	ID              int    `json:"id"`
+	TenantID        int    `json:"tenant_id"` // Clave de seguridad
+	TipoDocumento   string `json:"tipo_documento"`
+	NumeroDocumento string `json:"numero_documento"`
+	Nombres         string `json:"nombres"`
+	ApellidoPaterno string `json:"apellido_paterno"`
+	ApellidoMaterno string `json:"apellido_materno"`
+	FechaNacimiento string `json:"fecha_nacimiento"`
+	Sexo            string `json:"sexo"`
+	Activo          bool   `json:"activo"`
+}
+
+// NombreCompleto es una función auxiliar útil para mostrar en la interfaz
+func (t *Trabajador) NombreCompleto() string {
+	return t.ApellidoPaterno + " " + t.ApellidoMaterno + ", " + t.Nombres
+}
+
+// RegimenLaboral representa el catálogo nacional de regímenes (276, CAS, etc.)
+type RegimenLaboral struct {
+	ID          int    `json:"id"`
+	Codigo      string `json:"codigo"`
+	Descripcion string `json:"descripcion"`
+}
+
+// Contrato vincula a un trabajador con un régimen y establece sus condiciones económicas
+type Contrato struct {
+	ID           int     `json:"id"`
+	TenantID     int     `json:"tenant_id"`
+	TrabajadorID int     `json:"trabajador_id"`
+	RegimenID    int     `json:"regimen_id"`
+	Cargo        string  `json:"cargo"`
+	SueldoBase   float64 `json:"sueldo_base"`
+	FechaInicio  string  `json:"fecha_inicio"`
+	FechaFin     *string `json:"fecha_fin"` // Puntero para permitir nulos
+	Activo       bool    `json:"activo"`
+
+	// Campos auxiliares para la interfaz web (JOINs)
+	TrabajadorNombre string `json:"trabajador_nombre,omitempty"`
+	TrabajadorDoc    string `json:"trabajador_doc,omitempty"`
+	RegimenDesc      string `json:"regimen_desc,omitempty"`
 }

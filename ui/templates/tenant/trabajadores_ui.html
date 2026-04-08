@@ -1,0 +1,171 @@
+<article>
+    <header>
+        <h3 style="margin-bottom: 0;">👥 Legajo de Trabajadores</h3>
+    </header>
+    <div class="grid">
+        <div id="contenedor-formulario">
+            {{template "formulario_crear"}}
+        </div>
+
+        <div>
+            <div id="lista-trabajadores" hx-get="/tenant/trabajadores/lista" hx-trigger="load">
+                <p aria-busy="true">Cargando personal...</p>
+            </div>
+        </div>
+    </div>
+</article>
+
+{{define "formulario_crear"}}
+<details open>
+    <summary role="button" class="secondary outline">➕ Registrar Nuevo Trabajador</summary>
+    <div style="padding-top: 1rem;">
+        <form hx-post="/tenant/trabajadores/crear" hx-target="#lista-trabajadores" hx-swap="innerHTML">
+
+            <div class="grid">
+                <label>Tipo Documento
+                    <select name="tipo_documento" required>
+                        <option value="DNI">DNI</option>
+                        <option value="CE">Carnet de Extranjería</option>
+                        <option value="PASAPORTE">Pasaporte</option>
+                    </select>
+                </label>
+                <label>Número Documento
+                    <input type="text" name="numero_documento" required>
+                </label>
+            </div>
+
+            <label>Nombres Completos
+                <input type="text" name="nombres" required>
+            </label>
+
+            <div class="grid">
+                <label>Apellido Paterno
+                    <input type="text" name="apellido_paterno" required>
+                </label>
+                <label>Apellido Materno
+                    <input type="text" name="apellido_materno" required>
+                </label>
+            </div>
+
+            <div class="grid">
+                <label>Fecha de Nacimiento
+                    <input type="date" name="fecha_nacimiento">
+                </label>
+                <label>Sexo
+                    <select name="sexo">
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                    </select>
+                </label>
+            </div>
+
+            <label>
+                <input type="checkbox" name="activo" checked> Personal Activo
+            </label>
+
+            <button type="submit">Guardar Trabajador</button>
+        </form>
+    </div>
+</details>
+{{end}}
+
+{{define "formulario_editar"}}
+<details open>
+    <summary role="button" class="contrast outline">✏️ Editando: {{.NombreCompleto}}</summary>
+    <div style="padding-top: 1rem;">
+        <form hx-post="/tenant/trabajadores/actualizar" hx-target="#contenido-tenant" hx-swap="innerHTML">
+            <input type="hidden" name="id" value="{{.ID}}">
+
+            <div class="grid">
+                <label>Tipo Documento
+                    <select name="tipo_documento" required>
+                        <option value="DNI" {{if eq .TipoDocumento "DNI" }}selected{{end}}>DNI</option>
+                        <option value="CE" {{if eq .TipoDocumento "CE" }}selected{{end}}>Carnet de Extranjería</option>
+                        <option value="PASAPORTE" {{if eq .TipoDocumento "PASAPORTE" }}selected{{end}}>Pasaporte
+                        </option>
+                    </select>
+                </label>
+                <label>Número Documento
+                    <input type="text" name="numero_documento" value="{{.NumeroDocumento}}" required>
+                </label>
+            </div>
+
+            <label>Nombres Completos
+                <input type="text" name="nombres" value="{{.Nombres}}" required>
+            </label>
+
+            <div class="grid">
+                <label>Apellido Paterno
+                    <input type="text" name="apellido_paterno" value="{{.ApellidoPaterno}}" required>
+                </label>
+                <label>Apellido Materno
+                    <input type="text" name="apellido_materno" value="{{.ApellidoMaterno}}" required>
+                </label>
+            </div>
+
+            <div class="grid">
+                <label>Fecha de Nacimiento
+                    <input type="date" name="fecha_nacimiento" value="{{.FechaNacimiento}}">
+                </label>
+                <label>Sexo
+                    <select name="sexo">
+                        <option value="M" {{if eq .Sexo "M" }}selected{{end}}>Masculino</option>
+                        <option value="F" {{if eq .Sexo "F" }}selected{{end}}>Femenino</option>
+                    </select>
+                </label>
+            </div>
+
+            <label>
+                <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Personal Activo
+            </label>
+
+            <div class="grid">
+                <button type="submit">Actualizar</button>
+                <button type="button" class="secondary outline" hx-get="/tenant/ui/trabajadores"
+                    hx-target="#contenido-tenant">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</details>
+{{end}}
+
+{{define "tabla_trabajadores"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>DNI/Doc</th>
+            <th>Apellidos y Nombres</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td><small>{{.NumeroDocumento}}</small></td>
+            <td><strong>{{.ApellidoPaterno}} {{.ApellidoMaterno}}</strong><br><small>{{.Nombres}}</small></td>
+            <td>
+                {{if .Activo}}
+                <mark
+                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Activo</mark>
+                {{else}}
+                <mark
+                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Baja</mark>
+                {{end}}
+            </td>
+            <td>
+                <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                    hx-get="/tenant/trabajadores/editar_ui?id={{.ID}}" hx-target="#contenedor-formulario"
+                    hx-swap="innerHTML">
+                    Editar
+                </button>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="4" style="text-align: center;">No hay trabajadores registrados.</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}

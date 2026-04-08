@@ -1,0 +1,106 @@
+<article>
+    <header>
+        <h3 style="margin-bottom: 0;">📄 Gestión de Contratos Laborales</h3>
+    </header>
+    <div class="grid">
+        <div id="contenedor-formulario">
+            {{template "formulario_crear" .}}
+        </div>
+        <div>
+            <div id="lista-contratos" hx-get="/tenant/contratos/lista" hx-trigger="load">
+                <p aria-busy="true">Cargando contratos...</p>
+            </div>
+        </div>
+    </div>
+</article>
+
+{{define "formulario_crear"}}
+<details open>
+    <summary role="button" class="secondary outline">➕ Registrar Nuevo Contrato</summary>
+    <div style="padding-top: 1rem;">
+        <form hx-post="/tenant/contratos/crear" hx-target="#lista-contratos" hx-swap="innerHTML">
+
+            <label>Seleccionar Trabajador
+                <select name="trabajador_id" required>
+                    <option value="">-- Seleccione personal activo --</option>
+                    {{range .Trabajadores}}
+                    {{if .Activo}}
+                    <option value="{{.ID}}">{{.ApellidoPaterno}} {{.ApellidoMaterno}}, {{.Nombres}}
+                        ({{.NumeroDocumento}})</option>
+                    {{end}}
+                    {{end}}
+                </select>
+            </label>
+
+            <div class="grid">
+                <label>Régimen Laboral
+                    <select name="regimen_id" required>
+                        <option value="">-- Régimen --</option>
+                        {{range .Regimenes}}
+                        <option value="{{.ID}}">{{.Descripcion}}</option>
+                        {{end}}
+                    </select>
+                </label>
+                <label>Sueldo Base Mensual (S/)
+                    <input type="number" step="0.01" name="sueldo_base" placeholder="Ej. 1500.00" required>
+                </label>
+            </div>
+
+            <label>Cargo / Puesto
+                <input type="text" name="cargo" placeholder="Ej. Especialista en Logística" required>
+            </label>
+
+            <div class="grid">
+                <label>Fecha de Inicio
+                    <input type="date" name="fecha_inicio" required>
+                </label>
+                <label>Fecha de Fin (Opcional)
+                    <input type="date" name="fecha_fin">
+                </label>
+            </div>
+
+            <label>
+                <input type="checkbox" name="activo" checked> Contrato Activo (En curso)
+            </label>
+
+            <button type="submit">Generar Contrato</button>
+        </form>
+    </div>
+</details>
+{{end}}
+
+{{define "tabla_contratos"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Trabajador</th>
+            <th>Detalle Contractual</th>
+            <th>Vigencia</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td><strong>{{.TrabajadorNombre}}</strong><br><small>Doc: {{.TrabajadorDoc}}</small></td>
+            <td><mark>{{.RegimenDesc}}</mark><br><small>{{.Cargo}} (S/ {{.SueldoBase}})</small></td>
+            <td><small>Desde: {{.FechaInicio}}<br>Hasta: {{if
+                    .FechaFin}}{{.FechaFin}}{{else}}<em>Indeterminado</em>{{end}}</small></td>
+            <td>
+                {{if .Activo}}
+                <mark
+                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Vigente</mark>
+                {{else}}
+                <mark
+                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Finalizado</mark>
+                {{end}}
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="4" style="text-align: center;">No hay contratos registrados.</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}

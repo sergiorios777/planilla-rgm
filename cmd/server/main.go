@@ -41,6 +41,13 @@ func main() {
 		TenantRepo: tenantRepo,
 	}
 	tenantHandler := handlers.TenantHandler{Repo: tenantRepo}
+	trabajadorRepo := repository.NewTrabajadorRepository(db)
+	trabajadorHandler := handlers.TrabajadorHandler{Repo: trabajadorRepo}
+	contratoRepo := repository.NewContratoRepository(db)
+	contratoHandler := handlers.ContratoHandler{
+		Repo:           contratoRepo,
+		TrabajadorRepo: trabajadorRepo,
+	}
 
 	// Servir archivos estáticos (CSS, JS, Imágenes)
 	fs := http.FileServer(http.Dir("ui/static"))
@@ -131,6 +138,18 @@ func main() {
 	// Rutas de Inquilino
 	http.HandleFunc("/tenant/ui/perfil", middleware.RequireAuth(tenantHandler.PerfilUI))
 	http.HandleFunc("/tenant/perfil/actualizar", middleware.RequireAuth(tenantHandler.ActualizarPerfil))
+
+	// Rutas de Trabajadores (Protegidas)
+	http.HandleFunc("/tenant/ui/trabajadores", middleware.RequireAuth(trabajadorHandler.VistaUI))
+	http.HandleFunc("/tenant/trabajadores/lista", middleware.RequireAuth(trabajadorHandler.Listar))
+	http.HandleFunc("/tenant/trabajadores/crear", middleware.RequireAuth(trabajadorHandler.Crear))
+	http.HandleFunc("/tenant/trabajadores/editar_ui", middleware.RequireAuth(trabajadorHandler.EditarUI))
+	http.HandleFunc("/tenant/trabajadores/actualizar", middleware.RequireAuth(trabajadorHandler.Actualizar))
+
+	// Rutas protegidas de Contratos
+	http.HandleFunc("/tenant/ui/contratos", middleware.RequireAuth(contratoHandler.VistaUI))
+	http.HandleFunc("/tenant/contratos/lista", middleware.RequireAuth(contratoHandler.Listar))
+	http.HandleFunc("/tenant/contratos/crear", middleware.RequireAuth(contratoHandler.Crear))
 
 	// 4. Iniciar el servidor
 	log.Println("🚀 Servidor iniciado en http://localhost:8080")
