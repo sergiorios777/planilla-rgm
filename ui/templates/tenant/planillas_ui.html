@@ -1,0 +1,106 @@
+<article>
+    <header>
+        <h3 style="margin-bottom: 0;">📅 Apertura de Planillas Mensuales</h3>
+    </header>
+    <p><small>Abre una nueva planilla para iniciar los cálculos. Solo las planillas en estado BORRADOR pueden ser
+            modificadas.</small></p>
+
+    <div class="grid">
+        <div id="contenedor-formulario">
+            {{template "formulario_crear" .}}
+        </div>
+        <div>
+            <div id="lista-planillas" hx-get="/tenant/planillas/lista" hx-trigger="load">
+                <p aria-busy="true">Cargando historial de planillas...</p>
+            </div>
+        </div>
+    </div>
+</article>
+
+{{define "formulario_crear"}}
+<details open>
+    <summary role="button" class="secondary outline">➕ Abrir Nueva Planilla</summary>
+    <div style="padding-top: 1rem;">
+
+        <div id="alerta-planilla"></div>
+
+        <form hx-post="/tenant/planillas/crear" hx-target="#lista-planillas" hx-swap="innerHTML">
+
+            <div class="grid">
+                <label>Año Fiscal
+                    <input type="number" name="anio" value="2026" required>
+                </label>
+
+                <label>Mes
+                    <select name="mes" required>
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                </label>
+            </div>
+
+            <label>Descripción / Grupo
+                <input type="text" name="descripcion" placeholder="Ej. Planilla Régimen CAS - Enero" required>
+                <small>Usa nombres descriptivos si separas tu planilla por regímenes o fuentes de
+                    financiamiento.</small>
+            </label>
+
+            <button type="submit">Generar Apertura</button>
+        </form>
+    </div>
+</details>
+{{end}}
+
+{{define "tabla_planillas"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Periodo</th>
+            <th>Descripción</th>
+            <th>Estado</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td><strong>{{.Anio}} - {{printf "%02d" .Mes}}</strong></td>
+            <td><small>{{.Descripcion}}</small></td>
+            <td>
+                {{if eq .Estado "BORRADOR"}}
+                <mark
+                    style="background-color: #fff9c4; color: #f57f17; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Borrador</mark>
+                {{else if eq .Estado "CERRADA"}}
+                <mark
+                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Cerrada</mark>
+                {{end}}
+            </td>
+            <td>
+                <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                    hx-post="/tenant/planillas/procesar?id={{.ID}}" hx-target="#contenido-tenant" hx-indicator="this">
+                    ⚙️ Procesar
+                </button>
+                <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                    hx-get="/tenant/planillas/detalle/ui?id={{.ID}}" hx-target="#contenido-tenant">
+                    👁️ Ver
+                </button>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="4" style="text-align: center;">No hay planillas registradas.</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}

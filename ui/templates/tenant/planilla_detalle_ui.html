@@ -1,0 +1,41 @@
+<article>
+    <header>
+        <h3 style="margin-bottom: 0;">🧾 Detalle de la Planilla Procesada</h3>
+        <p><small>Boletas generadas por el Motor de Cálculo para este periodo.</small></p>
+    </header>
+
+    <button class="secondary outline" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant"
+        style="margin-bottom: 2rem;">
+        ⬅️ Volver al Historial de Planillas
+    </button>
+
+    <table class="striped">
+        <thead>
+            <tr>
+                <th>Trabajador</th>
+                <th>Plaza Costeada</th>
+                <th style="color: #1b5e20;">Ingresos</th>
+                <th style="color: #b71c1c;">Retenciones</th>
+                <th style="color: #1565c0;">Aportes (Entidad)</th>
+                <th>Neto a Pagar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Detalles}}
+            <tr>
+                <td><strong>{{.TrabajadorNombre}}</strong><br><small>Doc: {{.TrabajadorDoc}}</small></td>
+                <td><small>{{.PuestoNombre}}</small></td>
+                <td style="color: #1b5e20;">S/ {{printf "%.2f" .TotalIngresos}}</td>
+                <td style="color: #b71c1c;">S/ {{printf "%.2f" .TotalRetenciones}}</td>
+                <td style="color: #1565c0;">S/ {{printf "%.2f" .TotalAportes}}</td>
+                <td><strong>S/ {{printf "%.2f" .NetoPagar}}</strong></td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="6" style="text-align: center;">No hay trabajadores activos costeados para esta planilla.
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</article>

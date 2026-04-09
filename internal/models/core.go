@@ -182,3 +182,42 @@ type PuestoConcepto struct {
 	ConceptoTipo        string `json:"concepto_tipo,omitempty"`
 	Clasificador        string `json:"clasificador,omitempty"`
 }
+
+// Planilla representa la cabecera mensual de cálculos
+type Planilla struct {
+	ID          int    `json:"id"`
+	TenantID    int    `json:"tenant_id"`
+	Anio        int    `json:"anio"`
+	Mes         int    `json:"mes"`
+	Descripcion string `json:"descripcion"`
+	Estado      string `json:"estado"` // BORRADOR, CERRADA
+}
+
+// PlanillaDetalle representa la boleta consolidada de un trabajador
+type PlanillaDetalle struct {
+	ID               int     `json:"id"`
+	PlanillaID       int     `json:"planilla_id"`
+	ContratoID       int     `json:"contrato_id"`
+	TotalIngresos    float64 `json:"total_ingresos"`
+	TotalRetenciones float64 `json:"total_retenciones"`
+	TotalAportes     float64 `json:"total_aportes"`
+	NetoPagar        float64 `json:"neto_pagar"`
+
+	// Campos auxiliares para pintar la boleta (JOINs)
+	TrabajadorNombre string `json:"trabajador_nombre,omitempty"`
+	TrabajadorDoc    string `json:"trabajador_doc,omitempty"`
+	PuestoNombre     string `json:"puesto_nombre,omitempty"`
+	RegimenDesc      string `json:"regimen_desc,omitempty"`
+}
+
+// PlanillaConcepto es el desglose rubro por rubro
+type PlanillaConcepto struct {
+	ID                int     `json:"id"`
+	PlanillaDetalleID int     `json:"planilla_detalle_id"`
+	ConceptoTenantID  int     `json:"concepto_tenant_id"`
+	TipoConcepto      string  `json:"tipo_concepto"` // INGRESO, RETENCION, APORTE
+	Monto             float64 `json:"monto"`
+
+	// Campo auxiliar
+	NombrePersonalizado string `json:"nombre_personalizado,omitempty"`
+}

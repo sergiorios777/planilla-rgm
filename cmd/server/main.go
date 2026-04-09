@@ -38,6 +38,7 @@ func main() {
 	puestoRepo := repository.NewPuestoRepository(db)
 	conceptoTenantRepo := repository.NewConceptoTenantRepository(db)
 	puestoConceptoRepo := repository.NewPuestoConceptoRepository(db)
+	planillaRepo := repository.NewPlanillaRepository(db)
 
 	// Handlers:
 	adminHandler := handlers.AdminHandler{Repo: tenantRepo}
@@ -68,6 +69,7 @@ func main() {
 		Repo:       puestoConceptoRepo,
 		PuestoRepo: puestoRepo,
 	}
+	planillaHandler := handlers.PlanillaHandler{Repo: planillaRepo}
 
 	// Servir archivos estáticos (CSS, JS, Imágenes)
 	fs := http.FileServer(http.Dir("ui/static"))
@@ -195,6 +197,13 @@ func main() {
 	http.HandleFunc("/tenant/puestos-conceptos/lista", middleware.RequireAuth(puestoConceptoHandler.Listar))
 	http.HandleFunc("/tenant/puestos-conceptos/crear", middleware.RequireAuth(puestoConceptoHandler.Crear))
 	http.HandleFunc("/tenant/puestos-conceptos/eliminar", middleware.RequireAuth(puestoConceptoHandler.Eliminar))
+
+	// Rutas protegidas (Bajo una nueva sección de Procesamiento)
+	http.HandleFunc("/tenant/ui/planillas", middleware.RequireAuth(planillaHandler.VistaUI))
+	http.HandleFunc("/tenant/planillas/lista", middleware.RequireAuth(planillaHandler.Listar))
+	http.HandleFunc("/tenant/planillas/crear", middleware.RequireAuth(planillaHandler.Crear))
+	http.HandleFunc("/tenant/planillas/procesar", middleware.RequireAuth(planillaHandler.Procesar))
+	http.HandleFunc("/tenant/planillas/detalle/ui", middleware.RequireAuth(planillaHandler.VistaDetalle))
 
 	// 4. Iniciar el servidor
 	log.Println("🚀 Servidor iniciado en http://localhost:8080")
