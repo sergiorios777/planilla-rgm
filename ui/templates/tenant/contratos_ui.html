@@ -16,54 +16,45 @@
 
 {{define "formulario_crear"}}
 <details open>
-    <summary role="button" class="secondary outline">➕ Registrar Nuevo Contrato</summary>
+    <summary role="button" class="secondary outline">➕ Asignar Puesto a Trabajador</summary>
     <div style="padding-top: 1rem;">
+        <div id="alerta-contrato"></div>
         <form hx-post="/tenant/contratos/crear" hx-target="#lista-contratos" hx-swap="innerHTML">
 
             <label>Seleccionar Trabajador
                 <select name="trabajador_id" required>
-                    <option value="">-- Seleccione personal activo --</option>
+                    <option value="">-- Seleccione personal --</option>
                     {{range .Trabajadores}}
                     {{if .Activo}}
-                    <option value="{{.ID}}">{{.ApellidoPaterno}} {{.ApellidoMaterno}}, {{.Nombres}}
-                        ({{.NumeroDocumento}})</option>
+                    <option value="{{.ID}}">{{.ApellidoPaterno}} {{.ApellidoMaterno}}, {{.Nombres}}</option>
                     {{end}}
                     {{end}}
                 </select>
             </label>
 
-            <div class="grid">
-                <label>Régimen Laboral
-                    <select name="regimen_id" required>
-                        <option value="">-- Régimen --</option>
-                        {{range .Regimenes}}
-                        <option value="{{.ID}}">{{.Descripcion}}</option>
-                        {{end}}
-                    </select>
-                </label>
-                <label>Sueldo Base Mensual (S/)
-                    <input type="number" step="0.01" name="sueldo_base" placeholder="Ej. 1500.00" required>
-                </label>
-            </div>
-
-            <label>Cargo / Puesto
-                <input type="text" name="cargo" placeholder="Ej. Especialista en Logística" required>
+            <label>Puesto (Plaza) a Ocupar
+                <select name="puesto_id" required>
+                    <option value="">-- Seleccione una plaza vacante --</option>
+                    {{range .Puestos}}
+                    <option value="{{.ID}}">{{.Nombre}} | {{.RegimenDesc}} | S/ {{.SueldoPresupuestado}}</option>
+                    {{end}}
+                </select>
             </label>
 
             <div class="grid">
-                <label>Fecha de Inicio
+                <label>Fecha de Inicio de Labores
                     <input type="date" name="fecha_inicio" required>
                 </label>
-                <label>Fecha de Fin (Opcional)
+                <label>Fecha de Fin (Dejar vacío si es indeterminado)
                     <input type="date" name="fecha_fin">
                 </label>
             </div>
 
             <label>
-                <input type="checkbox" name="activo" checked> Contrato Activo (En curso)
+                <input type="checkbox" name="activo" checked> Contrato Activo
             </label>
 
-            <button type="submit">Generar Contrato</button>
+            <button type="submit">Generar Contrato y Ocupar Plaza</button>
         </form>
     </div>
 </details>
@@ -74,7 +65,7 @@
     <thead>
         <tr>
             <th>Trabajador</th>
-            <th>Detalle Contractual</th>
+            <th>Plaza Asignada (Puesto)</th>
             <th>Vigencia</th>
             <th>Estado</th>
         </tr>
@@ -83,7 +74,8 @@
         {{range .}}
         <tr>
             <td><strong>{{.TrabajadorNombre}}</strong><br><small>Doc: {{.TrabajadorDoc}}</small></td>
-            <td><mark>{{.RegimenDesc}}</mark><br><small>{{.Cargo}} (S/ {{.SueldoBase}})</small></td>
+            <td><mark>{{.RegimenDesc}}</mark><br><small><strong>{{.PuestoNombre}}</strong> (S/
+                    {{.SueldoPresupuestado}})</small></td>
             <td><small>Desde: {{.FechaInicio}}<br>Hasta: {{if
                     .FechaFin}}{{.FechaFin}}{{else}}<em>Indeterminado</em>{{end}}</small></td>
             <td>

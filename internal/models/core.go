@@ -102,15 +102,83 @@ type Contrato struct {
 	ID           int     `json:"id"`
 	TenantID     int     `json:"tenant_id"`
 	TrabajadorID int     `json:"trabajador_id"`
-	RegimenID    int     `json:"regimen_id"`
-	Cargo        string  `json:"cargo"`
-	SueldoBase   float64 `json:"sueldo_base"`
+	PuestoID     int     `json:"puesto_id"`
 	FechaInicio  string  `json:"fecha_inicio"`
 	FechaFin     *string `json:"fecha_fin"` // Puntero para permitir nulos
 	Activo       bool    `json:"activo"`
 
 	// Campos auxiliares para la interfaz web (JOINs)
-	TrabajadorNombre string `json:"trabajador_nombre,omitempty"`
-	TrabajadorDoc    string `json:"trabajador_doc,omitempty"`
-	RegimenDesc      string `json:"regimen_desc,omitempty"`
+	TrabajadorNombre    string  `json:"trabajador_nombre,omitempty"`
+	TrabajadorDoc       string  `json:"trabajador_doc,omitempty"`
+	PuestoNombre        string  `json:"puesto_nombre,omitempty"`
+	RegimenDesc         string  `json:"regimen_desc,omitempty"`
+	SueldoPresupuestado float64 `json:"sueldo_presupuestado,omitempty"`
+}
+
+// FuenteRubro representa el catálogo del MEF de fuentes de financiamiento
+type FuenteRubro struct {
+	ID                   int    `json:"id"`
+	Anio                 int    `json:"anio"`
+	FuenteFinanciamiento string `json:"fuente_financiamiento"`
+	Rubro                string `json:"rubro"`
+	Activo               bool   `json:"activo"`
+}
+
+// MetaPresupuestal representa un proyecto o actividad del año fiscal
+type MetaPresupuestal struct {
+	ID          int    `json:"id"`
+	TenantID    int    `json:"tenant_id"`
+	Anio        int    `json:"anio"`
+	Codigo      string `json:"codigo"`
+	Descripcion string `json:"descripcion"`
+	Activo      bool   `json:"activo"`
+}
+
+// Puesto (Plaza) representa una "silla" dentro de la municipalidad, esté ocupada o vacante.
+// Es la base para el cálculo del Presupuesto Anual.
+type Puesto struct {
+	ID                  int     `json:"id"`
+	TenantID            int     `json:"tenant_id"`
+	MetaID              int     `json:"meta_id"`
+	FuenteRubroID       int     `json:"fuente_rubro_id"`
+	RegimenID           int     `json:"regimen_id"`
+	Nombre              string  `json:"nombre"`
+	SueldoPresupuestado float64 `json:"sueldo_presupuestado"`
+	Estado              string  `json:"estado"` // VACANTE u OCUPADO
+	Activo              bool    `json:"activo"`
+
+	// Campos auxiliares para pintar tablas dinámicas sin hacer múltiples consultas
+	MetaCodigo      string `json:"meta_codigo,omitempty"`
+	FuenteRubroDesc string `json:"fuente_rubro_desc,omitempty"`
+	RegimenDesc     string `json:"regimen_desc,omitempty"`
+}
+
+// ConceptoTenant es la configuración local (por municipalidad) de un concepto maestro
+type ConceptoTenant struct {
+	ID                  int    `json:"id"`
+	TenantID            int    `json:"tenant_id"`
+	ConceptoID          int    `json:"concepto_id"` // Apunta a conceptos_maestros
+	NombrePersonalizado string `json:"nombre_personalizado"`
+	FrecuenciaMeses     string `json:"frecuencia_meses"`
+	ClasificadorID      *int   `json:"clasificador_id"`
+	Activo              bool   `json:"activo"`
+
+	// Campos Auxiliares (JOINs desde la tabla conceptos_maestros)
+	ConceptoCodigo     string `json:"concepto_codigo,omitempty"`
+	ConceptoTipo       string `json:"concepto_tipo,omitempty"`
+	ClasificadorCodigo string `json:"clasificador_codigo,omitempty"`
+}
+
+// PuestoConcepto es el detalle de qué conceptos arman el costo de una Plaza específica
+type PuestoConcepto struct {
+	ID               int      `json:"id"`
+	PuestoID         int      `json:"puesto_id"`
+	ConceptoTenantID int      `json:"concepto_tenant_id"`
+	Monto            *float64 `json:"monto"`
+	Activo           bool     `json:"activo"`
+
+	// Campos Auxiliares para pintar la UI
+	NombrePersonalizado string `json:"nombre_personalizado,omitempty"`
+	ConceptoTipo        string `json:"concepto_tipo,omitempty"`
+	Clasificador        string `json:"clasificador,omitempty"`
 }

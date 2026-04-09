@@ -1,0 +1,106 @@
+<article>
+    <header>
+        <h3 style="margin-bottom: 0;">⚙️ Catálogo Local de Conceptos</h3>
+    </header>
+    <p><small>Configura cómo se llamarán los conceptos en tus boletas y vincúlalos al SIAF (Clasificadores).</small></p>
+
+    <div class="grid">
+        <div id="contenedor-formulario">
+            {{template "formulario_crear" .}}
+        </div>
+        <div>
+            <div id="lista-conceptos-tenant" hx-get="/tenant/conceptos-locales/lista" hx-trigger="load">
+                <p aria-busy="true">Cargando catálogo local...</p>
+            </div>
+        </div>
+    </div>
+</article>
+
+{{define "formulario_crear"}}
+<details open>
+    <summary role="button" class="secondary outline">➕ Agregar Concepto a la Municipalidad</summary>
+    <div style="padding-top: 1rem;">
+
+        <div id="alerta-concepto"></div>
+
+        <form hx-post="/tenant/conceptos-locales/crear" hx-target="#lista-conceptos-tenant" hx-swap="innerHTML">
+
+            <label>Concepto Base (SUNAT / PLAME)
+                <select name="concepto_id" required>
+                    <option value="">-- Seleccione Concepto Maestro --</option>
+                    {{range .Maestros}}
+                    <option value="{{.ID}}">[{{.Tipo}}] {{.Codigo}} - {{.Descripcion}}</option>
+                    {{end}}
+                </select>
+            </label>
+
+            <label>Nombre Personalizado (Máscara para la Boleta)
+                <input type="text" name="nombre_personalizado" placeholder="Ej. Remuneración CAS, Bono Frontera..."
+                    required>
+            </label>
+
+            <div class="grid">
+                <label>Frecuencia de Pago (Meses)
+                    <input type="text" name="frecuencia_meses" value="1,2,3,4,5,6,7,8,9,10,11,12" required>
+                    <small>Ej. Todos = 1,2..12 | Aguinaldo = 7,12 | Escolaridad = 1</small>
+                </label>
+                <label>Clasificador Presupuestal (SIAF)
+                    <select name="clasificador_id">
+                        <option value="">-- Sin Clasificador --</option>
+                        {{range .Clasificadores}}
+                        <option value="{{.ID}}">{{.CodigoLimpio}} - {{.Descripcion}}</option>
+                        {{end}}
+                    </select>
+                </label>
+            </div>
+
+            <label>
+                <input type="checkbox" name="activo" checked> Concepto Activo
+            </label>
+
+            <button type="submit">Guardar Configuración</button>
+        </form>
+    </div>
+</details>
+{{end}}
+
+{{define "tabla_conceptos_tenant"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Concepto (Boleta)</th>
+            <th>Base SUNAT</th>
+            <th>Frecuencia y SIAF</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td>
+                <strong>{{.NombrePersonalizado}}</strong><br>
+                {{if eq .ConceptoTipo "INGRESO"}}
+                <mark
+                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">INGRESO</mark>
+                {{else if eq .ConceptoTipo "RETENCION"}}
+                <mark
+                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">RETENCIÓN</mark>
+                {{else}}
+                <mark
+                    style="background-color: #bbdefb; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">APORTE</mark>
+                {{end}}
+            </td>
+            <td><small>Cód: {{.ConceptoCodigo}}</small></td>
+            <td>
+                <small>Meses: {{.FrecuenciaMeses}}</small><br>
+                <small>SIAF: <strong>{{if
+                        .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}}</strong></small>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="3" style="text-align: center;">Aún no has configurado conceptos locales.</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}

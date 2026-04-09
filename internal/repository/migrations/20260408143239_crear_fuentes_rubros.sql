@@ -1,5 +1,32 @@
 -- +goose Up
-SELECT 'up SQL query';
+-- +goose StatementBegin
+CREATE TABLE fuentes_rubros (
+    id SERIAL PRIMARY KEY,
+    anio INTEGER NOT NULL,
+    fuente_financiamiento VARCHAR(150) NOT NULL,
+    rubro VARCHAR(150) NOT NULL,
+    activo BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Evitamos duplicar exactamente la misma combinación en el mismo año
+    CONSTRAINT unique_fuente_rubro_anio UNIQUE(anio, fuente_financiamiento, rubro)
+);
+
+-- Insertamos la información maestra del 2026
+INSERT INTO fuentes_rubros (anio, fuente_financiamiento, rubro) VALUES 
+(2026, '1. RECURSOS ORDINARIOS', '00. RECURSOS ORDINARIOS'),
+(2026, '2. RECURSOS DIRECTAMENTE RECAUDADOS', '09. RECURSOS DIRECTAMENTE RECAUDADOS'),
+(2026, '3. RECURSOS POR OPERACIONES OFICIALES DE CREDITO', '19. RECURSOS POR OPERACIONES OFICIALES DE CREDITO'),
+(2026, '4. DONACIONES Y TRANSFERENCIAS', '13. DONACIONES Y TRANSFERENCIAS'),
+(2026, '5. RECURSOS DETERMINADOS', '07. FONDO DE COMPENSACION MUNICIPAL'),
+(2026, '5. RECURSOS DETERMINADOS', '15. FONDO DE COMPENSACION REGIONAL - FONCOR'),
+(2026, '5. RECURSOS DETERMINADOS', '04. CONTRIBUCIONES A FONDOS'),
+(2026, '5. RECURSOS DETERMINADOS', '18. CANON Y SOBRECANON, REGALIAS, RENTA DE ADUANAS Y PARTICIPACIONES'),
+(2026, '5. RECURSOS DETERMINADOS', '08. IMPUESTOS MUNICIPALES');
+
+-- +goose StatementEnd
 
 -- +goose Down
-SELECT 'down SQL query';
+-- +goose StatementBegin
+DROP TABLE IF EXISTS fuentes_rubros;
+-- +goose StatementEnd

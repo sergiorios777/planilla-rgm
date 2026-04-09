@@ -1,0 +1,113 @@
+<article>
+    <header>
+        <h3 style="margin-bottom: 0;">🪑 Cuadro de Puestos (Plazas)</h3>
+    </header>
+    <div class="grid">
+        <div id="contenedor-formulario">
+            {{template "formulario_crear" .}}
+        </div>
+        <div>
+            <div id="lista-puestos" hx-get="/tenant/puestos/lista" hx-trigger="load">
+                <p aria-busy="true">Cargando plazas...</p>
+            </div>
+        </div>
+    </div>
+</article>
+
+{{define "formulario_crear"}}
+<details open>
+    <summary role="button" class="secondary outline">➕ Crear Nueva Plaza</summary>
+    <div style="padding-top: 1rem;">
+        <form hx-post="/tenant/puestos/crear" hx-target="#lista-puestos" hx-swap="innerHTML">
+
+            <label>Nombre del Puesto / Cargo
+                <input type="text" name="nombre" placeholder="Ej. Especialista en Logística II" required>
+            </label>
+
+            <label>Meta Presupuestal
+                <select name="meta_id" required>
+                    <option value="">-- Seleccione Meta --</option>
+                    {{range .Metas}}{{if .Activo}}
+                    <option value="{{.ID}}">{{.Codigo}} - {{.Descripcion}}</option>
+                    {{end}}{{end}}
+                </select>
+            </label>
+
+            <label>Fuente y Rubro de Financiamiento
+                <select name="fuente_rubro_id" required>
+                    <option value="">-- Seleccione Fte. Fto. --</option>
+                    {{range .Fuentes}}{{if .Activo}}
+                    <option value="{{.ID}}">{{.FuenteFinanciamiento}} | {{.Rubro}}</option>
+                    {{end}}{{end}}
+                </select>
+            </label>
+
+            <div class="grid">
+                <label>Régimen Esperado
+                    <select name="regimen_id" required>
+                        <option value="">-- Régimen --</option>
+                        {{range .Regimenes}}
+                        <option value="{{.ID}}">{{.Descripcion}}</option>
+                        {{end}}
+                    </select>
+                </label>
+                <label>Sueldo Presupuestado (S/)
+                    <input type="number" step="0.01" name="sueldo_presupuestado" placeholder="Ej. 2500.00" required>
+                </label>
+            </div>
+
+            <label>
+                <input type="checkbox" name="activo" checked> Plaza Activa
+            </label>
+
+            <button type="submit">Generar Plaza</button>
+        </form>
+    </div>
+</details>
+{{end}}
+
+{{define "tabla_puestos"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Puesto y Presupuesto</th>
+            <th>Estructura de Gasto</th>
+            <th>Estado</th>
+            <th>Configuración</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td>
+                <strong>{{.Nombre}}</strong><br>
+                <small>{{.RegimenDesc}} | S/ {{.SueldoPresupuestado}}</small>
+            </td>
+            <td>
+                <small>Meta: <strong>{{.MetaCodigo}}</strong></small><br>
+                <small>Rubro: {{.FuenteRubroDesc}}</small>
+            </td>
+            <td>
+                {{if eq .Estado "VACANTE"}}
+                <mark
+                    style="background-color: #fff9c4; color: #f57f17; border-radius: 4px; padding: 2px 6px;">Libre</mark>
+                {{else}}
+                <mark
+                    style="background-color: #bbdefb; color: #1565c0; border-radius: 4px; padding: 2px 6px;">Ocupada</mark>
+                {{end}}
+            </td>
+            <td>
+                <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                    hx-get="/tenant/puestos-conceptos/ui?puesto_id={{.ID}}" hx-target="#contenido-tenant">
+                    ⚙️ Costos
+                </button>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="4" style="text-align: center;">No hay plazas registradas.</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}

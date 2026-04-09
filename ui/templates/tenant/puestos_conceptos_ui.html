@@ -1,0 +1,89 @@
+<article>
+    <header>
+        <h3 style="margin-bottom: 0;">💰 Estructura de Costos de la Plaza</h3>
+        <p><small>Asigna los ingresos, retenciones y aportes que le corresponden a este puesto.</small></p>
+    </header>
+
+    <button class="secondary outline" hx-get="/tenant/ui/puestos" hx-target="#contenido-tenant"
+        style="margin-bottom: 2rem;">
+        ⬅️ Volver al Cuadro de Puestos
+    </button>
+
+    <div class="grid">
+        <div id="contenedor-formulario">
+            <details open>
+                <summary role="button" class="contrast outline">➕ Añadir Concepto a la Plaza</summary>
+                <div style="padding-top: 1rem;">
+                    <form hx-post="/tenant/puestos-conceptos/crear" hx-target="#contenido-tenant">
+                        <input type="hidden" name="puesto_id" value="{{.PuestoID}}">
+
+                        <label>Seleccionar Concepto
+                            <select name="concepto_tenant_id" required>
+                                <option value="">-- Conceptos Disponibles --</option>
+                                {{range .Disponibles}}
+                                <option value="{{.ID}}">[{{.ConceptoTipo}}] {{.NombrePersonalizado}}</option>
+                                {{end}}
+                            </select>
+                        </label>
+
+                        <label>Monto Fijo (S/)
+                            <input type="number" step="0.01" name="monto"
+                                placeholder="Dejar vacío si se calcula por Ley/Fórmula">
+                            <small>Solo llene esto si el concepto tiene un monto fijo (Ej. Bono exacto de S/
+                                100).</small>
+                        </label>
+
+                        <button type="submit">Asignar a la Plaza</button>
+                    </form>
+                </div>
+            </details>
+        </div>
+
+        <div>
+            <div hx-get="/tenant/puestos-conceptos/lista?puesto_id={{.PuestoID}}" hx-trigger="load">
+                <p aria-busy="true">Cargando estructura...</p>
+            </div>
+        </div>
+    </div>
+</article>
+
+{{define "tabla_asignados"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Concepto / Clasificador</th>
+            <th>Monto</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td>
+                <strong>{{.NombrePersonalizado}}</strong><br>
+                <small>{{.ConceptoTipo}} | SIAF: {{if .Clasificador}}{{.Clasificador}}{{else}}N/A{{end}}</small>
+            </td>
+            <td>
+                {{if .Monto}}
+                <strong>S/ {{.Monto}}</strong>
+                {{else}}
+                <em>Cálculo Automático</em>
+                {{end}}
+            </td>
+            <td>
+                <button class="outline"
+                    style="padding: 0.2rem 0.5rem; font-size: 0.8rem; color: #b71c1c; border-color: #b71c1c;"
+                    hx-delete="/tenant/puestos-conceptos/eliminar?id={{.ID}}&puesto_id={{.PuestoID}}"
+                    hx-target="#contenido-tenant" hx-confirm="¿Estás seguro de quitar este concepto de la plaza?">
+                    Quitar
+                </button>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="3" style="text-align: center;">Esta plaza aún no tiene conceptos costeados.</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}

@@ -25,28 +25,48 @@ func main() {
 	// Nos aseguramos de cerrar la conexión si el servidor se detiene
 	defer db.Close()
 
-	// Inicializamos el repositorio y el controlador
+	// Repositorios:
 	tenantRepo := repository.NewTenantRepository(db)
-	adminHandler := handlers.AdminHandler{Repo: tenantRepo}
 	mefRepo := repository.NewMefRepository(db)
-	mefHandler := handlers.MefHandler{Repo: mefRepo}
 	conceptoRepo := repository.NewConceptoRepository(db)
-	conceptoHandler := handlers.ConceptoHandler{Repo: conceptoRepo}
 	parametroRepo := repository.NewParametroRepository(db)
-	parametroHandler := handlers.ParametroHandler{Repo: parametroRepo}
 	usuarioRepo := repository.NewUsuarioRepository(db)
+	trabajadorRepo := repository.NewTrabajadorRepository(db)
+	contratoRepo := repository.NewContratoRepository(db)
+	fuenteRubroRepo := repository.NewFuenteRubroRepository(db)
+	metaRepo := repository.NewMetaRepository(db)
+	puestoRepo := repository.NewPuestoRepository(db)
+	conceptoTenantRepo := repository.NewConceptoTenantRepository(db)
+	puestoConceptoRepo := repository.NewPuestoConceptoRepository(db)
+
+	// Handlers:
+	adminHandler := handlers.AdminHandler{Repo: tenantRepo}
+	mefHandler := handlers.MefHandler{Repo: mefRepo}
+	conceptoHandler := handlers.ConceptoHandler{Repo: conceptoRepo}
+	parametroHandler := handlers.ParametroHandler{Repo: parametroRepo}
 	authHandler := handlers.AuthHandler{Repo: usuarioRepo}
 	usuarioHandler := handlers.UsuarioHandler{
 		UserRepo:   usuarioRepo,
 		TenantRepo: tenantRepo,
 	}
 	tenantHandler := handlers.TenantHandler{Repo: tenantRepo}
-	trabajadorRepo := repository.NewTrabajadorRepository(db)
 	trabajadorHandler := handlers.TrabajadorHandler{Repo: trabajadorRepo}
-	contratoRepo := repository.NewContratoRepository(db)
 	contratoHandler := handlers.ContratoHandler{
 		Repo:           contratoRepo,
 		TrabajadorRepo: trabajadorRepo,
+		PuestoRepo:     puestoRepo,
+	}
+	fuenteRubroHandler := handlers.FuenteRubroHandler{Repo: fuenteRubroRepo}
+	metaHandler := handlers.MetaHandler{Repo: metaRepo}
+	puestoHandler := handlers.PuestoHandler{
+		Repo:            puestoRepo,
+		MetaRepo:        metaRepo,
+		FuenteRubroRepo: fuenteRubroRepo,
+	}
+	conceptoTenantHandler := handlers.ConceptoTenantHandler{Repo: conceptoTenantRepo}
+	puestoConceptoHandler := handlers.PuestoConceptoHandler{
+		Repo:       puestoConceptoRepo,
+		PuestoRepo: puestoRepo,
 	}
 
 	// Servir archivos estáticos (CSS, JS, Imágenes)
@@ -125,6 +145,10 @@ func main() {
 	http.HandleFunc("/admin/usuarios/editar_ui", middleware.RequireAuth(usuarioHandler.EditarUI))
 	http.HandleFunc("/admin/usuarios/actualizar", middleware.RequireAuth(usuarioHandler.ActualizarUsuario))
 
+	// Rutas de Fuentes y Rubros
+	http.HandleFunc("/admin/ui/fuentes-rubros", middleware.RequireAuth(fuenteRubroHandler.VistaUI))
+	http.HandleFunc("/admin/fuentes-rubros/lista", middleware.RequireAuth(fuenteRubroHandler.Listar))
+
 	// === RUTA PRINCIPAL DEL INQUILINO (Protegida) ===
 	http.HandleFunc("/tenant", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("ui/templates/layouts/tenant_index.html")
@@ -150,6 +174,27 @@ func main() {
 	http.HandleFunc("/tenant/ui/contratos", middleware.RequireAuth(contratoHandler.VistaUI))
 	http.HandleFunc("/tenant/contratos/lista", middleware.RequireAuth(contratoHandler.Listar))
 	http.HandleFunc("/tenant/contratos/crear", middleware.RequireAuth(contratoHandler.Crear))
+
+	// Rutas de Metas
+	http.HandleFunc("/tenant/ui/metas", middleware.RequireAuth(metaHandler.VistaUI))
+	http.HandleFunc("/tenant/metas/lista", middleware.RequireAuth(metaHandler.Listar))
+	http.HandleFunc("/tenant/metas/crear", middleware.RequireAuth(metaHandler.Crear))
+
+	// Rutas de Puestos
+	http.HandleFunc("/tenant/ui/puestos", middleware.RequireAuth(puestoHandler.VistaUI))
+	http.HandleFunc("/tenant/puestos/lista", middleware.RequireAuth(puestoHandler.Listar))
+	http.HandleFunc("/tenant/puestos/crear", middleware.RequireAuth(puestoHandler.Crear))
+
+	// Rutas protegidas (Bajo la sección de Inquilinos/Presupuesto)
+	http.HandleFunc("/tenant/ui/conceptos-locales", middleware.RequireAuth(conceptoTenantHandler.VistaUI))
+	http.HandleFunc("/tenant/conceptos-locales/lista", middleware.RequireAuth(conceptoTenantHandler.Listar))
+	http.HandleFunc("/tenant/conceptos-locales/crear", middleware.RequireAuth(conceptoTenantHandler.Crear))
+
+	// Rutas protegidas (Agrega esto junto a las de Puestos)
+	http.HandleFunc("/tenant/puestos-conceptos/ui", middleware.RequireAuth(puestoConceptoHandler.VistaUI))
+	http.HandleFunc("/tenant/puestos-conceptos/lista", middleware.RequireAuth(puestoConceptoHandler.Listar))
+	http.HandleFunc("/tenant/puestos-conceptos/crear", middleware.RequireAuth(puestoConceptoHandler.Crear))
+	http.HandleFunc("/tenant/puestos-conceptos/eliminar", middleware.RequireAuth(puestoConceptoHandler.Eliminar))
 
 	// 4. Iniciar el servidor
 	log.Println("🚀 Servidor iniciado en http://localhost:8080")
