@@ -5,7 +5,7 @@ import (
 	"planilla-rgm/internal/config"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
-	"planilla-rgm/internal/service"
+	service "planilla-rgm/internal/services"
 )
 
 func main() {

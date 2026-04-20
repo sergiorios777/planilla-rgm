@@ -78,10 +78,21 @@ func (r *ConceptoTenantRepository) ObtenerTodos(tenantID int) ([]models.Concepto
 // Crear inserta la configuración local
 func (r *ConceptoTenantRepository) Crear(ct *models.ConceptoTenant) error {
 	query := `
-		INSERT INTO conceptos_tenant (tenant_id, concepto_id, nombre_personalizado, frecuencia_meses, clasificador_id, activo)
-		VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
+		INSERT INTO conceptos_tenant (tenant_id, concepto_id, nombre_personalizado, frecuencia_meses, clasificador_id, activo, es_extraordinario)
+		VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
 	`
-	return r.db.QueryRow(query, ct.TenantID, ct.ConceptoID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo).Scan(&ct.ID)
+	return r.db.QueryRow(query, ct.TenantID, ct.ConceptoID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario).Scan(&ct.ID)
+}
+
+// Actualizar actualiza la configuración local
+func (r *ConceptoTenantRepository) Actualizar(ct *models.ConceptoTenant) error {
+	query := `
+		UPDATE conceptos_tenant 
+		SET concepto_id = $2, nombre_personalizado = $3, frecuencia_meses = $4, clasificador_id = $5, activo = $6, es_extraordinario = $7
+		WHERE id = $1 AND tenant_id = $8
+	`
+	_, err := r.db.Exec(query, ct.ID, ct.ConceptoID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario, ct.TenantID)
+	return err
 }
 
 // 1. NUEVA FUNCIÓN: Para llenar el menú desplegable en el formulario

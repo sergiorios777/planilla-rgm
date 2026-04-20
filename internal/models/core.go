@@ -61,6 +61,23 @@ type ConceptoAfectacion struct {
 	ConceptoDerivadoID int `json:"concepto_derivado_id"`
 }
 
+// ConceptoTenant es la configuración local (por municipalidad) de un concepto maestro
+type ConceptoTenant struct {
+	ID                  int    `json:"id"`
+	TenantID            int    `json:"tenant_id"`
+	ConceptoID          int    `json:"concepto_id"` // Apunta a conceptos_maestros
+	NombrePersonalizado string `json:"nombre_personalizado"`
+	FrecuenciaMeses     string `json:"frecuencia_meses"`
+	ClasificadorID      *int   `json:"clasificador_id"`
+	Activo              bool   `json:"activo"`
+	EsExtraordinario    bool   `json:"es_extraordinario"`
+
+	// Campos Auxiliares (JOINs desde la tabla conceptos_maestros)
+	ConceptoCodigo     string `json:"concepto_codigo,omitempty"`
+	ConceptoTipo       string `json:"concepto_tipo,omitempty"`
+	ClasificadorCodigo string `json:"clasificador_codigo,omitempty"`
+}
+
 // ParametroGlobal define valores anuales que afectan a todas las planillas (UIT, RMV, etc.)
 type ParametroGlobal struct {
 	ID          int     `json:"id"`
@@ -115,6 +132,24 @@ type Contrato struct {
 	SueldoPresupuestado float64 `json:"sueldo_presupuestado,omitempty"`
 }
 
+// ContratoPlanilla representa los datos básicos de un trabajador para el cálculo
+type ContratoPlanilla struct {
+	ID       int
+	PuestoID int
+	Regimen  string
+}
+
+// ConceptoPlanilla representa un rubro de la estructura de costos del puesto
+type ConceptoPlanilla struct {
+	TenantID         int
+	MaestroID        int
+	MaestroCodigo    string
+	Tipo             string
+	Monto            float64
+	Frecuencia       string
+	EsExtraordinario bool
+}
+
 // FuenteRubro representa el catálogo del MEF de fuentes de financiamiento
 type FuenteRubro struct {
 	ID                   int    `json:"id"`
@@ -151,22 +186,6 @@ type Puesto struct {
 	MetaCodigo      string `json:"meta_codigo,omitempty"`
 	FuenteRubroDesc string `json:"fuente_rubro_desc,omitempty"`
 	RegimenDesc     string `json:"regimen_desc,omitempty"`
-}
-
-// ConceptoTenant es la configuración local (por municipalidad) de un concepto maestro
-type ConceptoTenant struct {
-	ID                  int    `json:"id"`
-	TenantID            int    `json:"tenant_id"`
-	ConceptoID          int    `json:"concepto_id"` // Apunta a conceptos_maestros
-	NombrePersonalizado string `json:"nombre_personalizado"`
-	FrecuenciaMeses     string `json:"frecuencia_meses"`
-	ClasificadorID      *int   `json:"clasificador_id"`
-	Activo              bool   `json:"activo"`
-
-	// Campos Auxiliares (JOINs desde la tabla conceptos_maestros)
-	ConceptoCodigo     string `json:"concepto_codigo,omitempty"`
-	ConceptoTipo       string `json:"concepto_tipo,omitempty"`
-	ClasificadorCodigo string `json:"clasificador_codigo,omitempty"`
 }
 
 // PuestoConcepto es el detalle de qué conceptos arman el costo de una Plaza específica

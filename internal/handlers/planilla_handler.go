@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
+	"planilla-rgm/internal/services"
 	"strconv"
 	"strings"
 )
@@ -68,7 +69,8 @@ func (h *PlanillaHandler) Procesar(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
 	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
 
-	err := h.Repo.ProcesarPlanilla(planillaID, tenantID)
+	servicioPlanilla := services.NewPlanillaService(h.Repo)
+	err := servicioPlanilla.Procesar(planillaID, tenantID)
 	if err != nil {
 		// Si el motor falla, mostramos una alerta sin salir de la página
 		w.WriteHeader(http.StatusOK)

@@ -55,6 +55,7 @@ func (h *ConceptoTenantHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		FrecuenciaMeses:     r.FormValue("frecuencia_meses"),
 		ClasificadorID:      clasifID,
 		Activo:              r.FormValue("activo") == "on",
+		EsExtraordinario:    r.FormValue("es_extraordinario") == "on",
 	}
 
 	err := h.Repo.Crear(&nuevoConcepto)

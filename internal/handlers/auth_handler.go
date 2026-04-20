@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"net/http"
 	"planilla-rgm/internal/repository"
-	"planilla-rgm/internal/service"
+	service "planilla-rgm/internal/services"
 	"time"
 )
 
