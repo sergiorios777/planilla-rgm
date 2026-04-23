@@ -22,8 +22,14 @@ func obtenerTenantID(r *http.Request) int {
 }
 
 func (h *TrabajadorHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
+	// Extraemos la lista de AFPs de la BD para poblar el <select> de Crear
+	afps, _ := h.Repo.ObtenerAFPsActivas()
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/trabajadores_ui.html")
-	tmpl.Execute(w, nil)
+
+	// Pasamos la lista a la vista principal
+	tmpl.Execute(w, map[string]interface{}{
+		"ListaAFPs": afps,
+	})
 }
 
 func (h *TrabajadorHandler) Listar(w http.ResponseWriter, r *http.Request) {
@@ -37,16 +43,22 @@ func (h *TrabajadorHandler) Listar(w http.ResponseWriter, r *http.Request) {
 func (h *TrabajadorHandler) Crear(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
+	afpID, _ := strconv.Atoi(r.FormValue("afp_id"))
+
 	nuevoTrabajador := models.Trabajador{
-		TenantID:        obtenerTenantID(r), // INYECCIÓN SEGURA DEL BACKEND
-		TipoDocumento:   r.FormValue("tipo_documento"),
-		NumeroDocumento: r.FormValue("numero_documento"),
-		Nombres:         r.FormValue("nombres"),
-		ApellidoPaterno: r.FormValue("apellido_paterno"),
-		ApellidoMaterno: r.FormValue("apellido_materno"),
-		FechaNacimiento: r.FormValue("fecha_nacimiento"),
-		Sexo:            r.FormValue("sexo"),
-		Activo:          r.FormValue("activo") == "on",
+		TenantID:           obtenerTenantID(r),
+		TipoDocumento:      r.FormValue("tipo_documento"),
+		NumeroDocumento:    r.FormValue("numero_documento"),
+		Nombres:            r.FormValue("nombres"),
+		ApellidoPaterno:    r.FormValue("apellido_paterno"),
+		ApellidoMaterno:    r.FormValue("apellido_materno"),
+		FechaNacimiento:    r.FormValue("fecha_nacimiento"),
+		Sexo:               r.FormValue("sexo"),
+		Activo:             r.FormValue("activo") == "on",
+		RegimenPensionario: r.FormValue("regimen_pensionario"),
+		AfpID:              afpID,
+		AfpTipoComision:    r.FormValue("afp_tipo_comision"),
+		Cuspp:              r.FormValue("cuspp"),
 	}
 
 	h.Repo.Crear(&nuevoTrabajador)
@@ -63,26 +75,43 @@ func (h *TrabajadorHandler) EditarUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Extraemos las AFPs para el desplegable de edición
+	afps, _ := h.Repo.ObtenerAFPsActivas()
+
+	// Creamos una estructura al vuelo para pasar el trabajador Y la lista al template
+	data := struct {
+		*models.Trabajador
+		ListaAFPs map[int]string
+	}{
+		Trabajador: trabajador,
+		ListaAFPs:  afps,
+	}
+
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/trabajadores_ui.html")
-	tmpl.ExecuteTemplate(w, "formulario_editar", trabajador)
+	tmpl.ExecuteTemplate(w, "formulario_editar", data)
 }
 
 func (h *TrabajadorHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	id, _ := strconv.Atoi(r.FormValue("id"))
+	afpID, _ := strconv.Atoi(r.FormValue("afp_id"))
 
 	trabajadorEditado := models.Trabajador{
-		ID:              id,
-		TenantID:        obtenerTenantID(r), // INYECCIÓN SEGURA DEL BACKEND
-		TipoDocumento:   r.FormValue("tipo_documento"),
-		NumeroDocumento: r.FormValue("numero_documento"),
-		Nombres:         r.FormValue("nombres"),
-		ApellidoPaterno: r.FormValue("apellido_paterno"),
-		ApellidoMaterno: r.FormValue("apellido_materno"),
-		FechaNacimiento: r.FormValue("fecha_nacimiento"),
-		Sexo:            r.FormValue("sexo"),
-		Activo:          r.FormValue("activo") == "on",
+		ID:                 id,
+		TenantID:           obtenerTenantID(r),
+		TipoDocumento:      r.FormValue("tipo_documento"),
+		NumeroDocumento:    r.FormValue("numero_documento"),
+		Nombres:            r.FormValue("nombres"),
+		ApellidoPaterno:    r.FormValue("apellido_paterno"),
+		ApellidoMaterno:    r.FormValue("apellido_materno"),
+		FechaNacimiento:    r.FormValue("fecha_nacimiento"),
+		Sexo:               r.FormValue("sexo"),
+		Activo:             r.FormValue("activo") == "on",
+		RegimenPensionario: r.FormValue("regimen_pensionario"),
+		AfpID:              afpID,
+		AfpTipoComision:    r.FormValue("afp_tipo_comision"),
+		Cuspp:              r.FormValue("cuspp"),
 	}
 
 	h.Repo.Actualizar(&trabajadorEditado)

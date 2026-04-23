@@ -100,6 +100,11 @@ type Trabajador struct {
 	FechaNacimiento string `json:"fecha_nacimiento"`
 	Sexo            string `json:"sexo"`
 	Activo          bool   `json:"activo"`
+	// PENSIONES
+	RegimenPensionario string `json:"regimen_pensionario"`
+	AfpID              int    `json:"afp_id"`
+	AfpTipoComision    string `json:"afp_tipo_comision"`
+	Cuspp              string `json:"cuspp"` // NUEVO: Obligatorio para PLAME
 }
 
 // NombreCompleto es una función auxiliar útil para mostrar en la interfaz
@@ -137,6 +142,10 @@ type ContratoPlanilla struct {
 	ID       int
 	PuestoID int
 	Regimen  string
+	// Referencia para pensiones
+	RegimenPensionario string
+	AfpID              int
+	AfpTipoComision    string
 }
 
 // ConceptoPlanilla representa un rubro de la estructura de costos del puesto

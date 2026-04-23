@@ -59,6 +59,36 @@
                 </label>
             </div>
 
+            <div class="grid">
+                <label>Régimen pensionario
+                    <select name="regimen_pensionario">
+                        <option value="ONP">ONP</option>
+                        <option value="AFP">AFP</option>
+                    </select>
+                </label>
+
+                <label>Seleccionar AFP
+                    <select name="afp_id">
+                        <option value=""> -- No aplica -- </option>
+                        {{range $id, $afp := .ListaAFPs}}
+                        <option value="{{$id}}">{{$afp}}</option>
+                        {{end}}
+                    </select>
+                </label>
+
+                <label>Tipo de Comisión
+                    <select name="afp_tipo_comision">
+                        <option value=""> -- No aplica -- </option>
+                        <option value="FLUJO">Comisión Flujo</option>
+                        <option value="MIXTA">Comisión Mixta</option>
+                    </select>
+                </label>
+
+                <label>CUSPP
+                    <input type="text" name="cuspp" placeholder="Código Único">
+                </label>
+            </div>
+
             <label>
                 <input type="checkbox" name="activo" checked> Personal Activo
             </label>
@@ -112,6 +142,36 @@
                         <option value="M" {{if eq .Sexo "M" }}selected{{end}}>Masculino</option>
                         <option value="F" {{if eq .Sexo "F" }}selected{{end}}>Femenino</option>
                     </select>
+                </label>
+            </div>
+
+            <div class="grid">
+                <label>Régimen pensionario
+                    <select name="regimen_pensionario">
+                        <option value="ONP" {{if eq .RegimenPensionario "ONP" }}selected{{end}}>ONP</option>
+                        <option value="AFP" {{if eq .RegimenPensionario "AFP" }}selected{{end}}>AFP</option>
+                    </select>
+                </label>
+
+                <label>Seleccionar AFP
+                    <select name="afp_id">
+                        <option value=""> -- No aplica -- </option>
+                        {{range $id, $afp := .ListaAFPs}}
+                        <option value="{{$id}}" {{if eq $id $.AfpID}}selected{{end}}>{{$afp}}</option>
+                        {{end}}
+                    </select>
+                </label>
+
+                <label>Tipo de Comisión
+                    <select name="afp_tipo_comision">
+                        <option value=""> -- No aplica -- </option>
+                        <option value="FLUJO" {{if eq .AfpTipoComision "FLUJO" }}selected{{end}}>Comisión Flujo</option>
+                        <option value="MIXTA" {{if eq .AfpTipoComision "MIXTA" }}selected{{end}}>Comisión Mixta</option>
+                    </select>
+                </label>
+
+                <label>CUSPP
+                    <input type="text" name="cuspp" value="{{.Cuspp}}" placeholder="Código Único">
                 </label>
             </div>
 

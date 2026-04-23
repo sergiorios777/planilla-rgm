@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"planilla-rgm/internal/models"
 	"strconv"
 	"strings"
@@ -90,13 +91,15 @@ func (r *PlanillaRepository) ObtenerParametrosGlobales(anio int, mes int) (map[s
 	return parametros, nil
 }
 
-// ObtenerContratosActivosPlanilla busca a todos los que trabajaron en ese mes
+// ObtenerContratosActivosPlanilla busca a todos los que trabajaron en ese mes y trae su info de AFP desde el trabajador
 func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio int, mes int) ([]models.ContratoPlanilla, error) {
 	query := `
-		SELECT c.id, c.puesto_id, rl.codigo
+		SELECT c.id, c.puesto_id, rl.codigo, 
+		       COALESCE(t.regimen_pensionario, 'ONP'), COALESCE(t.afp_id, 0), COALESCE(t.afp_tipo_comision, '')
 		FROM contratos c
 		INNER JOIN puestos p ON c.puesto_id = p.id
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id -- 💡 NUEVO: Unimos con trabajadores
 		WHERE c.tenant_id = $1 AND c.activo = true
 		  AND c.fecha_inicio <= (make_date($2, $3, 1) + interval '1 month' - interval '1 day')::date
 		  AND (c.fecha_fin IS NULL OR c.fecha_fin >= make_date($2, $3, 1)::date)
@@ -110,7 +113,8 @@ func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio 
 	var lista []models.ContratoPlanilla
 	for rows.Next() {
 		var c models.ContratoPlanilla
-		rows.Scan(&c.ID, &c.PuestoID, &c.Regimen)
+		// El escaneo sigue siendo exactamente igual, llenando nuestra estructura en memoria
+		rows.Scan(&c.ID, &c.PuestoID, &c.Regimen, &c.RegimenPensionario, &c.AfpID, &c.AfpTipoComision)
 		lista = append(lista, c)
 	}
 	return lista, nil
@@ -180,6 +184,15 @@ func (r *PlanillaRepository) GuardarPlanillaCalculada(planillaID int, boletas []
 				VALUES ($1, $2, $3, $4)
 			`, detalleID, concepto.ConceptoTenantID, concepto.TipoConcepto, concepto.Monto)
 
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+
+		// NUEVO: Marcamos las ocurrencias como procesadas para que no se descuenten el otro mes
+		for _, ocID := range boleta.OcurrenciasProcesadas {
+			_, err = tx.Exec(`UPDATE ocurrencias_asistencia SET procesado = true, planilla_id_descuento = $1 WHERE id = $2`, planillaID, ocID)
 			if err != nil {
 				tx.Rollback()
 				return err
@@ -331,6 +344,54 @@ func (r *PlanillaRepository) ObtenerAfectacionesGlobales() (map[int][]int, error
 		var base, derivado int
 		rows.Scan(&base, &derivado)
 		mapa[base] = append(mapa[base], derivado)
+	}
+	return mapa, nil
+}
+
+// ObtenerOcurrenciasParaProcesar trae las faltas libres O las que ya pertenecen a esta planilla
+func (r *PlanillaRepository) ObtenerOcurrenciasParaProcesar(tenantID int, planillaID int) (map[int][]models.OcurrenciaAsistencia, error) {
+	query := `
+		SELECT oa.id, oa.contrato_id, oa.tipo, oa.cantidad
+		FROM ocurrencias_asistencia oa
+		INNER JOIN contratos c ON oa.contrato_id = c.id
+		WHERE c.tenant_id = $1 
+          AND (oa.procesado = false OR oa.planilla_id_descuento = $2)
+	`
+	rows, err := r.db.Query(query, tenantID, planillaID)
+	if err != nil {
+		fmt.Println("Error al obtener ocurrencias para procesar: ", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	mapa := make(map[int][]models.OcurrenciaAsistencia)
+	for rows.Next() {
+		var contratoID int
+		var oc models.OcurrenciaAsistencia
+		rows.Scan(&oc.ID, &contratoID, &oc.Tipo, &oc.Cantidad)
+		mapa[contratoID] = append(mapa[contratoID], oc)
+	}
+	fmt.Println("Ocurrencias para procesar: ", mapa)
+	return mapa, nil
+}
+
+// ObtenerTasasAFPMes trae el diccionario de comisiones de todas las AFPs para el mes de cálculo
+func (r *PlanillaRepository) ObtenerTasasAFPMes(anio int, mes int) (map[int]models.TasasAFP, error) {
+	query := `SELECT afp_id, aporte_obligatorio, comision_flujo, comision_mixta_flujo, prima_seguro 
+	          FROM afp_tasas_mensuales WHERE anio = $1 AND mes = $2`
+
+	rows, err := r.db.Query(query, anio, mes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	mapa := make(map[int]models.TasasAFP)
+	for rows.Next() {
+		var afpID int
+		var t models.TasasAFP
+		rows.Scan(&afpID, &t.Aporte, &t.Flujo, &t.Mixta, &t.Prima)
+		mapa[afpID] = t
 	}
 	return mapa, nil
 }

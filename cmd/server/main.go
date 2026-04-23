@@ -39,6 +39,7 @@ func main() {
 	conceptoTenantRepo := repository.NewConceptoTenantRepository(db)
 	puestoConceptoRepo := repository.NewPuestoConceptoRepository(db)
 	planillaRepo := repository.NewPlanillaRepository(db)
+	asistenciaRepo := repository.NewAsistenciaRepository(db)
 
 	// Handlers:
 	adminHandler := handlers.AdminHandler{Repo: tenantRepo}
@@ -70,6 +71,7 @@ func main() {
 		PuestoRepo: puestoRepo,
 	}
 	planillaHandler := handlers.PlanillaHandler{Repo: planillaRepo}
+	asistenciaHandler := handlers.AsistenciaHandler{Repo: asistenciaRepo}
 
 	// Servir archivos estáticos (CSS, JS, Imágenes)
 	fs := http.FileServer(http.Dir("ui/static"))
@@ -204,6 +206,11 @@ func main() {
 	http.HandleFunc("/tenant/planillas/crear", middleware.RequireAuth(planillaHandler.Crear))
 	http.HandleFunc("/tenant/planillas/procesar", middleware.RequireAuth(planillaHandler.Procesar))
 	http.HandleFunc("/tenant/planillas/detalle/ui", middleware.RequireAuth(planillaHandler.VistaDetalle))
+
+	// Asistencias
+	http.HandleFunc("/tenant/ui/asistencia", middleware.RequireAuth(asistenciaHandler.VistaUI))
+	http.HandleFunc("/tenant/asistencia/lista", middleware.RequireAuth(asistenciaHandler.Listar))
+	http.HandleFunc("/tenant/asistencia/crear", middleware.RequireAuth(asistenciaHandler.Crear))
 
 	// 4. Iniciar el servidor
 	log.Println("🚀 Servidor iniciado en http://localhost:8080")

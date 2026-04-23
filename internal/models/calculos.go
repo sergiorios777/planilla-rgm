@@ -20,6 +20,12 @@ type ContextoCalculo struct {
 	Retenciones5taPrevias       float64 // Suma de lo retenido en Ene-Mar
 	RemuneracionNoMensual       float64 // Suma de gratificaciones, bonos, etc.
 	IngresoExtraordinarioDelMes float64 // Bonos puntuales del mes
+
+	// 6. Pensiones
+	RegimenPensionario string
+	TasaAfpAporte      float64
+	TasaAfpPrima       float64
+	TasaAfpComision    float64
 }
 
 // BoletaResultado almacena el cálculo final de un trabajador en memoria antes de ir a la BD
@@ -30,5 +36,39 @@ type BoletaResultado struct {
 	TotalAportes     float64
 	NetoPagar        float64
 	// Aquí guardamos el detalle de rubros (Sueldo, EsSalud, AFP, etc.)
-	LineasConceptos []PlanillaConcepto
+	LineasConceptos       []PlanillaConcepto
+	OcurrenciasProcesadas []int
+}
+
+// OcurrenciaAsistencia representa una falta o tardanza extraída de la BD
+type OcurrenciaAsistencia struct {
+	ID       int
+	Tipo     string
+	Cantidad float64
+}
+
+// OcurrenciaVista es un DTO para mostrar las faltas en la tabla de la interfaz de usuario
+type OcurrenciaVista struct {
+	ID               int
+	ContratoID       int
+	TrabajadorNombre string // Apellidos y Nombres unidos
+	Tipo             string
+	FechaOcurrencia  string
+	Cantidad         float64
+	Procesado        bool
+}
+
+// ContratoSelect es un DTO ligero para llenar el desplegable <select> del formulario
+type ContratoSelect struct {
+	ID               int
+	TrabajadorNombre string
+	NumeroDocumento  string
+}
+
+// 2. Crea esta nueva estructura para almacenar la "fotografía" del mes
+type TasasAFP struct {
+	Aporte float64
+	Flujo  float64
+	Mixta  float64
+	Prima  float64
 }

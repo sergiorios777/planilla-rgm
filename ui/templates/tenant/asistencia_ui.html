@@ -1,0 +1,105 @@
+<article>
+    <header>
+        <h3 style="margin-bottom: 0;">⏱️ Control de Asistencias y Tardanzas</h3>
+    </header>
+
+    <div class="grid">
+        <div>
+            <details open>
+                <summary role="button" class="secondary outline">➕ Registrar Ocurrencia</summary>
+                <div style="padding-top: 1rem;">
+                    <form hx-post="/tenant/asistencia/crear" hx-target="#lista-ocurrencias" hx-swap="innerHTML">
+
+                        <label>Trabajador Afectado
+                            <select name="contrato_id" required>
+                                <option value="">-- Seleccionar Trabajador --</option>
+                                {{range .Contratos}}
+                                <option value="{{.ID}}">{{.NumeroDocumento}} - {{.TrabajadorNombre}}</option>
+                                {{end}}
+                            </select>
+                        </label>
+
+                        <div class="grid">
+                            <label>Tipo
+                                <select name="tipo" required>
+                                    <option value="INASISTENCIA">Inasistencia (Falta)</option>
+                                    <option value="TARDANZA">Tardanza</option>
+                                </select>
+                            </label>
+
+                            <label>Fecha de Ocurrencia
+                                <input type="date" name="fecha_ocurrencia" required>
+                            </label>
+                        </div>
+
+                        <label>Cantidad <small>(Ingrese Días enteros para inasistencia, o Minutos para
+                                tardanzas)</small>
+                            <input type="number" step="0.01" name="cantidad" required
+                                placeholder="Ej: 1 (Falta) o 45 (Minutos)">
+                        </label>
+
+                        <button type="submit">Registrar y Guardar Pendiente</button>
+                    </form>
+                </div>
+            </details>
+        </div>
+
+        <div>
+            <h5>Historial y Pendientes</h5>
+            <div id="lista-ocurrencias" hx-get="/tenant/asistencia/lista" hx-trigger="load">
+                <p aria-busy="true">Cargando registros...</p>
+            </div>
+        </div>
+    </div>
+</article>
+
+{{define "tabla_ocurrencias"}}
+<div class="overflow-auto">
+    <table class="striped">
+        <thead>
+            <tr>
+                <th>Trabajador</th>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Cant.</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .}}
+            <tr>
+                <td><small>{{.TrabajadorNombre}}</small></td>
+                <td>{{.FechaOcurrencia}}</td>
+                <td>
+                    {{if eq .Tipo "INASISTENCIA"}}
+                    🔴 Falta
+                    {{else}}
+                    🟠 Tardanza
+                    {{end}}
+                </td>
+                <td>
+                    {{if eq .Tipo "INASISTENCIA"}}
+                    {{.Cantidad}} Día(s)
+                    {{else}}
+                    {{.Cantidad}} Min(s)
+                    {{end}}
+                </td>
+                <td>
+                    {{if .Procesado}}
+                    <mark
+                        style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Descontado</mark>
+                    {{else}}
+                    <mark
+                        style="background-color: #ffe082; color: #ff8f00; padding: 2px 6px; border-radius: 4px;">Pendiente</mark>
+                    {{end}}
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="5" style="text-align: center;">No hay ocurrencias registradas.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
