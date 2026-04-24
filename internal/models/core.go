@@ -141,13 +141,14 @@ type Contrato struct {
 
 // ContratoPlanilla representa los datos básicos de un trabajador para el cálculo
 type ContratoPlanilla struct {
-	ID       int
-	PuestoID int
-	Regimen  string
-	// Referencia para pensiones
+	ID                 int
+	PuestoID           int
+	Regimen            string
 	RegimenPensionario string
 	AfpID              int
 	AfpTipoComision    string
+	FechaInicio        time.Time
+	FechaFin           *time.Time
 }
 
 // ConceptoPlanilla representa un rubro de la estructura de costos del puesto

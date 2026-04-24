@@ -97,11 +97,12 @@ func (r *PlanillaRepository) ObtenerParametrosGlobales(anio int, mes int) (map[s
 func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio int, mes int) ([]models.ContratoPlanilla, error) {
 	query := `
 		SELECT c.id, c.puesto_id, rl.codigo, 
-		       COALESCE(t.regimen_pensionario, 'ONP'), COALESCE(t.afp_id, 0), COALESCE(t.afp_tipo_comision, '')
+		       COALESCE(t.regimen_pensionario, 'ONP'), COALESCE(t.afp_id, 0), COALESCE(t.afp_tipo_comision, ''),
+		       c.fecha_inicio, c.fecha_fin
 		FROM contratos c
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
 		INNER JOIN puestos p ON c.puesto_id = p.id
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
-		INNER JOIN trabajadores t ON c.trabajador_id = t.id -- 💡 NUEVO: Unimos con trabajadores
 		WHERE c.tenant_id = $1 AND c.activo = true
 		  AND c.fecha_inicio <= (make_date($2, $3, 1) + interval '1 month' - interval '1 day')::date
 		  AND (c.fecha_fin IS NULL OR c.fecha_fin >= make_date($2, $3, 1)::date)
@@ -116,7 +117,10 @@ func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio 
 	for rows.Next() {
 		var c models.ContratoPlanilla
 		// El escaneo sigue siendo exactamente igual, llenando nuestra estructura en memoria
-		rows.Scan(&c.ID, &c.PuestoID, &c.Regimen, &c.RegimenPensionario, &c.AfpID, &c.AfpTipoComision)
+		err := rows.Scan(&c.ID, &c.PuestoID, &c.Regimen, &c.RegimenPensionario, &c.AfpID, &c.AfpTipoComision, &c.FechaInicio, &c.FechaFin)
+		if err != nil {
+			return nil, err
+		}
 		lista = append(lista, c)
 	}
 	return lista, nil
@@ -461,8 +465,64 @@ func (r *PlanillaRepository) ObtenerConceptosPorPuestoMasivo(puestoIDs []int) (m
 	return mapa, nil
 }
 
-// ObtenerRetencionesPreviasMasivo trae el acumulado de Renta de 5ta
-func (r *PlanillaRepository) ObtenerRetencionesPreviasMasivo(contratoIDs []int, anio int, mes int) (map[int]float64, error) {
+// ObtenerRetencionesPreviasMasivo trae el acumulado de Renta de 5ta respetando los cortes de SUNAT
+func (r *PlanillaRepository) ObtenerRetencionesPreviasMasivo(contratoIDs []int, anio int, mesActual int) (map[int]float64, error) {
+	if len(contratoIDs) == 0 {
+		return make(map[int]float64), nil
+	}
+
+	// 1. LÓGICA TRIBUTARIA SUNAT: Determinar hasta qué mes sumar (Mes de Corte)
+	mesCorte := 0
+	switch mesActual {
+	case 1, 2, 3:
+		// Enero, Febrero y Marzo: No se deducen retenciones previas.
+		// Retornamos un mapa vacío inmediatamente (¡Ahorramos una consulta SQL!)
+		return make(map[int]float64), nil
+	case 4:
+		mesCorte = 3 // Abril: Suma Enero a Marzo
+	case 5, 6, 7:
+		mesCorte = 4 // Mayo a Julio: Suma Enero a Abril
+	case 8:
+		mesCorte = 7 // Agosto: Suma Enero a Julio
+	case 9, 10, 11:
+		mesCorte = 8 // Septiembre a Noviembre: Suma Enero a Agosto
+	case 12:
+		mesCorte = 11 // Diciembre: Suma Enero a Noviembre
+	}
+
+	// 2. CONSULTA SQL AJUSTADA
+	// Usamos p.mes <= $3 (menor o IGUAL al mes de corte)
+	query := `
+		SELECT pd.contrato_id, SUM(pc.monto)
+		FROM planilla_conceptos pc
+		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
+		INNER JOIN planillas p ON pd.planilla_id = p.id
+		INNER JOIN conceptos_maestros cm ON pc.maestro_id = cm.id
+		WHERE pd.contrato_id = ANY($1) 
+		  AND p.anio = $2 
+		  AND p.mes <= $3 
+		  AND cm.codigo = '0605' 
+		GROUP BY pd.contrato_id
+	`
+	rows, err := r.db.Query(query, pq.Array(contratoIDs), anio, mesCorte)
+	if err != nil {
+		log.Println("Error SQL ObtenerRetencionesPreviasMasivo:", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	mapa := make(map[int]float64)
+	for rows.Next() {
+		var cID int
+		var suma float64
+		rows.Scan(&cID, &suma)
+		mapa[cID] = suma
+	}
+	return mapa, nil
+}
+
+// ObtenerIngresosPreviosMasivo trae el acumulado de ingresos reales percibidos en el año
+func (r *PlanillaRepository) ObtenerIngresosPreviosMasivo(contratoIDs []int, anio int, mesActual int) (map[int]float64, error) {
 	if len(contratoIDs) == 0 {
 		return make(map[int]float64), nil
 	}
@@ -471,17 +531,16 @@ func (r *PlanillaRepository) ObtenerRetencionesPreviasMasivo(contratoIDs []int, 
 		SELECT pd.contrato_id, SUM(pc.monto)
 		FROM planilla_conceptos pc
 		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
-		INNER JOIN planillas p ON pd.planilla_id = p.id -- 💡 CORRECCIÓN: Faltaba esta unión
-		INNER JOIN conceptos_maestros cm ON pc.maestro_id = cm.id
+		INNER JOIN planillas p ON pd.planilla_id = p.id
 		WHERE pd.contrato_id = ANY($1) 
 		  AND p.anio = $2 
-		  AND p.mes < $3
-		  AND cm.codigo = '0605' 
+		  AND p.mes < $3 
+		  AND pc.tipo_concepto = 'INGRESO'
 		GROUP BY pd.contrato_id
 	`
-	rows, err := r.db.Query(query, pq.Array(contratoIDs), anio, mes)
+	rows, err := r.db.Query(query, pq.Array(contratoIDs), anio, mesActual)
 	if err != nil {
-		log.Println("Error SQL ObtenerRetencionesPreviasMasivo:", err)
+		log.Println("Error SQL ObtenerIngresosPreviosMasivo:", err)
 		return nil, err
 	}
 	defer rows.Close()

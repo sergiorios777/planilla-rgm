@@ -20,6 +20,7 @@ type ContextoCalculo struct {
 	Retenciones5taPrevias       float64 // Suma de lo retenido en Ene-Mar
 	RemuneracionNoMensual       float64 // Suma de gratificaciones, bonos, etc.
 	IngresoExtraordinarioDelMes float64 // Bonos puntuales del mes
+	IngresosPrevios             float64 // Suma de ingresos de meses anteriores
 
 	// 6. Pensiones
 	RegimenPensionario string
@@ -80,6 +81,7 @@ type JobPlanilla struct {
 	Ocurrencias            []OcurrenciaAsistencia
 	TasasAFP               TasasAFP
 	Retenciones5taPrevias  float64 // Pre-cargado
+	IngresosPrevios        float64
 	MesActual              int
 	Anio                   int
 	ParametrosGlobales     map[string]float64

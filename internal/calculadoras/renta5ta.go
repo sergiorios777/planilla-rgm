@@ -1,6 +1,7 @@
 package calculadoras
 
 import (
+	"log"
 	"math"
 	"planilla-rgm/internal/models"
 )
@@ -15,12 +16,16 @@ func CalcularRenta5ta(remuneracionMensual float64, ctx models.ContextoCalculo) f
 	// ==============================================================
 	// PASO 1: Proyección de la Remuneración Bruta Anual
 	// ==============================================================
-	mesesFaltantes := 13 - ctx.MesActual // Si es Enero(1), faltan 12 meses.
+	// SUNAT: (Remuneración Ordinaria del Mes * Meses Faltantes) + Ingresos Previos del Año
+
+	mesesFaltantes := 13 - ctx.MesActual // Si es Abril(4), faltan 9 meses (Abr, May, Jun, Jul, Ago, Sep, Oct, Nov, Dic).
 
 	remuneracionProyectada := remuneracionMensual * float64(mesesFaltantes)
-	
-	// CORRECCIÓN: Usamos la nueva variable global RemuneracionNoMensual
-	remuneracionBrutaAnual := remuneracionProyectada + ctx.RemuneracionNoMensual	// ==============================================================
+
+	// 💡 LA CORRECCIÓN MAESTRA: Sumamos los ingresos que ya ocurrieron este año
+	remuneracionBrutaAnual := remuneracionProyectada + ctx.RemuneracionNoMensual + ctx.IngresosPrevios
+
+	// ==============================================================
 	// PASO 2: Deducción de 7 UIT
 	// ==============================================================
 	remuneracionNetaAnual := remuneracionBrutaAnual - (7 * uit)
@@ -38,6 +43,9 @@ func CalcularRenta5ta(remuneracionMensual float64, ctx models.ContextoCalculo) f
 	// ==============================================================
 	retencionMes := 0.00
 	impuestoRestante := impuestoAnualProyectado - ctx.Retenciones5taPrevias
+	log.Println("impuestoAnualProyectado: ", impuestoAnualProyectado)
+	log.Println("ctx.Retenciones5taPrevias: ", ctx.Retenciones5taPrevias)
+	log.Println("impuestoRestante: ", impuestoRestante)
 
 	if impuestoRestante > 0 {
 		switch {

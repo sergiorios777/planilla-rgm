@@ -7,6 +7,7 @@ import (
 	"planilla-rgm/internal/repository"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type PlanillaService struct {
@@ -47,6 +48,7 @@ func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
 	// log.Println("Mapa Conceptos: ", mapaConceptosPuesto)
 	mapa5taPrevias, _ := s.Repo.ObtenerRetencionesPreviasMasivo(contratoIDs, anio, mes)
 	// log.Println("Mapa 5ta Previas: ", mapa5taPrevias)
+	mapaIngresosPrevios, _ := s.Repo.ObtenerIngresosPreviosMasivo(contratoIDs, anio, mes)
 
 	// =========================================================
 	// 2. INICIO DE LA CONCURRENCIA (WORKER POOL)
@@ -73,6 +75,7 @@ func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
 			Ocurrencias:            mapaOcurrenciasGlobal[contrato.ID],
 			TasasAFP:               mapaTasasAFPMes[contrato.AfpID],
 			Retenciones5taPrevias:  mapa5taPrevias[contrato.ID],
+			IngresosPrevios:        mapaIngresosPrevios[contrato.ID],
 			MesActual:              mes,
 			Anio:                   anio,
 			ParametrosGlobales:     parametros,
@@ -171,11 +174,13 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 
 	// Preparamos nuestro "Maletín" con los datos que vienen en el Job
 	ctxTrabajador := models.ContextoCalculo{
-		ParametrosGlobales: job.ParametrosGlobales,
-		RegimenCodigo:      job.Contrato.Regimen,
-		IngresosProcesados: make(map[string]float64),
-		MesActual:          job.MesActual,
-		RegimenPensionario: job.Contrato.RegimenPensionario,
+		ParametrosGlobales:    job.ParametrosGlobales,
+		RegimenCodigo:         job.Contrato.Regimen,
+		IngresosProcesados:    make(map[string]float64),
+		MesActual:             job.MesActual,
+		Retenciones5taPrevias: job.Retenciones5taPrevias, // OJO: revisar luego
+		IngresosPrevios:       job.IngresosPrevios,
+		RegimenPensionario:    job.Contrato.RegimenPensionario,
 	}
 
 	// 💡 ASIGNACIÓN DINÁMICA DE TASAS AFP
@@ -188,6 +193,10 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 			ctxTrabajador.TasaAfpComision = job.TasasAFP.Mixta
 		}
 	}
+
+	// Calculamos días y factor de prorrateo
+	diasLaborados := s.calcularDiasLaborados(job.Contrato.FechaInicio, job.Contrato.FechaFin, job.Anio, job.MesActual)
+	factorProrrateo := diasLaborados / 30.0
 
 	// --- PASADA 1: PROCESAR INGRESOS ---
 	for _, cp := range job.ConceptosPlaza {
@@ -207,10 +216,16 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 			continue
 		}
 
-		boleta.TotalIngresos += cp.Monto
-		ctxTrabajador.IngresosProcesados[strconv.Itoa(cp.MaestroID)] = cp.Monto
+		// Aplica prorrateo solo si NO es extraordinario
+		montoProporcional := cp.Monto
+		if !cp.EsExtraordinario {
+			montoProporcional = cp.Monto * factorProrrateo
+		}
+
+		boleta.TotalIngresos += montoProporcional
+		ctxTrabajador.IngresosProcesados[strconv.Itoa(cp.MaestroID)] = montoProporcional
 		boleta.LineasConceptos = append(boleta.LineasConceptos, models.PlanillaConcepto{
-			ConceptoTenantID: cp.TenantID, TipoConcepto: "INGRESO", Monto: cp.Monto,
+			ConceptoTenantID: cp.TenantID, TipoConcepto: "INGRESO", Monto: montoProporcional,
 		})
 	}
 
@@ -269,6 +284,8 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 			montoFinal = descFaltas
 		case "0804":
 			montoFinal = calculadoras.CalcularEsSalud(base, ctxTrabajador)
+		case "S101":
+			montoFinal = calculadoras.CalcularRenta4ta(base, ctxTrabajador)
 		case "0605":
 			// Lógica de 5ta usando datos del job
 			remM, remNM, extra := s.clasificarIngresos5ta(job.ConceptosPlaza, job.MapaAfectacionesGlobal[cp.MaestroID], job.MesActual)
@@ -304,4 +321,39 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 
 	boleta.NetoPagar = boleta.TotalIngresos - boleta.TotalRetenciones
 	return boleta, nil
+}
+
+// calcularDiasLaborados determina cuántos días del mes (base 30) se deben pagar
+func (s *PlanillaService) calcularDiasLaborados(fechaInicio time.Time, fechaFin *time.Time, anio int, mes int) float64 {
+	primerDiaMes := time.Date(anio, time.Month(mes), 1, 0, 0, 0, 0, time.UTC)
+
+	// ELIMINADO: ultimoDiaMes := primerDiaMes.AddDate(0, 1, -1)
+
+	// Punto de partida: El trabajador inicia el día 1 del mes, a menos que su contrato diga lo contrario
+	diaInicioEfectivo := 1
+	if fechaInicio.After(primerDiaMes) || fechaInicio.Equal(primerDiaMes) {
+		if int(fechaInicio.Month()) == mes && fechaInicio.Year() == anio {
+			diaInicioEfectivo = fechaInicio.Day()
+		}
+	}
+
+	// Punto de fin: El trabajador termina el día 30, a menos que el contrato termine este mes
+	diaFinEfectivo := 30
+	if fechaFin != nil {
+		if int(fechaFin.Month()) == mes && fechaFin.Year() == anio {
+			diaFinEfectivo = fechaFin.Day()
+			if diaFinEfectivo > 30 {
+				diaFinEfectivo = 30
+			}
+		}
+	}
+
+	dias := float64(diaFinEfectivo - diaInicioEfectivo + 1)
+	if dias < 0 {
+		return 0
+	}
+	if dias > 30 {
+		return 30
+	}
+	return dias
 }
