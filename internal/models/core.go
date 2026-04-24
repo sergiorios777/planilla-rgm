@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 // Tenant representa a las entidades/inquilinos que usan tu SaaS
 type Tenant struct {
@@ -150,12 +152,14 @@ type ContratoPlanilla struct {
 
 // ConceptoPlanilla representa un rubro de la estructura de costos del puesto
 type ConceptoPlanilla struct {
+	ID               int
 	TenantID         int
 	MaestroID        int
 	MaestroCodigo    string
 	Tipo             string
 	Monto            float64
 	Frecuencia       string
+	ParentID         int
 	EsExtraordinario bool
 }
 
@@ -245,6 +249,7 @@ type PlanillaConcepto struct {
 	ConceptoTenantID  int     `json:"concepto_tenant_id"`
 	TipoConcepto      string  `json:"tipo_concepto"` // INGRESO, RETENCION, APORTE
 	Monto             float64 `json:"monto"`
+	MaestroID         int     `json:"maestro_id"`
 
 	// Campo auxiliar
 	NombrePersonalizado string `json:"nombre_personalizado,omitempty"`

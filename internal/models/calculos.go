@@ -72,3 +72,23 @@ type TasasAFP struct {
 	Mixta  float64
 	Prima  float64
 }
+
+// JobPlanilla es el "expediente" completo que recibe una Goroutine
+type JobPlanilla struct {
+	Contrato               ContratoPlanilla
+	ConceptosPlaza         []ConceptoPlanilla // Pre-cargados
+	Ocurrencias            []OcurrenciaAsistencia
+	TasasAFP               TasasAFP
+	Retenciones5taPrevias  float64 // Pre-cargado
+	MesActual              int
+	Anio                   int
+	ParametrosGlobales     map[string]float64
+	MapaCodigos            map[string]int
+	MapaAfectacionesGlobal map[int][]int
+}
+
+// ResultPlanilla es lo que la Goroutine devuelve al terminar
+type ResultPlanilla struct {
+	Boleta BoletaResultado
+	Error  error
+}

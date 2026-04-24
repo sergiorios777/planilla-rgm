@@ -1,14 +1,12 @@
 package calculadoras
 
 import (
-	"fmt"
 	"math"
 )
 
 // CalcularDescuentoFaltas aplica la regla de 1/30 + el proporcional dominical (1/7)
 func CalcularDescuentoFaltas(remuneracionComputable float64, diasFalta float64) float64 {
 	if diasFalta <= 0 {
-		fmt.Println("Error: La cantidad de faltas debe ser mayor a 0")
 		return 0.00
 	}
 
@@ -25,7 +23,6 @@ func CalcularDescuentoFaltas(remuneracionComputable float64, diasFalta float64) 
 // CalcularDescuentoTardanzas aplica la regla de minutos en base a 8 horas (480 min)
 func CalcularDescuentoTardanzas(remuneracionComputable float64, minutosTardanza float64) float64 {
 	if minutosTardanza <= 0 {
-		fmt.Println("Error: La cantidad de tardanzas debe ser mayor a 0")
 		return 0.00
 	}
 

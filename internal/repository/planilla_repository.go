@@ -2,10 +2,12 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
+	"log"
 	"planilla-rgm/internal/models"
 	"strconv"
 	"strings"
+
+	"github.com/lib/pq"
 )
 
 type PlanillaRepository struct {
@@ -155,43 +157,44 @@ func (r *PlanillaRepository) GuardarPlanillaCalculada(planillaID int, boletas []
 		return err
 	}
 
-	// 1. Limpieza de reprocesamientos (Rerun)
+	// 1. LIMPIEZA
 	_, err = tx.Exec(`DELETE FROM planilla_detalles WHERE planilla_id = $1`, planillaID)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	// 2. Guardado en bloque
-	for _, boleta := range boletas {
+	// 2. PREPARAR SENTENCIAS
+	stmtDetalle, _ := tx.Prepare(`
+		INSERT INTO planilla_detalles (planilla_id, contrato_id, total_ingresos, total_retenciones, total_aportes, neto_pagar) 
+		VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`)
+
+	// 💡 CORRECCIÓN CRÍTICA: Añadidos concepto_tenant_id y las columnas exactas de tu tabla
+	stmtConcepto, _ := tx.Prepare(`
+		INSERT INTO planilla_conceptos (planilla_detalle_id, concepto_tenant_id, maestro_id, tipo_concepto, monto) 
+		VALUES ($1, $2, $3, $4, $5)`)
+
+	// 3. BUCLE DE GUARDADO
+	for _, b := range boletas {
 		var detalleID int
-
-		// Guardamos la cabecera de la boleta
-		err = tx.QueryRow(`
-			INSERT INTO planilla_detalles (planilla_id, contrato_id, total_ingresos, total_retenciones, total_aportes, neto_pagar) 
-			VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
-		`, planillaID, boleta.ContratoID, boleta.TotalIngresos, boleta.TotalRetenciones, boleta.TotalAportes, boleta.NetoPagar).Scan(&detalleID)
-
+		err := stmtDetalle.QueryRow(planillaID, b.ContratoID, b.TotalIngresos, b.TotalRetenciones, b.TotalAportes, b.NetoPagar).Scan(&detalleID)
 		if err != nil {
+			log.Println("Error insertando detalle:", err)
 			tx.Rollback()
 			return err
 		}
 
-		// Guardamos el detalle (los rubros)
-		for _, concepto := range boleta.LineasConceptos {
-			_, err = tx.Exec(`
-				INSERT INTO planilla_conceptos (planilla_detalle_id, concepto_tenant_id, tipo_concepto, monto)
-				VALUES ($1, $2, $3, $4)
-			`, detalleID, concepto.ConceptoTenantID, concepto.TipoConcepto, concepto.Monto)
-
+		for _, linea := range b.LineasConceptos {
+			// 💡 CORRECCIÓN: Pasamos el ConceptoTenantID y el MaestroID que la tabla exige
+			_, err = stmtConcepto.Exec(detalleID, linea.ConceptoTenantID, linea.MaestroID, linea.TipoConcepto, linea.Monto)
 			if err != nil {
+				log.Println("Error insertando concepto:", err)
 				tx.Rollback()
 				return err
 			}
 		}
 
-		// NUEVO: Marcamos las ocurrencias como procesadas para que no se descuenten el otro mes
-		for _, ocID := range boleta.OcurrenciasProcesadas {
+		for _, ocID := range b.OcurrenciasProcesadas {
 			_, err = tx.Exec(`UPDATE ocurrencias_asistencia SET procesado = true, planilla_id_descuento = $1 WHERE id = $2`, planillaID, ocID)
 			if err != nil {
 				tx.Rollback()
@@ -359,7 +362,6 @@ func (r *PlanillaRepository) ObtenerOcurrenciasParaProcesar(tenantID int, planil
 	`
 	rows, err := r.db.Query(query, tenantID, planillaID)
 	if err != nil {
-		fmt.Println("Error al obtener ocurrencias para procesar: ", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -371,7 +373,7 @@ func (r *PlanillaRepository) ObtenerOcurrenciasParaProcesar(tenantID int, planil
 		rows.Scan(&oc.ID, &contratoID, &oc.Tipo, &oc.Cantidad)
 		mapa[contratoID] = append(mapa[contratoID], oc)
 	}
-	fmt.Println("Ocurrencias para procesar: ", mapa)
+
 	return mapa, nil
 }
 
@@ -392,6 +394,104 @@ func (r *PlanillaRepository) ObtenerTasasAFPMes(anio int, mes int) (map[int]mode
 		var t models.TasasAFP
 		rows.Scan(&afpID, &t.Aporte, &t.Flujo, &t.Mixta, &t.Prima)
 		mapa[afpID] = t
+	}
+	return mapa, nil
+}
+
+// ObtenerMapaCodigosID crea un diccionario para traducir Códigos SUNAT a IDs internos
+func (r *PlanillaRepository) ObtenerMapaCodigosID() (map[string]int, error) {
+	query := `SELECT codigo, id FROM conceptos_maestros WHERE activo = true`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	mapa := make(map[string]int)
+	for rows.Next() {
+		var codigo string
+		var id int
+		if err := rows.Scan(&codigo, &id); err != nil {
+			return nil, err
+		}
+		mapa[codigo] = id
+	}
+	return mapa, nil
+}
+
+// ObtenerConceptosPorPuestoMasivo trae las estructuras de costos de todos los puestos involucrados
+func (r *PlanillaRepository) ObtenerConceptosPorPuestoMasivo(puestoIDs []int) (map[int][]models.ConceptoPlanilla, error) {
+	if len(puestoIDs) == 0 {
+		return make(map[int][]models.ConceptoPlanilla), nil
+	}
+
+	query := `
+		SELECT pc.puesto_id, pc.concepto_tenant_id, cm.id, cm.codigo, cm.tipo, pc.monto,
+		       ct.frecuencia_meses, ct.es_extraordinario, COALESCE(cm.parent_id, 0)
+		FROM puesto_conceptos pc
+		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+		WHERE pc.puesto_id = ANY($1) AND pc.activo = true
+	`
+	rows, err := r.db.Query(query, pq.Array(puestoIDs))
+	if err != nil {
+		log.Println("Error SQL ObtenerConceptosPorPuestoMasivo:", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	mapa := make(map[int][]models.ConceptoPlanilla)
+	for rows.Next() {
+		var pID int
+		var cp models.ConceptoPlanilla
+		var m sql.NullFloat64 // Usamos esto por si el monto está vacío en la BD
+
+		err := rows.Scan(&pID, &cp.TenantID, &cp.MaestroID, &cp.MaestroCodigo, &cp.Tipo, &m,
+			&cp.Frecuencia, &cp.EsExtraordinario, &cp.ParentID)
+		if err != nil {
+			log.Println("Error Scan ObtenerConceptosPorPuestoMasivo:", err)
+			continue
+		}
+
+		if m.Valid {
+			cp.Monto = m.Float64
+		}
+		mapa[pID] = append(mapa[pID], cp)
+	}
+	return mapa, nil
+}
+
+// ObtenerRetencionesPreviasMasivo trae el acumulado de Renta de 5ta
+func (r *PlanillaRepository) ObtenerRetencionesPreviasMasivo(contratoIDs []int, anio int, mes int) (map[int]float64, error) {
+	if len(contratoIDs) == 0 {
+		return make(map[int]float64), nil
+	}
+
+	query := `
+		SELECT pd.contrato_id, SUM(pc.monto)
+		FROM planilla_conceptos pc
+		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
+		INNER JOIN planillas p ON pd.planilla_id = p.id -- 💡 CORRECCIÓN: Faltaba esta unión
+		INNER JOIN conceptos_maestros cm ON pc.maestro_id = cm.id
+		WHERE pd.contrato_id = ANY($1) 
+		  AND p.anio = $2 
+		  AND p.mes < $3
+		  AND cm.codigo = '0605' 
+		GROUP BY pd.contrato_id
+	`
+	rows, err := r.db.Query(query, pq.Array(contratoIDs), anio, mes)
+	if err != nil {
+		log.Println("Error SQL ObtenerRetencionesPreviasMasivo:", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	mapa := make(map[int]float64)
+	for rows.Next() {
+		var cID int
+		var suma float64
+		rows.Scan(&cID, &suma)
+		mapa[cID] = suma
 	}
 	return mapa, nil
 }
