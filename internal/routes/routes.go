@@ -13,60 +13,18 @@ import (
 func ConfigurarRutas(db *sql.DB) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	// 1. Inicialización de Repositorios y Handlers (como vimos antes)
-	// =========================================================
-	// INICIALIZAR REPOSITORIOS
-	// =========================================================
-	/*
-		tenantRepo := repository.NewTenantRepository(db)
-		mefRepo := repository.NewMefRepository(db)
-		conceptoRepo := repository.NewConceptoRepository(db)
-		parametroRepo := repository.NewParametroRepository(db)
-	*/
+	// 1. Inicialización de Repositorios y Handlers
+	// Repositorios
 	usuarioRepo := repository.NewUsuarioRepository(db)
-	/*
-		trabajadorRepo := repository.NewTrabajadorRepository(db)
-		contratoRepo := repository.NewContratoRepository(db)
-		fuenteRubroRepo := repository.NewFuenteRubroRepository(db)
-		metaRepo := repository.NewMetaRepository(db)
-		puestoRepo := repository.NewPuestoRepository(db)
-		conceptoTenantRepo := repository.NewConceptoTenantRepository(db)
-		puestoConceptoRepo := repository.NewPuestoConceptoRepository(db)
-		planillaRepo := repository.NewPlanillaRepository(db)
-		asistenciaRepo := repository.NewAsistenciaRepository(db)
-	*/
 
-	// =========================================================
-	// INICIALIZAR HANDLERS
-	// =========================================================
-	/*
-		adminHandler := handlers.AdminHandler{Repo: tenantRepo}
-		mefHandler := handlers.MefHandler{Repo: mefRepo}
-		conceptoHandler := handlers.ConceptoHandler{Repo: conceptoRepo}
-		parametroHandler := handlers.ParametroHandler{Repo: parametroRepo}
-	*/
+	// Handlers
 	authHandler := handlers.AuthHandler{Repo: usuarioRepo}
-	/*
-		usuarioHandler := handlers.UsuarioHandler{UserRepo: usuarioRepo, TenantRepo: tenantRepo}
-		tenantHandler := handlers.TenantHandler{Repo: tenantRepo}
-		trabajadorHandler := handlers.TrabajadorHandler{Repo: trabajadorRepo}
-		contratoHandler := handlers.ContratoHandler{Repo: contratoRepo, TrabajadorRepo: trabajadorRepo, PuestoRepo: puestoRepo}
-		fuenteRubroHandler := handlers.FuenteRubroHandler{Repo: fuenteRubroRepo}
-		metaHandler := handlers.MetaHandler{Repo: metaRepo}
-		puestoHandler := handlers.PuestoHandler{Repo: puestoRepo, MetaRepo: metaRepo, FuenteRubroRepo: fuenteRubroRepo}
-		conceptoTenantHandler := handlers.ConceptoTenantHandler{Repo: conceptoTenantRepo}
-		puestoConceptoHandler := handlers.PuestoConceptoHandler{Repo: puestoConceptoRepo, PuestoRepo: puestoRepo}
-		planillaHandler := handlers.PlanillaHandler{Repo: planillaRepo}
-		asistenciaHandler := handlers.AsistenciaHandler{Repo: asistenciaRepo}
-	*/
 
-	// =========================================================
-	// ARCHIVOS ESTÁTICOS
-	// =========================================================
+	// 1.5 Archivos Estáticos
 	fs := http.FileServer(http.Dir("ui/static"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	// Ruta principal: Renderiza la interfaz de HTMX + Pico.css
+	// Ruta principal
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// Buscamos el HTML en la nueva ruta relativa
 		tmpl, err := template.ParseFiles("ui/templates/layouts/index.html")
