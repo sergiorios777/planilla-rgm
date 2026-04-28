@@ -186,20 +186,22 @@ type MetaPresupuestal struct {
 // Puesto (Plaza) representa una "silla" dentro de la municipalidad, esté ocupada o vacante.
 // Es la base para el cálculo del Presupuesto Anual.
 type Puesto struct {
-	ID                  int     `json:"id"`
-	TenantID            int     `json:"tenant_id"`
-	MetaID              int     `json:"meta_id"`
-	FuenteRubroID       int     `json:"fuente_rubro_id"`
-	RegimenID           int     `json:"regimen_id"`
+	ID                  int `json:"id"`
+	TenantID            int `json:"tenant_id"`
+	MetaID              int `json:"meta_id"`
+	FuenteRubroID       int `json:"fuente_rubro_id"`
+	RegimenID           int `json:"regimen_id"`
+	RegimenCodigo       string
 	Nombre              string  `json:"nombre"`
 	SueldoPresupuestado float64 `json:"sueldo_presupuestado"`
 	Estado              string  `json:"estado"` // VACANTE u OCUPADO
 	Activo              bool    `json:"activo"`
 
 	// Campos auxiliares para pintar tablas dinámicas sin hacer múltiples consultas
-	MetaCodigo      string `json:"meta_codigo,omitempty"`
-	FuenteRubroDesc string `json:"fuente_rubro_desc,omitempty"`
-	RegimenDesc     string `json:"regimen_desc,omitempty"`
+	MetaCodigo       string `json:"meta_codigo,omitempty"`
+	FuenteRubroDesc  string `json:"fuente_rubro_desc,omitempty"`
+	RegimenDesc      string `json:"regimen_desc,omitempty"`
+	RequiereRevision bool
 }
 
 // PuestoConcepto es el detalle de qué conceptos arman el costo de una Plaza específica
@@ -214,6 +216,9 @@ type PuestoConcepto struct {
 	NombrePersonalizado string `json:"nombre_personalizado,omitempty"`
 	ConceptoTipo        string `json:"concepto_tipo,omitempty"`
 	Clasificador        string `json:"clasificador,omitempty"`
+	MaestroCodigo       string `json:"maestro_codigo,omitempty"`
+	RequiereMontoManual bool   `json:"requiere_monto_manual,omitempty"`
+	MontoIngresado      bool   `json:"monto_ingresado,omitempty"`
 }
 
 // Planilla representa la cabecera mensual de cálculos

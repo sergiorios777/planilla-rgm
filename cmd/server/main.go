@@ -188,6 +188,8 @@ func main() {
 	http.HandleFunc("/tenant/ui/puestos", middleware.RequireAuth(puestoHandler.VistaUI))
 	http.HandleFunc("/tenant/puestos/lista", middleware.RequireAuth(puestoHandler.Listar))
 	http.HandleFunc("/tenant/puestos/crear", middleware.RequireAuth(puestoHandler.Crear))
+	http.HandleFunc("/tenant/puestos/editar", middleware.RequireAuth(puestoHandler.Editar))
+	http.HandleFunc("/tenant/puestos/actualizar", middleware.RequireAuth(puestoHandler.Actualizar))
 
 	// Rutas protegidas (Bajo la sección de Inquilinos/Presupuesto)
 	http.HandleFunc("/tenant/ui/conceptos-locales", middleware.RequireAuth(conceptoTenantHandler.VistaUI))
@@ -199,6 +201,9 @@ func main() {
 	http.HandleFunc("/tenant/puestos-conceptos/lista", middleware.RequireAuth(puestoConceptoHandler.Listar))
 	http.HandleFunc("/tenant/puestos-conceptos/crear", middleware.RequireAuth(puestoConceptoHandler.Crear))
 	http.HandleFunc("/tenant/puestos-conceptos/eliminar", middleware.RequireAuth(puestoConceptoHandler.Eliminar))
+	http.HandleFunc("/tenant/puestos-conceptos/restaurar", middleware.RequireAuth(puestoConceptoHandler.RestaurarCostosBase))
+	http.HandleFunc("/tenant/puestos-conceptos/editar-monto-ui", middleware.RequireAuth(puestoConceptoHandler.EditarMontoUI))
+	http.HandleFunc("/tenant/puestos-conceptos/actualizar-monto", middleware.RequireAuth(puestoConceptoHandler.ActualizarMonto))
 
 	// Rutas protegidas (Bajo una nueva sección de Procesamiento)
 	http.HandleFunc("/tenant/ui/planillas", middleware.RequireAuth(planillaHandler.VistaUI))

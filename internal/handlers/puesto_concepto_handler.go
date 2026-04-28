@@ -3,6 +3,7 @@ package handlers
 import (
 	"html/template"
 	"net/http"
+	"planilla-rgm/internal/config"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
 	"strconv"
@@ -19,14 +20,31 @@ func (h *PuestoConceptoHandler) VistaUI(w http.ResponseWriter, r *http.Request) 
 	tenantID := obtenerTenantID(r)
 	puestoID, _ := strconv.Atoi(r.URL.Query().Get("puesto_id"))
 
-	// Traemos la info de los Puestos (reutilizamos ObtenerTodos y filtramos)
-	// En un escenario ideal, tendrías un ObtenerPorID en PuestoRepository.
-	// Por ahora lo simplificamos enviando solo el ID.
+	// 1. Obtenemos los conceptos asignados
+	asignados, _ := h.Repo.ObtenerAsignados(puestoID, tenantID)
+	// log.Println("asignados:", asignados)
+
+	// 2. 💡 LÓGICA INTELIGENTE EN EL SERVIDOR
+	for i, cp := range asignados {
+
+		// A. Evaluamos el puntero: Si no es nulo y es mayor a 0
+		if cp.Monto != nil && *cp.Monto > 0 {
+			asignados[i].MontoIngresado = true
+		}
+
+		// B. Evaluamos si es un concepto que obliga intervención humana
+		if config.ConceptosQueRequierenMonto[cp.MaestroCodigo] {
+			asignados[i].RequiereMontoManual = true
+		}
+	}
+	// log.Println("asignados con RequiereMontoManual:", asignados)
 
 	disponibles, _ := h.Repo.ObtenerDisponibles(puestoID, tenantID)
+	// log.Println("disponibles:", disponibles)
 
 	datos := map[string]interface{}{
 		"PuestoID":    puestoID,
+		"Asignados":   asignados, // 💡 Mandamos la lista procesada a la vista
 		"Disponibles": disponibles,
 	}
 
@@ -34,13 +52,29 @@ func (h *PuestoConceptoHandler) VistaUI(w http.ResponseWriter, r *http.Request) 
 	tmpl.Execute(w, datos)
 }
 
-// Listar devuelve solo el fragmento de la tabla actualizada
+// Listar devuelve únicamente el fragmento HTML de la tabla para HTMX
 func (h *PuestoConceptoHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
 	puestoID, _ := strconv.Atoi(r.URL.Query().Get("puesto_id"))
 
+	// 1. Obtenemos los conceptos asignados crudos desde la BD
 	asignados, _ := h.Repo.ObtenerAsignados(puestoID, tenantID)
 
+	// 2. 💡 EL SECRETO: Aplicamos la lógica inteligente AQUÍ,
+	// porque esta es la función que HTMX usa para pintar los datos reales
+	for i, cp := range asignados {
+		// A. Evaluamos el puntero: Si no es nulo y es mayor a 0
+		if cp.Monto != nil && *cp.Monto > 0 {
+			asignados[i].MontoIngresado = true
+		}
+
+		// B. Evaluamos si es un concepto que obliga intervención humana
+		if config.ConceptosQueRequierenMonto[cp.MaestroCodigo] {
+			asignados[i].RequiereMontoManual = true
+		}
+	}
+
+	// 3. Renderizamos SOLO el fragmento de la tabla con los datos ya procesados
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/puestos_conceptos_ui.html")
 	tmpl.ExecuteTemplate(w, "tabla_asignados", asignados)
 }
@@ -85,5 +119,87 @@ func (h *PuestoConceptoHandler) Eliminar(w http.ResponseWriter, r *http.Request)
 	// w.Header().Set("HX-Redirect", "/tenant/puestos-conceptos/ui?puesto_id="+puestoID)
 	r.URL.RawQuery = "puesto_id=" + puestoID
 	// w.WriteHeader(http.StatusOK)
+	h.VistaUI(w, r)
+}
+
+// RestaurarCostosBase limpia la plaza e inyecta los conceptos por defecto
+func (h *PuestoConceptoHandler) RestaurarCostosBase(w http.ResponseWriter, r *http.Request) {
+	pID := r.URL.Query().Get("puesto_id")
+	if pID == "" {
+		pID = r.FormValue("puesto_id")
+	}
+	puestoID, _ := strconv.Atoi(pID)
+	tenantID := obtenerTenantID(r)
+
+	// 1. Necesitamos el régimen del puesto para saber qué plantilla aplicar
+	puesto, err := h.PuestoRepo.ObtenerPorID(puestoID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al obtener puesto: "+err.Error(), 500)
+		return
+	}
+
+	// 2. Obtener códigos de la configuración
+	codigos := config.ConceptosBasePorRegimen[puesto.RegimenCodigo]
+	// 3. Ejecutar restauración
+	err = h.PuestoRepo.RestaurarPlantillaBase(puestoID, tenantID, codigos) // Asumiendo que Repo de Puesto está instanciado o accesible
+	// Nota: Como RestaurarPlantillaBase está en PuestoRepository, asegúrate de llamarlo desde h.PuestoRepo
+	if err != nil {
+		http.Error(w, "Error al restaurar: "+err.Error(), 500)
+		return
+	}
+
+	// 3.5 forzamos un refresco de HTMX disparando un evento custom.
+	w.Header().Set("HX-trigger", "refreshCostosBase")
+
+	// 4. Enviamos de vuelta a la función VistaUI para que recargue todo.
+	r.URL.RawQuery = "puesto_id=" + strconv.Itoa(puestoID)
+	h.VistaUI(w, r)
+}
+
+// EditarMontoUI devuelve un pequeño input para el monto
+func (h *PuestoConceptoHandler) EditarMontoUI(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	puestoID := r.URL.Query().Get("puesto_id")
+
+	// Retornamos un fragmento HTML con un input que se guarda al perder el foco o presionar Enter
+	html := `
+		<form hx-put="/tenant/puestos-conceptos/actualizar-monto" hx-target="#contenido-tenant" style="margin-bottom:0;">
+			<input type="hidden" name="id" value="` + id + `">
+			<div style="display: flex; gap: 5px; align-items: center;">
+				<input type="number" step="0.01" name="monto" autofocus 
+					   style="margin-bottom: 0; padding: 2px 5px; width: 100px;">
+				<button class="outline" style="margin-bottom: 0; padding: 2px 10px;">✅</button>
+				
+				<button type="button" class="outline secondary" style="margin-bottom: 0; padding: 2px 10px;"
+				        hx-get="/tenant/puestos-conceptos/ui?puesto_id=` + puestoID + `" hx-target="#contenido-tenant">
+				    ❌
+				</button>
+			</div>
+		</form>
+	`
+	w.Write([]byte(html))
+}
+
+// ActualizarMonto procesa el cambio y refresca la tabla
+func (h *PuestoConceptoHandler) ActualizarMonto(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	id, _ := strconv.Atoi(r.FormValue("id"))
+	monto, _ := strconv.ParseFloat(r.FormValue("monto"), 64)
+
+	// 1. Actualizar monto
+	h.Repo.ActualizarMonto(id, monto)
+
+	// 2. Obtener el puesto_id para saber qué página recargar
+	var puestoID int
+	// Refrescamos toda la tabla para que los booleanos se recalculen
+	// Necesitamos el puesto_id para llamar a Listar
+	err := h.PuestoRepo.DB().QueryRow("SELECT puesto_id FROM puesto_conceptos WHERE id = $1", id).Scan(&puestoID)
+	if err != nil {
+		http.Error(w, "Error al obtener puesto", 500)
+		return
+	}
+
+	// 3. Refrescamos la vista completa en el target correcto (#contenido-tenant)
+	r.URL.RawQuery = "puesto_id=" + strconv.Itoa(puestoID)
 	h.VistaUI(w, r)
 }

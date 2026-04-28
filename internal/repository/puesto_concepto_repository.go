@@ -17,7 +17,8 @@ func NewPuestoConceptoRepository(db *sql.DB) *PuestoConceptoRepository {
 func (r *PuestoConceptoRepository) ObtenerAsignados(puestoID int, tenantID int) ([]models.PuestoConcepto, error) {
 	query := `
 		SELECT pc.id, pc.puesto_id, pc.concepto_tenant_id, pc.monto, pc.activo,
-		       ct.nombre_personalizado, mef.codigo AS clasificador, cm.tipo
+		       ct.nombre_personalizado, mef.codigo AS clasificador, cm.tipo, 
+		       cm.codigo -- 💡 NUEVO: Traemos el código SUNAT
 		FROM puesto_conceptos pc
 		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
 		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
@@ -38,7 +39,7 @@ func (r *PuestoConceptoRepository) ObtenerAsignados(puestoID int, tenantID int) 
 		var clasif sql.NullString
 
 		err := rows.Scan(&pc.ID, &pc.PuestoID, &pc.ConceptoTenantID, &monto, &pc.Activo,
-			&pc.NombrePersonalizado, &clasif, &pc.ConceptoTipo)
+			&pc.NombrePersonalizado, &clasif, &pc.ConceptoTipo, &pc.MaestroCodigo)
 		if err == nil {
 			if monto.Valid {
 				pc.Monto = &monto.Float64
@@ -90,5 +91,11 @@ func (r *PuestoConceptoRepository) Crear(pc *models.PuestoConcepto) error {
 
 func (r *PuestoConceptoRepository) Eliminar(id int) error {
 	_, err := r.db.Exec(`DELETE FROM puesto_conceptos WHERE id = $1`, id)
+	return err
+}
+
+func (r *PuestoConceptoRepository) ActualizarMonto(id int, monto float64) error {
+	query := `UPDATE puesto_conceptos SET monto = $1 WHERE id = $2`
+	_, err := r.db.Exec(query, monto, id)
 	return err
 }

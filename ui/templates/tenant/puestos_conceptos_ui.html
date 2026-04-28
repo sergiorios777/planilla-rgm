@@ -4,14 +4,21 @@
         <p><small>Asigna los ingresos, retenciones y aportes que le corresponden a este puesto.</small></p>
     </header>
 
-    <button class="secondary outline" hx-get="/tenant/ui/puestos" hx-target="#contenido-tenant"
-        style="margin-bottom: 2rem;">
-        ⬅️ Volver al Cuadro de Puestos
-    </button>
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+        <button class="secondary outline" hx-get="/tenant/ui/puestos" hx-target="#contenido-tenant">
+            ⬅️ Volver al Cuadro de Puestos
+        </button>
+
+        <button class="outline" style="color: #d32f2f; border-color: #d32f2f;"
+            hx-post="/tenant/puestos-conceptos/restaurar?puesto_id={{.PuestoID}}" hx-target="#contenido-tenant"
+            hx-confirm="🚨 ATENCIÓN: Esto borrará los montos actuales y volverá a cargar la plantilla predeterminada. ¿Desea continuar?">
+            🔄 Restaurar Plantilla
+        </button>
+    </div>
 
     <div class="grid">
         <div id="contenedor-formulario">
-            <details open>
+            <details close>
                 <summary role="button" class="contrast outline">➕ Añadir Concepto a la Plaza</summary>
                 <div style="padding-top: 1rem;">
                     <form hx-post="/tenant/puestos-conceptos/crear" hx-target="#contenido-tenant">
@@ -38,11 +45,13 @@
                 </div>
             </details>
         </div>
-
         <div>
-            <div hx-get="/tenant/puestos-conceptos/lista?puesto_id={{.PuestoID}}" hx-trigger="load">
-                <p aria-busy="true">Cargando estructura...</p>
-            </div>
+            <!--Espacio en blanco para que el formulario no se estire-->
+        </div>
+    </div>
+    <div class="grid" id="contenedor-tabla">
+        <div hx-get="/tenant/puestos-conceptos/lista?puesto_id={{.PuestoID}}" hx-trigger="load">
+            <p aria-busy="true">Cargando estructura...</p>
         </div>
     </div>
 </article>
@@ -64,10 +73,23 @@
                 <small>{{.ConceptoTipo}} | SIAF: {{if .Clasificador}}{{.Clasificador}}{{else}}N/A{{end}}</small>
             </td>
             <td>
-                {{if .Monto}}
-                <strong>S/ {{.Monto}}</strong>
+                {{if .MontoIngresado}}
+                    <div style="cursor: pointer;" 
+                        hx-get="/tenant/puestos-conceptos/editar-monto-ui?id={{.ID}}&puesto_id={{.PuestoID}}"
+                        hx-target="this">
+                        <strong>S/ {{.Monto}}</strong> ✏️
+                    </div>
                 {{else}}
-                <em>Cálculo Automático</em>
+                    {{if .RequiereMontoManual}}
+                        <mark
+                            style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; cursor: pointer;"
+                            hx-get="/tenant/puestos-conceptos/editar-monto-ui?id={{.ID}}&puesto_id={{.PuestoID}}" 
+                            hx-target="this">
+                            ⚠️ Ingresar Monto
+                        </mark>
+                    {{else}}
+                        <span style="color: #666; font-style: italic;">⚙️ Cálculo Automático</span>
+                    {{end}}
                 {{end}}
             </td>
             <td>

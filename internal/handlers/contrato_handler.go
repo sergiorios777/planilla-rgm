@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
+	"planilla-rgm/internal/services"
 	"strconv"
 	"strings"
 )
@@ -86,6 +88,19 @@ func (h *ContratoHandler) Crear(w http.ResponseWriter, r *http.Request) {
 
 	// Si el contrato se crea con éxito, enviamos una orden OOB para "limpiar" cualquier alerta anterior
 	w.Write([]byte(`<div id="alerta-contrato" hx-swap-oob="true"></div>`))
+
+	// Instanciamos el contrato service para llamar a la funcion AsignarPensionesAutomaticas
+	servicioContrato := services.ContratoService{
+		RepoPuesto:     h.PuestoRepo,
+		Repo:           h.Repo,
+		RepoTrabajador: h.TrabajadorRepo,
+	}
+
+	// Disparamos la inyección automática de AFP/ONP según el puesto
+	err = servicioContrato.AsignarPensionesAutomaticas(pID, tID, tenantID)
+	if err != nil {
+		log.Println("Error al asignar pensiones:", err)
+	}
 
 	// Finalmente, devolvemos la tabla actualizada como siempre
 	h.Listar(w, r)
