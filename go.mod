@@ -8,3 +8,5 @@ require (
 	github.com/lib/pq v1.12.3
 	golang.org/x/crypto v0.49.0
 )
+
+require github.com/jung-kurt/gofpdf v1.16.2

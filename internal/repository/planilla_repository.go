@@ -554,3 +554,112 @@ func (r *PlanillaRepository) ObtenerIngresosPreviosMasivo(contratoIDs []int, ani
 	}
 	return mapa, nil
 }
+
+// ObtenerDatosParaReporte extrae absolutamente todo el detalle de una planilla
+// agrupando los conceptos (Ingresos, Retenciones, Aportes) por trabajador.
+func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID int) (*models.DatosReportePlanilla, error) {
+	var reporte models.DatosReportePlanilla
+
+	// 1. Obtener Cabecera (Datos de la Muni y de la Planilla)
+	queryCabecera := `
+		SELECT t.nombre, t.ruc, p.anio, p.mes, p.descripcion
+		FROM planillas p
+		INNER JOIN tenants t ON p.tenant_id = t.id
+		WHERE p.id = $1 AND p.tenant_id = $2
+	`
+	err := r.db.QueryRow(queryCabecera, planillaID, tenantID).Scan(
+		&reporte.TenantNombre, &reporte.TenantRUC,
+		&reporte.PlanillaAnio, &reporte.PlanillaMes, &reporte.PlanillaDesc,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Obtener los Trabajadores (Detalles)
+	queryDetalles := `
+		SELECT 
+			pd.id, 
+			tr.numero_documento, 
+			tr.nombres || ' ' || tr.apellido_paterno || ' ' || tr.apellido_materno AS trabajador_nombre,
+			pu.nombre AS cargo, rl.descripcion AS regimen,
+			pd.total_ingresos, pd.total_retenciones, pd.total_aportes, pd.neto_pagar
+		FROM planilla_detalles pd
+		INNER JOIN contratos c ON pd.contrato_id = c.id
+		INNER JOIN trabajadores tr ON c.trabajador_id = tr.id
+		INNER JOIN puestos pu ON c.puesto_id = pu.id
+		INNER JOIN regimenes_laborales rl ON pu.regimen_id = rl.id
+		WHERE pd.planilla_id = $1
+		ORDER BY tr.apellido_paterno ASC
+	`
+	rowsDet, err := r.db.Query(queryDetalles, planillaID)
+	if err != nil {
+		return nil, err
+	}
+	defer rowsDet.Close()
+
+	// Usamos un mapa para ubicar rápidamente la boleta cuando leamos los conceptos
+	mapaBoletas := make(map[int]*models.BoletaReporte)
+
+	for rowsDet.Next() {
+		b := &models.BoletaReporte{}
+		rowsDet.Scan(
+			&b.DetalleID, &b.TrabajadorDoc, &b.TrabajadorNombre, &b.Cargo, &b.Regimen,
+			&b.TotalIngresos, &b.TotalRetenciones, &b.TotalAportes, &b.NetoPagar,
+		)
+
+		// Sumamos a los totales generales de la Municipalidad
+		reporte.TotalIngresos += b.TotalIngresos
+		reporte.TotalRetenciones += b.TotalRetenciones
+		reporte.TotalAportes += b.TotalAportes
+		reporte.TotalNeto += b.NetoPagar
+
+		mapaBoletas[b.DetalleID] = b
+		reporte.Boletas = append(reporte.Boletas, b) // Mantenemos el orden alfabético
+	}
+
+	// 3. Obtener TODOS los conceptos de esa planilla y apilarlos donde correspondan
+	queryConceptos := `
+		SELECT 
+			pc.planilla_detalle_id, ct.nombre_personalizado, cm.tipo, pc.monto
+		FROM planilla_conceptos pc
+		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+		WHERE pc.planilla_detalle_id IN (SELECT id FROM planilla_detalles WHERE planilla_id = $1)
+		ORDER BY pc.monto DESC -- Opcional: para que los montos más altos salgan primero
+	`
+	rowsConc, err := r.db.Query(queryConceptos, planillaID)
+	if err != nil {
+		return nil, err
+	}
+	defer rowsConc.Close()
+
+	for rowsConc.Next() {
+		var detalleID int
+		var nombre, tipo string
+		var monto float64
+		rowsConc.Scan(&detalleID, &nombre, &tipo, &monto)
+
+		// Si el monto es 0, no lo imprimimos para ahorrar espacio en el PDF
+		if monto <= 0 {
+			continue
+		}
+
+		concepto := models.ConceptoReporte{Nombre: nombre, Monto: monto}
+
+		// Apilamos en la columna correspondiente según tu idea de diseño
+		if boleta, existe := mapaBoletas[detalleID]; existe {
+			// 💡 SOLUCIÓN: Normalizamos a mayúsculas para evitar errores por "Ingreso" vs "INGRESO"
+			tipoNormalizado := strings.ToUpper(strings.TrimSpace(tipo))
+			switch tipoNormalizado {
+			case "INGRESO":
+				boleta.Ingresos = append(boleta.Ingresos, concepto)
+			case "RETENCION":
+				boleta.Retenciones = append(boleta.Retenciones, concepto)
+			case "APORTE":
+				boleta.Aportes = append(boleta.Aportes, concepto)
+			}
+		}
+	}
+
+	return &reporte, nil
+}

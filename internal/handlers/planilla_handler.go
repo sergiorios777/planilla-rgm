@@ -111,3 +111,56 @@ func (h *PlanillaHandler) VistaDetalle(w http.ResponseWriter, r *http.Request) {
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/planilla_detalle_ui.html")
 	tmpl.Execute(w, datos)
 }
+
+// DescargarReportePDF responde a un click del usuario generando y enviando el PDF al vuelo
+func (h *PlanillaHandler) DescargarReportePDF(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	// 1. Obtener la data (La función que hicimos en la Meta 1)
+	datos, err := h.Repo.ObtenerDatosParaReporte(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al extraer datos: "+err.Error(), 500)
+		return
+	}
+
+	// 2. Instanciar el servicio y generar el PDF
+	pdfService := services.NewPdfService()
+	pdfBytes, err := pdfService.GenerarReportePlanilla(datos)
+	if err != nil {
+		http.Error(w, "Error al generar el PDF: "+err.Error(), 500)
+		return
+	}
+
+	// 3. Modificar los Headers para que el navegador sepa que es un PDF
+	// Usamos "inline" para que intente abrirlo en una pestaña nueva, o "attachment" para forzar descarga
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", `inline; filename="Reporte_Planilla.pdf"`)
+
+	// 4. Enviar los bytes crudos
+	w.Write(pdfBytes)
+}
+
+// DescargarBoletasPDF genera el PDF masivo de boletas
+func (h *PlanillaHandler) DescargarBoletasPDF(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	// Extraemos la misma data rica que usamos para el boletón
+	datos, err := h.Repo.ObtenerDatosParaReporte(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al extraer datos: "+err.Error(), 500)
+		return
+	}
+
+	pdfService := services.NewPdfService()
+	pdfBytes, err := pdfService.GenerarBoletasPDF(datos) // 💡 Llamamos a la nueva función
+	if err != nil {
+		http.Error(w, "Error al generar las boletas: "+err.Error(), 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", `inline; filename="Boletas_Pago.pdf"`)
+	w.Write(pdfBytes)
+}

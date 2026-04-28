@@ -94,6 +94,14 @@
                     hx-get="/tenant/planillas/detalle/ui?id={{.ID}}" hx-target="#contenido-tenant">
                     👁️ Ver
                 </button>
+                <a href="/tenant/planillas/descargar-reporte?id={{.ID}}" target="_blank" role="button"
+                    class="outline primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">
+                    📄 Imprimir Planilla
+                </a>
+                <a href="/tenant/planillas/descargar-boletas?id={{.ID}}" target="_blank" role="button"
+                    class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">
+                    📄 Imprimir Boletas
+                </a>
             </td>
         </tr>
         {{else}}
