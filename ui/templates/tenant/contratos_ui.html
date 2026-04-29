@@ -7,7 +7,8 @@
             {{template "formulario_crear" .}}
         </div>
         <div>
-            <div id="lista-contratos" hx-get="/tenant/contratos/lista" hx-trigger="load">
+            <div id="lista-contratos" hx-get="/tenant/contratos/lista"
+                hx-trigger="load, recargarTablaContratos from:body">
                 <p aria-busy="true">Cargando contratos...</p>
             </div>
         </div>
@@ -60,6 +61,49 @@
 </details>
 {{end}}
 
+{{define "formulario_editar"}}
+<details open>
+    <summary role="button" class="secondary outline">✏️ Editando Contrato</summary>
+    <div style="padding-top: 1rem;">
+        <div id="alerta-contrato"></div>
+        <form hx-post="/tenant/contratos/actualizar" hx-target="#contenedor-formulario" hx-swap="innerHTML">
+            <input type="hidden" name="id" value="{{.ID}}">
+            <input type="hidden" name="puesto_id" value="{{.PuestoID}}">
+
+            <label>Trabajador (Solo Lectura)
+                <input type="text" value="{{.TrabajadorNombre}}" disabled>
+            </label>
+
+            <label>Plaza Asignada (Solo Lectura)
+                <input type="text" value="{{.PuestoNombre}}" disabled>
+                <small>Para cambiar de plaza, finalice este contrato y cree uno nuevo.</small>
+            </label>
+
+            <div class="grid">
+                <label>Fecha de Inicio
+                    <input type="date" name="fecha_inicio" value="{{.FechaInicio}}" required>
+                </label>
+                <label>Fecha de Fin
+                    <input type="date" name="fecha_fin" value="{{if .FechaFin}}{{.FechaFin}}{{end}}">
+                </label>
+            </div>
+
+            <label>
+                <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Contrato Activo
+            </label>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" class="primary">Guardar Cambios</button>
+                <button type="button" class="secondary outline" hx-get="/tenant/contratos/formulario-crear"
+                    hx-target="#contenedor-formulario">
+                    Cancelar
+                </button>
+            </div>
+        </form>
+    </div>
+</details>
+{{end}}
+
 {{define "tabla_contratos"}}
 <table class="striped">
     <thead>
@@ -79,13 +123,20 @@
             <td><small>Desde: {{.FechaInicio}}<br>Hasta: {{if
                     .FechaFin}}{{.FechaFin}}{{else}}<em>Indeterminado</em>{{end}}</small></td>
             <td>
-                {{if .Activo}}
-                <mark
-                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Vigente</mark>
-                {{else}}
-                <mark
-                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Finalizado</mark>
-                {{end}}
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    {{if .Activo}}
+                    <mark
+                        style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Vigente</mark>
+                    {{else}}
+                    <mark
+                        style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Finalizado</mark>
+                    {{end}}
+
+                    <button class="outline secondary" style="padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
+                        hx-get="/tenant/contratos/editar-ui?id={{.ID}}" hx-target="#contenedor-formulario">
+                        ✏️
+                    </button>
+                </div>
             </td>
         </tr>
         {{else}}

@@ -173,6 +173,9 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/ui/contratos", middleware.RequireAuth(contratoHandler.VistaUI))
 	mux.HandleFunc("/tenant/contratos/lista", middleware.RequireAuth(contratoHandler.Listar))
 	mux.HandleFunc("/tenant/contratos/crear", middleware.RequireAuth(contratoHandler.Crear))
+	mux.HandleFunc("/tenant/contratos/formulario-crear", middleware.RequireAuth(contratoHandler.FormularioCrearUI))
+	mux.HandleFunc("/tenant/contratos/editar-ui", middleware.RequireAuth(contratoHandler.EditarUI))
+	mux.HandleFunc("/tenant/contratos/actualizar", middleware.RequireAuth(contratoHandler.Actualizar))
 
 	// Rutas protegidas (Bajo la sección de Inquilinos/Presupuesto)
 	conceptoTenantRepo := repository.NewConceptoTenantRepository(db)

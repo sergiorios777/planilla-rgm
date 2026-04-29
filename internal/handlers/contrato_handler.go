@@ -105,3 +105,53 @@ func (h *ContratoHandler) Crear(w http.ResponseWriter, r *http.Request) {
 	// Finalmente, devolvemos la tabla actualizada como siempre
 	h.Listar(w, r)
 }
+
+// FormularioCrearUI devuelve el form limpio
+func (h *ContratoHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	trabajadores, _ := h.TrabajadorRepo.ObtenerTodos(tenantID)
+	puestos, _ := h.PuestoRepo.ObtenerVacantes(tenantID)
+	datos := map[string]interface{}{"Trabajadores": trabajadores, "Puestos": puestos}
+	
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/contratos_ui.html")
+	tmpl.ExecuteTemplate(w, "formulario_crear", datos)
+}
+
+// EditarUI carga el formulario de edición
+func (h *ContratoHandler) EditarUI(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+	
+	contrato, _ := h.Repo.ObtenerPorID(id, tenantID)
+
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/contratos_ui.html")
+	tmpl.ExecuteTemplate(w, "formulario_editar", contrato)
+}
+
+// Actualizar guarda cambios, recarga tabla y limpia form
+func (h *ContratoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	id, _ := strconv.Atoi(r.FormValue("id"))
+	puestoID, _ := strconv.Atoi(r.FormValue("puesto_id"))
+	
+	fFinStr := r.FormValue("fecha_fin")
+	var fFin *string
+	if strings.TrimSpace(fFinStr) != "" { fFin = &fFinStr }
+
+	cActualizado := models.Contrato{
+		ID:          id,
+		TenantID:    obtenerTenantID(r),
+		PuestoID:    puestoID, // Lo enviamos oculto para poder liberar la plaza si se inactiva
+		FechaInicio: r.FormValue("fecha_inicio"),
+		FechaFin:    fFin,
+		Activo:      r.FormValue("activo") == "on",
+	}
+
+	h.Repo.Actualizar(&cActualizado)
+
+	// Pedimos recargar la tabla
+	w.Header().Set("HX-Trigger", "recargarTablaContratos")
+	
+	// Volvemos al form de creación
+	h.FormularioCrearUI(w, r)
+}

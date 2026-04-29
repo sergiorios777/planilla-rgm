@@ -115,3 +115,59 @@ func (r *ConceptoRepository) ProcesarImportacion(conceptos []models.ConceptoMaes
 	// Confirmamos todo
 	return tx.Commit()
 }
+
+func (r *ContratoRepository) ObtenerPorID(id int, tenantID int) (models.Contrato, error) {
+	var c models.Contrato
+	var fFin sql.NullString
+	query := `
+		SELECT c.id, c.trabajador_id, c.puesto_id, 
+		       TO_CHAR(c.fecha_inicio, 'YYYY-MM-DD'), TO_CHAR(c.fecha_fin, 'YYYY-MM-DD'), c.activo,
+		       t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
+		       p.nombre AS puesto_nombre
+		FROM contratos c
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		INNER JOIN puestos p ON c.puesto_id = p.id
+		WHERE c.id = $1 AND c.tenant_id = $2
+	`
+	err := r.db.QueryRow(query, id, tenantID).Scan(
+		&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fFin, &c.Activo,
+		&c.TrabajadorNombre, &c.PuestoNombre,
+	)
+	if fFin.Valid {
+		c.FechaFin = &fFin.String
+	}
+	return c, err
+}
+
+func (r *ContratoRepository) Actualizar(c *models.Contrato) error {
+	// Solo actualizamos fechas y estado. Si el contrato pasa a inactivo, la plaza se libera.
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	query := `UPDATE contratos SET fecha_inicio = $1, fecha_fin = NULLIF($2, '')::DATE, activo = $3 WHERE id = $4 AND tenant_id = $5`
+	_, err = tx.Exec(query, c.FechaInicio, c.FechaFin, c.Activo, c.ID, c.TenantID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Si se inactiva el contrato, liberamos la plaza a VACANTE
+	if !c.Activo {
+		_, err = tx.Exec(`UPDATE puestos SET estado = 'VACANTE' WHERE id = $1`, c.PuestoID)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	} else {
+		// Si se reactiva (por si acaso), lo marcamos OCUPADO
+		_, err = tx.Exec(`UPDATE puestos SET estado = 'OCUPADO' WHERE id = $1`, c.PuestoID)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
