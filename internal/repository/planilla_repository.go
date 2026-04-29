@@ -663,3 +663,22 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 
 	return &reporte, nil
 }
+
+// CambiarEstado actualiza el estado de la planilla (ej: de BORRADOR a CERRADA)
+func (r *PlanillaRepository) CambiarEstado(planillaID int, tenantID int, nuevoEstado string) error {
+	query := `
+		UPDATE planillas 
+		SET estado = $1, updated_at = CURRENT_TIMESTAMP 
+		WHERE id = $2 AND tenant_id = $3
+	`
+	_, err := r.db.Exec(query, nuevoEstado, planillaID, tenantID)
+	return err
+}
+
+// ObtenerEstado (Opcional, pero útil) para verificar antes de hacer operaciones críticas
+func (r *PlanillaRepository) ObtenerEstado(planillaID int, tenantID int) (string, error) {
+	var estado string
+	query := `SELECT estado FROM planillas WHERE id = $1 AND tenant_id = $2`
+	err := r.db.QueryRow(query, planillaID, tenantID).Scan(&estado)
+	return estado, err
+}

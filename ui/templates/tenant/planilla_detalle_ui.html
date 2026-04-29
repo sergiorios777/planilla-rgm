@@ -1,7 +1,28 @@
 <article>
-    <header>
+    <header style="display: flex; gap: 10px; align-items: center;">
         <h3 style="margin-bottom: 0;">🧾 Detalle de la Planilla Procesada</h3>
         <p><small>Boletas generadas por el Motor de Cálculo para este periodo.</small></p>
+
+        {{if eq .Planilla.Estado "BORRADOR"}}
+            <button class="primary" hx-post="/tenant/planillas/procesar?id={{.Planilla.ID}}" hx-target="#contenido-tenant">
+                ⚙️ Procesar / Recalcular
+            </button>
+
+            <button class="contrast" hx-post="/tenant/planillas/cerrar?id={{.Planilla.ID}}" hx-target="#contenido-tenant"
+                hx-confirm="⚠️ ¿Estás seguro de cerrar esta planilla? Una vez cerrada, NO podrás recalcular ni modificar montos.">
+                🔒 Cerrar Planilla
+            </button>
+        {{else}}
+            <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 10px; border-radius: 5px;">
+                🔒 <strong>PLANILLA CERRADA</strong> (Solo Lectura)
+            </mark>
+        {{end}}
+
+        <span style="flex-grow: 1;"></span>
+        <a href="/tenant/planillas/descargar-reporte?id={{.Planilla.ID}}" target="_blank" role="button"
+            class="secondary outline">📄 Boletón PDF</a>
+        <a href="/tenant/planillas/descargar-boletas?id={{.Planilla.ID}}" target="_blank" role="button"
+            class="secondary outline">🖨️ Boletas PDF</a>
     </header>
 
     <button class="secondary outline" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant"

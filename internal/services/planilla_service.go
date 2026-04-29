@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"log"
 	"planilla-rgm/internal/calculadoras"
 	"planilla-rgm/internal/models"
@@ -19,6 +20,12 @@ func NewPlanillaService(repo *repository.PlanillaRepository) *PlanillaService {
 }
 
 func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
+	// 0. Validar estado antes de comenzar
+	estado, err := s.Repo.ObtenerEstado(planillaID, tenantID)
+	if err == nil && estado == "CERRADA" {
+		return errors.New("operación denegada: la planilla ya está CERRADA y no puede recalcularse")
+	}
+
 	// 1. EXTRAER CONTEXTO GLOBAL (FASE B)
 
 	// log.Println("------------- Iniciando Procesar Planilla ------------- ")

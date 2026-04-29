@@ -164,3 +164,21 @@ func (h *PlanillaHandler) DescargarBoletasPDF(w http.ResponseWriter, r *http.Req
 	w.Header().Set("Content-Disposition", `inline; filename="Boletas_Pago.pdf"`)
 	w.Write(pdfBytes)
 }
+
+// CerrarPlanilla sella la planilla para evitar futuras modificaciones
+func (h *PlanillaHandler) CerrarPlanilla(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	err := h.Repo.CambiarEstado(planillaID, tenantID, "CERRADA")
+	if err != nil {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`<div id="alerta-planilla" hx-swap-oob="true"><article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem;">❌ Error al cerrar: ` + err.Error() + `</article></div>`))
+		return
+	}
+
+	// Si todo salió bien, empujamos la URL y recargamos la vista de detalle
+	w.Header().Set("HX-Push-Url", "/tenant/planillas/detalle/ui?id="+strconv.Itoa(planillaID))
+	r.URL.RawQuery = "id=" + strconv.Itoa(planillaID)
+	h.VistaDetalle(w, r)
+}
