@@ -126,3 +126,43 @@ func (r *ConceptoTenantRepository) ObtenerClasificadores() ([]models.Clasificado
 	}
 	return lista, nil
 }
+
+// ObtenerPorID trae un concepto específico para rellenar el formulario de edición
+func (r *ConceptoTenantRepository) ObtenerPorID(id int, tenantID int) (models.ConceptoTenant, error) {
+	var c models.ConceptoTenant
+	query := `
+		SELECT ct.id, ct.concepto_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
+		       cm.codigo, cm.tipo, 
+			   mef.codigo AS clasificador_codigo
+		FROM conceptos_tenant ct
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+		LEFT JOIN clasificadores_mef mef ON ct.clasificador_id = mef.id
+		WHERE ct.id = $1 AND ct.tenant_id = $2
+	`
+	err := r.db.QueryRow(query, id, tenantID).Scan(
+		&c.ID, &c.ConceptoID, &c.NombrePersonalizado, &c.FrecuenciaMeses, &c.ClasificadorID, &c.Activo,
+		&c.ConceptoCodigo, &c.ConceptoTipo, &c.ClasificadorCodigo)
+	return c, err
+}
+
+// ActualizarPersonalizado guarda el nuevo nombre personalizado y el estado
+func (r *ConceptoTenantRepository) ActualizarPersonalizado(id int, tenantID int, nombre string, activo bool) error {
+	query := `
+		UPDATE conceptos_tenant 
+		SET nombre_personalizado = $1, activo = $2 
+		WHERE id = $3 AND tenant_id = $4
+	`
+	_, err := r.db.Exec(query, nombre, activo, id, tenantID)
+	return err
+}
+
+func (r *ConceptoTenantRepository) ActualizarCompleto(id int, tenantID int, conceptoID int, clasificadorID *int, nombre string, frecuencia string, activo bool) error {
+	query := `
+		UPDATE conceptos_tenant 
+		SET concepto_id = $1, clasificador_id = $2, nombre_personalizado = $3, 
+		    frecuencia_meses = $4, activo = $5, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $6 AND tenant_id = $7
+	`
+	_, err := r.db.Exec(query, conceptoID, clasificadorID, nombre, frecuencia, activo, id, tenantID)
+	return err
+}

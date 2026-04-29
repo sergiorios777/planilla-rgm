@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"planilla-rgm/internal/models"
+	"strings"
 )
 
 type AsistenciaRepository struct {
@@ -71,4 +72,19 @@ func (r *AsistenciaRepository) ListarHistorial(tenantID int) ([]models.Ocurrenci
 		lista = append(lista, o)
 	}
 	return lista, nil
+}
+
+// ObtenerContratoPorDNI busca el contrato activo usando el DNI del trabajador
+func (r *AsistenciaRepository) ObtenerContratoPorDNI(tenantID int, dni string) (int, error) {
+	var contratoID int
+	query := `
+		SELECT c.id 
+		FROM contratos c
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		WHERE t.numero_documento = $1 AND c.tenant_id = $2 AND c.activo = true
+		LIMIT 1
+	`
+	// Usamos strings.TrimSpace por si el Excel trae espacios en blanco ocultos
+	err := r.db.QueryRow(query, strings.TrimSpace(dni), tenantID).Scan(&contratoID)
+	return contratoID, err
 }

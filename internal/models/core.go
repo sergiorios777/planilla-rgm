@@ -76,6 +76,7 @@ type ConceptoTenant struct {
 
 	// Campos Auxiliares (JOINs desde la tabla conceptos_maestros)
 	ConceptoCodigo     string `json:"concepto_codigo,omitempty"`
+	ConceptoNombre     string `json:"concepto_nombre,omitempty"`
 	ConceptoTipo       string `json:"concepto_tipo,omitempty"`
 	ClasificadorCodigo string `json:"clasificador_codigo,omitempty"`
 }

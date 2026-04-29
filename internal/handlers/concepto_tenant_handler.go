@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
@@ -15,7 +16,7 @@ type ConceptoTenantHandler struct {
 
 func (h *ConceptoTenantHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 	maestros, _ := h.Repo.ObtenerMaestros()
-	clasificadores, _ := h.Repo.ObtenerClasificadores() // NUEVO
+	clasificadores, _ := h.Repo.ObtenerClasificadores()
 
 	datos := map[string]interface{}{
 		"Maestros":       maestros,
@@ -79,4 +80,144 @@ func (h *ConceptoTenantHandler) Crear(w http.ResponseWriter, r *http.Request) {
 	// Limpiamos alertas previas y actualizamos la tabla
 	w.Write([]byte(`<div id="alerta-concepto" hx-swap-oob="true"></div>`))
 	h.Listar(w, r)
+}
+
+// EditarUI carga el formulario de edición en el contenedor principal
+func (h *ConceptoTenantHandler) EditarUI(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	// 1. Traer el concepto a editar
+	c, err := h.Repo.ObtenerPorID(id, tenantID)
+	if err != nil {
+		log.Println("Error obteniendo concepto", err)
+		return
+	}
+
+	// Extraer el valor del puntero clasificador_id *int
+	var clasificadorID int
+	if c.ClasificadorID != nil {
+		clasificadorID = *c.ClasificadorID
+	}
+
+	// 2. Traer las listas para los <select> (USA TUS FUNCIONES EXISTENTES AQUÍ)
+	maestros, _ := h.Repo.ObtenerMaestros()
+	clasificadores, _ := h.Repo.ObtenerClasificadores()
+
+	// 3. Enviar todo a la plantilla
+	data := map[string]interface{}{
+		"Concepto":                   c,
+		"ClasificadorIDSeleccionado": clasificadorID,
+		"Maestros":                   maestros,
+		"Clasificadores":             clasificadores,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/tenant/conceptos_tenant_ui.html")
+	if err != nil {
+		log.Println("Error parseando plantilla:", err)
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(w, "formulario_editar", data)
+	if err != nil {
+		log.Println("Error ejecutando plantilla:", err)
+		return
+	}
+}
+
+// Actualizar guarda los cambios, refresca la tabla y resetea el formulario
+func (h *ConceptoTenantHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	id, _ := strconv.Atoi(r.FormValue("id"))
+	tenantID := obtenerTenantID(r)
+
+	conceptoID, _ := strconv.Atoi(r.FormValue("concepto_id"))
+
+	// Manejo del clasificador nulo/vacío
+	var clasificadorID *int
+	if classF := r.FormValue("clasificador_id"); classF != "" {
+		val, _ := strconv.Atoi(classF)
+		clasificadorID = &val
+	}
+
+	nombre := r.FormValue("nombre_personalizado")
+	frecuencia := r.FormValue("frecuencia_meses")
+	activo := r.FormValue("activo") == "on"
+
+	// 1. Actualizar en BD (Necesitarás adaptar tu función en el Repositorio)
+	h.Repo.ActualizarCompleto(id, tenantID, conceptoID, clasificadorID, nombre, frecuencia, activo)
+
+	// 2. Le decimos a HTMX: "Por favor, dispara el evento que recarga la tabla"
+	w.Header().Set("HX-Trigger", "recargarTablaConceptos")
+
+	// 3. Devolvemos el formulario de CREAR para dejar la pantalla limpia
+	h.FormularioCrearUI(w, r)
+}
+
+// FormularioCrearUI devuelve el fragmento HTML del formulario de creación limpio
+func (h *ConceptoTenantHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Request) {
+	// tenantID := obtenerTenantID(r)
+
+	// 1. Traer los datos para los selectores (Usa tus nombres de función reales)
+	maestros, _ := h.Repo.ObtenerMaestros()
+	clasificadores, _ := h.Repo.ObtenerClasificadores()
+
+	data := map[string]interface{}{
+		"Maestros":       maestros,
+		"Clasificadores": clasificadores,
+	}
+
+	// 2. Renderizar solo el bloque "formulario_crear" definido en tu HTML
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/conceptos_tenant_ui.html")
+	tmpl.ExecuteTemplate(w, "formulario_crear", data)
+}
+
+// 3. FilaUI devuelve el fragmento HTML de solo lectura
+func (h *ConceptoTenantHandler) FilaUI(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	c, _ := h.Repo.ObtenerPorID(id, tenantID)
+
+	badgeTipo := `<mark style="background-color: #bbdefb; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">APORTE</mark>`
+	switch c.ConceptoTipo {
+	case "INGRESO":
+		badgeTipo = `<mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">INGRESO</mark>`
+	case "RETENCION":
+		badgeTipo = `<mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">RETENCIÓN</mark>`
+	}
+
+	textoEstado := `<span style="color: #b71c1c; font-size: 0.8rem; font-weight: bold;">Inactivo</span>`
+	if c.Activo {
+		textoEstado = `<span style="color: #1b5e20; font-size: 0.8rem; font-weight: bold;">Activo</span>`
+	}
+
+	siaf := c.ClasificadorCodigo
+	if siaf == "" {
+		siaf = "N/A"
+	}
+
+	html := `
+	<tr id="concepto-` + strconv.Itoa(c.ID) + `">
+		<td>
+			<strong>` + c.NombrePersonalizado + `</strong><br>
+			` + badgeTipo + `
+		</td>
+		<td><small>Cód: ` + c.ConceptoCodigo + `</small></td>
+		<td>
+			<small>Meses: ` + c.FrecuenciaMeses + `</small><br>
+			<small>SIAF: <strong>` + siaf + `</strong></small>
+		</td>
+		<td style="text-align: right;">
+			<div style="display: flex; gap: 5px; justify-content: flex-end; align-items: center;">
+				` + textoEstado + `
+				<button class="outline secondary" style="padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
+				        hx-get="/tenant/conceptos-locales/editar-ui?id=` + strconv.Itoa(c.ID) + `" hx-target="closest tr" hx-swap="outerHTML">
+					✏️
+				</button>
+			</div>
+		</td>
+	</tr>
+	`
+	w.Write([]byte(html))
 }

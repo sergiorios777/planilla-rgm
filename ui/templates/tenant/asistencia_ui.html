@@ -4,54 +4,113 @@
     </header>
 
     <div class="grid">
-        <div>
-            <details open>
-                <summary role="button" class="secondary outline">➕ Registrar Ocurrencia</summary>
-                <div style="padding-top: 1rem;">
-                    <form hx-post="/tenant/asistencia/crear" hx-target="#lista-ocurrencias" hx-swap="innerHTML">
-
-                        <label>Trabajador Afectado
-                            <select name="contrato_id" required>
-                                <option value="">-- Seleccionar Trabajador --</option>
-                                {{range .Contratos}}
-                                <option value="{{.ID}}">{{.NumeroDocumento}} - {{.TrabajadorNombre}}</option>
-                                {{end}}
-                            </select>
-                        </label>
-
-                        <div class="grid">
-                            <label>Tipo
-                                <select name="tipo" required>
-                                    <option value="INASISTENCIA">Inasistencia (Falta)</option>
-                                    <option value="TARDANZA">Tardanza</option>
-                                </select>
-                            </label>
-
-                            <label>Fecha de Ocurrencia
-                                <input type="date" name="fecha_ocurrencia" required>
-                            </label>
-                        </div>
-
-                        <label>Cantidad <small>(Ingrese Días enteros para inasistencia, o Minutos para
-                                tardanzas)</small>
-                            <input type="number" step="0.01" name="cantidad" required
-                                placeholder="Ej: 1 (Falta) o 45 (Minutos)">
-                        </label>
-
-                        <button type="submit">Registrar y Guardar Pendiente</button>
-                    </form>
-                </div>
-            </details>
+        <div id="contenedor-formularios">
+            {{template "formularios_asistencia" .}}
         </div>
 
         <div>
-            <h5>Historial y Pendientes</h5>
             <div id="lista-ocurrencias" hx-get="/tenant/asistencia/lista" hx-trigger="load">
-                <p aria-busy="true">Cargando registros...</p>
+                <p aria-busy="true">Cargando historial...</p>
             </div>
         </div>
     </div>
 </article>
+
+{{define "formularios_asistencia"}}
+<div>
+    <details>
+        <summary role="button" class="secondary outline">➕ Registrar Ocurrencia Manual</summary>
+        <div style="padding-top: 1rem;">
+            <form hx-post="/tenant/asistencia/crear" hx-target="#lista-ocurrencias" hx-swap="innerHTML">
+
+                <label>Trabajador Afectado
+                    <select name="contrato_id" required>
+                        <option value="">-- Seleccionar Trabajador --</option>
+                        {{range .Contratos}}
+                        <option value="{{.ID}}">{{.NumeroDocumento}} - {{.TrabajadorNombre}}</option>
+                        {{end}}
+                    </select>
+                </label>
+
+                <div class="grid">
+                    <label>Tipo
+                        <select name="tipo" required>
+                            <option value="INASISTENCIA">Inasistencia (Falta)</option>
+                            <option value="TARDANZA">Tardanza</option>
+                        </select>
+                    </label>
+
+                    <label>Fecha de Ocurrencia
+                        <input type="date" name="fecha_ocurrencia" required>
+                    </label>
+                </div>
+
+                <label>Cantidad (Días / Minutos)
+                    <input type="number" step="0.5" name="cantidad" required>
+                </label>
+
+                <button type="submit" class="primary">Guardar</button>
+            </form>
+        </div>
+    </details>
+
+    <details>
+        <summary role="button" class="contrast outline">📥 Importación Masiva (Excel)</summary>
+        <div style="padding-top: 1rem;">
+            <p><small>Sube un archivo <b>.xlsx</b> con 4 columnas exactas. Asegúrate de que la columna de fecha tenga
+                    formato de texto (AAAA-MM-DD).</small></p>
+
+            <table class="striped" style="width: 100%; font-size: 0.75rem;">
+                <thead>
+                    <tr>
+                        <th>A: DNI</th>
+                        <th>B: Fecha</th>
+                        <th>C: Tipo</th>
+                        <th>D: Cant.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>76001522</td>
+                        <td>2026-04-14</td>
+                        <td>TARDANZA</td>
+                        <td>45</td>
+                    </tr>
+                    <tr>
+                        <td>76001522</td>
+                        <td>2026-04-15</td>
+                        <td>FALTA</td>
+                        <td>1</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <form hx-post="/tenant/asistencia/importar" hx-encoding="multipart/form-data"
+                hx-target="#resultado-importacion" hx-indicator="#cargando-excel">
+
+                <div class="grid" style="margin-top: 1rem;">
+                    <label>Archivo Excel Detallado (.xlsx)
+                        <input type="file" name="archivo_excel" accept=".xlsx" required>
+                    </label>
+
+                    <div style="display: flex; align-items: end; padding-bottom: var(--spacing);">
+                        <button type="submit" class="contrast" style="margin-bottom: 0;">Procesar Archivo</button>
+                    </div>
+                </div>
+
+                <span id="cargando-excel" class="htmx-indicator">⏳ Leyendo filas...</span>
+            </form>
+
+            <div id="resultado-importacion" style="margin-top: 1rem;"></div>
+
+            <button class="secondary outline" style="margin-top: 0.5rem; width: 100%;" hx-get="/tenant/asistencia/lista"
+                hx-target="#lista-ocurrencias">
+                🔄 Actualizar Tabla
+            </button>
+        </div>
+    </details>
+</div>
+{{end}}
 
 {{define "tabla_ocurrencias"}}
 <div class="overflow-auto">

@@ -179,6 +179,10 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/ui/conceptos-locales", middleware.RequireAuth(conceptoTenantHandler.VistaUI))
 	mux.HandleFunc("/tenant/conceptos-locales/lista", middleware.RequireAuth(conceptoTenantHandler.Listar))
 	mux.HandleFunc("/tenant/conceptos-locales/crear", middleware.RequireAuth(conceptoTenantHandler.Crear))
+	mux.HandleFunc("/tenant/conceptos-locales/editar-ui", middleware.RequireAuth(conceptoTenantHandler.EditarUI))
+	mux.HandleFunc("/tenant/conceptos-locales/actualizar", middleware.RequireAuth(conceptoTenantHandler.Actualizar))
+	mux.HandleFunc("/tenant/conceptos-locales/formulario-crear", middleware.RequireAuth(conceptoTenantHandler.FormularioCrearUI))
+	mux.HandleFunc("/tenant/conceptos-locales/fila", middleware.RequireAuth(conceptoTenantHandler.FilaUI))
 
 	// Rutas protegidas (Agrega esto junto a las de Puestos)
 	puestoConceptoRepo := repository.NewPuestoConceptoRepository(db)
@@ -206,6 +210,7 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/ui/asistencia", middleware.RequireAuth(asistenciaHandler.VistaUI))
 	mux.HandleFunc("/tenant/asistencia/lista", middleware.RequireAuth(asistenciaHandler.Listar))
 	mux.HandleFunc("/tenant/asistencia/crear", middleware.RequireAuth(asistenciaHandler.Crear))
+	mux.HandleFunc("/tenant/asistencia/importar", middleware.RequireAuth(asistenciaHandler.ImportarExcel))
 
 	// Ruta para descargar el PDF de planilla y boeltas
 	mux.HandleFunc("/tenant/planillas/descargar-reporte", middleware.RequireAuth(planillaHandler.DescargarReportePDF))

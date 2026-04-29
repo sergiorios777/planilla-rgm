@@ -9,7 +9,8 @@
             {{template "formulario_crear" .}}
         </div>
         <div>
-            <div id="lista-conceptos-tenant" hx-get="/tenant/conceptos-locales/lista" hx-trigger="load">
+            <div id="lista-conceptos-tenant" hx-get="/tenant/conceptos-locales/lista"
+                hx-trigger="load, recargarTablaConceptos from:body">
                 <p aria-busy="true">Cargando catálogo local...</p>
             </div>
         </div>
@@ -68,43 +69,124 @@
 </details>
 {{end}}
 
+{{define "formulario_editar"}}
+<details open>
+    <summary role="button" class="primary outline" style="margin-bottom: 0;">✏️ Editando Concepto:
+        {{.Concepto.NombrePersonalizado}}</summary>
+    <div style="padding-top: 1rem;">
+
+        <form hx-put="/tenant/conceptos-locales/actualizar" hx-target="#contenedor-formulario" hx-swap="innerHTML">
+            <input type="hidden" name="id" value="{{.Concepto.ID}}">
+
+            <label>Concepto Base (SUNAT / PLAME)
+                <select name="concepto_id" required>
+                    {{range .Maestros}}
+                    <option value="{{.ID}}" {{if eq .ID $.Concepto.ConceptoID}}selected{{end}}>
+                        [{{.Tipo}}] {{.CodigoLimpio}} - {{.Descripcion}}
+                    </option>
+                    {{end}}
+                </select>
+            </label>
+
+            <label>Nombre Local en Boleta
+                <input type="text" name="nombre_personalizado" value="{{.Concepto.NombrePersonalizado}}" required>
+            </label>
+
+            <div class="grid">
+
+                <label>Frecuencia (Meses ej: 1,2,3...12)
+                    <input type="text" name="frecuencia_meses" value="{{.Concepto.FrecuenciaMeses}}" required>
+                </label>
+
+                <label>Clasificador SIAF (Opcional)
+                    <select name="clasificador_id">
+                        <option value="">-- Sin Clasificador SIAF --</option>
+                        {{range .Clasificadores}}
+                        <option value="{{.ID}}" {{if eq .ID $.ClasificadorIDSeleccionado}}selected{{end}}>
+                            {{.CodigoLimpio}} - {{.Descripcion}}
+                        </option>
+                        {{end}}
+                    </select>
+                </label>
+            </div>
+
+            <label>
+                <input type="checkbox" name="activo" {{if .Concepto.Activo}}checked{{end}}> Concepto Activo
+            </label>
+            <label>
+                <input type="checkbox" name="es_extraordinario" {{if .Concepto.EsExtraordinario}}checked{{end}}>
+                Concepto Extraordinario
+            </label>
+
+            <div class="grid">
+                <button type="button" class="secondary outline" style="margin-bottom: 0;"
+                    hx-get="/tenant/conceptos-locales/formulario-crear" hx-target="#contenedor-formulario">
+                    Cancelar
+                </button>
+                <button type="submit" class="primary" style="margin-bottom: 0;">💾 Guardar Cambios</button>
+            </div>
+
+        </form>
+    </div>
+</details>
+{{end}}
+
 {{define "tabla_conceptos_tenant"}}
-<table class="striped">
-    <thead>
-        <tr>
-            <th>Concepto (Boleta)</th>
-            <th>Base SUNAT</th>
-            <th>Frecuencia y SIAF</th>
-        </tr>
-    </thead>
-    <tbody>
-        {{range .}}
-        <tr>
-            <td>
-                <strong>{{.NombrePersonalizado}}</strong><br>
-                {{if eq .ConceptoTipo "INGRESO"}}
-                <mark
-                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">INGRESO</mark>
-                {{else if eq .ConceptoTipo "RETENCION"}}
-                <mark
-                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">RETENCIÓN</mark>
-                {{else}}
-                <mark
-                    style="background-color: #bbdefb; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">APORTE</mark>
-                {{end}}
-            </td>
-            <td><small>Cód: {{.ConceptoCodigo}}</small></td>
-            <td>
-                <small>Meses: {{.FrecuenciaMeses}}</small><br>
-                <small>SIAF: <strong>{{if
-                        .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}}</strong></small>
-            </td>
-        </tr>
-        {{else}}
-        <tr>
-            <td colspan="3" style="text-align: center;">Aún no has configurado conceptos locales.</td>
-        </tr>
-        {{end}}
-    </tbody>
-</table>
+<div style="overflow-x: auto;">
+    <table class="striped">
+        <thead>
+            <tr>
+                <th>Concepto (Boleta)</th>
+                <th>Base SUNAT</th>
+                <th>Frecuencia y SIAF</th>
+                <th style="text-align: right;">Estado / Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .}}
+            <tr id="concepto-{{.ID}}">
+                <td>
+                    <strong>{{.NombrePersonalizado}}</strong><br>
+                    {{if eq .ConceptoTipo "INGRESO"}}
+                    <mark
+                        style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">INGRESO</mark>
+                    {{else if eq .ConceptoTipo "RETENCION"}}
+                    <mark
+                        style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">RETENCIÓN</mark>
+                    {{else}}
+                    <mark
+                        style="background-color: #bbdefb; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">APORTE</mark>
+                    {{end}}
+                </td>
+                <td><small>Cód: {{.ConceptoCodigo}}</small></td>
+                <td>
+                    <small>Meses: {{.FrecuenciaMeses}}</small><br>
+                    <small>SIAF: <strong>{{if
+                            .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}}</strong></small>
+                </td>
+                <td style="text-align: right;">
+                    <div style="display: flex; gap: 5px; justify-content: flex-end; align-items: center;">
+                        {{if .Activo}}
+                        <span style="color: #1b5e20; font-size: 0.8rem; font-weight: bold;">Activo</span>
+                        {{else}}
+                        <span style="color: #b71c1c; font-size: 0.8rem; font-weight: bold;">Inactivo</span>
+                        {{end}}
+
+                        <button class="outline secondary"
+                            style="padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
+                            hx-get="/tenant/conceptos-locales/editar-ui?id={{.ID}}" hx-target="#contenedor-formulario"
+                            hx-swap="innerHTML">
+                            ✏️
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="4" style="text-align: center;">Aún no has configurado conceptos locales.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
 {{end}}
