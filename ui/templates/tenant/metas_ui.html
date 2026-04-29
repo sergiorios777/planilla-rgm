@@ -7,7 +7,7 @@
             {{template "formulario_crear"}}
         </div>
         <div>
-            <div id="lista-metas" hx-get="/tenant/metas/lista" hx-trigger="load">
+            <div id="lista-metas" hx-get="/tenant/metas/lista" hx-trigger="load, recargarTablaMetas from:body">
                 <p aria-busy="true">Cargando metas...</p>
             </div>
         </div>
@@ -39,6 +39,42 @@
 </details>
 {{end}}
 
+{{define "formulario_editar"}}
+<details open>
+    <summary role="button" class="primary outline">✏️ Editando Meta Presupuestal</summary>
+    <div style="padding-top: 1rem;">
+        <form hx-put="/tenant/metas/actualizar" hx-target="#contenedor-formulario" hx-swap="innerHTML">
+            <input type="hidden" name="id" value="{{.ID}}">
+
+            <div class="grid">
+                <label>Año Fiscal (No editable)
+                    <input type="number" name="anio" value="{{.Anio}}" disabled>
+                </label>
+                <label>Código Secuencia
+                    <input type="text" name="codigo" value="{{.Codigo}}" required>
+                </label>
+            </div>
+
+            <label>Descripción de la Meta
+                <input type="text" name="descripcion" value="{{.Descripcion}}" required>
+            </label>
+
+            <label>
+                <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Meta Activa
+            </label>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" class="primary">Guardar Cambios</button>
+                <button type="button" class="secondary outline" hx-get="/tenant/metas/formulario-crear"
+                    hx-target="#contenedor-formulario">
+                    Cancelar
+                </button>
+            </div>
+        </form>
+    </div>
+</details>
+{{end}}
+
 {{define "tabla_metas"}}
 <table class="striped">
     <thead>
@@ -56,13 +92,20 @@
             <td><strong>{{.Codigo}}</strong></td>
             <td><small>{{.Descripcion}}</small></td>
             <td>
-                {{if .Activo}}
-                <mark
-                    style="background-color: #c8e6c9; color: #1b5e20; border-radius: 4px; padding: 2px 6px;">Activa</mark>
-                {{else}}
-                <mark
-                    style="background-color: #ffcdd2; color: #b71c1c; border-radius: 4px; padding: 2px 6px;">Inactiva</mark>
-                {{end}}
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    {{if .Activo}}
+                    <mark
+                        style="background-color: #c8e6c9; color: #1b5e20; border-radius: 4px; padding: 2px 6px;">Activa</mark>
+                    {{else}}
+                    <mark
+                        style="background-color: #ffcdd2; color: #b71c1c; border-radius: 4px; padding: 2px 6px;">Inactiva</mark>
+                    {{end}}
+
+                    <button class="outline secondary" style="padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
+                        hx-get="/tenant/metas/editar-ui?id={{.ID}}" hx-target="#contenedor-formulario">
+                        ✏️
+                    </button>
+                </div>
             </td>
         </tr>
         {{else}}
