@@ -102,10 +102,12 @@ func (h *PlanillaHandler) VistaDetalle(w http.ResponseWriter, r *http.Request) {
 	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
 
 	detalles, _ := h.Repo.ObtenerDetalles(planillaID, tenantID)
+	planillaEstado, _ := h.Repo.ObtenerEstado(planillaID, tenantID)
 
 	datos := map[string]interface{}{
-		"PlanillaID": planillaID,
-		"Detalles":   detalles,
+		"PlanillaID":     planillaID,
+		"Detalles":       detalles,
+		"PlanillaEstado": planillaEstado,
 	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/planilla_detalle_ui.html")
