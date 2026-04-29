@@ -97,7 +97,7 @@ func (h *PuestoHandler) Editar(w http.ResponseWriter, r *http.Request) {
 func (h *PuestoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	id, _ := strconv.Atoi(r.FormValue("id"))
-	
+
 	metaID, _ := strconv.Atoi(r.FormValue("meta_id"))
 	fuenteID, _ := strconv.Atoi(r.FormValue("fuente_rubro_id"))
 	regimenID, _ := strconv.Atoi(r.FormValue("regimen_id"))
@@ -117,5 +117,23 @@ func (h *PuestoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 	h.Repo.Actualizar(&puestoActualizado)
 
 	// Tras actualizar, mostramos el formulario de "Crear" nuevamente
-	h.VistaUI(w, r) 
+	h.VistaUI(w, r)
+}
+
+// FormularioCrearUI devuelve el formulario limpio
+func (h *PuestoHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+
+	metas, _ := h.MetaRepo.ObtenerTodos(tenantID)
+	fuentes, _ := h.FuenteRubroRepo.ObtenerPorAnio(2026)
+	regimenes, _ := h.Repo.ObtenerRegimenes()
+
+	datos := map[string]interface{}{
+		"Metas":     metas,
+		"Fuentes":   fuentes,
+		"Regimenes": regimenes,
+	}
+
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/puestos_ui.html")
+	tmpl.ExecuteTemplate(w, "formulario_crear", datos)
 }

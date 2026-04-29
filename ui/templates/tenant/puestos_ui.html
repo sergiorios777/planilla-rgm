@@ -80,27 +80,25 @@
                 <input type="text" name="nombre" value="{{.Puesto.Nombre}}" required>
             </label>
 
-            <div class="grid">
-                <label>Meta Presupuestal
-                    <select name="meta_id" required>
-                        {{$pMeta := .Puesto.MetaID}}
-                        {{range .Metas}}
-                        <option value="{{.ID}}" {{if eq .ID $pMeta}}selected{{end}}>{{.Codigo}} - {{.Descripcion}}
-                        </option>
-                        {{end}}
-                    </select>
-                </label>
+            <label>Meta Presupuestal
+                <select name="meta_id" required>
+                    {{$pMeta := .Puesto.MetaID}}
+                    {{range .Metas}}
+                    <option value="{{.ID}}" {{if eq .ID $pMeta}}selected{{end}}>{{.Codigo}} - {{.Descripcion}}
+                    </option>
+                    {{end}}
+                </select>
+            </label>
 
-                <label>Fuente y Rubro
-                    <select name="fuente_rubro_id" required>
-                        {{$pFuente := .Puesto.FuenteRubroID}}
-                        {{range .Fuentes}}
-                        <option value="{{.ID}}" {{if eq .ID $pFuente}}selected{{end}}>{{.FuenteFinanciamiento}} |
-                            {{.Rubro}}</option>
-                        {{end}}
-                    </select>
-                </label>
-            </div>
+            <label>Fuente y Rubro
+                <select name="fuente_rubro_id" required>
+                    {{$pFuente := .Puesto.FuenteRubroID}}
+                    {{range .Fuentes}}
+                    <option value="{{.ID}}" {{if eq .ID $pFuente}}selected{{end}}>{{.FuenteFinanciamiento}} |
+                        {{.Rubro}}</option>
+                    {{end}}
+                </select>
+            </label>
 
             <div class="grid">
                 <label>Régimen Laboral
@@ -125,8 +123,8 @@
 
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                 <button type="submit" class="primary">Guardar Cambios</button>
-                <button type="button" class="secondary outline" hx-get="/tenant/puestos/lista"
-                    hx-target="#lista-puestos">Cancelar</button>
+                <button type="button" class="secondary outline" hx-get="/tenant/puestos/formulario-crear"
+                    hx-target="#contenedor-formulario">Cancelar</button>
             </div>
         </form>
     </div>
