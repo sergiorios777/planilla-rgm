@@ -99,3 +99,39 @@ func (r *PuestoConceptoRepository) ActualizarMonto(id int, monto float64) error 
 	_, err := r.db.Exec(query, monto, id)
 	return err
 }
+
+// ObtenerParaCalculo extrae los conceptos activos de un puesto y los formatea
+// para ser inyectados directamente en el Motor de Cálculo (Simulador).
+func (r *PuestoConceptoRepository) ObtenerParaCalculo(puestoID int) ([]models.ConceptoPlanilla, error) {
+	query := `
+		SELECT ct.id, cm.id, cm.codigo, ct.nombre_personalizado, cm.tipo, pc.monto, ct.frecuencia_meses, ct.es_extraordinario
+		FROM puesto_conceptos pc
+		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+		WHERE pc.puesto_id = $1 AND pc.activo = true AND ct.activo = true
+	`
+	rows, err := r.db.Query(query, puestoID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.ConceptoPlanilla
+	for rows.Next() {
+		var cp models.ConceptoPlanilla
+		err := rows.Scan(
+			&cp.TenantID,
+			&cp.MaestroID,
+			&cp.MaestroCodigo,
+			&cp.Nombre,
+			&cp.Tipo,
+			&cp.Monto,
+			&cp.Frecuencia,
+			&cp.EsExtraordinario,
+		)
+		if err == nil {
+			lista = append(lista, cp)
+		}
+	}
+	return lista, nil
+}

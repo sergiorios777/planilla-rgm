@@ -163,6 +163,9 @@ type ConceptoPlanilla struct {
 	Frecuencia       string
 	ParentID         int
 	EsExtraordinario bool
+
+	// Agregado para el PAP
+	Nombre string // Nombre personalizado del concepto
 }
 
 // FuenteRubro representa el catálogo del MEF de fuentes de financiamiento
@@ -261,4 +264,40 @@ type PlanillaConcepto struct {
 
 	// Campo auxiliar
 	NombrePersonalizado string `json:"nombre_personalizado,omitempty"`
+}
+
+// PuestoPAP es un DTO exclusivo para extraer los datos descriptivos del reporte
+type PuestoPAP struct {
+	ID                     int
+	RegimenCodigo          string
+	MetaCodigo             string
+	MetaDescripcion        string
+	FuenteRubroCodigo      string
+	FuenteRubroDescripcion string
+	TotalIngresosAnual     float64
+	TotalAportesAnual      float64
+}
+
+// PapVersion representa la cabecera de la proyección anual
+type PapVersion struct {
+	ID              int
+	TenantID        int
+	Anio            int
+	Tipo            string
+	FechaGeneracion string
+	Estado          string
+}
+
+// PapDetalle representa una fila de la matriz de proyección (Meta x Fuente x Clasificador)
+type PapDetalle struct {
+	ID                       int
+	VersionID                int
+	MetaCodigo               string
+	MetaDescripcion          string
+	FuenteRubroCodigo        string
+	FuenteRubroDescripcion   string
+	ClasificadorCodigoLimpio string
+	ClasificadorDescripcion  string
+	Meses                    [12]float64
+	TotalAnual               float64
 }

@@ -238,3 +238,32 @@ func (r *PuestoRepository) ObtenerPorID(id int, tenantID int) (models.Puesto, er
 func (r *PuestoRepository) DB() *sql.DB {
 	return r.db
 }
+
+// ObtenerPuestosParaPAP extrae los puestos activos con su jerarquía presupuestal
+func (r *PuestoRepository) ObtenerPuestosParaPAP(tenantID int) ([]models.PuestoPAP, error) {
+	query := `
+		SELECT p.id, rl.codigo, 
+		       m.codigo, m.descripcion, 
+		       fr.fuente_financiamiento || ' | ' || fr.rubro, 'Fuente Financiamiento' 
+		FROM puestos p
+		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
+		INNER JOIN metas_presupuestales m ON p.meta_id = m.id
+		INNER JOIN fuentes_rubros fr ON p.fuente_rubro_id = fr.id
+		WHERE p.tenant_id = $1 AND p.activo = true
+	`
+	rows, err := r.db.Query(query, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.PuestoPAP
+	for rows.Next() {
+		var p models.PuestoPAP
+		err := rows.Scan(&p.ID, &p.RegimenCodigo, &p.MetaCodigo, &p.MetaDescripcion, &p.FuenteRubroCodigo, &p.FuenteRubroDescripcion)
+		if err == nil {
+			lista = append(lista, p)
+		}
+	}
+	return lista, nil
+}

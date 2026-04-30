@@ -364,3 +364,57 @@ func (s *PlanillaService) calcularDiasLaborados(fechaInicio time.Time, fechaFin 
 	}
 	return dias
 }
+
+// SimularCostoMensualPuesto crea un entorno ideal (sin faltas) para calcular cuánto le cuesta
+// a la Municipalidad (Genérica 2.1) un puesto específico en un mes determinado.
+func (s *PlanillaService) SimularCostoMensualPuesto(
+	puestoID int,
+	regimenCodigo string,
+	conceptosPlaza []models.ConceptoPlanilla,
+	anio int,
+	mes int,
+	parametros map[string]float64,
+	mapaCodigos map[string]int,
+	mapaAfectaciones map[int][]int,
+) (float64, float64, error) {
+
+	// 1. Crear fechas ideales (Mes completo)
+	primerDia := time.Date(anio, time.Month(mes), 1, 0, 0, 0, 0, time.UTC)
+	ultimoDia := primerDia.AddDate(0, 1, -1) // Truco de Go para ir al último día del mes
+
+	// 2. Crear un contrato ficticio perfecto
+	contratoIdeal := models.ContratoPlanilla{
+		ID:                 999999, // ID Ficticio para evitar cruces
+		PuestoID:           puestoID,
+		Regimen:            regimenCodigo,
+		FechaInicio:        primerDia,
+		FechaFin:           &ultimoDia,
+		RegimenPensionario: "ONP", // Indiferente para la Genérica 2.1 (es retención, no aporte)
+	}
+
+	// 3. Empaquetar el "Job" para nuestro motor de cálculo
+	jobIdeal := models.JobPlanilla{
+		Contrato:               contratoIdeal,
+		ConceptosPlaza:         conceptosPlaza,
+		Ocurrencias:            []models.OcurrenciaAsistencia{}, // 0 faltas, 0 tardanzas
+		MesActual:              mes,
+		Anio:                   anio,
+		ParametrosGlobales:     parametros,
+		MapaCodigos:            mapaCodigos,
+		MapaAfectacionesGlobal: mapaAfectaciones,
+		// Los acumulados de 5ta los dejamos en 0 porque para proyecciones presupuestales
+		// la renta de 5ta (que es retención) no afecta el costo total del empleador.
+		Retenciones5taPrevias: 0,
+		IngresosPrevios:       0,
+	}
+
+	// 4. Ejecutar el motor de cálculo exacto
+	boleta, err := s.calcularBoletaContrato(jobIdeal)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// 5. Retornar los dos componentes del costo municipal:
+	// Ingresos (Sueldo, Aguinaldos) y Aportes (EsSalud)
+	return boleta.TotalIngresos, boleta.TotalAportes, nil
+}

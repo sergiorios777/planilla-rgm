@@ -8,6 +8,7 @@ import (
 	"planilla-rgm/internal/handlers"
 	"planilla-rgm/internal/middleware"
 	"planilla-rgm/internal/repository"
+	"planilla-rgm/internal/services"
 )
 
 func ConfigurarRutas(db *sql.DB) *http.ServeMux {
@@ -222,6 +223,14 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/asistencia/formulario-crear", middleware.RequireAuth(asistenciaHandler.FormularioCrearUI))
 	mux.HandleFunc("/tenant/asistencia/editar-ui", middleware.RequireAuth(asistenciaHandler.EditarUI))
 	mux.HandleFunc("/tenant/asistencia/actualizar", middleware.RequireAuth(asistenciaHandler.Actualizar))
+
+	// Rutas de presupuesto anual de las planillas
+	planillaService := services.NewPlanillaService(planillaRepo)
+	presupuestoRepo := repository.NewPresupuestoRepository(db)
+	presupuestoService := services.NewPresupuestoService(presupuestoRepo, puestoRepo, puestoConceptoRepo, planillaService)
+	presupuestoHandler := handlers.NewPresupuestoHandler(presupuestoService, planillaRepo)
+	mux.HandleFunc("/tenant/presupuesto/index", middleware.RequireAuth(presupuestoHandler.IndexUI))
+	mux.HandleFunc("/tenant/presupuesto/generar", middleware.RequireAuth(presupuestoHandler.Generar))
 
 	// Ruta para descargar el PDF de planilla y boeltas
 	mux.HandleFunc("/tenant/planillas/descargar-reporte", middleware.RequireAuth(planillaHandler.DescargarReportePDF))
