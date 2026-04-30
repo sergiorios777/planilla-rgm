@@ -197,6 +197,7 @@ type Puesto struct {
 	SueldoPresupuestado float64 `json:"sueldo_presupuestado"`
 	Estado              string  `json:"estado"` // VACANTE u OCUPADO
 	Activo              bool    `json:"activo"`
+	EsDietario          bool    `json:"es_dietario"`
 
 	// Campos auxiliares para pintar tablas dinámicas sin hacer múltiples consultas
 	MetaCodigo       string `json:"meta_codigo,omitempty"`

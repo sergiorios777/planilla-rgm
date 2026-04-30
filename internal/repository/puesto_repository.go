@@ -90,19 +90,19 @@ func (r *PuestoRepository) ObtenerTodos(tenantID int) ([]models.Puesto, error) {
 
 func (r *PuestoRepository) Crear(p *models.Puesto) error {
 	query := `
-		INSERT INTO puestos (tenant_id, meta_id, fuente_rubro_id, regimen_id, nombre, sueldo_presupuestado, estado, activo)
-		VALUES ($1, $2, $3, $4, $5, $6, 'VACANTE', $7) RETURNING id
+		INSERT INTO puestos (tenant_id, meta_id, fuente_rubro_id, regimen_id, nombre, sueldo_presupuestado, estado, activo, es_dietario)
+		VALUES ($1, $2, $3, $4, $5, $6, 'VACANTE', $7, $8) RETURNING id
 	`
-	return r.db.QueryRow(query, p.TenantID, p.MetaID, p.FuenteRubroID, p.RegimenID, p.Nombre, p.SueldoPresupuestado, p.Activo).Scan(&p.ID)
+	return r.db.QueryRow(query, p.TenantID, p.MetaID, p.FuenteRubroID, p.RegimenID, p.Nombre, p.SueldoPresupuestado, p.Activo, p.EsDietario).Scan(&p.ID)
 }
 
 func (r *PuestoRepository) Actualizar(p *models.Puesto) error {
 	query := `
 		UPDATE puestos 
-		SET nombre = $1, meta_id = $2, fuente_rubro_id = $3, regimen_id = $4, sueldo_presupuestado = $5, activo = $6
-		WHERE id = $7 AND tenant_id = $8
+		SET nombre = $1, meta_id = $2, fuente_rubro_id = $3, regimen_id = $4, sueldo_presupuestado = $5, activo = $6, es_dietario = $7
+		WHERE id = $8 AND tenant_id = $9
 	`
-	_, err := r.db.Exec(query, p.Nombre, p.MetaID, p.FuenteRubroID, p.RegimenID, p.SueldoPresupuestado, p.Activo, p.ID, p.TenantID)
+	_, err := r.db.Exec(query, p.Nombre, p.MetaID, p.FuenteRubroID, p.RegimenID, p.SueldoPresupuestado, p.Activo, p.EsDietario, p.ID, p.TenantID)
 	return err
 }
 
@@ -222,14 +222,14 @@ func (r *PuestoRepository) ObtenerPorID(id int, tenantID int) (models.Puesto, er
 	var p models.Puesto
 	query := `
 		SELECT p.id, p.tenant_id, p.meta_id, p.fuente_rubro_id, p.regimen_id,
-		       p.nombre, p.sueldo_presupuestado, p.estado, p.activo, rl.codigo 
+		       p.nombre, p.sueldo_presupuestado, p.estado, p.activo, p.es_dietario, rl.codigo 
 		FROM puestos p 
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id 
 		WHERE p.id = $1 AND p.tenant_id = $2
 	`
 	err := r.db.QueryRow(query, id, tenantID).Scan(
 		&p.ID, &p.TenantID, &p.MetaID, &p.FuenteRubroID, &p.RegimenID,
-		&p.Nombre, &p.SueldoPresupuestado, &p.Estado, &p.Activo, &p.RegimenCodigo,
+		&p.Nombre, &p.SueldoPresupuestado, &p.Estado, &p.Activo, &p.EsDietario, &p.RegimenCodigo,
 	)
 	return p, err
 }

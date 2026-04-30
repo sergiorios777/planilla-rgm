@@ -63,6 +63,10 @@
                 <input type="checkbox" name="activo" checked> Plaza Activa
             </label>
 
+            <label>
+                <input type="checkbox" name="es_dietario"> Es Puesto de Dieta (Regidor/Consejero)
+            </label>
+
             <button type="submit">Generar Plaza</button>
         </form>
     </div>
@@ -119,6 +123,11 @@
             <label>
                 <input type="checkbox" name="activo" role="switch" {{if .Puesto.Activo}}checked{{end}}>
                 Plaza Activa para el ejercicio
+            </label>
+
+            <label>
+                <input type="checkbox" name="es_dietario" role="switch" {{if .Puesto.EsDietario}}checked{{end}}>
+                Es Puesto de Dieta (Regidor/Consejero)
             </label>
 
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">

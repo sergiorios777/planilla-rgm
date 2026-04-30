@@ -106,6 +106,7 @@ func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio 
 		WHERE c.tenant_id = $1 AND c.activo = true
 		  AND c.fecha_inicio <= (make_date($2, $3, 1) + interval '1 month' - interval '1 day')::date
 		  AND (c.fecha_fin IS NULL OR c.fecha_fin >= make_date($2, $3, 1)::date)
+		  AND p.es_dietario = false
 	`
 	rows, err := r.db.Query(query, tenantID, anio, mes)
 	if err != nil {

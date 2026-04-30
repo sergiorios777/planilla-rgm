@@ -135,3 +135,43 @@ func (h *AsistenciaHandler) ImportarExcel(w http.ResponseWriter, r *http.Request
 	`, procesados, errores)
 	w.Write([]byte(mensaje))
 }
+
+func (h *AsistenciaHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	contratos, _ := h.Repo.ObtenerContratosParaSelect(tenantID)
+
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/asistencia_ui.html")
+	tmpl.ExecuteTemplate(w, "formulario_crear", map[string]interface{}{
+		"Contratos": contratos,
+	})
+}
+
+func (h *AsistenciaHandler) EditarUI(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	ocurrencia, _ := h.Repo.ObtenerPorID(id, tenantID)
+
+	// Si ya está procesada, no permitimos editar (seguridad extra)
+	if ocurrencia.Procesado {
+		w.Write([]byte(`<p style="color:red;">⚠️ Esta ocurrencia ya fue procesada y no puede editarse.</p>`))
+		return
+	}
+
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/asistencia_ui.html")
+	tmpl.ExecuteTemplate(w, "formulario_editar", ocurrencia)
+}
+
+func (h *AsistenciaHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	id, _ := strconv.Atoi(r.FormValue("id"))
+	tipo := r.FormValue("tipo")
+	fecha := r.FormValue("fecha_ocurrencia")
+	cantidad, _ := strconv.ParseFloat(r.FormValue("cantidad"), 64)
+	tenantID := obtenerTenantID(r)
+
+	h.Repo.Actualizar(id, tipo, fecha, cantidad, tenantID)
+
+	w.Header().Set("HX-Trigger", "recargarTablaAsistencias")
+	h.FormularioCrearUI(w, r)
+}

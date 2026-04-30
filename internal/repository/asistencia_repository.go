@@ -88,3 +88,31 @@ func (r *AsistenciaRepository) ObtenerContratoPorDNI(tenantID int, dni string) (
 	err := r.db.QueryRow(query, strings.TrimSpace(dni), tenantID).Scan(&contratoID)
 	return contratoID, err
 }
+
+func (r *AsistenciaRepository) ObtenerPorID(id int, tenantID int) (models.OcurrenciaVista, error) {
+	var o models.OcurrenciaVista
+	query := `
+		SELECT o.id, o.contrato_id, t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres,
+		       o.tipo, TO_CHAR(o.fecha_ocurrencia, 'YYYY-MM-DD'), o.cantidad, o.procesado
+		FROM ocurrencias_asistencia o
+		INNER JOIN contratos c ON o.contrato_id = c.id
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		WHERE o.id = $1 AND c.tenant_id = $2
+	`
+	err := r.db.QueryRow(query, id, tenantID).Scan(
+		&o.ID, &o.ContratoID, &o.TrabajadorNombre, &o.Tipo, &o.FechaOcurrencia, &o.Cantidad, &o.Procesado,
+	)
+	return o, err
+}
+
+func (r *AsistenciaRepository) Actualizar(id int, tipo string, fecha string, cantidad float64, tenantID int) error {
+	// Solo permitimos editar si procesado = false
+	query := `
+		UPDATE ocurrencias_asistencia 
+		SET tipo = $1, fecha_ocurrencia = $2, cantidad = $3 
+		WHERE id = $4 AND procesado = false 
+		AND contrato_id IN (SELECT id FROM contratos WHERE tenant_id = $5)
+	`
+	_, err := r.db.Exec(query, tipo, fecha, cantidad, id, tenantID)
+	return err
+}

@@ -58,6 +58,7 @@ func (h *PuestoHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		Nombre:              r.FormValue("nombre"),
 		SueldoPresupuestado: sueldo,
 		Activo:              r.FormValue("activo") == "on",
+		EsDietario:          r.FormValue("es_dietario") == "on",
 	}
 
 	servicioPuesto := services.PuestoService{Repo: h.Repo}
@@ -112,6 +113,7 @@ func (h *PuestoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 		Nombre:              r.FormValue("nombre"),
 		SueldoPresupuestado: sueldo,
 		Activo:              r.FormValue("activo") == "on",
+		EsDietario:          r.FormValue("es_dietario") == "on",
 	}
 
 	h.Repo.Actualizar(&puestoActualizado)

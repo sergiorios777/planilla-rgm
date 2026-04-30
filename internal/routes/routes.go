@@ -219,6 +219,9 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/asistencia/lista", middleware.RequireAuth(asistenciaHandler.Listar))
 	mux.HandleFunc("/tenant/asistencia/crear", middleware.RequireAuth(asistenciaHandler.Crear))
 	mux.HandleFunc("/tenant/asistencia/importar", middleware.RequireAuth(asistenciaHandler.ImportarExcel))
+	mux.HandleFunc("/tenant/asistencia/formulario-crear", middleware.RequireAuth(asistenciaHandler.FormularioCrearUI))
+	mux.HandleFunc("/tenant/asistencia/editar-ui", middleware.RequireAuth(asistenciaHandler.EditarUI))
+	mux.HandleFunc("/tenant/asistencia/actualizar", middleware.RequireAuth(asistenciaHandler.Actualizar))
 
 	// Ruta para descargar el PDF de planilla y boeltas
 	mux.HandleFunc("/tenant/planillas/descargar-reporte", middleware.RequireAuth(planillaHandler.DescargarReportePDF))
