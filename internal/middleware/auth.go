@@ -87,3 +87,23 @@ func rechazarAcceso(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	}
 }
+
+// RequireRole verifica que el usuario autenticado tenga un rol específico antes de dejarlo pasar
+func RequireRole(rolRequerido string, next http.HandlerFunc) http.HandlerFunc {
+	// Primero usamos RequireAuth para garantizar que el usuario tiene un JWT válido
+	return RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+
+		// Extraemos el rol que RequireAuth guardó previamente en el contexto
+		rolActual := r.Context().Value(RolKey)
+
+		// Comparamos el rol actual con el rol que exige esta ruta
+		if rolActual == nil || rolActual.(string) != rolRequerido {
+			// Si no coinciden, bloqueamos el acceso
+			http.Error(w, "Acceso denegado: Privilegios insuficientes", http.StatusForbidden)
+			return
+		}
+
+		// Si el rol es correcto, permitimos que la petición continúe
+		next.ServeHTTP(w, r)
+	})
+}

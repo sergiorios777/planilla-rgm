@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
@@ -19,7 +20,11 @@ func (h *ParametroHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ParametroHandler) Listar(w http.ResponseWriter, r *http.Request) {
-	parametros, _ := h.Repo.ObtenerTodos()
+	parametros, err := h.Repo.ObtenerTodos()
+	if err != nil {
+		log.Println("Error crítico leyendo la base de datos:", err)
+	}
+	// log.Println("Parametros obtenidos:", parametros)
 	tmpl, _ := template.ParseFiles("ui/templates/admin/parametros_ui.html")
 	tmpl.ExecuteTemplate(w, "tabla_parametros", parametros)
 }

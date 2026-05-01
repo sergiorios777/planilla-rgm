@@ -66,8 +66,8 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	adminRepo := repository.NewTenantRepository(db)
 	h := handlers.AdminHandler{Repo: adminRepo}
 
-	// Esta ruta carga el "esqueleto" (menú lateral, cabecera, CSS)
-	mux.HandleFunc("/admin", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+	// 🔒 Reemplazamos RequireAuth por RequireRole("super_admin")
+	mux.HandleFunc("/admin", middleware.RequireRole("super_admin", func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("ui/templates/layouts/index.html")
 		if err != nil {
 			http.Error(w, "Error cargando la vista principal", http.StatusInternalServerError)
@@ -77,50 +77,50 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	}))
 
 	// Ruta: HTMX llamará aquí para obtener la tabla de inquilinos
-	mux.HandleFunc("/admin/ui/inquilinos", middleware.RequireAuth(h.VistaUI))
-	mux.HandleFunc("/admin/inquilinos", middleware.RequireAuth(h.ListarInquilinos))
-	mux.HandleFunc("/admin/inquilinos/crear", middleware.RequireAuth(h.CrearInquilino))
-	mux.HandleFunc("/admin/inquilinos/editar_ui", middleware.RequireAuth(h.EditarUI))
-	mux.HandleFunc("/admin/inquilinos/actualizar", middleware.RequireAuth(h.ActualizarInquilino))
+	mux.HandleFunc("/admin/ui/inquilinos", middleware.RequireRole("super_admin", h.VistaUI))
+	mux.HandleFunc("/admin/inquilinos", middleware.RequireRole("super_admin", h.ListarInquilinos))
+	mux.HandleFunc("/admin/inquilinos/crear", middleware.RequireRole("super_admin", h.CrearInquilino))
+	mux.HandleFunc("/admin/inquilinos/editar_ui", middleware.RequireRole("super_admin", h.EditarUI))
+	mux.HandleFunc("/admin/inquilinos/actualizar", middleware.RequireRole("super_admin", h.ActualizarInquilino))
 
 	// Rutas del MEF (Clasificadores )
 	mefRepo := repository.NewMefRepository(db)
 	m := handlers.MefHandler{Repo: mefRepo}
-	mux.HandleFunc("/admin/ui/mef", middleware.RequireAuth(m.VistaUI))
-	mux.HandleFunc("/admin/mef", middleware.RequireAuth(m.ListarClasificadores))
-	mux.HandleFunc("/admin/mef/crear", middleware.RequireAuth(m.CrearClasificador))
-	mux.HandleFunc("/admin/mef/importar", middleware.RequireAuth(m.ImportarCSV))
-	mux.HandleFunc("/admin/mef/vincular", middleware.RequireAuth(m.VincularJerarquiaManual))
+	mux.HandleFunc("/admin/ui/mef", middleware.RequireRole("super_admin", m.VistaUI))
+	mux.HandleFunc("/admin/mef", middleware.RequireRole("super_admin", m.ListarClasificadores))
+	mux.HandleFunc("/admin/mef/crear", middleware.RequireRole("super_admin", m.CrearClasificador))
+	mux.HandleFunc("/admin/mef/importar", middleware.RequireRole("super_admin", m.ImportarCSV))
+	mux.HandleFunc("/admin/mef/vincular", middleware.RequireRole("super_admin", m.VincularJerarquiaManual))
 
 	// Rutas de Conceptos Maestros
 	conceptoRepo := repository.NewConceptoRepository(db)
 	c := handlers.ConceptoHandler{Repo: conceptoRepo}
-	mux.HandleFunc("/admin/ui/conceptos", middleware.RequireAuth(c.VistaUI))
-	mux.HandleFunc("/admin/conceptos/lista", middleware.RequireAuth(c.ListarConceptos))
-	mux.HandleFunc("/admin/conceptos/importar", middleware.RequireAuth(c.ImportarCSV))
+	mux.HandleFunc("/admin/ui/conceptos", middleware.RequireRole("super_admin", c.VistaUI))
+	mux.HandleFunc("/admin/conceptos/lista", middleware.RequireRole("super_admin", c.ListarConceptos))
+	mux.HandleFunc("/admin/conceptos/importar", middleware.RequireRole("super_admin", c.ImportarCSV))
 
 	// Rutas de Parámetros Globales
 	parametroRepo := repository.NewParametroRepository(db)
 	p := handlers.ParametroHandler{Repo: parametroRepo}
-	mux.HandleFunc("/admin/ui/parametros", middleware.RequireAuth(p.VistaUI))
-	mux.HandleFunc("/admin/parametros/lista", middleware.RequireAuth(p.Listar))
-	mux.HandleFunc("/admin/parametros/guardar", middleware.RequireAuth(p.Guardar))
+	mux.HandleFunc("/admin/ui/parametros", middleware.RequireRole("super_admin", p.VistaUI))
+	mux.HandleFunc("/admin/parametros/lista", middleware.RequireRole("super_admin", p.Listar))
+	mux.HandleFunc("/admin/parametros/guardar", middleware.RequireRole("super_admin", p.Guardar))
 
 	// Rutas protegidas de Usuarios
 	usuarioRepo := repository.NewUsuarioRepository(db)
 	tenantRepo := repository.NewTenantRepository(db)
 	u := handlers.UsuarioHandler{UserRepo: usuarioRepo, TenantRepo: tenantRepo}
-	mux.HandleFunc("/admin/ui/usuarios", middleware.RequireAuth(u.VistaUI))
-	mux.HandleFunc("/admin/usuarios/lista", middleware.RequireAuth(u.Listar))
-	mux.HandleFunc("/admin/usuarios/crear", middleware.RequireAuth(u.Crear))
-	mux.HandleFunc("/admin/usuarios/editar_ui", middleware.RequireAuth(u.EditarUI))
-	mux.HandleFunc("/admin/usuarios/actualizar", middleware.RequireAuth(u.ActualizarUsuario))
+	mux.HandleFunc("/admin/ui/usuarios", middleware.RequireRole("super_admin", u.VistaUI))
+	mux.HandleFunc("/admin/usuarios/lista", middleware.RequireRole("super_admin", u.Listar))
+	mux.HandleFunc("/admin/usuarios/crear", middleware.RequireRole("super_admin", u.Crear))
+	mux.HandleFunc("/admin/usuarios/editar_ui", middleware.RequireRole("super_admin", u.EditarUI))
+	mux.HandleFunc("/admin/usuarios/actualizar", middleware.RequireRole("super_admin", u.ActualizarUsuario))
 
 	// Rutas de Fuentes y Rubros
 	fuenteRubroRepo := repository.NewFuenteRubroRepository(db)
 	f := handlers.FuenteRubroHandler{Repo: fuenteRubroRepo}
-	mux.HandleFunc("/admin/ui/fuentes-rubros", middleware.RequireAuth(f.VistaUI))
-	mux.HandleFunc("/admin/fuentes-rubros/lista", middleware.RequireAuth(f.Listar))
+	mux.HandleFunc("/admin/ui/fuentes-rubros", middleware.RequireRole("super_admin", f.VistaUI))
+	mux.HandleFunc("/admin/fuentes-rubros/lista", middleware.RequireRole("super_admin", f.Listar))
 }
 
 // --- SECCIÓN TENANT (MUNICIPALIDADES) ---

@@ -33,7 +33,8 @@ func (r *ParametroRepository) ObtenerTodos() ([]models.ParametroGlobal, error) {
 	query := `
 		SELECT id, clave, valor, TO_CHAR(fecha_desde, 'YYYY-MM-DD'), TO_CHAR(fecha_hasta, 'YYYY-MM-DD'), descripcion 
 		FROM parametros_globales 
-		ORDER BY clave ASC, fecha_desde DESC`
+		ORDER BY clave ASC, fecha_desde DESC
+	`
 
 	rows, err := r.db.Query(query)
 	if err != nil {
@@ -45,13 +46,18 @@ func (r *ParametroRepository) ObtenerTodos() ([]models.ParametroGlobal, error) {
 	for rows.Next() {
 		var p models.ParametroGlobal
 		var fechaHasta sql.NullString // Variable intermedia para manejar nulos de la BD
+		var descripcion sql.NullString
 
-		if err := rows.Scan(&p.ID, &p.Clave, &p.Valor, &p.FechaDesde, &fechaHasta, &p.Descripcion); err != nil {
+		if err := rows.Scan(&p.ID, &p.Clave, &p.Valor, &p.FechaDesde, &fechaHasta, &descripcion); err != nil {
 			return nil, err
 		}
 
 		if fechaHasta.Valid {
 			p.FechaHasta = &fechaHasta.String
+		}
+
+		if descripcion.Valid {
+			p.Descripcion = descripcion.String
 		}
 
 		lista = append(lista, p)
