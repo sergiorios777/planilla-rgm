@@ -61,10 +61,53 @@ func (h *PresupuestoHandler) Generar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Notificar éxito
-	// Por ahora mostramos un mensaje simple. Más adelante, aquí podríamos disparar
-	// un evento HX-Trigger para recargar automáticamente la tabla matricial.
-	w.Write([]byte(`<article style="background-color: #e8f5e9; color: #2e7d32;">
+	// 3. Notificar éxito y entregar un botón para cargar la matriz
+	mensajeExito := `
+	<article style="background-color: #e8f5e9; color: #2e7d32; border-color: #c8e6c9;">
 		<strong>¡Éxito!</strong> La proyección del Presupuesto Analítico de Personal (PIA) para el año ` + anioStr + ` ha sido generada y guardada correctamente.
-	</article>`))
+		<div style="margin-top: 1rem;">
+			<button class="primary" hx-get="/tenant/presupuesto/matriz?anio=` + anioStr + `" hx-target="#matriz-contenedor">
+				👀 Ver Matriz Generada
+			</button>
+		</div>
+	</article>
+	<div id="matriz-contenedor" style="margin-top: 2rem;"></div>
+	`
+	w.Write([]byte(mensajeExito))
+}
+
+// CargarMatriz recupera los datos de la BD y renderiza solo la tabla HTML
+func (h *PresupuestoHandler) CargarMatriz(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+
+	anioStr := r.URL.Query().Get("anio")
+	anio, err := strconv.Atoi(anioStr)
+	if err != nil || anio == 0 {
+		// Por defecto buscamos 2027 si no se envía el parámetro
+		anio = 2027
+	}
+
+	// Consultamos a la base de datos
+	matriz, err := h.Service.PresupuestoRepo.ObtenerMatrizPorAnio(tenantID, anio)
+	if err != nil {
+		w.Write([]byte(`<article style="background-color: #ffebee; color: #c62828;">Error consultando la base de datos.</article>`))
+		return
+	}
+
+	if len(matriz) == 0 {
+		w.Write([]byte(`<article>No hay datos generados para el año ` + strconv.Itoa(anio) + `. Por favor, genera la proyección primero.</article>`))
+		return
+	}
+
+	// Renderizamos solo el fragmento de la tabla (lo crearemos en el siguiente paso)
+	tmpl, err := template.ParseFiles("ui/templates/tenant/presupuesto_ui.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "presupuesto_matriz", map[string]interface{}{
+		"Anio":   anio,
+		"Matriz": matriz,
+	})
 }

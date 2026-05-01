@@ -1,0 +1,108 @@
+{{define "presupuesto_index"}}
+<!-- Encabezado del Módulo -->
+<article>
+    <header>
+        <h2>📊 Presupuesto Analítico de Personal (PAP)</h2>
+        <p>Proyección anual y generación del Presupuesto Institucional de Apertura (PIA)</p>
+    </header>
+
+    <!-- Panel de Control con HTMX -->
+    <!-- hx-post: Llama a nuestra ruta de Go -->
+    <!-- hx-target: Define dónde se imprimirá la respuesta del servidor -->
+    <!-- hx-indicator: Muestra un elemento mientras espera la respuesta -->
+    <form hx-post="/tenant/presupuesto/generar" hx-target="#resultado-presupuesto" hx-indicator="#indicador-carga">
+        <div class="grid">
+            <div>
+                <label>
+                    Año de Proyección (PIA)
+                    <input type="number" name="anio" value="2027" required>
+                </label>
+                <label>
+                    Mes Base de Cálculo
+                    <select name="mes_base" disabled>
+                        <option value="1">Enero (Por defecto)</option>
+                    </select>
+                    <small>Por ahora usaremos enero como base global.</small>
+                </label>
+
+                <button type="submit" class="primary" style="margin-top: 1rem;">⚙️ Generar Proyección</button>
+            </div>
+
+            <div>
+                <!-- En blanco por ahora -->
+            </div>
+        </div>
+    </form>
+
+    <!-- Indicador de carga (Oculto por defecto por HTMX) -->
+    <div id="indicador-carga" class="htmx-indicator" style="text-align: center; padding: 2rem;">
+        <p aria-busy="true">Calculando proyección anual de la planilla. Esto puede tardar unos segundos...</p>
+    </div>
+</article>
+
+<!-- Contenedor donde aparecerá el mensaje de éxito o error devuelto por Go -->
+<div id="resultado-presupuesto" style="margin-top: 1rem;">
+    <!-- El resultado se inyectará aquí -->
+</div>
+{{end}}
+
+{{define "presupuesto_matriz"}}
+<article>
+    <header>
+        <h3>📊 Matriz de Presupuesto - Año {{.Anio}}</h3>
+        <p><small>Valores expresados en la moneda local (con dos decimales).</small></p>
+    </header>
+
+    <!-- figure ayuda a que la tabla sea scrolleable horizontalmente en pantallas pequeñas -->
+    <figure style="overflow-x: auto;">
+        <table role="grid" style="font-size: 0.85em; white-space: nowrap;">
+            <thead>
+                <tr>
+                    <th scope="col">Meta</th>
+                    <th scope="col">F. / Rubro</th>
+                    <th scope="col">Clasificador</th>
+                    <th scope="col">Ene</th>
+                    <th scope="col">Feb</th>
+                    <th scope="col">Mar</th>
+                    <th scope="col">Abr</th>
+                    <th scope="col">May</th>
+                    <th scope="col">Jun</th>
+                    <th scope="col">Jul</th>
+                    <th scope="col">Ago</th>
+                    <th scope="col">Sep</th>
+                    <th scope="col">Oct</th>
+                    <th scope="col">Nov</th>
+                    <th scope="col">Dic</th>
+                    <th scope="col">Total Anual</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Matriz}}
+                <tr>
+                    <!-- Usamos la etiqueta title para mostrar la descripción al pasar el mouse -->
+                    <td><abbr title="{{.MetaDescripcion}}">{{.MetaCodigo}}</abbr></td>
+                    <td><abbr title="{{.FuenteRubroDescripcion}}">{{.FuenteRubroCodigo}}</abbr></td>
+                    <td><abbr title="{{.ClasificadorDescripcion}}">{{.ClasificadorCodigoLimpio}}</abbr></td>
+
+                    <!-- Imprimimos los montos de cada mes asegurando 2 decimales -->
+                    <td>{{printf "%.2f" (index .Meses 0)}}</td>
+                    <td>{{printf "%.2f" (index .Meses 1)}}</td>
+                    <td>{{printf "%.2f" (index .Meses 2)}}</td>
+                    <td>{{printf "%.2f" (index .Meses 3)}}</td>
+                    <td>{{printf "%.2f" (index .Meses 4)}}</td>
+                    <td>{{printf "%.2f" (index .Meses 5)}}</td>
+                    <td>{{printf "%.2f" (index .Meses 6)}}</td>
+                    <td>{{printf "%.2f" (index .Meses 7)}}</td>
+                    <td>{{printf "%.2f" (index .Meses 8)}}</td>
+                    <td>{{printf "%.2f" (index .Meses 9)}}</td>
+                    <td>{{printf "%.2f" (index .Meses 10)}}</td>
+                    <td>{{printf "%.2f" (index .Meses 11)}}</td>
+
+                    <td><strong>{{printf "%.2f" .TotalAnual}}</strong></td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </figure>
+</article>
+{{end}}

@@ -231,6 +231,7 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	presupuestoHandler := handlers.NewPresupuestoHandler(presupuestoService, planillaRepo)
 	mux.HandleFunc("/tenant/presupuesto/index", middleware.RequireAuth(presupuestoHandler.IndexUI))
 	mux.HandleFunc("/tenant/presupuesto/generar", middleware.RequireAuth(presupuestoHandler.Generar))
+	mux.HandleFunc("/tenant/presupuesto/matriz", middleware.RequireAuth(presupuestoHandler.CargarMatriz))
 
 	// Ruta para descargar el PDF de planilla y boeltas
 	mux.HandleFunc("/tenant/planillas/descargar-reporte", middleware.RequireAuth(planillaHandler.DescargarReportePDF))

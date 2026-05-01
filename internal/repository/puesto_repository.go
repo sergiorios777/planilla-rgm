@@ -244,7 +244,8 @@ func (r *PuestoRepository) ObtenerPuestosParaPAP(tenantID int) ([]models.PuestoP
 	query := `
 		SELECT p.id, rl.codigo, 
 		       m.codigo, m.descripcion, 
-		       fr.fuente_financiamiento || ' | ' || fr.rubro, 'Fuente Financiamiento' 
+		       -- Enviamos el ID como código corto, y el nombre completo a la descripción (que soporta 255 caracteres)
+		       CAST(fr.id AS VARCHAR), fr.fuente_financiamiento || ' | ' || fr.rubro 
 		FROM puestos p
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
 		INNER JOIN metas_presupuestales m ON p.meta_id = m.id
