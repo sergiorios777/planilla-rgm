@@ -18,13 +18,37 @@
                     <input type="number" name="anio" value="2027" required>
                 </label>
                 <label>
+                    Tipo de Presupuesto
+                    <select name="tipo_proyeccion" required>
+                        <option value="PIA">PIA (Presupuesto Institucional de Apertura)</option>
+                        <option value="VIGENTE">Año Vigente (Real + Proyectado)</option>
+                    </select>
+                </label>
+                <label>
                     Mes Base de Cálculo
                     <select name="mes_base" disabled>
                         <option value="1">Enero (Por defecto)</option>
                     </select>
                     <small>Por ahora usaremos enero como base global.</small>
                 </label>
-
+                <label>
+                    Mes de Corte (Para Año Vigente)
+                    <select name="mes_corte">
+                        <option value="0">Ninguno (Todo Proyectado)</option>
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                </label>
                 <button type="submit" class="primary" style="margin-top: 1rem;">⚙️ Generar Proyección</button>
             </div>
 
@@ -44,6 +68,65 @@
 <div id="resultado-presupuesto" style="margin-top: 1rem;">
     <!-- El resultado se inyectará aquí -->
 </div>
+
+<article>
+    <header>
+        <h2>📑 Centro de Reportes de Presupuesto</h2>
+        <p>Genera, visualiza y exporta tus proyecciones analíticas de personal.</p>
+    </header>
+
+    <!-- Agregamos un ID al formulario para que HTMX pueda leer sus datos -->
+    <form id="form-reportes">
+        <div class="grid">
+            <label>
+                Año a Consultar
+                <input type="number" name="anio" value="2027" required>
+            </label>
+
+            <label>
+                Tipo de Proyección
+                <select name="tipo_proyeccion" required>
+                    <option value="PIA">PIA (Presupuesto Institucional de Apertura)</option>
+                    <option value="VIGENTE">Año Vigente (Real + Proyectado)</option>
+                </select>
+            </label>
+
+            <label>
+                Reporte Disponible
+                <select name="tipo_reporte" required>
+                    <option value="matriz">Matriz Anual (12 Meses)</option>
+                    <!-- Aquí se pueden agregar otros reportes en el futuro -->
+                </select>
+            </label>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <!-- 1. Ver en pantalla: Usa HTMX. hx-include envía los datos del form -->
+            <button type="button" class="primary" hx-get="/tenant/presupuesto/matriz" hx-include="#form-reportes"
+                hx-target="#matriz-contenedor">
+                👀 Ver en Pantalla
+            </button>
+
+            <!-- 2. Exportar CSV: Petición HTTP tradicional del navegador para descargar -->
+            <button type="submit" class="secondary" formaction="/tenant/presupuesto/exportar/csv" formmethod="GET">
+                📄 Descargar CSV
+            </button>
+
+            <!-- 3. Exportar Excel -->
+            <button type="submit" class="secondary" formaction="/tenant/presupuesto/exportar/excel" formmethod="GET">
+                📊 Descargar Excel
+            </button>
+
+            <!-- 4. Exportar PDF -->
+            <button type="submit" class="secondary" formaction="/tenant/presupuesto/exportar/pdf" formmethod="GET">
+                📕 Descargar PDF
+            </button>
+        </div>
+    </form>
+</article>
+
+<!-- Contenedor para el botón "Ver en pantalla" -->
+<div id="matriz-contenedor" style="margin-top: 2rem;"></div>
 {{end}}
 
 {{define "presupuesto_matriz"}}
