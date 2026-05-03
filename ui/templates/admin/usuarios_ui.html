@@ -7,7 +7,15 @@
             {{template "formulario_crear" .}}
         </div>
 
-        <div>
+        <div id="contenedor-lista">
+            <div class="card">
+                <div style="display:flex; justify-content: end;">
+                    <!-- El input de búsqueda debe estar aqui-->
+                    <input class="form-control" type="search" name="buscar" placeholder="Buscar por nombre o correo..."
+                        hx-get="/admin/usuarios/lista" hx-trigger="keyup changed delay:500ms, search"
+                        hx-target="#lista-usuarios">
+                </div>
+            </div>
             <div id="lista-usuarios" hx-get="/admin/usuarios/lista" hx-trigger="load">
                 <p aria-busy="true">Cargando usuarios...</p>
             </div>
@@ -128,42 +136,43 @@
             <th>Acciones</th>
         </tr>
     </thead>
-    <tbody>
-        {{range .}}
-        <tr>
-            <td>
-                {{if eq .TenantNombre "Súper Admin (SaaS)"}}
-                <mark style="background-color: #e1bee7; color: #4a148c; padding: 2px 6px; border-radius: 4px;">SaaS
-                    Admin</mark>
-                {{else}}
-                <small><strong>{{.TenantNombre}}</strong></small>
-                {{end}}
-            </td>
-            <td>{{.Nombre}}</td>
-            <td>{{.Email}}</td>
-            <td><small>{{.Rol}}</small></td>
-            <td>
-                {{if .Activo}}
-                <mark
-                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Activo</mark>
-                {{else}}
-                <mark
-                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Inactivo</mark>
-                {{end}}
-            </td>
-            <td>
-                <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
-                    hx-get="/admin/usuarios/editar_ui?id={{.ID}}" hx-target="#contenedor-formulario"
-                    hx-swap="innerHTML">
-                    Editar
-                </button>
-            </td>
-        </tr>
-        {{else}}
-        <tr>
-            <td colspan="6" style="text-align: center;">No hay usuarios registrados.</td>
-        </tr>
-        {{end}}
+    <tbody id="cuerpo-tabla-usuarios">
+        {{template "filas_usuarios" .}}
     </tbody>
 </table>
+{{end}}
+
+{{define "filas_usuarios"}}
+{{range .}}
+<tr>
+    <td>
+        {{if eq .TenantNombre "Súper Admin (SaaS)"}}
+        <mark style="background-color: #e1bee7; color: #4a148c; padding: 2px 6px; border-radius: 4px;">SaaS
+            Admin</mark>
+        {{else}}
+        <small><strong>{{.TenantNombre}}</strong></small>
+        {{end}}
+    </td>
+    <td>{{.Nombre}}</td>
+    <td>{{.Email}}</td>
+    <td><small>{{.Rol}}</small></td>
+    <td>
+        {{if .Activo}}
+        <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Activo</mark>
+        {{else}}
+        <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Inactivo</mark>
+        {{end}}
+    </td>
+    <td>
+        <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+            hx-get="/admin/usuarios/editar_ui?id={{.ID}}" hx-target="#contenedor-formulario" hx-swap="innerHTML">
+            Editar
+        </button>
+    </td>
+</tr>
+{{else}}
+<tr>
+    <td colspan="6" style="text-align: center;">No hay usuarios registrados.</td>
+</tr>
+{{end}}
 {{end}}

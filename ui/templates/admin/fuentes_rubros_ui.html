@@ -3,7 +3,7 @@
         <h3 style="margin-bottom: 0;">🏛️ Catálogo: Fuentes de Financiamiento y Rubros</h3>
     </header>
 
-    <div style="margin-bottom: 1rem;">
+    <div style="margin-bottom: 1rem; display: flex; justify-content: space-between;">
         <label>Consultar Año:
             <select name="anio" hx-get="/admin/fuentes-rubros/lista" hx-target="#lista-fuentes"
                 style="max-width: 150px; display: inline-block; margin-left: 10px;">
@@ -11,6 +11,13 @@
                 <option value="2027">2027</option>
             </select>
         </label>
+        <div class="card">
+            <div style="display:flex; justify-content: end;">
+                <input class="form-control" type="search" name="buscar" placeholder="Buscar fuente o rubro..."
+                    hx-get="/admin/fuentes-rubros/lista" hx-trigger="keyup changed delay:500ms, search"
+                    hx-target="#lista-fuentes">
+            </div>
+        </div>
     </div>
 
     <div id="lista-fuentes" hx-get="/admin/fuentes-rubros/lista?anio=2026" hx-trigger="load">
@@ -27,26 +34,28 @@
             <th>Estado</th>
         </tr>
     </thead>
-    <tbody>
-        {{range .}}
-        <tr>
-            <td><strong>{{.FuenteFinanciamiento}}</strong></td>
-            <td><small>{{.Rubro}}</small></td>
-            <td>
-                {{if .Activo}}
-                <mark
-                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Activo</mark>
-                {{else}}
-                <mark
-                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Inactivo</mark>
-                {{end}}
-            </td>
-        </tr>
-        {{else}}
-        <tr>
-            <td colspan="3" style="text-align: center;">No hay registros para este año.</td>
-        </tr>
-        {{end}}
+    <tbody id="cuerpo-tabla-fuentes">
+        {{template "filas_fuentes" .}}
     </tbody>
 </table>
+{{end}}
+
+{{define "filas_fuentes"}}
+{{range .}}
+<tr>
+    <td><strong>{{.FuenteFinanciamiento}}</strong></td>
+    <td><small>{{.Rubro}}</small></td>
+    <td>
+        {{if .Activo}}
+        <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Activo</mark>
+        {{else}}
+        <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Inactivo</mark>
+        {{end}}
+    </td>
+</tr>
+{{else}}
+<tr>
+    <td colspan="3" style="text-align: center;">No hay registros para este año.</td>
+</tr>
+{{end}}
 {{end}}

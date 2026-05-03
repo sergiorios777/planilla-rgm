@@ -18,20 +18,32 @@ type AdminHandler struct {
 // ListarInquilinos obtiene los datos y los inyecta en una plantilla HTML
 func (h *AdminHandler) ListarInquilinos(w http.ResponseWriter, r *http.Request) {
 	// 1. Pedimos los datos al repositorio
-	tenants, err := h.Repo.ObtenerTodos()
+	busqueda := r.URL.Query().Get("buscar")
+	tenants, err := h.Repo.ObtenerTodos(busqueda)
 	if err != nil {
 		http.Error(w, "Error al obtener la lista de inquilinos de la base de datos", http.StatusInternalServerError)
 		return
 	}
 
 	// 2. Cargamos el archivo HTML que diseñaremos en el siguiente paso
+	// Si la petición la hizo HTMX (al teclear), SOLO devolvemos las filas (<tr>)
+	// Usamos GetHeader para detectar esto
+	if r.Header.Get("HX-Target") == "true" {
+		tmpl, err := template.ParseFiles("ui/templates/admin/inquilinos_ui.html")
+		if err != nil {
+			http.Error(w, "Error cargando la vista HTML", http.StatusInternalServerError)
+			return
+		}
+		tmpl.ExecuteTemplate(w, "filas_inquilinos", tenants)
+		return
+	}
+
+	// 3. Si es una página normal, renderizamos todo el contenido
 	tmpl, err := template.ParseFiles("ui/templates/admin/inquilinos_ui.html")
 	if err != nil {
 		http.Error(w, "Error cargando la vista HTML", http.StatusInternalServerError)
 		return
 	}
-
-	// 3. Renderizamos el HTML enviándole la lista de inquilinos
 	tmpl.ExecuteTemplate(w, "tabla_inquilinos", tenants)
 }
 

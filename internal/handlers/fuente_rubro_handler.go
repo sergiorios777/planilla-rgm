@@ -25,8 +25,23 @@ func (h *FuenteRubroHandler) Listar(w http.ResponseWriter, r *http.Request) {
 		anio = a
 	}
 
-	datos, _ := h.Repo.ObtenerPorAnio(anio)
+	busqueda := r.URL.Query().Get("buscar")
+	datos, err := h.Repo.ObtenerPorAnio(anio, busqueda)
+	if err != nil {
+		http.Error(w, "Error obteniendo fuentes y rubros", http.StatusInternalServerError)
+		return
+	}
 
-	tmpl, _ := template.ParseFiles("ui/templates/admin/fuentes_rubros_ui.html")
+	tmpl, err := template.ParseFiles("ui/templates/admin/fuentes_rubros_ui.html")
+	if err != nil {
+		http.Error(w, "Error cargando la vista HTML", http.StatusInternalServerError)
+		return
+	}
+
+	if r.Header.Get("HX-Target") == "true" {
+		tmpl.ExecuteTemplate(w, "filas_fuentes", datos)
+		return
+	}
+
 	tmpl.ExecuteTemplate(w, "tabla_fuentes", datos)
 }

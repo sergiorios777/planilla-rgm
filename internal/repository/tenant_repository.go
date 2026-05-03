@@ -15,13 +15,17 @@ func NewTenantRepository(db *sql.DB) *TenantRepository {
 	return &TenantRepository{db: db}
 }
 
-// ObtenerTodos ejecuta un SELECT para traer la lista de inquilinos
-func (r *TenantRepository) ObtenerTodos() ([]models.Tenant, error) {
+// ObtenerTodos ejecuta un SELECT para traer la lista de inquilinos.
+func (r *TenantRepository) ObtenerTodos(busqueda string) ([]models.Tenant, error) {
 	// Escribimos la consulta SQL
-	query := `SELECT id, nombre, ruc, direccion, frase_gestion, logo_url, slug, activo, created_at FROM tenants ORDER BY id DESC`
+	query := `
+		SELECT id, nombre, ruc, direccion, frase_gestion, logo_url, slug, activo, created_at 
+		FROM tenants 
+		WHERE nombre ILIKE '%' || $1 || '%' OR ruc ILIKE '%' || $1 || '%' 
+		ORDER BY id DESC`
 
 	// Ejecutamos la consulta
-	rows, err := r.db.Query(query)
+	rows, err := r.db.Query(query, busqueda)
 	if err != nil {
 		return nil, err
 	}

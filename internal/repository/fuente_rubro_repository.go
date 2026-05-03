@@ -14,14 +14,14 @@ func NewFuenteRubroRepository(db *sql.DB) *FuenteRubroRepository {
 }
 
 // ObtenerPorAnio lista el catálogo para un año específico
-func (r *FuenteRubroRepository) ObtenerPorAnio(anio int) ([]models.FuenteRubro, error) {
+func (r *FuenteRubroRepository) ObtenerPorAnio(anio int, buscar string) ([]models.FuenteRubro, error) {
 	query := `
 		SELECT id, anio, fuente_financiamiento, rubro, activo 
 		FROM fuentes_rubros 
-		WHERE anio = $1 
+		WHERE anio = $1 AND (fuente_financiamiento ILIKE '%' || $2 || '%' OR rubro ILIKE '%' || $2 || '%')
 		ORDER BY fuente_financiamiento, rubro ASC
 	`
-	rows, err := r.db.Query(query, anio)
+	rows, err := r.db.Query(query, anio, buscar)
 	if err != nil {
 		return nil, err
 	}

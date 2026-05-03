@@ -37,14 +37,15 @@ func (r *UsuarioRepository) Crear(u *models.Usuario) error {
 }
 
 // 3. ObtenerTodos lista los usuarios y el nombre de su municipalidad (si tienen)
-func (r *UsuarioRepository) ObtenerTodos() ([]models.Usuario, error) {
+func (r *UsuarioRepository) ObtenerTodos(busqueda string) ([]models.Usuario, error) {
 	query := `
 		SELECT u.id, u.tenant_id, u.nombre, u.email, u.rol, u.activo, COALESCE(t.nombre, 'Súper Admin (SaaS)') as tenant_nombre
 		FROM usuarios u
 		LEFT JOIN tenants t ON u.tenant_id = t.id
-		ORDER BY u.id ASC
+		WHERE u.nombre ILIKE '%' || $1 || '%' OR u.email ILIKE '%' || $1 || '%' OR t.nombre ILIKE '%' || $1 || '%'
+		ORDER BY t.id ASC
 	`
-	rows, err := r.db.Query(query)
+	rows, err := r.db.Query(query, busqueda)
 	if err != nil {
 		return nil, err
 	}

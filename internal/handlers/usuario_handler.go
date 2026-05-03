@@ -17,7 +17,7 @@ type UsuarioHandler struct {
 // VistaUI carga la estructura principal y le envía los inquilinos para el select
 func (h *UsuarioHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 	// Traemos todos los inquilinos para el menú desplegable
-	inquilinos, _ := h.TenantRepo.ObtenerTodos()
+	inquilinos, _ := h.TenantRepo.ObtenerTodos("")
 
 	tmpl, _ := template.ParseFiles("ui/templates/admin/usuarios_ui.html")
 	tmpl.Execute(w, inquilinos) // Le pasamos los inquilinos al renderizar la vista base
@@ -25,8 +25,24 @@ func (h *UsuarioHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 
 // Listar devuelve solo la tabla de usuarios
 func (h *UsuarioHandler) Listar(w http.ResponseWriter, r *http.Request) {
-	usuarios, _ := h.UserRepo.ObtenerTodos()
-	tmpl, _ := template.ParseFiles("ui/templates/admin/usuarios_ui.html")
+	busqueda := r.URL.Query().Get("buscar")
+	usuarios, err := h.UserRepo.ObtenerTodos(busqueda)
+	if err != nil {
+		http.Error(w, "Error obteniendo usuarios", http.StatusInternalServerError)
+		return
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/admin/usuarios_ui.html")
+	if err != nil {
+		http.Error(w, "Error cargando la vista HTML", http.StatusInternalServerError)
+		return
+	}
+
+	if r.Header.Get("HX-Target") == "true" {
+		tmpl.ExecuteTemplate(w, "filas_usuarios", usuarios)
+		return
+	}
+
 	tmpl.ExecuteTemplate(w, "tabla_usuarios", usuarios)
 }
 
@@ -76,7 +92,7 @@ func (h *UsuarioHandler) EditarUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inquilinos, _ := h.TenantRepo.ObtenerTodos()
+	inquilinos, _ := h.TenantRepo.ObtenerTodos("")
 
 	// Truco: Go maneja TenantID como un puntero (*int). Para hacer la comparación
 	// en el HTML fácilmente, sacamos su valor a una variable entera simple.

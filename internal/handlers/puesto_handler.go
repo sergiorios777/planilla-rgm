@@ -21,7 +21,7 @@ func (h *PuestoHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 
 	// Preparamos listas para los combos
 	metas, _ := h.MetaRepo.ObtenerTodos(tenantID)
-	fuentes, _ := h.FuenteRubroRepo.ObtenerPorAnio(2026) // Anio fijo por ahora
+	fuentes, _ := h.FuenteRubroRepo.ObtenerPorAnio(2026, "")
 	regimenes, _ := h.Repo.ObtenerRegimenes()
 
 	datos := map[string]interface{}{
@@ -79,7 +79,7 @@ func (h *PuestoHandler) Editar(w http.ResponseWriter, r *http.Request) {
 
 	// 2. Necesitamos las listas para los combos (Selects)
 	metas, _ := h.MetaRepo.ObtenerTodos(tenantID)
-	fuentes, _ := h.FuenteRubroRepo.ObtenerPorAnio(2026)
+	fuentes, _ := h.FuenteRubroRepo.ObtenerPorAnio(2026, "")
 	regimenes, _ := h.Repo.ObtenerRegimenes()
 
 	datos := map[string]interface{}{
@@ -127,7 +127,7 @@ func (h *PuestoHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Request
 	tenantID := obtenerTenantID(r)
 
 	metas, _ := h.MetaRepo.ObtenerTodos(tenantID)
-	fuentes, _ := h.FuenteRubroRepo.ObtenerPorAnio(2026)
+	fuentes, _ := h.FuenteRubroRepo.ObtenerPorAnio(2026, "")
 	regimenes, _ := h.Repo.ObtenerRegimenes()
 
 	datos := map[string]interface{}{

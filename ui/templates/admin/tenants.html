@@ -1,8 +1,15 @@
 <article>
     <header>
-        <h2>Inquilinos Registrados</h2>
+        <h2>Entidades Registradas</h2>
+        <div style="display:flex; justify-content: end;">
+            <!-- El input de búsqueda debe estar aqui-->
+            <input class="form-control" type="search" name="buscar" placeholder="Buscar por nombre o RUC..."
+                hx-get="/admin/tenants" hx-trigger="keyup changed delay:500ms, search"
+                hx-target="#cuerpo-tabla-inquilinos">
+        </div>
     </header>
 
+    <!-- La tabla que recibirá los datos -->
     <table class="striped">
         <thead>
             <tr>
@@ -12,25 +19,30 @@
                 <th scope="col">Estado</th>
             </tr>
         </thead>
-        <tbody>
-            {{range .}}
-            <tr>
-                <td>{{.ID}}</td>
-                <td>{{.Nombre}}</td>
-                <td>{{.Ruc}}</td>
-                <td>
-                    {{if .Activo}}
-                    <ins>Activo</ins>
-                    {{else}}
-                    <del>Inactivo</del>
-                    {{end}}
-                </td>
-            </tr>
-            {{else}}
-            <tr>
-                <td colspan="4" style="text-align: center;">No hay inquilinos registrados aún.</td>
-            </tr>
-            {{end}}
+        <!-- HTMX inyectará los datos filtrados aquí -->
+        <tbody id="cuerpo-tabla-inquilinos">
+            {{template "filas_inquilinos" .}}
         </tbody>
     </table>
 </article>
+
+{{ define "filas_inquilinos"}}
+    {{range .}}
+        <tr>
+            <td>{{.ID}}</td>
+            <td>{{.Nombre}}</td>
+            <td>{{.Ruc}}</td>
+            <td>
+                {{if .Activo}}
+                <ins>Activo</ins>
+                {{else}}
+                <del>Inactivo</del>
+                {{end}}
+            </td>
+        </tr>
+    {{else}}
+        <tr>
+            <td colspan="4" style="text-align: center;">No hay entidades registradas aún.</td>
+        </tr>
+    {{end}}
+{{end}}
