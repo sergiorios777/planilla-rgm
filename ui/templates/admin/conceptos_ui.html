@@ -16,6 +16,9 @@
         </div>
 
         <div>
+            <div>
+                {{template "filtros_conceptos" .}}
+            </div>
             <div id="lista-conceptos" hx-get="/admin/conceptos/lista" hx-trigger="load">
                 <p aria-busy="true">Cargando conceptos...</p>
             </div>
@@ -34,7 +37,7 @@
         </tr>
     </thead>
     <tbody>
-        {{range .}}
+        {{range .Conceptos}}
         <tr>
             <td><strong>{{.Codigo}}</strong></td>
             <td>{{.Descripcion}}</td>
@@ -54,4 +57,60 @@
         {{end}}
     </tbody>
 </table>
+
+<!-- Controles de Paginación -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+    <!-- Mostramos el estado completo de la navegación -->
+    <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
+
+    <div role="group">
+        {{if gt .PaginaAnterior 0}}
+        <button class="outline" hx-get="/admin/conceptos/lista" hx-include="#form-filtros-conceptos"
+            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#lista-conceptos">
+            ⬅️ Anterior
+        </button>
+        {{end}}
+
+        <!-- Evaluamos si estamos antes del final para mostrar el botón "Siguiente" -->
+        {{if lt .PaginaActual .TotalPaginas}}
+        <button class="outline" hx-get="/admin/conceptos/lista" hx-include="#form-filtros-conceptos"
+            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#lista-conceptos">
+            Siguiente ➡️
+        </button>
+        {{end}}
+    </div>
+</div>
+{{end}}
+
+{{define "filtros_conceptos"}}
+<form id="form-filtros-conceptos" class="grid" style="margin-bottom: 1rem;">
+    <label>
+        Buscar
+        <input type="search" name="buscar" placeholder="Código o descripción..." hx-get="/admin/conceptos/lista"
+            hx-trigger="keyup changed delay:500ms, search" hx-include="#form-filtros-conceptos"
+            hx-target="#lista-conceptos">
+    </label>
+
+    <label>
+        Tipo
+        <select name="tipo" hx-get="/admin/conceptos/lista" hx-include="#form-filtros-conceptos"
+            hx-target="#lista-conceptos">
+            <option value="">Todos</option>
+            <option value="Ingreso">Ingreso</option>
+            <option value="Retencion">Retención</option>
+            <option value="Aporte">Aporte</option>
+        </select>
+    </label>
+
+    <label>
+        Mostrar
+        <select name="limite" hx-get="/admin/conceptos/lista" hx-include="#form-filtros-conceptos"
+            hx-target="#lista-conceptos">
+            <option value="15">15 filas</option>
+            <option value="25">25 filas</option>
+            <option value="50">50 filas</option>
+            <option value="100">100 filas</option>
+        </select>
+    </label>
+</form>
 {{end}}

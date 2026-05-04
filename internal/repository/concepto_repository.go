@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"planilla-rgm/internal/models"
 	"strings"
 )
@@ -15,11 +16,38 @@ func NewConceptoRepository(db *sql.DB) *ConceptoRepository {
 }
 
 // ObtenerTodos trae la lista para la pantalla
-func (r *ConceptoRepository) ObtenerTodos() ([]models.ConceptoMaestro, error) {
-	query := `SELECT id, parent_id, codigo, descripcion, tipo, activo FROM conceptos_maestros ORDER BY codigo ASC`
-	rows, err := r.db.Query(query)
+func (r *ConceptoRepository) ObtenerTodos(busqueda string, tipo string, limite int, offset int) ([]models.ConceptoMaestro, int, error) {
+	whereClause := "WHERE 1=1"
+	
+	var args []interface{}
+	contadorArgs := 1
+
+	if busqueda != "" {
+		whereClause += fmt.Sprintf(` AND (codigo ILIKE '%%' || $%d || '%%' OR descripcion ILIKE '%%' || $%d || '%%')`, contadorArgs, contadorArgs)
+		args = append(args, busqueda)
+		contadorArgs++
+	}
+
+	if tipo != "" {
+		whereClause += fmt.Sprintf(` AND tipo = $%d`, contadorArgs)
+		args = append(args, tipo)
+		contadorArgs++
+	}
+
+	var totalRegistros int
+	countQuery := `SELECT COUNT(*) FROM conceptos_maestros ` + whereClause
+	err := r.db.QueryRow(countQuery, args...).Scan(&totalRegistros)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	query := `SELECT id, parent_id, codigo, descripcion, tipo, activo FROM conceptos_maestros ` + whereClause
+	query += fmt.Sprintf(` ORDER BY codigo ASC LIMIT $%d OFFSET $%d`, contadorArgs, contadorArgs+1)
+	args = append(args, limite, offset)
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -28,11 +56,11 @@ func (r *ConceptoRepository) ObtenerTodos() ([]models.ConceptoMaestro, error) {
 		var c models.ConceptoMaestro
 		err := rows.Scan(&c.ID, &c.ParentID, &c.Codigo, &c.Descripcion, &c.Tipo, &c.Activo)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		lista = append(lista, c)
 	}
-	return lista, nil
+	return lista, totalRegistros, nil
 }
 
 // ProcesarImportacion ejecuta el algoritmo de 3 pasadas en una sola transacción segura

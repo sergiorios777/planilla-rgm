@@ -9,7 +9,7 @@
         </tr>
     </thead>
     <tbody>
-        {{range .}}
+        {{range .Clasificadores}}
         <tr>
             <td>{{.Anio}}</td>
             <td><strong>{{.CodigoOriginal}}</strong></td>
@@ -32,3 +32,26 @@
         {{end}}
     </tbody>
 </table>
+
+<!-- Controles de Paginación -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+    <!-- Mostramos el estado completo de la navegación -->
+    <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
+
+    <div role="group">
+        {{if gt .PaginaAnterior 0}}
+        <button class="outline" hx-get="/admin/mef" hx-include="#form-filtros-mef"
+            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#lista-mef">
+            ⬅️ Anterior
+        </button>
+        {{end}}
+
+        <!-- Evaluamos si estamos antes del final para mostrar el botón "Siguiente" -->
+        {{if lt .PaginaActual .TotalPaginas}}
+        <button class="outline" hx-get="/admin/mef" hx-include="#form-filtros-mef"
+            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#lista-mef">
+            Siguiente ➡️
+        </button>
+        {{end}}
+    </div>
+</div>

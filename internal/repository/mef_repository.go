@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"planilla-rgm/internal/models"
 	"strings"
 )
@@ -32,14 +33,54 @@ func (r *MefRepository) Crear(c *models.ClasificadorMEF) error {
 }
 
 // ObtenerTodos devuelve la lista completa sincronizada con los nuevos campos
-func (r *MefRepository) ObtenerTodos() ([]models.ClasificadorMEF, error) {
-	query := `SELECT id, anio, codigo, codigo_limpio, descripcion, nivel, tipo_transaccion, activo, parent_id 
-	          FROM clasificadores_mef 
-	          ORDER BY anio DESC, codigo_limpio ASC`
+func (r *MefRepository) ObtenerTodos(busqueda string, anio int, tipo string, limite int, offset int) ([]models.ClasificadorMEF, int, error) {
+	query := ` 
+	          WHERE 1=1
+	`
+	// Guardamos los parámetros de forma segura
+	var args []interface{}
+	contadorArgs := 1
 
-	rows, err := r.db.Query(query)
+	// 1. Filtro para búsqueda
+	if busqueda != "" {
+		query += fmt.Sprintf(` AND (codigo_limpio ILIKE '%%' || $%d || '%%' OR descripcion ILIKE '%%' || $%d || '%%')`, contadorArgs, contadorArgs)
+		args = append(args, busqueda)
+		contadorArgs++
+	}
+
+	// 2. Filtro de tipo (Ingreso / Gasto)
+	if tipo != "" {
+		query += fmt.Sprintf(` AND tipo_transaccion = $%d`, contadorArgs)
+		args = append(args, tipo)
+		contadorArgs++
+	}
+
+	// 3. Filtro por año
+	if anio != 0 {
+		query += fmt.Sprintf(` AND anio = $%d`, contadorArgs)
+		args = append(args, anio)
+		contadorArgs++
+	}
+
+	// 3.5 Agregar el total de registros
+	var totalRegistros int
+	countQuery := `SELECT COUNT(*) FROM clasificadores_mef` + query
+	err := r.db.QueryRow(countQuery, args...).Scan(&totalRegistros)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Cambiamos el query para seleccionar los registros, agregamos al inicio de query el SELECT
+	query = `SELECT id, anio, codigo, codigo_limpio, descripcion, nivel, tipo_transaccion, activo, parent_id 
+	          FROM clasificadores_mef ` + query
+
+	// 4. Orden y paginación
+	query += fmt.Sprintf(` ORDER BY anio DESC, codigo_limpio ASC LIMIT $%d OFFSET $%d`, contadorArgs, contadorArgs+1)
+	args = append(args, limite, offset)
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -58,11 +99,11 @@ func (r *MefRepository) ObtenerTodos() ([]models.ClasificadorMEF, error) {
 			&c.ParentID,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		lista = append(lista, c)
 	}
-	return lista, nil
+	return lista, totalRegistros, nil
 }
 
 // InsertarMasivo recibe una lista grande de clasificadores y los guarda en una sola transacción

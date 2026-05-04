@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"html/template"
 	"log"
+	"math"
 	"net/http"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
@@ -16,14 +17,63 @@ type MefHandler struct {
 }
 
 func (h *MefHandler) ListarClasificadores(w http.ResponseWriter, r *http.Request) {
-	clasificadores, err := h.Repo.ObtenerTodos()
+	// 1. Capturar filtros
+	busqueda := r.URL.Query().Get("buscar")
+	tipo := r.URL.Query().Get("tipo_clasificador")
+	anioStr := r.URL.Query().Get("anio")
+	anio, _ := strconv.Atoi(anioStr) // Si falla, queda en 0 y no se filtra
+
+	// 2. Capturar y calcular paginación (con valores por defecto si están vacíos)
+	limiteStr := r.URL.Query().Get("limite")
+	paginaStr := r.URL.Query().Get("pagina")
+
+	limite, err := strconv.Atoi(limiteStr)
+	if err != nil || limite <= 0 {
+		limite = 10 // Por defecto mostramos 10
+	}
+
+	pagina, err := strconv.Atoi(paginaStr)
+	if err != nil || pagina <= 0 {
+		pagina = 1 // Por defecto empezamos en la página 1
+	}
+	offset := (pagina - 1) * limite // Matemática del salto
+
+	// 3. Obtener los datos con los nuevos parámetros
+	clasificadores, totalRegistros, err := h.Repo.ObtenerTodos(busqueda, anio, tipo, limite, offset)
 	if err != nil {
 		http.Error(w, "Error al obtener clasificadores", http.StatusInternalServerError)
 		return
 	}
 
-	tmpl, _ := template.ParseFiles("ui/templates/admin/clasificadores.html")
-	tmpl.Execute(w, clasificadores)
+	// 4. Crear una estructura "al vuelo" para enviar datos + paginación a la vista
+	// math.Ceil redondea hacia arriba, por lo que 4.1 se convierte en 5.
+	totalPaginas := int(math.Ceil(float64(totalRegistros) / float64(limite)))
+
+	// Si la búsqueda no arrojó resultados, forzamos la vista a "Página 1 de 1"
+	if totalPaginas == 0 {
+		totalPaginas = 1
+	}
+
+	datosVista := struct {
+		Clasificadores  []models.ClasificadorMEF
+		PaginaActual    int
+		PaginaAnterior  int
+		PaginaSiguiente int
+		TotalPaginas    int
+	}{
+		Clasificadores:  clasificadores,
+		PaginaActual:    pagina,
+		PaginaAnterior:  pagina - 1,
+		PaginaSiguiente: pagina + 1,
+		TotalPaginas:    totalPaginas,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/admin/clasificadores.html")
+	if err != nil {
+		http.Error(w, "Error cargando plantilla: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tmpl.Execute(w, datosVista)
 }
 
 func (h *MefHandler) CrearClasificador(w http.ResponseWriter, r *http.Request) {

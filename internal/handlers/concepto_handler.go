@@ -3,9 +3,11 @@ package handlers
 import (
 	"encoding/csv"
 	"html/template"
+	"math"
 	"net/http"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
+	"strconv"
 	"strings"
 )
 
@@ -19,10 +21,55 @@ func (h *ConceptoHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ConceptoHandler) ListarConceptos(w http.ResponseWriter, r *http.Request) {
-	conceptos, _ := h.Repo.ObtenerTodos()
-	tmpl, _ := template.ParseFiles("ui/templates/admin/conceptos_ui.html")
-	// Usamos un bloque específico dentro de la plantilla para solo recargar la tabla
-	tmpl.ExecuteTemplate(w, "tabla_conceptos", conceptos)
+	busqueda := r.URL.Query().Get("buscar")
+	tipo := r.URL.Query().Get("tipo")
+	limiteStr := r.URL.Query().Get("limite")
+	paginaStr := r.URL.Query().Get("pagina")
+
+	limite, err := strconv.Atoi(limiteStr)
+	if err != nil || limite <= 0 {
+		limite = 10 // Por defecto mostramos 10
+	}
+
+	pagina, err := strconv.Atoi(paginaStr)
+	if err != nil || pagina <= 0 {
+		pagina = 1 // Por defecto empezamos en la página 1
+	}
+	offset := (pagina - 1) * limite
+
+	conceptos, totalRegistros, err := h.Repo.ObtenerTodos(busqueda, tipo, limite, offset)
+	if err != nil {
+		http.Error(w, "Error al listar conceptos", http.StatusInternalServerError)
+		return
+	}
+
+	totalPaginas := int(math.Ceil(float64(totalRegistros) / float64(limite)))
+
+	if totalPaginas == 0 {
+		totalPaginas = 1
+	}
+
+	datos := struct {
+		Conceptos       []models.ConceptoMaestro
+		TotalPaginas    int
+		PaginaActual    int
+		PaginaAnterior  int
+		PaginaSiguiente int
+	}{
+		Conceptos:       conceptos,
+		TotalPaginas:    totalPaginas,
+		PaginaActual:    pagina,
+		PaginaAnterior:  pagina - 1,
+		PaginaSiguiente: pagina + 1,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/admin/conceptos_ui.html")
+	if err != nil {
+		http.Error(w, "Error al parsear plantilla", http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "tabla_conceptos", datos)
 }
 
 func (h *ConceptoHandler) ImportarCSV(w http.ResponseWriter, r *http.Request) {
