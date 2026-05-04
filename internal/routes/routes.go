@@ -105,6 +105,8 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/admin/ui/parametros", middleware.RequireRole("super_admin", p.VistaUI))
 	mux.HandleFunc("/admin/parametros/lista", middleware.RequireRole("super_admin", p.Listar))
 	mux.HandleFunc("/admin/parametros/guardar", middleware.RequireRole("super_admin", p.Guardar))
+	mux.HandleFunc("/admin/parametros/editar_ui", middleware.RequireRole("super_admin", p.EditarUI))
+	mux.HandleFunc("/admin/parametros/actualizar", middleware.RequireRole("super_admin", p.ActualizarParametro))
 
 	// Rutas protegidas de Usuarios
 	usuarioRepo := repository.NewUsuarioRepository(db)
