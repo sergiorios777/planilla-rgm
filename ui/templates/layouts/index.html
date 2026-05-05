@@ -24,6 +24,13 @@
             align-items: start;
         }
 
+        .icono-menu {
+            width: 1.25em;
+            height: 1.25em;
+            vertical-align: -0.125em;
+            margin-right: 0.5rem;
+        }
+
         /* Diseño responsivo: En pantallas móviles (tablets/celulares) se pone uno debajo del otro */
         @media (max-width: 768px) {
             .layout-admin {
@@ -81,21 +88,45 @@
                 <nav>
                     <ul>
                         <li><small><strong>ADMINISTRACIÓN</strong></small></li>
-                        <li><a href="#" hx-get="/admin/ui/inquilinos" hx-target="#contenido-principal">🏢 Inquilinos</a>
+                        <li>
+                            <a href="#" hx-get="/admin/ui/inquilinos" hx-target="#contenido-principal">
+                                <svg class="icono-menu">
+                                    <use href="#icono-edificio"></use>
+                                </svg>
+                                Inquilinos</a>
                         </li>
-                        <li><a href="#" hx-get="/admin/ui/usuarios" hx-target="#contenido-principal">👥 Usuarios</a>
+                        <li><a href="#" hx-get="/admin/ui/usuarios" hx-target="#contenido-principal">
+                                <svg class="icono-menu">
+                                    <use href="#icono-usuarios"></use>
+                                </svg>
+                                Usuarios</a>
                         </li>
                         <li>
                             <hr>
                         </li>
                         <li><small><strong>CATÁLOGOS GLOBALES</strong></small></li>
-                        <li><a href="#" hx-get="/admin/ui/fuentes-rubros" hx-target="#contenido-principal">🏛️ Fuentes y
-                                Rubros</a></li>
-                        <li><a href="#" hx-get="/admin/ui/mef" hx-target="#contenido-principal">📊 Clasificadores
+                        <li><a href="#" hx-get="/admin/ui/fuentes-rubros" hx-target="#contenido-principal">
+                                <svg class="icono-menu">
+                                    <use href="#icono-edificio-2"></use>
+                                </svg>
+                                Fuentes y Rubros</a>
+                        </li>
+                        <li><a href="#" hx-get="/admin/ui/mef" hx-target="#contenido-principal">
+                                <svg class="icono-menu">
+                                    <use href="#icono-clasificador"></use>
+                                </svg> Clasificadores
                                 MEF</a></li>
-                        <li><a href="#" hx-get="/admin/ui/conceptos" hx-target="#contenido-principal">💰 Conceptos de
+                        <li><a href="#" hx-get="/admin/ui/conceptos" hx-target="#contenido-principal">
+                                <svg class="icono-menu">
+                                    <use href="#icono-maletin"></use>
+                                </svg>
+                                Conceptos de
                                 Planilla</a></li>
-                        <li><a href="#" hx-get="/admin/ui/parametros" hx-target="#contenido-principal">⚙️ Parámetros
+                        <li><a href="#" hx-get="/admin/ui/parametros" hx-target="#contenido-principal">
+                                <svg class="icono-menu">
+                                    <use href="#icono-ajustes"></use>
+                                </svg>
+                                Parámetros
                                 Globales</a></li>
                     </ul>
                 </nav>
@@ -109,6 +140,7 @@
             </div>
         </div>
     </main>
+    {{template "svg_sprite" .}}
 </body>
 
 </html>

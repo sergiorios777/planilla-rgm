@@ -29,7 +29,7 @@ func (h *MefHandler) ListarClasificadores(w http.ResponseWriter, r *http.Request
 
 	limite, err := strconv.Atoi(limiteStr)
 	if err != nil || limite <= 0 {
-		limite = 10 // Por defecto mostramos 10
+		limite = 15 // Por defecto mostramos 10
 	}
 
 	pagina, err := strconv.Atoi(paginaStr)

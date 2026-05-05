@@ -1,13 +1,25 @@
 <article>
     <header>
-        <h3 style="margin-bottom: 0;">👥 Legajo de Trabajadores</h3>
+        <h3 style="margin-bottom: 0;">
+            <svg class="icono-menu">
+                <use href="#icono-usuarios"></use>
+            </svg>
+            Legajo de Trabajadores
+        </h3>
     </header>
     <div class="grid">
         <div id="contenedor-formulario">
             {{template "formulario_crear" .}}
         </div>
 
-        <div>
+        <div id="contenedor-lista">
+            <div class="card">
+                <div style="display:flex; justify-content: end;">
+                    <input id="input-buscar-trabajador" class="form-control" type="search" name="buscar"
+                        placeholder="Buscar por nombre o DNI..." hx-get="/tenant/trabajadores/lista"
+                        hx-trigger="keyup changed delay:500ms, search" hx-target="#lista-trabajadores">
+                </div>
+            </div>
             <div id="lista-trabajadores" hx-get="/tenant/trabajadores/lista" hx-trigger="load">
                 <p aria-busy="true">Cargando personal...</p>
             </div>
@@ -16,7 +28,7 @@
 </article>
 
 {{define "formulario_crear"}}
-<details open>
+<details>
     <summary role="button" class="secondary outline">➕ Registrar Nuevo Trabajador</summary>
     <div style="padding-top: 1rem;">
         <form hx-post="/tenant/trabajadores/crear" hx-target="#lista-trabajadores" hx-swap="innerHTML">
@@ -200,7 +212,7 @@
         </tr>
     </thead>
     <tbody>
-        {{range .}}
+        {{range .Trabajadores}}
         <tr>
             <td><small>{{.NumeroDocumento}}</small></td>
             <td><strong>{{.ApellidoPaterno}} {{.ApellidoMaterno}}</strong><br><small>{{.Nombres}}</small></td>
@@ -228,4 +240,27 @@
         {{end}}
     </tbody>
 </table>
+
+<!-- Controles de paginación-->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+    <!-- Mostramos el estado completo de la navegación -->
+    <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
+
+    <div role="group">
+        {{if gt .PaginaAnterior 0}}
+        <button class="outline" hx-get="/tenant/trabajadores/lista" hx-include="#input-buscar-trabajador"
+            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#lista-trabajadores">
+            ⬅️ Anterior
+        </button>
+        {{end}}
+
+        <!-- Evaluamos si estamos antes del final para mostrar el botón "Siguiente" -->
+        {{if lt .PaginaActual .TotalPaginas}}
+        <button class="outline" hx-get="/tenant/trabajadores/lista" hx-include="#input-buscar-trabajador"
+            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#lista-trabajadores">
+            Siguiente ➡️
+        </button>
+        {{end}}
+    </div>
+</div>
 {{end}}

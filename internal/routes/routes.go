@@ -68,11 +68,12 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 
 	// 🔒 Reemplazamos RequireAuth por RequireRole("super_admin")
 	mux.HandleFunc("/admin", middleware.RequireRole("super_admin", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("ui/templates/layouts/index.html")
+		tmpl, err := template.ParseFiles("ui/templates/layouts/index.html", "ui/templates/layouts/iconos_sprite.html")
 		if err != nil {
 			http.Error(w, "Error cargando la vista principal", http.StatusInternalServerError)
 			return
 		}
+
 		tmpl.Execute(w, nil)
 	}))
 
@@ -129,7 +130,7 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	// Ruta al esqueleto de tenant
 	mux.HandleFunc("/tenant", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("ui/templates/layouts/tenant_index.html")
+		tmpl, err := template.ParseFiles("ui/templates/layouts/tenant_index.html", "ui/templates/layouts/iconos_sprite.html")
 		if err != nil {
 			http.Error(w, "Error cargando la vista principal del inquilino", http.StatusInternalServerError)
 			return

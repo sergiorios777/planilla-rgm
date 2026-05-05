@@ -34,10 +34,50 @@ func (h *TrabajadorHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 
 func (h *TrabajadorHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
-	trabajadores, _ := h.Repo.ObtenerTodos(tenantID)
+	busqueda := r.URL.Query().Get("buscar")
+	limiteStr := r.URL.Query().Get("limite")
+	paginaStr := r.URL.Query().Get("pagina")
+
+	limite, err := strconv.Atoi(limiteStr)
+	if err != nil || limite <= 0 {
+		limite = 10 // Por defecto mostramos 10
+	}
+
+	pagina, err := strconv.Atoi(paginaStr)
+	if err != nil || pagina <= 0 {
+		pagina = 1 // Por defecto empezamos en la página 1
+	}
+
+	offset := (pagina - 1) * limite
+
+	trabajadores, totalRegistros, err := h.Repo.ObtenerTodosPaginacion(tenantID, busqueda, limite, offset)
+	if err != nil {
+		http.Error(w, "Error al listar trabajadores", http.StatusInternalServerError)
+		return
+	}
+
+	totalPaginas := (totalRegistros + limite - 1) / limite
+
+	if totalPaginas == 0 {
+		totalPaginas = 1
+	}
+
+	datos := struct {
+		Trabajadores    []models.Trabajador
+		TotalPaginas    int
+		PaginaActual    int
+		PaginaAnterior  int
+		PaginaSiguiente int
+	}{
+		Trabajadores:    trabajadores,
+		TotalPaginas:    totalPaginas,
+		PaginaActual:    pagina,
+		PaginaAnterior:  pagina - 1,
+		PaginaSiguiente: pagina + 1,
+	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/trabajadores_ui.html")
-	tmpl.ExecuteTemplate(w, "tabla_trabajadores", trabajadores)
+	tmpl.ExecuteTemplate(w, "tabla_trabajadores", datos)
 }
 
 func (h *TrabajadorHandler) Crear(w http.ResponseWriter, r *http.Request) {

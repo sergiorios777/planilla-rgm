@@ -1,6 +1,9 @@
 <article>
     <header>
-        <h3>Catálogo: Clasificadores Presupuestales (MEF)</h3>
+        <h3><svg class="icono-menu">
+                <use href="#icono-clasificador"></use>
+            </svg>
+            Catálogo: Clasificadores Presupuestales (MEF)</h3>
     </header>
 
     <div class="grid">
@@ -60,7 +63,9 @@
 
 {{ define "crear_clasificador"}}
 <details close>
-    <summary role="button" class="secondary outline">​📒 Registrar Clasificador</summary>
+    <summary role="button" class="secondary outline"><svg class="icono-menu">
+            <use href="#icono-nuevo-1"></use>
+        </svg>Registrar Clasificador</summary>
     <h4>Registrar Clasificador</h4>
     <form hx-post="/admin/mef/crear" hx-target="#lista-mef" hx-swap="innerHTML">
         <div class="grid">
@@ -80,7 +85,9 @@
 
 {{define "importacion_masiva"}}
 <details close>
-    <summary role="button" class="secondary outline">📤 Importación Masiva (CSV)</summary>
+    <summary role="button" class="secondary outline"><svg class="icono-menu">
+            <use href="#icono-importar"></use>
+        </svg>Importación Masiva (CSV)</summary>
     <h4>Importación Masiva (CSV)</h4>
     <p><small>Sube el archivo oficial del MEF. Columnas requeridas: ANIO, CLASIFICADOR, DESCRIPCION.</small>
     </p>
@@ -94,7 +101,9 @@
 
 {{define "vinculacion_jerarquica"}}
 <details open>
-    <summary role="button" class="secondary outline">🔗 Vincular Jerarquía</summary>
+    <summary role="button" class="secondary outline"><svg class="icono-menu">
+            <use href="#icono-enlace"></use>
+        </svg>Vincular Jerarquía</summary>
     <p><small>Ejecuta la vinculación de jerarquías (Padre/Hijo) para un año específico si los datos se
             desincronizan.</small></p>
 

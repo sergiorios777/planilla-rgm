@@ -13,6 +13,13 @@
             font-size: 14px;
             /* El valor original suele ser 16px o más */
         }
+
+        .icono-menu {
+            width: 1.25em;
+            height: 1.25em;
+            vertical-align: -0.125em;
+            margin-right: 0.5rem;
+        }
     </style>
 </head>
 
@@ -45,9 +52,17 @@
                         <hr style="margin: 1rem 0;">
 
                         <li><small><strong>RECURSOS HUMANOS</strong></small></li>
-                        <li><a href="#" hx-get="/tenant/ui/trabajadores" hx-target="#contenido-tenant">👥 Trabajadores
-                                (Legajo)</a></li>
-                        <li><a href="#" hx-get="/tenant/ui/contratos" hx-target="#contenido-tenant">📄 Contratos</a>
+                        <li><a href="#" hx-get="/tenant/ui/trabajadores" hx-target="#contenido-tenant">
+                                <svg class="icono-menu">
+                                    <use href="#icono-usuarios"></use>
+                                </svg>
+                                Trabajadores (Legajo)</a>
+                        </li>
+                        <li><a href="#" hx-get="/tenant/ui/contratos" hx-target="#contenido-tenant">
+                                <svg class="icono-menu">
+                                    <use href="#icono-carpeta-usuario"></use>
+                                </svg>
+                                Contratos</a>
                         </li>
 
                         <hr style="margin: 1rem 0;">
@@ -95,6 +110,7 @@
 
         </div>
     </main>
+    {{template "svg_sprite" .}}
 </body>
 
 </html>

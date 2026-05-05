@@ -2,6 +2,8 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
+	"log"
 	"planilla-rgm/internal/models"
 )
 
@@ -32,16 +34,17 @@ func (r *TrabajadorRepository) ObtenerAFPsActivas() (map[int]string, error) {
 	return afps, nil
 }
 
-// Obtener todos los trabajadores de un tenant
+// Obtener todos los trabajadores de un tenant (sin paginación)
 func (r *TrabajadorRepository) ObtenerTodos(tenantID int) ([]models.Trabajador, error) {
 	query := `
 		SELECT id, tenant_id, tipo_documento, numero_documento, nombres, apellido_paterno, apellido_materno, 
 		       TO_CHAR(fecha_nacimiento, 'YYYY-MM-DD'), sexo, activo,
 		       COALESCE(regimen_pensionario, 'ONP'), COALESCE(afp_id, 0), COALESCE(afp_tipo_comision, ''), COALESCE(cuspp, '')
 		FROM trabajadores 
-		WHERE tenant_id = $1 
+		WHERE tenant_id = $1
 		ORDER BY apellido_paterno, apellido_materno ASC
 	`
+
 	rows, err := r.db.Query(query, tenantID)
 	if err != nil {
 		return nil, err
@@ -62,6 +65,61 @@ func (r *TrabajadorRepository) ObtenerTodos(tenantID int) ([]models.Trabajador, 
 		lista = append(lista, t)
 	}
 	return lista, nil
+}
+
+// Obtener todos los trabajadores de un tenant paginado
+func (r *TrabajadorRepository) ObtenerTodosPaginacion(tenantID int, busqueda string, limite int, offset int) ([]models.Trabajador, int, error) {
+	whereClause := `WHERE tenant_id = $1`
+
+	args := []interface{}{tenantID}
+	contadorArgs := 2
+
+	if busqueda != "" {
+		whereClause += fmt.Sprintf(` AND (numero_documento ILIKE $%d OR nombres || ' ' || apellido_paterno || ' ' || apellido_materno ILIKE $%d)`, contadorArgs, contadorArgs)
+		args = append(args, "%"+busqueda+"%")
+		contadorArgs++
+	}
+
+	var totalRegistros int
+	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM trabajadores %s`, whereClause)
+	err := r.db.QueryRow(countQuery, args...).Scan(&totalRegistros)
+	if err != nil {
+		return nil, 0, err
+	}
+	log.Println("Total registros trabajadores: ", totalRegistros)
+
+	query := fmt.Sprintf(`
+		SELECT id, tenant_id, tipo_documento, numero_documento, nombres, apellido_paterno, apellido_materno, 
+		       TO_CHAR(fecha_nacimiento, 'YYYY-MM-DD'), sexo, activo,
+		       COALESCE(regimen_pensionario, 'ONP'), COALESCE(afp_id, 0), COALESCE(afp_tipo_comision, ''), COALESCE(cuspp, '')
+		FROM trabajadores 
+		%s
+		ORDER BY apellido_paterno, apellido_materno ASC
+		LIMIT $%d OFFSET $%d
+	`, whereClause, contadorArgs, contadorArgs+1)
+
+	args = append(args, limite, offset)
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var lista []models.Trabajador
+	for rows.Next() {
+		var t models.Trabajador
+		var fecha sql.NullString
+		err := rows.Scan(&t.ID, &t.TenantID, &t.TipoDocumento, &t.NumeroDocumento, &t.Nombres, &t.ApellidoPaterno, &t.ApellidoMaterno, &fecha, &t.Sexo, &t.Activo, &t.RegimenPensionario, &t.AfpID, &t.AfpTipoComision, &t.Cuspp)
+		if err != nil {
+			return nil, 0, err
+		}
+		if fecha.Valid {
+			t.FechaNacimiento = fecha.String
+		}
+		lista = append(lista, t)
+	}
+	return lista, totalRegistros, nil
 }
 
 // Obtener trabajador por ID y tenantID
