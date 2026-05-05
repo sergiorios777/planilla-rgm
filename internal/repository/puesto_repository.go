@@ -2,8 +2,10 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"planilla-rgm/internal/models"
+	"strings"
 
 	"github.com/lib/pq"
 )
@@ -86,6 +88,82 @@ func (r *PuestoRepository) ObtenerTodos(tenantID int) ([]models.Puesto, error) {
 		}
 	}
 	return lista, nil
+}
+
+// ObtenerTodosPaginacion todos los registros para paginacion
+func (r *PuestoRepository) ObtenerTodosPaginacion(tenantID int, metaID int, regimenID int, busqueda string, estado string, limite int, offset int) ([]models.Puesto, int, error) {
+	whereClause := "WHERE p.tenant_id = $1"
+
+	params := []interface{}{tenantID}
+	paramIndex := 2
+
+	if metaID > 0 {
+		whereClause += fmt.Sprintf(" AND p.meta_id = $%d", paramIndex)
+		params = append(params, metaID)
+		paramIndex++
+	}
+	if regimenID > 0 {
+		whereClause += fmt.Sprintf(" AND p.regimen_id = $%d", paramIndex)
+		params = append(params, regimenID)
+		paramIndex++
+	}
+	if busqueda != "" {
+		whereClause += fmt.Sprintf(" AND p.nombre ILIKE $%d", paramIndex)
+		params = append(params, "%"+busqueda+"%")
+		paramIndex++
+	}
+	if estado != "" {
+		estado = strings.ToUpper(estado)
+		whereClause += fmt.Sprintf(" AND p.estado = $%d", paramIndex)
+		params = append(params, estado)
+		paramIndex++
+	}
+
+	var totalRegistros int
+	countQuery := fmt.Sprintf(
+		`
+			SELECT COUNT(*) FROM puestos p 
+			INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id 
+			LEFT JOIN metas_presupuestales m ON p.meta_id = m.id 
+			LEFT JOIN fuentes_rubros fr ON p.fuente_rubro_id = fr.id 
+			%s
+		`, whereClause)
+
+	err := r.db.QueryRow(countQuery, params...).Scan(&totalRegistros)
+	if err != nil {
+		log.Println("Error al obtener el total de registros (en puesto_repository):", err)
+		return nil, 0, err
+	}
+
+	query := fmt.Sprintf(`
+		SELECT p.id, p.nombre, p.sueldo_presupuestado, p.estado, p.activo,
+		       m.codigo, fr.rubro, rl.descripcion, p.es_dietario
+		FROM puestos p
+		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
+		LEFT JOIN metas_presupuestales m ON p.meta_id = m.id
+		LEFT JOIN fuentes_rubros fr ON p.fuente_rubro_id = fr.id
+		%s
+		ORDER BY p.id DESC
+		LIMIT $%d OFFSET $%d
+	`, whereClause, paramIndex, paramIndex+1)
+
+	params = append(params, limite, offset)
+
+	rows, err := r.db.Query(query, params...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var lista []models.Puesto
+	for rows.Next() {
+		var p models.Puesto
+		err := rows.Scan(&p.ID, &p.Nombre, &p.SueldoPresupuestado, &p.Estado, &p.Activo, &p.MetaCodigo, &p.FuenteRubroDesc, &p.RegimenDesc, &p.EsDietario)
+		if err == nil {
+			lista = append(lista, p)
+		}
+	}
+	return lista, totalRegistros, nil
 }
 
 func (r *PuestoRepository) Crear(p *models.Puesto) error {

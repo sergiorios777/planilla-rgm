@@ -1,6 +1,11 @@
 <article>
     <header>
-        <h3 style="margin-bottom: 0;">🪑 Cuadro de Puestos (Plazas)</h3>
+        <h3 style="margin-bottom: 0;">
+            <svg class="icono-menu">
+                <use href="#icono-puestos"></use>
+            </svg>
+            Cuadro de Puestos (Plazas)
+        </h3>
     </header>
     <div class="grid">
         <div id="contenedor-formulario">
@@ -10,7 +15,58 @@
             <!--Espacio en blanco para que el formulario no se estire-->
         </div>
     </div>
-    <div class="grid">
+    <div>
+        <form id="form-filtros-puestos" class="grid">
+            <label>
+                Buscar
+                <input type="search" name="buscar" placeholder="Código o descripción..." hx-get="/tenant/puestos/lista"
+                    hx-trigger="keyup changed delay:500ms, search" hx-include="#form-filtros-puestos"
+                    hx-target="#lista-puestos">
+            </label>
+
+            <label>
+                Meta
+                <select name="meta_id" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
+                    hx-target="#lista-puestos">
+                    <option value="">Todos</option>
+                    {{range .Metas}}{{if .Activo}}
+                    <option value="{{.ID}}">{{.Codigo}} - {{.Descripcion}}</option>
+                    {{end}}{{end}}
+                </select>
+            </label>
+
+            <label>
+                Régimen Laboral
+                <select name="regimen_id" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
+                    hx-target="#lista-puestos">
+                    <option value="">Todos</option>
+                    {{range .Regimenes}}
+                    <option value="{{.ID}}">{{.Descripcion}}</option>
+                    {{end}}
+                </select>
+            </label>
+
+            <label>
+                Estado
+                <select name="estado" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
+                    hx-target="#lista-puestos">
+                    <option value="">Todos</option>
+                    <option value="vacante">Libre</option>
+                    <option value="ocupado">Ocupada</option>
+                </select>
+            </label>
+
+            <label style="width: 150px;">
+                Mostrar
+                <select name="limite" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
+                    hx-target="#lista-puestos">
+                    <option value="10">10 filas</option>
+                    <option value="20">20 filas</option>
+                    <option value="50">50 filas</option>
+                    <option value="100">100 filas</option>
+                </select>
+            </label>
+        </form>
         <div id="lista-puestos" hx-get="/tenant/puestos/lista" hx-trigger="load">
             <p aria-busy="true">Cargando plazas...</p>
         </div>
@@ -19,7 +75,12 @@
 
 {{define "formulario_crear"}}
 <details close>
-    <summary role="button" class="secondary outline">➕ Crear Nueva Plaza</summary>
+    <summary role="button" class="secondary outline">
+        <svg class="icono-menu">
+            <use href="#icono-nuevo-1"></use>
+        </svg>
+        Registrar Nueva Plaza
+    </summary>
     <div style="padding-top: 1rem;">
         <form hx-post="/tenant/puestos/crear" hx-target="#lista-puestos" hx-swap="innerHTML">
 
@@ -75,7 +136,12 @@
 
 {{define "formulario_editar"}}
 <details open>
-    <summary role="button" class="contrast">✏️ Editando Plaza: {{.Puesto.Nombre}}</summary>
+    <summary role="button" class="contrast">
+        <svg class="icono-menu">
+            <use href="#icono-lapiz-cuadrado"></use>
+        </svg>
+        Editando Plaza: {{.Puesto.Nombre}}
+    </summary>
     <div style="padding-top: 1rem;">
         <form hx-put="/tenant/puestos/actualizar" hx-target="#contenido-tenant">
             <input type="hidden" name="id" value="{{.Puesto.ID}}">
@@ -151,7 +217,7 @@
         </tr>
     </thead>
     <tbody>
-        {{range .}}
+        {{range .Puestos}}
         <tr>
             <td>
                 <strong>{{.Nombre}}</strong><br>
@@ -183,7 +249,7 @@
                 <div style="display: flex; gap: 0.5rem;">
                     <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
                         hx-get="/tenant/puestos/editar?id={{.ID}}" hx-target="#contenedor-formulario">
-                        ✏️ Editar
+                        Editar
                     </button>
 
                     <button class="outline primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
@@ -200,4 +266,27 @@
         {{end}}
     </tbody>
 </table>
+
+<!-- Controles de paginación-->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+    <!-- Mostramos el estado completo de la navegación -->
+    <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
+
+    <div role="group">
+        {{if gt .PaginaAnterior 0}}
+        <button class="outline" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
+            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#lista-puestos">
+            ⬅️ Anterior
+        </button>
+        {{end}}
+
+        <!-- Evaluamos si estamos antes del final para mostrar el botón "Siguiente" -->
+        {{if lt .PaginaActual .TotalPaginas}}
+        <button class="outline" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
+            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#lista-puestos">
+            Siguiente ➡️
+        </button>
+        {{end}}
+    </div>
+</div>
 {{end}}

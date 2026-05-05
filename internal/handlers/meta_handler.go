@@ -19,10 +19,52 @@ func (h *MetaHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 
 func (h *MetaHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r) // Usamos el helper que ya existe en este paquete
-	metas, _ := h.Repo.ObtenerTodos(tenantID)
+	busqueda := r.URL.Query().Get("buscar")
+	estado := r.URL.Query().Get("estado")
+	limiteStr := r.URL.Query().Get("limite")
+	paginaStr := r.URL.Query().Get("pagina")
+
+	limite, err := strconv.Atoi(limiteStr)
+	if err != nil || limite <= 0 {
+		limite = 10 // Por defecto mostramos 10
+	}
+
+	pagina, err := strconv.Atoi(paginaStr)
+	if err != nil || pagina <= 0 {
+		pagina = 1 // Por defecto empezamos en la página 1
+	}
+
+	offset := (pagina - 1) * limite
+
+	metas, totalRegistros, err := h.Repo.ObtenerTodosPaginacion(tenantID, busqueda, estado, limite, offset)
+	if err != nil {
+		http.Error(w, "Error al obtener las metas", http.StatusInternalServerError)
+		return
+	}
+
+	totalPaginas := (totalRegistros + limite - 1) / limite
+
+	if totalPaginas == 0 {
+		totalPaginas = 1
+	}
+
+	// Construimos los datos struc y objetos al vuelo
+	datosVista := struct {
+		Metas           []models.MetaPresupuestal
+		TotalPaginas    int
+		PaginaActual    int
+		PaginaAnterior  int
+		PaginaSiguiente int
+	}{
+		Metas:           metas,
+		TotalPaginas:    totalPaginas,
+		PaginaActual:    pagina,
+		PaginaAnterior:  pagina - 1,
+		PaginaSiguiente: pagina + 1,
+	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/metas_ui.html")
-	tmpl.ExecuteTemplate(w, "tabla_metas", metas)
+	tmpl.ExecuteTemplate(w, "tabla_metas", datosVista)
 }
 
 func (h *MetaHandler) Crear(w http.ResponseWriter, r *http.Request) {

@@ -22,7 +22,7 @@ func (h *ContratoHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 
 	trabajadores, _ := h.TrabajadorRepo.ObtenerTodos(tenantID)
 	puestos, _ := h.PuestoRepo.ObtenerVacantes(tenantID)
-	regimenes, _ := h.TrabajadorRepo.ObtenerRegimenesLaborales()
+	regimenes, _ := h.PuestoRepo.ObtenerRegimenes()
 
 	datos := map[string]interface{}{
 		"Trabajadores":       trabajadores,

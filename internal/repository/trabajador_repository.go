@@ -33,29 +33,6 @@ func (r *TrabajadorRepository) ObtenerAFPsActivas() (map[int]string, error) {
 	return afps, nil
 }
 
-// ObtenerRegimenesLaborales
-func (r *TrabajadorRepository) ObtenerRegimenesLaborales() (map[int]string, error) {
-	query := `SELECT id, codigo, descripcion FROM regimenes_laborales ORDER BY descripcion`
-	rows, err := r.db.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	regimenes := make(map[int]string)
-	for rows.Next() {
-		var id int
-		var codigo string
-		var descripcion string
-		err := rows.Scan(&id, &codigo, &descripcion)
-		if err != nil {
-			return nil, err
-		}
-		regimenes[id] = codigo + " - " + descripcion
-	}
-	return regimenes, nil
-}
-
 // Obtener todos los trabajadores de un tenant (sin paginación)
 func (r *TrabajadorRepository) ObtenerTodos(tenantID int) ([]models.Trabajador, error) {
 	query := `

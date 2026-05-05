@@ -1,25 +1,39 @@
 <article>
     <header>
-        <h3 style="margin-bottom: 0;">💰 Estructura de Costos de la Plaza</h3>
+        <h3 style="margin-bottom: 0;">
+            <svg class="icono-menu">
+                <use href="#icono-cajas"></use>
+            </svg>
+            Estructura de Costos de la Plaza
+        </h3>
         <p><small>Asigna los ingresos, retenciones y aportes que le corresponden a este puesto.</small></p>
     </header>
 
     <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
         <button class="secondary outline" hx-get="/tenant/ui/puestos" hx-target="#contenido-tenant">
-            ⬅️ Volver al Cuadro de Puestos
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Volver al Cuadro de Puestos
         </button>
 
         <button class="outline" style="color: #d32f2f; border-color: #d32f2f;"
             hx-post="/tenant/puestos-conceptos/restaurar?puesto_id={{.PuestoID}}" hx-target="#contenido-tenant"
             hx-confirm="🚨 ATENCIÓN: Esto borrará los montos actuales y volverá a cargar la plantilla predeterminada. ¿Desea continuar?">
-            🔄 Restaurar Plantilla
+            <svg class="icono-menu">
+                <use href="#icono-refrescar-giro-derecha"></use>
+            </svg> Restaurar Plantilla
         </button>
     </div>
 
     <div class="grid">
         <div id="contenedor-formulario">
             <details close>
-                <summary role="button" class="contrast outline">➕ Añadir Concepto a la Plaza</summary>
+                <summary role="button" class="contrast outline">
+                    <svg class="icono-menu">
+                        <use href="#icono-nuevo-1"></use>
+                    </svg>
+                    Añadir Concepto a la Plaza
+                </summary>
                 <div style="padding-top: 1rem;">
                     <form hx-post="/tenant/puestos-conceptos/crear" hx-target="#contenido-tenant">
                         <input type="hidden" name="puesto_id" value="{{.PuestoID}}">
@@ -74,22 +88,31 @@
             </td>
             <td>
                 {{if .MontoIngresado}}
-                    <div style="cursor: pointer;" 
-                        hx-get="/tenant/puestos-conceptos/editar-monto-ui?id={{.ID}}&puesto_id={{.PuestoID}}"
-                        hx-target="this">
-                        <strong>S/ {{.Monto}}</strong> ✏️
-                    </div>
+                <div style="cursor: pointer;"
+                    hx-get="/tenant/puestos-conceptos/editar-monto-ui?id={{.ID}}&puesto_id={{.PuestoID}}"
+                    hx-target="this">
+                    <strong>S/ {{.Monto}}</strong>
+                    <svg class="icono-menu">
+                        <use href="#icono-lapiz-cuadrado"></use>
+                    </svg>
+                </div>
                 {{else}}
-                    {{if .RequiereMontoManual}}
-                        <mark
-                            style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; cursor: pointer;"
-                            hx-get="/tenant/puestos-conceptos/editar-monto-ui?id={{.ID}}&puesto_id={{.PuestoID}}" 
-                            hx-target="this">
-                            ⚠️ Ingresar Monto
-                        </mark>
-                    {{else}}
-                        <span style="color: #666; font-style: italic;">⚙️ Cálculo Automático</span>
-                    {{end}}
+                {{if .RequiereMontoManual}}
+                <mark
+                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; cursor: pointer;"
+                    hx-get="/tenant/puestos-conceptos/editar-monto-ui?id={{.ID}}&puesto_id={{.PuestoID}}"
+                    hx-target="this">
+                    <svg class="icono-menu">
+                        <use href="#icono-alerta"></use>
+                    </svg> Ingresar Monto
+                </mark>
+                {{else}}
+                <span style="color: #666; font-style: italic;">
+                    <svg class="icono-menu">
+                        <use href="#icono-engranaje"></use>
+                    </svg>
+                    Cálculo Automático</span>
+                {{end}}
                 {{end}}
             </td>
             <td>

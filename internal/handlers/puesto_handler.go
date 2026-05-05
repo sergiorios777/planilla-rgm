@@ -36,10 +36,56 @@ func (h *PuestoHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 
 func (h *PuestoHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
-	puestos, _ := h.Repo.ObtenerTodos(tenantID)
+	busqueda := r.URL.Query().Get("buscar")
+	metaIDStr := r.URL.Query().Get("meta_id")
+	regimenIDStr := r.URL.Query().Get("regimen_id")
+	estado := r.URL.Query().Get("estado")
+	limiteStr := r.URL.Query().Get("limite")
+	paginaStr := r.URL.Query().Get("pagina")
+
+	metaID, err := strconv.Atoi(metaIDStr)
+	regimenID, err := strconv.Atoi(regimenIDStr)
+
+	limite, err := strconv.Atoi(limiteStr)
+	if err != nil || limite <= 0 {
+		limite = 10 // Por defecto mostramos 10
+	}
+
+	pagina, err := strconv.Atoi(paginaStr)
+	if err != nil || pagina <= 0 {
+		pagina = 1 // Por defecto empezamos en la página 1
+	}
+
+	offset := (pagina - 1) * limite
+
+	puestos, totalRegistros, err := h.Repo.ObtenerTodosPaginacion(tenantID, metaID, regimenID, busqueda, estado, limite, offset)
+	if err != nil {
+		http.Error(w, "Error al obtener las metas", http.StatusInternalServerError)
+		return
+	}
+
+	totalPaginas := (totalRegistros + limite - 1) / limite
+
+	if totalPaginas == 0 {
+		totalPaginas = 1
+	}
+
+	datosVista := struct {
+		Puestos         []models.Puesto
+		TotalPaginas    int
+		PaginaActual    int
+		PaginaAnterior  int
+		PaginaSiguiente int
+	}{
+		Puestos:         puestos,
+		TotalPaginas:    totalPaginas,
+		PaginaActual:    pagina,
+		PaginaAnterior:  pagina - 1,
+		PaginaSiguiente: pagina + 1,
+	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/puestos_ui.html")
-	tmpl.ExecuteTemplate(w, "tabla_puestos", puestos)
+	tmpl.ExecuteTemplate(w, "tabla_puestos", datosVista)
 }
 
 func (h *PuestoHandler) Crear(w http.ResponseWriter, r *http.Request) {
