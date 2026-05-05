@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"planilla-rgm/internal/models"
 )
 
@@ -14,7 +15,6 @@ func NewContratoRepository(db *sql.DB) *ContratoRepository {
 }
 
 // ObtenerTodos trae los contratos activos e inactivos de la municipalidad actual
-// Reemplaza estas dos funciones en contrato_repository.go
 func (r *ContratoRepository) ObtenerTodos(tenantID int) ([]models.Contrato, error) {
 	query := `
 		SELECT c.id, c.trabajador_id, c.puesto_id, 
@@ -49,6 +49,86 @@ func (r *ContratoRepository) ObtenerTodos(tenantID int) ([]models.Contrato, erro
 		}
 	}
 	return lista, nil
+}
+
+// ObtenerTodosPaginado paginado
+func (r *ContratoRepository) ObtenerTodosPaginado(tenantID int, busqueda string, regimenID int, limite int, offset int) ([]models.Contrato, int, error) {
+	// 1. Definimos la consulta base con un WHERE inicial para el inquilino
+	whereClause := `WHERE c.tenant_id = $1`
+
+	// 2. Inicializamos nuestros argumentos seguros con el tenantID
+	args := []interface{}{tenantID}
+	contadorArgs := 2 // El siguiente parámetro será $2
+
+	// 3. Lógica de búsqueda dinámica
+	if busqueda != "" {
+		// Buscamos en DNI, Nombres completos o Nombre del Puesto
+		whereClause += fmt.Sprintf(` AND (
+			t.numero_documento ILIKE $%d OR 
+			t.nombres || ' ' || t.apellido_paterno || ' ' || t.apellido_materno ILIKE $%d OR 
+			p.nombre ILIKE $%d
+		)`, contadorArgs, contadorArgs, contadorArgs)
+
+		// Añadimos el valor de búsqueda al arreglo (con los comodines % para coincidencia parcial)
+		args = append(args, "%"+busqueda+"%")
+		contadorArgs++
+	}
+
+	// 4. Lógica del filtro por Régimen Laboral
+	if regimenID > 0 {
+		whereClause += fmt.Sprintf(` AND p.regimen_id = $%d`, contadorArgs)
+		args = append(args, regimenID)
+		contadorArgs++
+	}
+
+	var totalRegistros int
+	countQuery := fmt.Sprintf(`
+		SELECT COUNT(*) FROM contratos c 
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id 
+		INNER JOIN puestos p ON c.puesto_id = p.id 
+		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id %s`, whereClause)
+	err := r.db.QueryRow(countQuery, args...).Scan(&totalRegistros)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	query := fmt.Sprintf(`
+		SELECT c.id, c.trabajador_id, c.puesto_id, 
+		       TO_CHAR(c.fecha_inicio, 'YYYY-MM-DD'), TO_CHAR(c.fecha_fin, 'YYYY-MM-DD'), c.activo,
+		       t.numero_documento, t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
+		       p.nombre AS puesto_nombre, p.sueldo_presupuestado, rl.descripcion AS regimen_descripcion
+		FROM contratos c
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		INNER JOIN puestos p ON c.puesto_id = p.id
+		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
+		%s
+		ORDER BY c.activo DESC, t.apellido_paterno ASC
+		LIMIT $%d OFFSET $%d
+	`, whereClause, contadorArgs, contadorArgs+1)
+
+	args = append(args, limite, offset)
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var lista []models.Contrato
+	for rows.Next() {
+		var c models.Contrato
+		var fechaFin sql.NullString
+		err := rows.Scan(&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fechaFin, &c.Activo,
+			&c.TrabajadorDoc, &c.TrabajadorNombre, &c.PuestoNombre, &c.SueldoPresupuestado, &c.RegimenDesc)
+		if err != nil {
+			return nil, 0, err
+		}
+		if fechaFin.Valid {
+			c.FechaFin = &fechaFin.String
+		}
+		lista = append(lista, c)
+	}
+	return lista, totalRegistros, nil
 }
 
 func (r *ContratoRepository) Crear(c *models.Contrato) error {

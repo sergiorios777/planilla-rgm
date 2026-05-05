@@ -12,29 +12,42 @@
             {{template "formulario_crear" .}}
         </div>
         <div>
-            <form id="form-filtros-contratos" class="grid">
-                <label>
-                    Buscar
-                    <input type="search" name="buscar" placeholder="Código o descripción..."
-                        hx-get="/tenant/contratos/lista" hx-trigger="keyup changed delay:500ms, search"
-                        hx-include="#form-filtros-contratos" hx-target="#lista-contratos">
-                </label>
+            <!-- Vacío -->
+        </div>
+    </div>
+    <div>
+        <form id="form-filtros-contratos" class="grid">
+            <label>
+                Buscar
+                <input type="search" name="buscar" placeholder="Código o descripción..."
+                    hx-get="/tenant/contratos/lista" hx-trigger="keyup changed delay:500ms, search"
+                    hx-include="#form-filtros-contratos" hx-target="#lista-contratos">
+            </label>
 
-                <label>
-                    Mostrar
-                    <select name="limite" hx-get="/tenant/contratos/lista" hx-include="#form-filtros-contratos"
-                        hx-target="#lista-contratos">
-                        <option value="15">15 filas</option>
-                        <option value="25">25 filas</option>
-                        <option value="50">50 filas</option>
-                        <option value="100">100 filas</option>
-                    </select>
-                </label>
-            </form>
-            <div id="lista-contratos" hx-get="/tenant/contratos/lista"
-                hx-trigger="load, recargarTablaContratos from:body">
-                <p aria-busy="true">Cargando contratos...</p>
-            </div>
+            <label>
+                Regimen Laboral
+                <select name="regimen_laboral_id" hx-get="/tenant/contratos/lista" hx-include="#form-filtros-contratos"
+                    hx-target="#lista-contratos">
+                    <option value="">Todos</option>
+                    {{range $id, $nombre := .RegimenesLaborales}}
+                    <option value="{{$id}}">{{$nombre}}</option>
+                    {{end}}
+                </select>
+            </label>
+
+            <label style="width: 150px;">
+                Mostrar
+                <select name="limite" hx-get="/tenant/contratos/lista" hx-include="#form-filtros-contratos"
+                    hx-target="#lista-contratos">
+                    <option value="10">10 filas</option>
+                    <option value="20">20 filas</option>
+                    <option value="50">50 filas</option>
+                    <option value="100">100 filas</option>
+                </select>
+            </label>
+        </form>
+        <div id="lista-contratos" hx-get="/tenant/contratos/lista" hx-trigger="load, recargarTablaContratos from:body">
+            <p aria-busy="true">Cargando contratos...</p>
         </div>
     </div>
 </article>
@@ -139,7 +152,7 @@
         </tr>
     </thead>
     <tbody>
-        {{range .}}
+        {{range .Contratos}}
         <tr>
             <td><strong>{{.TrabajadorNombre}}</strong><br><small>Doc: {{.TrabajadorDoc}}</small></td>
             <td><mark>{{.RegimenDesc}}</mark><br><small><strong>{{.PuestoNombre}}</strong> (S/

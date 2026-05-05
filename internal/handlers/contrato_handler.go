@@ -21,11 +21,13 @@ func (h *ContratoHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
 
 	trabajadores, _ := h.TrabajadorRepo.ObtenerTodos(tenantID)
-	puestos, _ := h.PuestoRepo.ObtenerVacantes(tenantID) // NUEVO
+	puestos, _ := h.PuestoRepo.ObtenerVacantes(tenantID)
+	regimenes, _ := h.TrabajadorRepo.ObtenerRegimenesLaborales()
 
 	datos := map[string]interface{}{
-		"Trabajadores": trabajadores,
-		"Puestos":      puestos,
+		"Trabajadores":       trabajadores,
+		"Puestos":            puestos,
+		"RegimenesLaborales": regimenes,
 	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/contratos_ui.html")
@@ -34,10 +36,56 @@ func (h *ContratoHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 
 func (h *ContratoHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
-	contratos, _ := h.Repo.ObtenerTodos(tenantID)
+	busqueda := r.URL.Query().Get("buscar")
+	limiteStr := r.URL.Query().Get("limite")
+	paginaStr := r.URL.Query().Get("pagina")
+	regimenStr := r.URL.Query().Get("regimen_laboral_id")
+
+	limite, err := strconv.Atoi(limiteStr)
+	if err != nil || limite <= 0 {
+		limite = 10 // Por defecto mostramos 10
+	}
+
+	pagina, err := strconv.Atoi(paginaStr)
+	if err != nil || pagina <= 0 {
+		pagina = 1 // Por defecto empezamos en la página 1
+	}
+
+	regimenID, err := strconv.Atoi(regimenStr)
+	if err != nil {
+		regimenID = 0
+	}
+
+	offset := (pagina - 1) * limite
+
+	contratos, totalRegistros, err := h.Repo.ObtenerTodosPaginado(tenantID, busqueda, regimenID, limite, offset)
+	if err != nil {
+		http.Error(w, "Error al obtener los contratos", http.StatusInternalServerError)
+		return
+	}
+	totalPaginas := (totalRegistros + limite - 1) / limite
+
+	if totalPaginas == 0 {
+		totalPaginas = 1
+	}
+
+	// Construimos los datos struc y objetos al vuelo
+	datosPaginacion := struct {
+		Contratos       []models.Contrato
+		TotalPaginas    int
+		PaginaActual    int
+		PaginaAnterior  int
+		PaginaSiguiente int
+	}{
+		Contratos:       contratos,
+		TotalPaginas:    totalPaginas,
+		PaginaActual:    pagina,
+		PaginaAnterior:  pagina - 1,
+		PaginaSiguiente: pagina + 1,
+	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/contratos_ui.html")
-	tmpl.ExecuteTemplate(w, "tabla_contratos", contratos)
+	tmpl.ExecuteTemplate(w, "tabla_contratos", datosPaginacion)
 }
 
 func (h *ContratoHandler) Crear(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +160,7 @@ func (h *ContratoHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Reque
 	trabajadores, _ := h.TrabajadorRepo.ObtenerTodos(tenantID)
 	puestos, _ := h.PuestoRepo.ObtenerVacantes(tenantID)
 	datos := map[string]interface{}{"Trabajadores": trabajadores, "Puestos": puestos}
-	
+
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/contratos_ui.html")
 	tmpl.ExecuteTemplate(w, "formulario_crear", datos)
 }
@@ -121,7 +169,7 @@ func (h *ContratoHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Reque
 func (h *ContratoHandler) EditarUI(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
 	tenantID := obtenerTenantID(r)
-	
+
 	contrato, _ := h.Repo.ObtenerPorID(id, tenantID)
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/contratos_ui.html")
@@ -133,10 +181,12 @@ func (h *ContratoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	id, _ := strconv.Atoi(r.FormValue("id"))
 	puestoID, _ := strconv.Atoi(r.FormValue("puesto_id"))
-	
+
 	fFinStr := r.FormValue("fecha_fin")
 	var fFin *string
-	if strings.TrimSpace(fFinStr) != "" { fFin = &fFinStr }
+	if strings.TrimSpace(fFinStr) != "" {
+		fFin = &fFinStr
+	}
 
 	cActualizado := models.Contrato{
 		ID:          id,
@@ -151,7 +201,7 @@ func (h *ContratoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 
 	// Pedimos recargar la tabla
 	w.Header().Set("HX-Trigger", "recargarTablaContratos")
-	
+
 	// Volvemos al form de creación
 	h.FormularioCrearUI(w, r)
 }
