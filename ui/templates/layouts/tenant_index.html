@@ -64,17 +64,29 @@
                                 </svg>
                                 Contratos</a>
                         </li>
+                        <li><a href="#" hx-get="/tenant/ui/asistencia" hx-target="#contenido-tenant">
+                                <svg class="icono-menu">
+                                    <use href="#icono-reloj-alarma"></use>
+                                </svg>
+                                Registrar Tardanzas/Faltas
+                            </a>
+                        </li>
 
                         <hr style="margin: 1rem 0;">
 
-                        <li><small><strong>PRESUPUESTO ANUAL</strong></small></li>
+                        <li><small><strong>PLANILLAS</strong></small></li>
+                        <li><a href="#" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
+                                <svg class="icono-menu">
+                                    <use href="#icono-calculadora"></use>
+                                </svg>
+                                Cálculo de Planillas</a></li>
                         <li><a href="#" hx-get="/tenant/presupuesto/index" hx-target="#contenido-tenant"
-                                hx-push-url="true">📊
+                                hx-push-url="true" disabled>📊
                                 Presupuesto Anual</a></li>
 
                         <hr style="margin: 1rem 0;">
 
-                        <li><small><strong>PRESUPUESTO Y PLAZAS</strong></small></li>
+                        <li><small><strong>METAS, PLAZAS Y CONCEPTOS</strong></small></li>
                         <li><a href="#" hx-get="/tenant/ui/metas" hx-target="#contenido-tenant">
                                 <svg class="icono-menu">
                                     <use href="#icono-objetivo"></use>
@@ -91,17 +103,6 @@
                                 </svg>
                                 Catálogo de Conceptos</a></li>
 
-                        <hr style="margin: 1rem 0;">
-
-                        <li><small><strong>PROCESAMIENTO MENSUAL</strong></small></li>
-                        <li><a href="#" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">📊 Cálculo de
-                                Planillas</a></li>
-
-                        <hr style="margin: 1rem 0;">
-
-                        <li><small><strong>CONTROL DE ASISTENCIA</strong></small></li>
-                        <li><a href="#" hx-get="/tenant/ui/asistencia" hx-target="#contenido-tenant">⏱️ Registrar
-                                Tardanzas/Faltas</a></li>
                     </ul>
                 </nav>
             </aside>

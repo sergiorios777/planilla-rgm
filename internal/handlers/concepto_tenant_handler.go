@@ -29,10 +29,51 @@ func (h *ConceptoTenantHandler) VistaUI(w http.ResponseWriter, r *http.Request) 
 
 func (h *ConceptoTenantHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
-	conceptos, _ := h.Repo.ObtenerTodos(tenantID)
+	busqueda := r.URL.Query().Get("buscar")
+	paginaStr := r.URL.Query().Get("pagina")
+	limiteStr := r.URL.Query().Get("limite")
+
+	limite, err := strconv.Atoi(limiteStr)
+	if err != nil || limite <= 0 {
+		limite = 10 // Por defecto mostramos 10
+	}
+
+	pagina, err := strconv.Atoi(paginaStr)
+	if err != nil || pagina <= 0 {
+		pagina = 1 // Por defecto empezamos en la página 1
+	}
+
+	offset := (pagina - 1) * limite
+
+	conceptos, totalRegistros, err := h.Repo.ObtenerTodosPaginacion(tenantID, busqueda, limite, offset)
+	if err != nil {
+		log.Println("Error al obtener los conceptos:", err)
+		http.Error(w, "Error al obtener los conceptos", http.StatusInternalServerError)
+		return
+	}
+
+	totalPaginas := (totalRegistros + limite - 1) / limite
+
+	if totalPaginas == 0 {
+		totalPaginas = 1
+	}
+
+	datosVista := struct {
+		Conceptos       []models.ConceptoTenant
+		TotalPaginas    int
+		PaginaActual    int
+		PaginaAnterior  int
+		PaginaSiguiente int
+	}{
+		Conceptos:       conceptos,
+		TotalPaginas:    totalPaginas,
+		PaginaActual:    pagina,
+		PaginaAnterior:  pagina - 1,
+		PaginaSiguiente: pagina + 1,
+	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/conceptos_tenant_ui.html")
-	tmpl.ExecuteTemplate(w, "tabla_conceptos_tenant", conceptos)
+	tmpl.ExecuteTemplate(w, "tabla_conceptos_tenant", datosVista)
 }
 
 func (h *ConceptoTenantHandler) Crear(w http.ResponseWriter, r *http.Request) {

@@ -20,7 +20,7 @@
         <form id="form-filtros-conceptos-tenant" class="grid">
             <label>
                 Buscar
-                <input type="search" name="buscar" placeholder="Código o descripción..."
+                <input type="search" name="buscar" placeholder="Código, Clasificador o descripción..."
                     hx-get="/tenant/conceptos-locales/lista" hx-trigger="keyup changed delay:500ms, search"
                     hx-include="#form-filtros-conceptos-tenant" hx-target="#lista-conceptos-tenant">
             </label>
@@ -67,7 +67,7 @@
             </tr>
         </thead>
         <tbody>
-            {{range .}}
+            {{range .Conceptos}}
             <tr id="concepto-{{.ID}}">
                 <td>
                     <strong>{{.NombrePersonalizado}}</strong><br>
@@ -112,6 +112,32 @@
             {{end}}
         </tbody>
     </table>
+</div>
+<!-- Controles de paginación-->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+    <!-- Mostramos el estado completo de la navegación -->
+    <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
+
+    <div role="group">
+        {{if gt .PaginaAnterior 0}}
+        <button class="outline" hx-get="/tenant/conceptos-locales/lista" hx-include="#form-filtros-conceptos-tenant"
+            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#lista-conceptos-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Anterior
+        </button>
+        {{end}}
+
+        <!-- Evaluamos si estamos antes del final para mostrar el botón "Siguiente" -->
+        {{if lt .PaginaActual .TotalPaginas}}
+        <button class="outline" hx-get="/tenant/conceptos-locales/lista" hx-include="#form-filtros-conceptos-tenant"
+            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#lista-conceptos-tenant">
+            Siguiente <svg class="icono-menu">
+                <use href="#icono-siguiente-cuadrado"></use>
+            </svg>
+        </button>
+        {{end}}
+    </div>
 </div>
 {{end}}
 

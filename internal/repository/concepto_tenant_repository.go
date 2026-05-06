@@ -2,6 +2,8 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
+	"log"
 	"planilla-rgm/internal/models"
 )
 
@@ -73,6 +75,81 @@ func (r *ConceptoTenantRepository) ObtenerTodos(tenantID int) ([]models.Concepto
 		}
 	}
 	return lista, nil
+}
+
+// ObtenerTodosPaginacion trae el catálogo configurado por la municipalidad con paginación
+func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda string, limite int, offset int) ([]models.ConceptoTenant, int, error) {
+	whereClause := "WHERE ct.tenant_id = $1"
+	params := []interface{}{tenantID}
+	paramIndex := 2
+
+	if busqueda != "" {
+		whereClause += fmt.Sprintf(" AND (ct.nombre_personalizado ILIKE $%d OR cm.codigo ILIKE $%d OR mef.codigo ILIKE $%d)", paramIndex, paramIndex+1, paramIndex+2)
+		params = append(params, "%"+busqueda+"%", "%"+busqueda+"%", "%"+busqueda+"%")
+		paramIndex += 3
+	}
+
+	var totalRegistros int
+	countQuery := fmt.Sprintf(
+		`
+			SELECT COUNT(*) FROM conceptos_tenant ct 
+			INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+			LEFT JOIN clasificadores_mef mef ON ct.clasificador_id = mef.id
+			%s
+		`,
+		whereClause,
+	)
+
+	err := r.db.QueryRow(countQuery, params...).Scan(&totalRegistros)
+	if err != nil {
+		log.Println("Error al obtener el total de registros (en concepto_tenant_repository):", err)
+		return nil, 0, err
+	}
+
+	query := fmt.Sprintf(`
+		SELECT ct.id, ct.concepto_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
+		       cm.codigo, cm.tipo, 
+			mef.codigo AS clasificador_codigo
+		FROM conceptos_tenant ct
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+		LEFT JOIN clasificadores_mef mef ON ct.clasificador_id = mef.id
+		%s
+		ORDER BY cm.tipo ASC, ct.nombre_personalizado ASC
+		LIMIT $%d OFFSET $%d
+	`,
+		whereClause,
+		paramIndex,
+		paramIndex+1,
+	)
+
+	params = append(params, limite, offset)
+
+	rows, err := r.db.Query(query, params...)
+	if err != nil {
+		log.Println("Error al paginar conceptos locales:", err)
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var lista []models.ConceptoTenant
+	for rows.Next() {
+		var ct models.ConceptoTenant
+		var clasifID sql.NullInt64
+		var clasifCod sql.NullString
+
+		err := rows.Scan(&ct.ID, &ct.ConceptoID, &ct.NombrePersonalizado, &ct.FrecuenciaMeses, &clasifID, &ct.Activo,
+			&ct.ConceptoCodigo, &ct.ConceptoTipo, &clasifCod)
+		if err == nil {
+			if clasifID.Valid {
+				id := int(clasifID.Int64)
+				ct.ClasificadorID = &id
+				ct.ClasificadorCodigo = clasifCod.String
+			}
+			lista = append(lista, ct)
+		}
+	}
+
+	return lista, totalRegistros, nil
 }
 
 // Crear inserta la configuración local
