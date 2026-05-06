@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"planilla-rgm/internal/models"
 	"strconv"
 	"strings"
 
@@ -30,10 +31,51 @@ func (h *AsistenciaHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 
 func (h *AsistenciaHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
-	ocurrencias, _ := h.Repo.ListarHistorial(tenantID)
+	buscar := r.URL.Query().Get("buscar")
+	tipo := r.URL.Query().Get("tipo")
+	procesado := r.URL.Query().Get("procesado")
+	paginaStr := r.URL.Query().Get("pagina")
+	limiteStr := r.URL.Query().Get("limite")
+
+	limite, err := strconv.Atoi(limiteStr)
+	if err != nil || limite <= 0 {
+		limite = 10 // Por defecto mostramos 10
+	}
+
+	pagina, err := strconv.Atoi(paginaStr)
+	if err != nil || pagina <= 0 {
+		pagina = 1 // Por defecto empezamos en la página 1
+	}
+
+	offset := (pagina - 1) * limite
+
+	ocurrencias, totalRegistros, err := h.Repo.ListarPaginado(tenantID, buscar, tipo, procesado, limite, offset)
+	if err != nil {
+		http.Error(w, "Error interno del servidor", http.StatusInternalServerError)
+		return
+	}
+
+	totalPaginas := (totalRegistros + limite - 1) / limite
+	if totalPaginas == 0 {
+		totalPaginas = 1
+	}
+
+	datosVista := struct {
+		Ocurrencias     []models.OcurrenciaVista
+		TotalPaginas    int
+		PaginaActual    int
+		PaginaAnterior  int
+		PaginaSiguiente int
+	}{
+		Ocurrencias:     ocurrencias,
+		TotalPaginas:    totalPaginas,
+		PaginaActual:    pagina,
+		PaginaAnterior:  pagina - 1,
+		PaginaSiguiente: pagina + 1,
+	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/asistencia_ui.html")
-	tmpl.ExecuteTemplate(w, "tabla_ocurrencias", ocurrencias)
+	tmpl.ExecuteTemplate(w, "tabla_ocurrencias", datosVista)
 }
 
 func (h *AsistenciaHandler) Crear(w http.ResponseWriter, r *http.Request) {

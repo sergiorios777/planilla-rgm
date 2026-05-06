@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"planilla-rgm/internal/models"
 	"strings"
 )
@@ -115,4 +116,90 @@ func (r *AsistenciaRepository) Actualizar(id int, tipo string, fecha string, can
 	`
 	_, err := r.db.Exec(query, tipo, fecha, cantidad, id, tenantID)
 	return err
+}
+
+func (r *AsistenciaRepository) ListarPaginado(tenantID int, buscar string, tipo string, procesado string, limite int, offset int) ([]models.OcurrenciaVista, int, error) {
+
+	whereClause := "WHERE c.tenant_id = $1"
+	args := []interface{}{tenantID}
+	paramIndex := 2
+
+	if buscar != "" {
+		buscaParam := "%" + strings.ToLower(buscar) + "%"
+		whereClause += fmt.Sprintf(` AND (LOWER(t.numero_documento) LIKE $%d OR LOWER(t.nombres || ' ' || t.apellido_paterno || ' ' || t.apellido_materno) LIKE $%d)`, paramIndex, paramIndex+1)
+		args = append(args, buscaParam, buscaParam)
+		paramIndex += 2
+	}
+
+	if tipo != "" {
+		whereClause += fmt.Sprintf(" AND o.tipo = $%d", paramIndex)
+		args = append(args, strings.ToUpper(tipo))
+		paramIndex++
+	}
+
+	// procesado puede llegar con un valor vacío "", "false", "true". Debemos convertir "false" o "true" en booleanos
+	// antes de agregarlos a los argumentos. Por ejemplo, si procesado es "false", lo convertimos a false.
+	var procesadoBool bool
+	if procesado != "" {
+		if procesado == "true" {
+			procesadoBool = true
+		} else {
+			procesadoBool = false
+		}
+
+		whereClause += fmt.Sprintf(" AND o.procesado = $%d", paramIndex)
+		args = append(args, procesadoBool)
+		paramIndex++
+	}
+
+	// 1. Contar registros totales
+	countQuery := fmt.Sprintf(`
+		SELECT COUNT(*)
+		FROM ocurrencias_asistencia o
+		INNER JOIN contratos c ON o.contrato_id = c.id
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		%s
+	`, whereClause)
+
+	var totalRegistros int
+	err := r.db.QueryRow(countQuery, args...).Scan(&totalRegistros)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 2. Obtener lista de la página actual
+	queryLista := fmt.Sprintf(`
+		SELECT o.id, o.contrato_id, t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres,
+		       o.tipo, TO_CHAR(o.fecha_ocurrencia, 'DD/MM/YYYY'), o.cantidad, o.procesado
+		FROM ocurrencias_asistencia o
+		INNER JOIN contratos c ON o.contrato_id = c.id
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		%s
+		ORDER BY o.procesado ASC, o.fecha_ocurrencia DESC 
+		LIMIT $%d OFFSET $%d
+	`, whereClause, paramIndex, paramIndex+1)
+
+	argsLista := append(args, limite, offset)
+
+	rows, err := r.db.Query(queryLista, argsLista...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var lista []models.OcurrenciaVista
+	for rows.Next() {
+		var o models.OcurrenciaVista
+		err := rows.Scan(&o.ID, &o.ContratoID, &o.TrabajadorNombre, &o.Tipo, &o.FechaOcurrencia, &o.Cantidad, &o.Procesado)
+		if err != nil {
+			return nil, 0, err
+		}
+		lista = append(lista, o)
+	}
+
+	for i := range lista {
+		lista[i].FechaOcurrencia = strings.TrimSpace(lista[i].FechaOcurrencia)
+	}
+
+	return lista, totalRegistros, nil
 }

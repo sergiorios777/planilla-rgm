@@ -1,32 +1,79 @@
 <article>
     <header>
-        <h3 style="margin-bottom: 0;">⏱️ Control de Asistencias y Tardanzas</h3>
+        <h3 style="margin-bottom: 0;">
+            <svg class="icono-menu">
+                <use href="#icono-reloj-alarma"></use>
+            </svg> Control de Asistencias y Tardanzas
+        </h3>
     </header>
 
     <div class="grid">
-        <div>
-            <div id="contenedor-formulario-crear">
-                {{template "formulario_crear" .}}
-            </div>
-
-            <div id="contenedor-formulario-importar">
-                {{template "formulario_importar" .}}
-            </div>
+        <div id="contenedor-formulario-crear">
+            {{template "formulario_crear" .}}
         </div>
 
-        <div>
-            <div id="lista-ocurrencias" hx-get="/tenant/asistencia/lista"
-                hx-trigger="load, recargarTablaAsistencias from:body">
-                <p aria-busy="true">Cargando historial...</p>
-            </div>
+        <div id="contenedor-formulario-importar">
+            {{template "formulario_importar" .}}
         </div>
     </div>
+    <div>
+        <form id="form-filtros-ocurrencias" class="grid">
+            <label>
+                Buscar
+                <input type="search" name="buscar" placeholder="Trabajador o DNI..." hx-get="/tenant/asistencia/lista"
+                    hx-trigger="keyup changed delay:500ms, search" hx-include="#form-filtros-ocurrencias"
+                    hx-target="#lista-ocurrencias">
+            </label>
+
+            <div class="grid">
+                <label>
+                    Ocurrencia
+                    <select name="tipo" hx-get="/tenant/asistencia/lista" hx-include="#form-filtros-ocurrencias"
+                        hx-target="#lista-ocurrencias">
+                        <option value="">Todos</option>
+                        <option value="inasistencia">Falta</option>
+                        <option value="tardanza">Tardanza</option>
+                    </select>
+                </label>
+
+                <label>
+                    Estado Procesado
+                    <select name="procesado" hx-get="/tenant/asistencia/lista" hx-include="#form-filtros-ocurrencias"
+                        hx-target="#lista-ocurrencias">
+                        <option value="">Todos</option>
+                        <option value="false">Pendiente</option>
+                        <option value="true">Descontado</option>
+                    </select>
+                </label>
+            </div>
+
+            <label style="width: 150px;">
+                Mostrar
+                <select name="limite" hx-get="/tenant/asistencia/lista" hx-include="#form-filtros-ocurrencias"
+                    hx-target="#lista-ocurrencias">
+                    <option value="10">10 filas</option>
+                    <option value="20">20 filas</option>
+                    <option value="50">50 filas</option>
+                    <option value="100">100 filas</option>
+                </select>
+            </label>
+        </form>
+        <div id="lista-ocurrencias" hx-get="/tenant/asistencia/lista"
+            hx-trigger="load, recargarTablaAsistencias from:body">
+            <p aria-busy="true">Cargando historial...</p>
+        </div>
+    </div>
+
 </article>
 
 {{define "formulario_crear"}}
 <div>
     <details>
-        <summary role="button" class="secondary outline">➕ Registrar Ocurrencia Manual</summary>
+        <summary role="button" class="secondary outline">
+            <svg class="icono-menu">
+                <use href="#icono-nuevo-1"></use>
+            </svg> Registrar Ocurrencia Manual
+        </summary>
         <div style="padding-top: 1rem;">
             <form hx-post="/tenant/asistencia/crear" hx-target="#lista-ocurrencias" hx-swap="innerHTML">
 
@@ -66,7 +113,11 @@
 {{define "formulario_importar"}}
 <div>
     <details>
-        <summary role="button" class="contrast outline">📥 Importación Masiva (Excel)</summary>
+        <summary role="button" class="contrast outline">
+            <svg class="icono-menu">
+                <use href="#icono-importar"></use>
+            </svg> Importación Masiva (Excel)
+        </summary>
         <div style="padding-top: 1rem;">
             <p><small>Sube un archivo <b>.xlsx</b> con 4 columnas exactas. Asegúrate de que la columna de fecha tenga
                     formato de texto (AAAA-MM-DD).</small></p>
@@ -109,14 +160,20 @@
                     </div>
                 </div>
 
-                <span id="cargando-excel" class="htmx-indicator">⏳ Leyendo filas...</span>
+                <span id="cargando-excel" class="htmx-indicator">
+                    <svg class="icono-menu">
+                        <use href="#icono-reloj-arena"></use>
+                    </svg> Leyendo filas...
+                </span>
             </form>
 
             <div id="resultado-importacion" style="margin-top: 1rem;"></div>
 
             <button class="secondary outline" style="margin-top: 0.5rem; width: 100%;" hx-get="/tenant/asistencia/lista"
                 hx-target="#lista-ocurrencias">
-                🔄 Actualizar Tabla
+                <svg class="icono-menu">
+                    <use href="#icono-sincronizar-punto"></use>
+                </svg> Actualizar Tabla
             </button>
         </div>
     </details>
@@ -125,7 +182,11 @@
 
 {{define "formulario_editar"}}
 <details open>
-    <summary role="button" class="primary outline">✏️ Editando Ocurrencia</summary>
+    <summary role="button" class="primary outline">
+        <svg class="icono-menu">
+            <use href="#icono-lapiz-cuadrado"></use>
+        </svg> Editando Ocurrencia
+    </summary>
     <div style="padding-top: 1rem;">
         <form hx-put="/tenant/asistencia/actualizar" hx-target="#contenedor-formulario-crear">
             <input type="hidden" name="id" value="{{.ID}}">
@@ -176,7 +237,7 @@
             </tr>
         </thead>
         <tbody>
-            {{range .}}
+            {{range .Ocurrencias}}
             <tr>
                 <td><small>{{.TrabajadorNombre}}</small></td>
                 <td>{{.FechaOcurrencia}}</td>
@@ -205,7 +266,9 @@
                         <button class="outline secondary"
                             style="padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
                             hx-get="/tenant/asistencia/editar-ui?id={{.ID}}" hx-target="#contenedor-formulario-crear">
-                            ✏️
+                            <svg class="icono-menu">
+                                <use href="#icono-lapiz-cuadrado"></use>
+                            </svg> Editar
                         </button>
                     </div>
                     {{end}}
@@ -218,5 +281,31 @@
             {{end}}
         </tbody>
     </table>
+</div>
+<!-- Controles de paginación-->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+    <!-- Mostramos el estado completo de la navegación -->
+    <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
+
+    <div role="group">
+        {{if gt .PaginaAnterior 0}}
+        <button class="outline" hx-get="/tenant/asistencia/lista" hx-include="#form-filtros-ocurrencias"
+            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#lista-ocurrencias">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Anterior
+        </button>
+        {{end}}
+
+        <!-- Evaluamos si estamos antes del final para mostrar el botón "Siguiente" -->
+        {{if lt .PaginaActual .TotalPaginas}}
+        <button class="outline" hx-get="/tenant/asistencia/lista" hx-include="#form-filtros-ocurrencias"
+            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#lista-ocurrencias">
+            Siguiente <svg class="icono-menu">
+                <use href="#icono-siguiente-cuadrado"></use>
+            </svg>
+        </button>
+        {{end}}
+    </div>
 </div>
 {{end}}

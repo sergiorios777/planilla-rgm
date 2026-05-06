@@ -47,7 +47,6 @@ func (h *ConceptoTenantHandler) Listar(w http.ResponseWriter, r *http.Request) {
 
 	conceptos, totalRegistros, err := h.Repo.ObtenerTodosPaginacion(tenantID, busqueda, limite, offset)
 	if err != nil {
-		log.Println("Error al obtener los conceptos:", err)
 		http.Error(w, "Error al obtener los conceptos", http.StatusInternalServerError)
 		return
 	}

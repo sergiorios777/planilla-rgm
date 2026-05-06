@@ -20,13 +20,24 @@
             vertical-align: -0.125em;
             margin-right: 0.5rem;
         }
+
+        .disabled-link {
+            pointer-events: none;
+            opacity: 0.6;
+            cursor: not-allowed;
+            text-decoration: none;
+            color: #888;
+        }
     </style>
 </head>
 
 <body>
     <nav class="container-fluid" style="border-bottom: 1px solid #e0e0e0; margin-bottom: 2rem; padding: 1rem;">
         <ul>
-            <li><strong>🏛️ Mi Municipalidad</strong></li>
+            <li><strong><svg class="icono-menu">
+                        <use href="#icono-edificio-2"></use>
+                    </svg> Mi Municipalidad</strong>
+            </li>
         </ul>
         <ul>
             <li><small>Operador de Planillas</small></li>
@@ -46,8 +57,12 @@
                 <nav>
                     <ul>
                         <li><small><strong>MI ENTIDAD</strong></small></li>
-                        <li><a href="#" hx-get="/tenant/ui/perfil" hx-target="#contenido-tenant">🏢 Perfil
-                                Institucional</a></li>
+                        <li><a href="#" hx-get="/tenant/ui/perfil" hx-target="#contenido-tenant">
+                                <svg class="icono-menu">
+                                    <use href="#icono-m-cuadrado"></use>
+                                </svg>
+                                Perfil Institucional</a>
+                        </li>
 
                         <hr style="margin: 1rem 0;">
 
@@ -80,8 +95,8 @@
                                     <use href="#icono-calculadora"></use>
                                 </svg>
                                 Cálculo de Planillas</a></li>
-                        <li><a href="#" hx-get="/tenant/presupuesto/index" hx-target="#contenido-tenant"
-                                hx-push-url="true" disabled>📊
+                        <li><a href="#" class="disabled-link" hx-get="/tenant/presupuesto/index"
+                                hx-target="#contenido-tenant" hx-push-url="true">📊
                                 Presupuesto Anual</a></li>
 
                         <hr style="margin: 1rem 0;">
