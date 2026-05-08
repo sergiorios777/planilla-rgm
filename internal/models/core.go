@@ -301,3 +301,22 @@ type PapDetalle struct {
 	Meses                    [12]float64
 	TotalAnual               float64
 }
+
+// ConceptoModelo representa la plantilla base para cada régimen laboral
+type ConceptoModelo struct {
+	ID                  int    `json:"id"`
+	ConceptoID          int    `json:"concepto_id"`
+	NombrePersonalizado string `json:"nombre_personalizado"`
+	FrecuenciaMeses     string `json:"frecuencia_meses"`
+	ClasificadorID      *int   `json:"clasificador_id"` // Es puntero porque puede ser nulo en la BD
+	EsExtraordinario    bool   `json:"es_extraordinario"`
+	RequiereMonto       bool   `json:"requiere_monto"`
+	CreatedAt           string `json:"created_at"`
+
+	// Campos "virtuales" obtenidos mediante JOINs para la interfaz de usuario
+	RegimenesIDs        []int  `json:"regimenes_ids"` // Para los checkboxes (POST/PUT)
+	RegimenesNombres    string `json:"regimenes_nombres,omitempty"`
+	ConceptoCodigo      string `json:"concepto_codigo,omitempty"`
+	ConceptoDescripcion string `json:"concepto_descripcion,omitempty"`
+	ClasificadorCodigo  string `json:"clasificador_codigo,omitempty"`
+}

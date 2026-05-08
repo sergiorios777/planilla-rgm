@@ -1,0 +1,195 @@
+<article>
+    <header>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">🛠️ Catálogo de Conceptos Modelo (SaaS)</h3>
+            <button class="outline" onclick="document.getElementById('modal-nuevo-modelo').showModal()">
+                <svg class="icono-menu">
+                    <use href="#icono-nuevo-1"></use>
+                </svg> Nuevo Concepto Modelo
+            </button>
+        </div>
+    </header>
+
+    <div id="lista-modelos" hx-get="/admin/conceptos-modelo/lista" hx-trigger="load" hx-target="#cuerpo-tabla-modelos"
+        hx-swap="innerHTML">
+        <table class="striped">
+            <thead>
+                <tr>
+                    <th>Concepto Maestro</th>
+                    <th>Nombre en Boleta</th>
+                    <th>Regímenes Aplicables</th>
+                    <th>Clasificador MEF</th>
+                    <th>¿Monto?</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo-tabla-modelos">
+                <tr>
+                    <td colspan="6" style="text-align: center;" aria-busy="true">Cargando catálogo maestro...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</article>
+
+{{define "tabla_modelos"}}
+{{range .}}
+<tr>
+    <td><small>{{.ConceptoCodigo}}</small><br>{{.ConceptoDescripcion}}</td>
+    <td><strong>{{.NombrePersonalizado}}</strong></td>
+    <td><small>{{.RegimenesNombres}}</small></td>
+    <td><mark>{{.ClasificadorCodigo}}</mark></td>
+    <td>{{if .RequiereMonto}}✅{{else}}🤖{{end}}</td>
+    <td>
+        <div role="group">
+            <button class="outline contrast" style="padding: 0.2rem 0.5rem;"
+                hx-get="/admin/conceptos-modelo/editar_ui?id={{.ID}}" hx-target="#contenido-modal-editar"
+                hx-swap="innerHTML">
+                Editar
+            </button>
+            <button class="outline contrast" style="padding: 0.2rem 0.5rem;"
+                hx-delete="/admin/conceptos-modelo/eliminar?id={{.ID}}" hx-target="#cuerpo-tabla-modelos"
+                hx-confirm="¿Eliminar este concepto del catálogo modelo?">
+                Borrar
+            </button>
+        </div>
+    </td>
+</tr>
+{{else}}
+<tr>
+    <td colspan="6" style="text-align: center;">No hay conceptos configurados en el catálogo modelo.</td>
+</tr>
+{{end}}
+{{end}}
+
+<!-- Modal para nuevo registo -->
+<dialog id="modal-nuevo-modelo">
+    <article style="max-width: 800px; width: 90%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-nuevo-modelo').close()"></a>
+            <h4>Configurar Nuevo Concepto Modelo</h4>
+        </header>
+        <form hx-post="/admin/conceptos-modelo/crear" hx-target="#cuerpo-tabla-modelos">
+            <fieldset>
+                <legend><strong>Asignar a Regímenes Laborales:</strong></legend>
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 1rem; border-radius: 8px;">
+                    {{range .Regimenes}}
+                    <label>
+                        <input type="checkbox" name="regimenes_ids" value="{{.ID}}">
+                        {{.Descripcion}}
+                    </label>
+                    {{end}}
+                </div>
+            </fieldset>
+
+            <div class="grid">
+                <label>Concepto Maestro (SUNAT)
+                    <select name="concepto_id">
+                        {{range .Conceptos}}<option value="{{.ID}}">[{{.Codigo}}] {{.Descripcion}}</option>{{end}}
+                    </select>
+                </label>
+                <label>Nombre Personalizado
+                    <input type="text" name="nombre_personalizado" placeholder="Ej: Remuneración Principal">
+                </label>
+            </div>
+
+            <div class="grid">
+                <label>Clasificador MEF
+                    <select name="clasificador_id">
+                        <option value="">-- No aplica --</option>
+                        {{range .Clasificadores}}
+                        <option value="{{.ID}}">{{.CodigoLimpio}} - {{.Descripcion}}</option>
+                        {{end}}
+                    </select>
+                </label>
+                <label>Frecuencia (Meses)
+                    <input type="text" name="frecuencia_meses" value="1,2,3,4,5,6,7,8,9,10,11,12">
+                </label>
+            </div>
+
+            <div class="grid">
+                <label><input type="checkbox" role="switch" name="requiere_monto" value="true"> ¿Monto manual?</label>
+                <label><input type="checkbox" role="switch" name="es_extraordinario" value="true">
+                    ¿Extraordinario?</label>
+            </div>
+            <footer><button type="submit">Guardar en Plantilla</button></footer>
+        </form>
+    </article>
+</dialog>
+
+<!-- Modal para editar registo -->
+<dialog id="modal-editar-modelo" hx-on::after-settle="this.showModal()">
+    <div id="contenido-modal-editar"></div>
+</dialog>
+
+{{define "formulario_editar_modelo"}}
+<article style="max-width: 800px; width: 90%;">
+    <header>
+        <a href="#close" aria-label="Close" class="close"
+            onclick="document.getElementById('modal-editar-modelo').close()"></a>
+        <h4>Editar Concepto Modelo</h4>
+    </header>
+    <form hx-post="/admin/conceptos-modelo/actualizar" hx-target="#cuerpo-tabla-modelos">
+        <input type="hidden" name="id" value="{{.Concepto.ID}}">
+
+        <fieldset>
+            <legend><strong>Regímenes Laborales donde aplica:</strong></legend>
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 1rem; border-radius: 8px;">
+                {{range .Regimenes}}
+                <label>
+                    <input type="checkbox" name="regimenes_ids" value="{{.ID}}" {{if index $.RegimenesMarcados
+                        .ID}}checked{{end}}>
+                    {{.Descripcion}}
+                </label>
+                {{end}}
+            </div>
+        </fieldset>
+
+        <div class="grid">
+            <label>Concepto Maestro
+                <select name="concepto_id" required>
+                    {{range .Conceptos}}<option value="{{.ID}}" {{if eq .ID $.Concepto.ConceptoID}}selected{{end}}>
+                        [{{.Codigo}}] {{.Descripcion}}</option>{{end}}
+                </select>
+            </label>
+            <label>Nombre Personalizado
+                <input type="text" name="nombre_personalizado" value="{{.Concepto.NombrePersonalizado}}" required>
+            </label>
+        </div>
+
+        <div class="grid">
+            <label>Clasificador MEF
+                <select name="clasificador_id">
+                    <option value="">-- No aplica --</option>
+                    {{range .Clasificadores}}<option value="{{.ID}}" {{if eq .ID $.ClasifSeleccionado}}selected{{end}}>
+                        {{.CodigoLimpio}} - {{.Descripcion}}</option>{{end}}
+                </select>
+            </label>
+            <label>Frecuencia (Meses)
+                <input type="text" name="frecuencia_meses" value="{{.Concepto.FrecuenciaMeses}}">
+            </label>
+        </div>
+
+        <div class="grid">
+            <label><input type="checkbox" role="switch" name="requiere_monto" value="true" {{if
+                    .Concepto.RequiereMonto}}checked{{end}}> Requiere Monto Manual</label>
+            <label><input type="checkbox" role="switch" name="es_extraordinario" value="true" {{if
+                    .Concepto.EsExtraordinario}}checked{{end}}> Es Extraordinario</label>
+        </div>
+
+        <footer><button type="submit">Actualizar Catálogo</button></footer>
+    </form>
+</article>
+{{end}}
+
+<script>
+    document.body.addEventListener("cerrarModal", function () {
+        const m1 = document.getElementById('modal-nuevo-modelo');
+        const m2 = document.getElementById('modal-editar-modelo');
+        if (m1 && m1.open) m1.close();
+        if (m2 && m2.open) m2.close();
+    });
+</script>

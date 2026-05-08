@@ -124,6 +124,20 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	f := handlers.FuenteRubroHandler{Repo: fuenteRubroRepo}
 	mux.HandleFunc("/admin/ui/fuentes-rubros", middleware.RequireRole("super_admin", f.VistaUI))
 	mux.HandleFunc("/admin/fuentes-rubros/lista", middleware.RequireRole("super_admin", f.Listar))
+
+	// Rutas de Conceptos Modelo (Plantillas)
+	conceptosModeloRepo := repository.NewConceptoModeloRepository(db)
+	puestoRepo := repository.NewPuestoRepository(db)
+	conceptosTenantRepo := repository.NewConceptoTenantRepository(db)
+	cm := handlers.ConceptoModeloHandler{Repo: conceptosModeloRepo,
+		PuestoRepo:         puestoRepo,
+		ConceptoTenantRepo: conceptosTenantRepo}
+	mux.HandleFunc("/admin/ui/conceptos-modelo", middleware.RequireRole("super_admin", cm.VistaUI))
+	mux.HandleFunc("/admin/conceptos-modelo/lista", middleware.RequireRole("super_admin", cm.Listar))
+	mux.HandleFunc("/admin/conceptos-modelo/crear", middleware.RequireRole("super_admin", cm.Crear))
+	mux.HandleFunc("/admin/conceptos-modelo/editar_ui", middleware.RequireRole("super_admin", cm.EditarUI))
+	mux.HandleFunc("/admin/conceptos-modelo/actualizar", middleware.RequireRole("super_admin", cm.Actualizar))
+	mux.HandleFunc("/admin/conceptos-modelo/eliminar", middleware.RequireRole("super_admin", cm.Eliminar))
 }
 
 // --- SECCIÓN TENANT (MUNICIPALIDADES) ---
