@@ -246,31 +246,67 @@ func (r *PuestoRepository) AsignarConceptosAPuesto(puestoID int, conceptoTenantI
 	return tx.Commit()
 }
 
-func (r *PuestoRepository) RestaurarPlantillaBase(puestoID int, tenantID int, codigosSUNAT []string) error {
+// ObtenerConceptosModeloPorRegimen lee la tabla intermedia y trae los conceptos
+// que corresponden al régimen, excluyendo automáticamente los previsionales (ONP/AFP).
+func (r *PuestoRepository) ObtenerConceptosModeloPorRegimen(tenantID int, regimenID int) ([]int, error) {
+	query := `
+		SELECT ct.id 
+		FROM conceptos_modelo cm
+		INNER JOIN regimen_concepto_modelo rcm ON cm.id = rcm.concepto_modelo_id
+		INNER JOIN conceptos_tenant ct ON ct.nombre_personalizado = cm.nombre_personalizado AND ct.tenant_id = $1
+		INNER JOIN conceptos_maestros cma ON ct.concepto_id = cma.id
+		WHERE rcm.regimen_id = $2 
+		  AND ct.activo = true
+		  AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
+	`
+	rows, err := r.db.Query(query, tenantID, regimenID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err == nil {
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
+}
+
+// RestaurarPlantillaBase reescrito para usar el nuevo catálogo SaaS
+func (r *PuestoRepository) RestaurarPlantillaBase(puestoID int, tenantID int, regimenID int) error {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return err
 	}
-	log.Println("----------------")
-	log.Println("puestoID", puestoID)
-	log.Println("tenantID", tenantID)
-	log.Println("codigosSUNAT", codigosSUNAT)
 
-	// 1. Borrar actuales
-	_, err = tx.Exec(`DELETE FROM puesto_conceptos WHERE puesto_id = $1`, puestoID)
+	// 1. Borramos la configuración actual del puesto, PERO PROTEGEMOS LAS PENSIONES
+	deleteQuery := `
+		DELETE FROM puesto_conceptos pc
+		USING conceptos_tenant ct, conceptos_maestros cma
+		WHERE pc.concepto_tenant_id = ct.id 
+		  AND ct.concepto_id = cma.id
+		  AND pc.puesto_id = $1
+		  AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
+	`
+	_, err = tx.Exec(deleteQuery, puestoID)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	// 2. Traducir códigos a IDs locales
-	// (Reutilizamos la lógica de consulta de IDs que ya tenemos)
+	// 2. Traemos la lista base desde el modelo (ya excluye pensiones)
 	query := `
-		SELECT ct.id FROM conceptos_tenant ct
-		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
-		WHERE ct.tenant_id = $1 AND cm.codigo = ANY($2) AND ct.activo = true`
-
-	rows, err := tx.Query(query, tenantID, pq.Array(codigosSUNAT))
+		SELECT ct.id 
+		FROM conceptos_modelo cm
+		INNER JOIN regimen_concepto_modelo rcm ON cm.id = rcm.concepto_modelo_id
+		INNER JOIN conceptos_tenant ct ON ct.nombre_personalizado = cm.nombre_personalizado AND ct.tenant_id = $1
+		INNER JOIN conceptos_maestros cma ON ct.concepto_id = cma.id
+		WHERE rcm.regimen_id = $2 AND ct.activo = true AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
+	`
+	rows, err := tx.Query(query, tenantID, regimenID)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -282,12 +318,14 @@ func (r *PuestoRepository) RestaurarPlantillaBase(puestoID int, tenantID int, co
 		rows.Scan(&id)
 		idsLocales = append(idsLocales, id)
 	}
-	log.Println("idsLocales", idsLocales)
-	log.Println("----------------")
 	rows.Close()
 
-	// 3. Insertar de nuevo con monto 0
-	stmt, _ := tx.Prepare(`INSERT INTO puesto_conceptos (puesto_id, concepto_tenant_id, monto) VALUES ($1, $2, 0)`)
+	// 3. Insertamos de nuevo usando ON CONFLICT para máxima seguridad
+	stmt, _ := tx.Prepare(`
+		INSERT INTO puesto_conceptos (puesto_id, concepto_tenant_id, monto, activo) 
+		VALUES ($1, $2, 0, true)
+		ON CONFLICT (puesto_id, concepto_tenant_id) DO NOTHING
+	`)
 	for _, ctID := range idsLocales {
 		tx.Stmt(stmt).Exec(puestoID, ctID)
 	}
@@ -345,4 +383,75 @@ func (r *PuestoRepository) ObtenerPuestosParaPAP(tenantID int) ([]models.PuestoP
 		}
 	}
 	return lista, nil
+}
+
+// ObtenerConceptosParaAsignacion devuelve todos los conceptos activos del tenant
+// y marca (LEFT JOIN) cuáles ya tiene asignados el puesto actualmente.
+func (r *PuestoRepository) ObtenerConceptosParaAsignacion(puestoID, tenantID int) ([]models.ConceptoAsignacion, error) {
+	query := `
+		SELECT 
+			ct.id AS concepto_tenant_id, 
+			ct.nombre_personalizado, 
+			cm.tipo, 
+			ct.requiere_monto,
+			CASE WHEN pc.id IS NOT NULL AND pc.activo = true THEN true ELSE false END AS asignado,
+			COALESCE(pc.monto, 0.00) AS monto
+		FROM conceptos_tenant ct
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+		-- El cruce clave: Solo unimos si el puesto coincide
+		LEFT JOIN puesto_conceptos pc ON ct.id = pc.concepto_tenant_id AND pc.puesto_id = $1
+		WHERE ct.tenant_id = $2 AND ct.activo = true
+		ORDER BY cm.tipo DESC, ct.nombre_personalizado ASC
+	`
+
+	rows, err := r.db.Query(query, puestoID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.ConceptoAsignacion
+	for rows.Next() {
+		var c models.ConceptoAsignacion
+		err := rows.Scan(&c.ConceptoTenantID, &c.Nombre, &c.Tipo, &c.RequiereMonto, &c.Asignado, &c.Monto)
+		if err != nil {
+			return nil, err
+		}
+		lista = append(lista, c)
+	}
+	return lista, nil
+}
+
+// GuardarAsignacionConceptos actualiza la estructura de pago de un puesto.
+// Usa una transacción para limpiar lo anterior y guardar la nueva selección.
+func (r *PuestoRepository) GuardarAsignacionConceptos(puestoID int, asignaciones []models.ConceptoAsignacion) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	// 1. Borramos la configuración anterior del puesto (Lienzo en blanco)
+	_, err = tx.Exec(`DELETE FROM puesto_conceptos WHERE puesto_id = $1`, puestoID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 2. Insertamos solo los conceptos que vienen marcados como "Asignado"
+	queryInsert := `
+		INSERT INTO puesto_conceptos (puesto_id, concepto_tenant_id, monto, activo) 
+		VALUES ($1, $2, $3, true)
+	`
+	for _, c := range asignaciones {
+		if c.Asignado {
+			_, err = tx.Exec(queryInsert, puestoID, c.ConceptoTenantID, c.Monto)
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+
+	// Confirmamos los cambios
+	return tx.Commit()
 }

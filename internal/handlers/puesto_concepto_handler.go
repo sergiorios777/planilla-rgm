@@ -138,11 +138,8 @@ func (h *PuestoConceptoHandler) RestaurarCostosBase(w http.ResponseWriter, r *ht
 		return
 	}
 
-	// 2. Obtener códigos de la configuración
-	codigos := config.ConceptosBasePorRegimen[puesto.RegimenCodigo]
-	// 3. Ejecutar restauración
-	err = h.PuestoRepo.RestaurarPlantillaBase(puestoID, tenantID, codigos) // Asumiendo que Repo de Puesto está instanciado o accesible
-	// Nota: Como RestaurarPlantillaBase está en PuestoRepository, asegúrate de llamarlo desde h.PuestoRepo
+	// 2. Ejecutar restauración (usando el régimen directo)
+	err = h.PuestoRepo.RestaurarPlantillaBase(puestoID, tenantID, puesto.RegimenID)
 	if err != nil {
 		http.Error(w, "Error al restaurar: "+err.Error(), 500)
 		return

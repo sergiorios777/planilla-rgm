@@ -64,7 +64,8 @@ func ConfigurarRutas(db *sql.DB) *http.ServeMux {
 // --- SECCIÓN ADMINISTRATIVA ---
 func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	adminRepo := repository.NewTenantRepository(db)
-	h := handlers.AdminHandler{Repo: adminRepo}
+	conceptoTenantRepo := repository.NewConceptoTenantRepository(db)
+	h := handlers.AdminHandler{Repo: adminRepo, ConceptoTenantRepo: conceptoTenantRepo}
 
 	// 🔒 Reemplazamos RequireAuth por RequireRole("super_admin")
 	mux.HandleFunc("/admin", middleware.RequireRole("super_admin", func(w http.ResponseWriter, r *http.Request) {
@@ -187,6 +188,8 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/puestos/editar", middleware.RequireAuth(puestoHandler.Editar))
 	mux.HandleFunc("/tenant/puestos/actualizar", middleware.RequireAuth(puestoHandler.Actualizar))
 	mux.HandleFunc("/tenant/puestos/formulario-crear", middleware.RequireAuth(puestoHandler.FormularioCrearUI))
+	mux.HandleFunc("/tenant/puestos/asignar-conceptos-ui", middleware.RequireAuth(puestoHandler.AsignarConceptosUI))
+	mux.HandleFunc("/tenant/puestos/guardar-asignacion", middleware.RequireAuth(puestoHandler.GuardarAsignacion))
 
 	// Rutas protegidas de Contratos
 	contratoRepo := repository.NewContratoRepository(db)
@@ -208,6 +211,7 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/conceptos-locales/actualizar", middleware.RequireAuth(conceptoTenantHandler.Actualizar))
 	mux.HandleFunc("/tenant/conceptos-locales/formulario-crear", middleware.RequireAuth(conceptoTenantHandler.FormularioCrearUI))
 	mux.HandleFunc("/tenant/conceptos-locales/fila", middleware.RequireAuth(conceptoTenantHandler.FilaUI))
+	mux.HandleFunc("/tenant/conceptos-locales/restaurar", middleware.RequireAuth(conceptoTenantHandler.Restaurar))
 
 	// Rutas protegidas (Agrega esto junto a las de Puestos)
 	puestoConceptoRepo := repository.NewPuestoConceptoRepository(db)

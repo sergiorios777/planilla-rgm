@@ -320,3 +320,14 @@ type ConceptoModelo struct {
 	ConceptoDescripcion string `json:"concepto_descripcion,omitempty"`
 	ClasificadorCodigo  string `json:"clasificador_codigo,omitempty"`
 }
+
+// ConceptoAsignacion representa la estructura temporal para la vista de 
+// asignación manual de conceptos a un puesto específico.
+type ConceptoAsignacion struct {
+	ConceptoTenantID int     `json:"concepto_tenant_id"`
+	Nombre           string  `json:"nombre"`
+	Tipo             string  `json:"tipo"`           // INGRESO, RETENCION, APORTE
+	RequiereMonto    bool    `json:"requiere_monto"`
+	Asignado         bool    `json:"asignado"`       // Define si el switch estará encendido
+	Monto            float64 `json:"monto"`          // El valor actual (si aplica)
+}

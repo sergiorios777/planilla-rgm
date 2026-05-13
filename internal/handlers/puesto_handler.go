@@ -185,3 +185,70 @@ func (h *PuestoHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Request
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/puestos_ui.html")
 	tmpl.ExecuteTemplate(w, "formulario_crear", datos)
 }
+
+// AsignarConceptosUI carga el modal con la estructura de conceptos del puesto
+func (h *PuestoHandler) AsignarConceptosUI(w http.ResponseWriter, r *http.Request) {
+	puestoID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r) // Tu función para obtener el ID de la municipalidad
+	// Obtenemos la lista combinada (Conceptos del Tenant + lo que tiene el Puesto)
+	asignaciones, err := h.Repo.ObtenerConceptosParaAsignacion(puestoID, tenantID)
+	if err != nil {
+		log.Println("Error al obtener conceptos para asignación:", err)
+		http.Error(w, "Error interno", 500)
+		return
+	}
+
+	data := map[string]interface{}{
+		"PuestoID":     puestoID,
+		"Asignaciones": asignaciones,
+	}
+
+	// CAPTURAMOS EL ERROR DE LA PLANTILLA
+	tmpl, err := template.ParseFiles("ui/templates/tenant/puestos_ui.html")
+	if err != nil {
+		log.Println("❌ Error al leer puestos_ui.html:", err)
+		http.Error(w, "Error de plantilla", 500)
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(w, "formulario_asignar_conceptos", data)
+	if err != nil {
+		log.Println("❌ Error al ejecutar el fragmento HTMX:", err)
+		http.Error(w, "Error al inyectar fragmento", 500)
+	}
+}
+
+// GuardarAsignacion procesa el formulario enviado por HTMX
+func (h *PuestoHandler) GuardarAsignacion(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	puestoID, _ := strconv.Atoi(r.FormValue("puesto_id"))
+
+	// Leemos qué conceptos fueron marcados (switches encendidos)
+	idsSeleccionados := r.Form["concepto_tenant_ids"]
+
+	var listaParaGuardar []models.ConceptoAsignacion
+	for _, idStr := range idsSeleccionados {
+		id, _ := strconv.Atoi(idStr)
+
+		// Leemos el monto específico para este ID (ej: monto_45)
+		montoStr := r.FormValue("monto_" + idStr)
+		monto, _ := strconv.ParseFloat(montoStr, 64)
+
+		listaParaGuardar = append(listaParaGuardar, models.ConceptoAsignacion{
+			ConceptoTenantID: id,
+			Monto:            monto,
+			Asignado:         true,
+		})
+	}
+
+	err := h.Repo.GuardarAsignacionConceptos(puestoID, listaParaGuardar)
+	if err != nil {
+		log.Println("Error al guardar asignación:", err)
+		http.Error(w, "No se pudo guardar la estructura de pago", 500)
+		return
+	}
+
+	// Si todo sale bien, enviamos la señal de éxito para cerrar el modal
+	w.Header().Set("HX-Trigger", "cerrarModalAsignacion")
+	w.Write([]byte("✅ Estructura de pago actualizada correctamente."))
+}

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 
 	"planilla-rgm/internal/models"
@@ -12,7 +13,8 @@ import (
 
 // AdminHandler agrupa las funciones web del panel del Super Admin
 type AdminHandler struct {
-	Repo *repository.TenantRepository
+	Repo               *repository.TenantRepository
+	ConceptoTenantRepo *repository.ConceptoTenantRepository
 }
 
 // ListarInquilinos obtiene los datos y los inyecta en una plantilla HTML
@@ -58,7 +60,6 @@ func (h *AdminHandler) CrearInquilino(w http.ResponseWriter, r *http.Request) {
 
 	nombre := r.FormValue("nombre")
 	ruc := r.FormValue("ruc")
-	// En HTML, un checkbox marcado envía el valor "on"
 	activo := r.FormValue("activo") == "on"
 
 	// 2. Preparamos nuestro modelo de Go
@@ -75,7 +76,17 @@ func (h *AdminHandler) CrearInquilino(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. TRUCO DE HTMX: En lugar de redirigir, simplemente volvemos a llamar
+	// 4. Clonamos el catálogo maestro al nuevo inquilino automáticamente
+	// (Asumimos que h.Repo.Crear actualiza nuevoTenant.ID con el ID generado)
+	if nuevoTenant.ID > 0 {
+		errClon := h.ConceptoTenantRepo.ClonarDesdeModelo(nuevoTenant.ID)
+		if errClon != nil {
+			// Solo logueamos el error, no detenemos el flujo porque el tenant ya se creó
+			log.Println("⚠️ Advertencia: Error al clonar conceptos modelo para el tenant", nuevoTenant.ID, ":", errClon)
+		}
+	}
+
+	// 5. TRUCO DE HTMX: En lugar de redirigir, simplemente volvemos a llamar
 	// a la función ListarInquilinos para que devuelva la tabla HTML actualizada.
 	h.ListarInquilinos(w, r)
 }

@@ -243,3 +243,18 @@ func (r *ConceptoTenantRepository) ActualizarCompleto(id int, tenantID int, conc
 	_, err := r.db.Exec(query, conceptoID, clasificadorID, nombre, frecuencia, activo, id, tenantID)
 	return err
 }
+
+// ClonarDesdeModelo copia todos los conceptos base a un nuevo tenant.
+// También sirve como función "Restaurar", ya que ignora los conceptos que ya existen.
+func (r *ConceptoTenantRepository) ClonarDesdeModelo(tenantID int) error {
+	query := `
+		INSERT INTO conceptos_tenant 
+		(tenant_id, concepto_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, activo)
+		SELECT 
+			$1, concepto_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, true
+		FROM conceptos_modelo
+		ON CONFLICT (tenant_id, nombre_personalizado) DO NOTHING;
+	`
+	_, err := r.db.Exec(query, tenantID)
+	return err
+}

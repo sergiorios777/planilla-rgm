@@ -261,3 +261,16 @@ func (h *ConceptoTenantHandler) FilaUI(w http.ResponseWriter, r *http.Request) {
 	`
 	w.Write([]byte(html))
 }
+
+func (h *ConceptoTenantHandler) Restaurar(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r) // Tu helper para obtener el ID de la sesión/contexto
+
+	err := h.Repo.ClonarDesdeModelo(tenantID)
+	if err != nil {
+		http.Error(w, "No se pudieron restaurar los conceptos", http.StatusInternalServerError)
+		return
+	}
+
+	// Refrescamos la lista para que el usuario vea los cambios
+	h.Listar(w, r)
+}

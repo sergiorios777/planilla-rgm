@@ -13,7 +13,7 @@
             {{template "formulario_crear" .}}
         </div>
         <div>
-            <!-- Vacío por ahora -->
+            {{template "botonera_acciones" .}}
         </div>
     </div>
     <div>
@@ -138,6 +138,17 @@
         </button>
         {{end}}
     </div>
+</div>
+{{end}}
+
+{{define "botonera_acciones"}}
+<div>
+    <button class="outline contrast" hx-post="/tenant/conceptos-locales/restaurar" hx-target="#lista-conceptos-tenant"
+        hx-confirm="¿Desea restaurar los conceptos faltantes desde el catálogo maestro? Esto no afectará a los conceptos que ya tiene configurados.">
+        <svg class="icono-menu">
+            <use href="#icono-refrescar-giro-derecha"></use>
+        </svg> Restaurar Conceptos
+    </button>
 </div>
 {{end}}
 
