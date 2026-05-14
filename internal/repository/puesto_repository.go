@@ -253,7 +253,7 @@ func (r *PuestoRepository) ObtenerConceptosModeloPorRegimen(tenantID int, regime
 		SELECT ct.id 
 		FROM conceptos_modelo cm
 		INNER JOIN regimen_concepto_modelo rcm ON cm.id = rcm.concepto_modelo_id
-		INNER JOIN conceptos_tenant ct ON ct.nombre_personalizado = cm.nombre_personalizado AND ct.tenant_id = $1
+		INNER JOIN conceptos_tenant ct ON ct.modelo_id = cm.id AND ct.tenant_id = $1
 		INNER JOIN conceptos_maestros cma ON ct.concepto_id = cma.id
 		WHERE rcm.regimen_id = $2 
 		  AND ct.activo = true
@@ -302,9 +302,11 @@ func (r *PuestoRepository) RestaurarPlantillaBase(puestoID int, tenantID int, re
 		SELECT ct.id 
 		FROM conceptos_modelo cm
 		INNER JOIN regimen_concepto_modelo rcm ON cm.id = rcm.concepto_modelo_id
-		INNER JOIN conceptos_tenant ct ON ct.nombre_personalizado = cm.nombre_personalizado AND ct.tenant_id = $1
+		INNER JOIN conceptos_tenant ct ON ct.modelo_id = cm.id AND ct.tenant_id = $1
 		INNER JOIN conceptos_maestros cma ON ct.concepto_id = cma.id
-		WHERE rcm.regimen_id = $2 AND ct.activo = true AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
+		WHERE rcm.regimen_id = $2
+		  AND ct.activo = true
+		  AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
 	`
 	rows, err := tx.Query(query, tenantID, regimenID)
 	if err != nil {

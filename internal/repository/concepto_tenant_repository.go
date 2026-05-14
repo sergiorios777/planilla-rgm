@@ -249,11 +249,11 @@ func (r *ConceptoTenantRepository) ActualizarCompleto(id int, tenantID int, conc
 func (r *ConceptoTenantRepository) ClonarDesdeModelo(tenantID int) error {
 	query := `
 		INSERT INTO conceptos_tenant 
-		(tenant_id, concepto_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, activo)
+		(tenant_id, concepto_id, modelo_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, activo)
 		SELECT 
-			$1, concepto_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, true
+			$1, concepto_id, id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, true
 		FROM conceptos_modelo
-		ON CONFLICT (tenant_id, nombre_personalizado) DO NOTHING;
+		ON CONFLICT (tenant_id, modelo_id) DO NOTHING;
 	`
 	_, err := r.db.Exec(query, tenantID)
 	return err
