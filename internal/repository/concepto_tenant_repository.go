@@ -42,7 +42,8 @@ func (r *ConceptoTenantRepository) ObtenerMaestros() ([]map[string]interface{}, 
 // ObtenerTodos trae el catálogo configurado por la municipalidad
 func (r *ConceptoTenantRepository) ObtenerTodos(tenantID int) ([]models.ConceptoTenant, error) {
 	query := `
-		SELECT ct.id, ct.concepto_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
+		SELECT ct.id, ct.concepto_id, ct.modelo_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
+		       ct.es_extraordinario, ct.es_pensionable, ct.es_remunerativa, ct.es_base_cts, ct.es_base_beneficios_sociales,
 		       cm.codigo, cm.tipo, 
 			   mef.codigo AS clasificador_codigo
 		FROM conceptos_tenant ct
@@ -62,14 +63,20 @@ func (r *ConceptoTenantRepository) ObtenerTodos(tenantID int) ([]models.Concepto
 		var ct models.ConceptoTenant
 		var clasifID sql.NullInt64
 		var clasifCod sql.NullString
+		var modeloID sql.NullInt64
 
-		err := rows.Scan(&ct.ID, &ct.ConceptoID, &ct.NombrePersonalizado, &ct.FrecuenciaMeses, &clasifID, &ct.Activo,
+		err := rows.Scan(&ct.ID, &ct.ConceptoID, &modeloID, &ct.NombrePersonalizado, &ct.FrecuenciaMeses, &clasifID, &ct.Activo,
+			&ct.EsExtraordinario, &ct.EsPensionable, &ct.EsRemunerativa, &ct.EsBaseCts, &ct.EsBaseBeneficiosSociales,
 			&ct.ConceptoCodigo, &ct.ConceptoTipo, &clasifCod)
 		if err == nil {
 			if clasifID.Valid {
 				id := int(clasifID.Int64)
 				ct.ClasificadorID = &id
 				ct.ClasificadorCodigo = clasifCod.String
+			}
+			if modeloID.Valid {
+				mID := int(modeloID.Int64)
+				ct.ModeloID = &mID
 			}
 			lista = append(lista, ct)
 		}
@@ -107,7 +114,8 @@ func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda
 	}
 
 	query := fmt.Sprintf(`
-		SELECT ct.id, ct.concepto_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
+		SELECT ct.id, ct.concepto_id, ct.modelo_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
+		       ct.es_extraordinario, ct.es_pensionable, ct.es_remunerativa, ct.es_base_cts, ct.es_base_beneficios_sociales,
 		       cm.codigo, cm.tipo, 
 			mef.codigo AS clasificador_codigo
 		FROM conceptos_tenant ct
@@ -136,14 +144,20 @@ func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda
 		var ct models.ConceptoTenant
 		var clasifID sql.NullInt64
 		var clasifCod sql.NullString
+		var modeloID sql.NullInt64
 
-		err := rows.Scan(&ct.ID, &ct.ConceptoID, &ct.NombrePersonalizado, &ct.FrecuenciaMeses, &clasifID, &ct.Activo,
+		err := rows.Scan(&ct.ID, &ct.ConceptoID, &modeloID, &ct.NombrePersonalizado, &ct.FrecuenciaMeses, &clasifID, &ct.Activo,
+			&ct.EsExtraordinario, &ct.EsPensionable, &ct.EsRemunerativa, &ct.EsBaseCts, &ct.EsBaseBeneficiosSociales,
 			&ct.ConceptoCodigo, &ct.ConceptoTipo, &clasifCod)
 		if err == nil {
 			if clasifID.Valid {
 				id := int(clasifID.Int64)
 				ct.ClasificadorID = &id
 				ct.ClasificadorCodigo = clasifCod.String
+			}
+			if modeloID.Valid {
+				mID := int(modeloID.Int64)
+				ct.ModeloID = &mID
 			}
 			lista = append(lista, ct)
 		}
@@ -155,20 +169,22 @@ func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda
 // Crear inserta la configuración local
 func (r *ConceptoTenantRepository) Crear(ct *models.ConceptoTenant) error {
 	query := `
-		INSERT INTO conceptos_tenant (tenant_id, concepto_id, nombre_personalizado, frecuencia_meses, clasificador_id, activo, es_extraordinario)
-		VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
+		INSERT INTO conceptos_tenant (tenant_id, concepto_id, modelo_id, nombre_personalizado, frecuencia_meses, clasificador_id, activo, es_extraordinario, es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id
 	`
-	return r.db.QueryRow(query, ct.TenantID, ct.ConceptoID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario).Scan(&ct.ID)
+	return r.db.QueryRow(query, ct.TenantID, ct.ConceptoID, ct.ModeloID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario, ct.EsPensionable, ct.EsRemunerativa, ct.EsBaseCts, ct.EsBaseBeneficiosSociales).Scan(&ct.ID)
 }
 
 // Actualizar actualiza la configuración local
 func (r *ConceptoTenantRepository) Actualizar(ct *models.ConceptoTenant) error {
 	query := `
 		UPDATE conceptos_tenant 
-		SET concepto_id = $2, nombre_personalizado = $3, frecuencia_meses = $4, clasificador_id = $5, activo = $6, es_extraordinario = $7
-		WHERE id = $1 AND tenant_id = $8
+		SET concepto_id = $2, nombre_personalizado = $3, frecuencia_meses = $4, clasificador_id = $5, activo = $6, es_extraordinario = $7,
+		    es_pensionable = $8, es_remunerativa = $9, es_base_cts = $10, es_base_beneficios_sociales = $11, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1 AND tenant_id = $12
 	`
-	_, err := r.db.Exec(query, ct.ID, ct.ConceptoID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario, ct.TenantID)
+	_, err := r.db.Exec(query, ct.ID, ct.ConceptoID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario,
+		ct.EsPensionable, ct.EsRemunerativa, ct.EsBaseCts, ct.EsBaseBeneficiosSociales, ct.TenantID)
 	return err
 }
 
@@ -207,8 +223,10 @@ func (r *ConceptoTenantRepository) ObtenerClasificadores() ([]models.Clasificado
 // ObtenerPorID trae un concepto específico para rellenar el formulario de edición
 func (r *ConceptoTenantRepository) ObtenerPorID(id int, tenantID int) (models.ConceptoTenant, error) {
 	var c models.ConceptoTenant
+	var modeloID sql.NullInt64
 	query := `
-		SELECT ct.id, ct.concepto_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
+		SELECT ct.id, ct.concepto_id, ct.modelo_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
+		       ct.es_extraordinario, ct.es_pensionable, ct.es_remunerativa, ct.es_base_cts, ct.es_base_beneficios_sociales,
 		       cm.codigo, cm.tipo, 
 			   mef.codigo AS clasificador_codigo
 		FROM conceptos_tenant ct
@@ -217,8 +235,13 @@ func (r *ConceptoTenantRepository) ObtenerPorID(id int, tenantID int) (models.Co
 		WHERE ct.id = $1 AND ct.tenant_id = $2
 	`
 	err := r.db.QueryRow(query, id, tenantID).Scan(
-		&c.ID, &c.ConceptoID, &c.NombrePersonalizado, &c.FrecuenciaMeses, &c.ClasificadorID, &c.Activo,
+		&c.ID, &c.ConceptoID, &modeloID, &c.NombrePersonalizado, &c.FrecuenciaMeses, &c.ClasificadorID, &c.Activo,
+		&c.EsExtraordinario, &c.EsPensionable, &c.EsRemunerativa, &c.EsBaseCts, &c.EsBaseBeneficiosSociales,
 		&c.ConceptoCodigo, &c.ConceptoTipo, &c.ClasificadorCodigo)
+	if err == nil && modeloID.Valid {
+		mID := int(modeloID.Int64)
+		c.ModeloID = &mID
+	}
 	return c, err
 }
 
@@ -249,9 +272,11 @@ func (r *ConceptoTenantRepository) ActualizarCompleto(id int, tenantID int, conc
 func (r *ConceptoTenantRepository) ClonarDesdeModelo(tenantID int) error {
 	query := `
 		INSERT INTO conceptos_tenant 
-		(tenant_id, concepto_id, modelo_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, activo)
+		(tenant_id, concepto_id, modelo_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, activo,
+		 es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales)
 		SELECT 
-			$1, concepto_id, id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, true
+			$1, concepto_id, id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, true,
+			es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales
 		FROM conceptos_modelo
 		ON CONFLICT (tenant_id, modelo_id) DO NOTHING;
 	`

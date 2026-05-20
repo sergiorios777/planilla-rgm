@@ -18,6 +18,7 @@ func (r *ConceptoModeloRepository) ObtenerTodos() ([]models.ConceptoModelo, erro
 	query := `
 		SELECT cm.id, cm.concepto_id, cm.nombre_personalizado, 
 		       cm.frecuencia_meses, cm.clasificador_id, cm.es_extraordinario, cm.requiere_monto,
+		       cm.es_pensionable, cm.es_remunerativa, cm.es_base_cts, cm.es_base_beneficios_sociales,
 		       cma.codigo, cma.descripcion, cl.codigo_limpio,
 		       COALESCE(STRING_AGG(rl.descripcion, ', '), 'Sin régimen') AS regimenes_nombres
 		FROM conceptos_modelo cm
@@ -43,6 +44,7 @@ func (r *ConceptoModeloRepository) ObtenerTodos() ([]models.ConceptoModelo, erro
 		err := rows.Scan(
 			&c.ID, &c.ConceptoID, &c.NombrePersonalizado, &c.FrecuenciaMeses,
 			&clasificadorID, &c.EsExtraordinario, &c.RequiereMonto,
+			&c.EsPensionable, &c.EsRemunerativa, &c.EsBaseCts, &c.EsBaseBeneficiosSociales,
 			&c.ConceptoCodigo, &c.ConceptoDescripcion, &clasificadorCodigo, &c.RegimenesNombres,
 		)
 		if err != nil {
@@ -64,7 +66,8 @@ func (r *ConceptoModeloRepository) ObtenerTodos() ([]models.ConceptoModelo, erro
 func (r *ConceptoModeloRepository) ObtenerPorID(id int) (*models.ConceptoModelo, error) {
 	// 1. Obtenemos los datos base del concepto
 	query := `
-		SELECT id, concepto_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto
+		SELECT id, concepto_id, nombre_personalizado, frecuencia_meses, clasificador_id, 
+		       es_extraordinario, requiere_monto, es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales
 		FROM conceptos_modelo WHERE id = $1`
 
 	var c models.ConceptoModelo
@@ -73,6 +76,7 @@ func (r *ConceptoModeloRepository) ObtenerPorID(id int) (*models.ConceptoModelo,
 	err := r.db.QueryRow(query, id).Scan(
 		&c.ID, &c.ConceptoID, &c.NombrePersonalizado, &c.FrecuenciaMeses,
 		&clasificadorID, &c.EsExtraordinario, &c.RequiereMonto,
+		&c.EsPensionable, &c.EsRemunerativa, &c.EsBaseCts, &c.EsBaseBeneficiosSociales,
 	)
 	if err != nil {
 		return nil, err
@@ -109,12 +113,14 @@ func (r *ConceptoModeloRepository) Crear(c *models.ConceptoModelo) error {
 	// 1. Insertamos el concepto base
 	queryConcepto := `
 		INSERT INTO conceptos_modelo 
-		(concepto_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto) 
-		VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
+		(concepto_id, nombre_personalizado, frecuencia_meses, clasificador_id, 
+		 es_extraordinario, requiere_monto, es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
 
 	err = tx.QueryRow(queryConcepto,
 		c.ConceptoID, c.NombrePersonalizado, c.FrecuenciaMeses,
 		c.ClasificadorID, c.EsExtraordinario, c.RequiereMonto,
+		c.EsPensionable, c.EsRemunerativa, c.EsBaseCts, c.EsBaseBeneficiosSociales,
 	).Scan(&c.ID)
 
 	if err != nil {
@@ -147,12 +153,16 @@ func (r *ConceptoModeloRepository) Actualizar(c *models.ConceptoModelo) error {
 	queryUpdate := `
 		UPDATE conceptos_modelo 
 		SET concepto_id = $1, nombre_personalizado = $2, frecuencia_meses = $3, 
-		    clasificador_id = $4, es_extraordinario = $5, requiere_monto = $6
-		WHERE id = $7`
+		    clasificador_id = $4, es_extraordinario = $5, requiere_monto = $6,
+		    es_pensionable = $7, es_remunerativa = $8, es_base_cts = $9, es_base_beneficios_sociales = $10,
+		    updated_at = CURRENT_TIMESTAMP
+		WHERE id = $11`
 
 	_, err = tx.Exec(queryUpdate,
 		c.ConceptoID, c.NombrePersonalizado, c.FrecuenciaMeses,
-		c.ClasificadorID, c.EsExtraordinario, c.RequiereMonto, c.ID,
+		c.ClasificadorID, c.EsExtraordinario, c.RequiereMonto,
+		c.EsPensionable, c.EsRemunerativa, c.EsBaseCts, c.EsBaseBeneficiosSociales,
+		c.ID,
 	)
 	if err != nil {
 		tx.Rollback()

@@ -63,13 +63,17 @@ func (h *ConceptoModeloHandler) Crear(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nuevo := models.ConceptoModelo{
-		ConceptoID:          0,
-		NombrePersonalizado: r.FormValue("nombre_personalizado"),
-		FrecuenciaMeses:     r.FormValue("frecuencia_meses"),
-		ClasificadorID:      clasificadorID,
-		EsExtraordinario:    r.FormValue("es_extraordinario") == "true",
-		RequiereMonto:       r.FormValue("requiere_monto") == "true",
-		RegimenesIDs:        ids,
+		ConceptoID:               0,
+		NombrePersonalizado:      r.FormValue("nombre_personalizado"),
+		FrecuenciaMeses:          r.FormValue("frecuencia_meses"),
+		ClasificadorID:           clasificadorID,
+		EsExtraordinario:         r.FormValue("es_extraordinario") == "true",
+		RequiereMonto:            r.FormValue("requiere_monto") == "true",
+		EsPensionable:            r.FormValue("es_pensionable") == "true",
+		EsRemunerativa:           r.FormValue("es_remunerativa") == "true",
+		EsBaseCts:                r.FormValue("es_base_cts") == "true",
+		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "true",
+		RegimenesIDs:             ids,
 	}
 	nuevo.ConceptoID, _ = strconv.Atoi(r.FormValue("concepto_id"))
 
@@ -119,7 +123,6 @@ func (h *ConceptoModeloHandler) EditarUI(w http.ResponseWriter, r *http.Request)
 
 // Actualizar procesa la edición del concepto
 func (h *ConceptoModeloHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
-	log.Println("🚀 INICIO DE ACTUALIZAR")
 	r.ParseForm()
 
 	conceptoIDReal, _ := strconv.Atoi(r.FormValue("id"))
@@ -139,14 +142,18 @@ func (h *ConceptoModeloHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 
 	cMaestroID, _ := strconv.Atoi(r.FormValue("concepto_id"))
 	editado := models.ConceptoModelo{
-		ID:                  conceptoIDReal,
-		ConceptoID:          cMaestroID,
-		NombrePersonalizado: r.FormValue("nombre_personalizado"),
-		FrecuenciaMeses:     r.FormValue("frecuencia_meses"),
-		ClasificadorID:      clasificadorID,
-		EsExtraordinario:    r.FormValue("es_extraordinario") == "true",
-		RequiereMonto:       r.FormValue("requiere_monto") == "true",
-		RegimenesIDs:        idsRegimen,
+		ID:                       conceptoIDReal,
+		ConceptoID:               cMaestroID,
+		NombrePersonalizado:      r.FormValue("nombre_personalizado"),
+		FrecuenciaMeses:          r.FormValue("frecuencia_meses"),
+		ClasificadorID:           clasificadorID,
+		EsExtraordinario:         r.FormValue("es_extraordinario") == "true",
+		RequiereMonto:            r.FormValue("requiere_monto") == "true",
+		EsPensionable:            r.FormValue("es_pensionable") == "true",
+		EsRemunerativa:           r.FormValue("es_remunerativa") == "true",
+		EsBaseCts:                r.FormValue("es_base_cts") == "true",
+		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "true",
+		RegimenesIDs:             idsRegimen,
 	}
 
 	err := h.Repo.Actualizar(&editado)
@@ -158,7 +165,6 @@ func (h *ConceptoModeloHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 
 	// Disparamos el cierre del modal
 	w.Header().Set("HX-Trigger", "cerrarModal")
-	log.Println("✅ Actualizado con éxito, refrescando tabla...")
 	h.Listar(w, r)
 }
 

@@ -21,6 +21,22 @@ CREATE TABLE regimen_concepto_modelo (
     PRIMARY KEY (regimen_id, concepto_modelo_id)
 );
 
+-- 6. Agregar la columna updated_at
+ALTER TABLE conceptos_modelo ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+
+-- 7. Agregar la columna es_pensionable
+ALTER TABLE conceptos_modelo ADD COLUMN es_pensionable BOOLEAN DEFAULT false;
+
+-- 8. Agregar la columna es_remunerativa
+ALTER TABLE conceptos_modelo ADD COLUMN es_remunerativa BOOLEAN DEFAULT false;
+
+-- 9. Agregar la columna es_base_cts
+ALTER TABLE conceptos_modelo ADD COLUMN es_base_cts BOOLEAN DEFAULT false;
+
+-- 10. Agregar la columna es_base_beneficios_sociales
+ALTER TABLE conceptos_modelo ADD COLUMN es_base_beneficios_sociales BOOLEAN DEFAULT false;
+
+
 -- +goose StatementEnd
 
 -- +goose Down
@@ -29,5 +45,11 @@ DROP TABLE regimen_concepto_modelo;
 ALTER TABLE conceptos_modelo DROP CONSTRAINT IF EXISTS unique_nombre_modelo;
 ALTER TABLE conceptos_modelo ADD COLUMN regimen_id INTEGER REFERENCES regimenes_laborales(id) ON DELETE CASCADE;
 ALTER TABLE conceptos_modelo RENAME COLUMN nombre_personalizado TO descripcion;
+ALTER TABLE conceptos_tenant DROP COLUMN modelo_id;
+ALTER TABLE conceptos_modelo DROP COLUMN updated_at;
+ALTER TABLE conceptos_modelo DROP COLUMN es_pensionable;
+ALTER TABLE conceptos_modelo DROP COLUMN es_remunerativa;
+ALTER TABLE conceptos_modelo DROP COLUMN es_base_cts;
+ALTER TABLE conceptos_modelo DROP COLUMN es_base_beneficios_sociales;
 
 -- +goose StatementEnd

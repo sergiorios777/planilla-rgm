@@ -90,13 +90,17 @@ func (h *ConceptoTenantHandler) Crear(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nuevoConcepto := models.ConceptoTenant{
-		TenantID:            tenantID,
-		ConceptoID:          cID,
-		NombrePersonalizado: r.FormValue("nombre_personalizado"),
-		FrecuenciaMeses:     r.FormValue("frecuencia_meses"),
-		ClasificadorID:      clasifID,
-		Activo:              r.FormValue("activo") == "on",
-		EsExtraordinario:    r.FormValue("es_extraordinario") == "on",
+		TenantID:                 tenantID,
+		ConceptoID:               cID,
+		NombrePersonalizado:      r.FormValue("nombre_personalizado"),
+		FrecuenciaMeses:          r.FormValue("frecuencia_meses"),
+		ClasificadorID:           clasifID,
+		Activo:                   r.FormValue("activo") == "on",
+		EsExtraordinario:         r.FormValue("es_extraordinario") == "on",
+		EsPensionable:            r.FormValue("es_pensionable") == "on",
+		EsRemunerativa:           r.FormValue("es_remunerativa") == "on",
+		EsBaseCts:                r.FormValue("es_base_cts") == "on",
+		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "on",
 	}
 
 	err := h.Repo.Crear(&nuevoConcepto)
@@ -184,8 +188,28 @@ func (h *ConceptoTenantHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 	frecuencia := r.FormValue("frecuencia_meses")
 	activo := r.FormValue("activo") == "on"
 
-	// 1. Actualizar en BD (Necesitarás adaptar tu función en el Repositorio)
-	h.Repo.ActualizarCompleto(id, tenantID, conceptoID, clasificadorID, nombre, frecuencia, activo)
+	editado := models.ConceptoTenant{
+		ID:                       id,
+		TenantID:                 tenantID,
+		ConceptoID:               conceptoID,
+		NombrePersonalizado:      nombre,
+		FrecuenciaMeses:          frecuencia,
+		ClasificadorID:           clasificadorID,
+		Activo:                   activo,
+		EsExtraordinario:         r.FormValue("es_extraordinario") == "on",
+		EsPensionable:            r.FormValue("es_pensionable") == "on",
+		EsRemunerativa:           r.FormValue("es_remunerativa") == "on",
+		EsBaseCts:                r.FormValue("es_base_cts") == "on",
+		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "on",
+	}
+
+	// 1. Actualizar en BD
+	err := h.Repo.Actualizar(&editado)
+	if err != nil {
+		log.Println("Error actualizando concepto tenant:", err)
+		http.Error(w, "Error al actualizar concepto en base de datos", http.StatusInternalServerError)
+		return
+	}
 
 	// 2. Le decimos a HTMX: "Por favor, dispara el evento que recarga la tabla"
 	w.Header().Set("HX-Trigger", "recargarTablaConceptos")

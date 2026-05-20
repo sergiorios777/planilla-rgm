@@ -65,14 +65,19 @@ type ConceptoAfectacion struct {
 
 // ConceptoTenant es la configuración local (por municipalidad) de un concepto maestro
 type ConceptoTenant struct {
-	ID                  int    `json:"id"`
-	TenantID            int    `json:"tenant_id"`
-	ConceptoID          int    `json:"concepto_id"` // Apunta a conceptos_maestros
-	NombrePersonalizado string `json:"nombre_personalizado"`
-	FrecuenciaMeses     string `json:"frecuencia_meses"`
-	ClasificadorID      *int   `json:"clasificador_id"`
-	Activo              bool   `json:"activo"`
-	EsExtraordinario    bool   `json:"es_extraordinario"`
+	ID                       int    `json:"id"`
+	TenantID                 int    `json:"tenant_id"`
+	ConceptoID               int    `json:"concepto_id"` // Apunta a conceptos_maestros
+	ModeloID                 *int   `json:"modelo_id"`   // Apunta a conceptos_modelo
+	NombrePersonalizado      string `json:"nombre_personalizado"`
+	FrecuenciaMeses          string `json:"frecuencia_meses"`
+	ClasificadorID           *int   `json:"clasificador_id"`
+	Activo                   bool   `json:"activo"`
+	EsExtraordinario         bool   `json:"es_extraordinario"`
+	EsPensionable            bool   `json:"es_pensionable"`
+	EsRemunerativa           bool   `json:"es_remunerativa"`
+	EsBaseCts                bool   `json:"es_base_cts"`
+	EsBaseBeneficiosSociales bool   `json:"es_base_beneficios_sociales"`
 
 	// Campos Auxiliares (JOINs desde la tabla conceptos_maestros)
 	ConceptoCodigo     string `json:"concepto_codigo,omitempty"`
@@ -304,14 +309,19 @@ type PapDetalle struct {
 
 // ConceptoModelo representa la plantilla base para cada régimen laboral
 type ConceptoModelo struct {
-	ID                  int    `json:"id"`
-	ConceptoID          int    `json:"concepto_id"`
-	NombrePersonalizado string `json:"nombre_personalizado"`
-	FrecuenciaMeses     string `json:"frecuencia_meses"`
-	ClasificadorID      *int   `json:"clasificador_id"` // Es puntero porque puede ser nulo en la BD
-	EsExtraordinario    bool   `json:"es_extraordinario"`
-	RequiereMonto       bool   `json:"requiere_monto"`
-	CreatedAt           string `json:"created_at"`
+	ID                       int        `json:"id"`
+	ConceptoID               int        `json:"concepto_id"`
+	NombrePersonalizado      string     `json:"nombre_personalizado"`
+	FrecuenciaMeses          string     `json:"frecuencia_meses"`
+	ClasificadorID           *int       `json:"clasificador_id"` // Es puntero porque puede ser nulo en la BD
+	EsExtraordinario         bool       `json:"es_extraordinario"`
+	RequiereMonto            bool       `json:"requiere_monto"`
+	EsPensionable            bool       `json:"es_pensionable"`
+	EsRemunerativa           bool       `json:"es_remunerativa"`
+	EsBaseCts                bool       `json:"es_base_cts"`
+	EsBaseBeneficiosSociales bool       `json:"es_base_beneficios_sociales"`
+	CreatedAt                string     `json:"created_at"`
+	UpdatedAt                *time.Time `json:"updated_at,omitempty"`
 
 	// Campos "virtuales" obtenidos mediante JOINs para la interfaz de usuario
 	RegimenesIDs        []int  `json:"regimenes_ids"` // Para los checkboxes (POST/PUT)
@@ -321,13 +331,19 @@ type ConceptoModelo struct {
 	ClasificadorCodigo  string `json:"clasificador_codigo,omitempty"`
 }
 
-// ConceptoAsignacion representa la estructura temporal para la vista de 
+// RegimenConceptoModelo representa la relación Muchos a Muchos entre regimenes_laborales y conceptos_modelo
+type RegimenConceptoModelo struct {
+	RegimenID        int `json:"regimen_id"`
+	ConceptoModeloID int `json:"concepto_modelo_id"`
+}
+
+// ConceptoAsignacion representa la estructura temporal para la vista de
 // asignación manual de conceptos a un puesto específico.
 type ConceptoAsignacion struct {
 	ConceptoTenantID int     `json:"concepto_tenant_id"`
 	Nombre           string  `json:"nombre"`
-	Tipo             string  `json:"tipo"`           // INGRESO, RETENCION, APORTE
+	Tipo             string  `json:"tipo"` // INGRESO, RETENCION, APORTE
 	RequiereMonto    bool    `json:"requiere_monto"`
-	Asignado         bool    `json:"asignado"`       // Define si el switch estará encendido
-	Monto            float64 `json:"monto"`          // El valor actual (si aplica)
+	Asignado         bool    `json:"asignado"` // Define si el switch estará encendido
+	Monto            float64 `json:"monto"`    // El valor actual (si aplica)
 }

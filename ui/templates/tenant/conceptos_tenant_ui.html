@@ -203,6 +203,24 @@
                 <input type="checkbox" name="es_extraordinario" role="switch"> Concepto Extraordinario
             </label>
 
+            <div class="grid">
+                <label>
+                    <input type="checkbox" name="es_pensionable" role="switch"> ¿Es Pensionable?
+                </label>
+                <label>
+                    <input type="checkbox" name="es_remunerativa" role="switch"> ¿Es Remunerativa?
+                </label>
+            </div>
+
+            <div class="grid">
+                <label>
+                    <input type="checkbox" name="es_base_cts" role="switch"> ¿Base CTS?
+                </label>
+                <label>
+                    <input type="checkbox" name="es_base_beneficios_sociales" role="switch"> ¿Base Beneficios Sociales?
+                </label>
+            </div>
+
             <button type="submit">
                 <svg class="icono-menu">
                     <use href="#icono-guardar"></use>
@@ -260,14 +278,31 @@
             </div>
 
             <label>
-                <input type="checkbox" role="switch" name="activo" {{if .Concepto.Activo}}checked{{end}}> Concepto
-                Activo
+                <input type="checkbox" role="switch" name="activo" {{if .Concepto.Activo}}checked{{end}}> Concepto Activo
             </label>
             <label>
                 <input type="checkbox" role="switch" name="es_extraordinario" {{if
                     .Concepto.EsExtraordinario}}checked{{end}}>
                 Concepto Extraordinario
             </label>
+
+            <div class="grid">
+                <label>
+                    <input type="checkbox" role="switch" name="es_pensionable" {{if .Concepto.EsPensionable}}checked{{end}}> Es Pensionable
+                </label>
+                <label>
+                    <input type="checkbox" role="switch" name="es_remunerativa" {{if .Concepto.EsRemunerativa}}checked{{end}}> Es Remunerativa
+                </label>
+            </div>
+
+            <div class="grid">
+                <label>
+                    <input type="checkbox" role="switch" name="es_base_cts" {{if .Concepto.EsBaseCts}}checked{{end}}> Base CTS
+                </label>
+                <label>
+                    <input type="checkbox" role="switch" name="es_base_beneficios_sociales" {{if .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> Base Beneficios Sociales
+                </label>
+            </div>
 
             <div class="grid">
                 <button type="submit" class="primary" style="margin-bottom: 0;">
