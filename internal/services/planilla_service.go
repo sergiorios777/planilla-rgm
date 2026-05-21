@@ -174,7 +174,15 @@ func (s *PlanillaService) obtenerBaseImponible(maestroID int, ingresosProcesados
 
 func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models.BoletaResultado, error) {
 	boleta := models.BoletaResultado{
-		ContratoID: job.Contrato.ID,
+		ContratoID:                     job.Contrato.ID,
+		TrabajadorNombreCompleto:       job.Contrato.TrabajadorNombreCompleto,
+		TrabajadorNumeroDocumento:      job.Contrato.TrabajadorNumeroDocumento,
+		PuestoCodigoAirhsp:             job.Contrato.PuestoCodigoAirhsp,
+		PuestoNombre:                   job.Contrato.PuestoNombre,
+		OrganigramaDocumentoAprobacion: job.Contrato.OrganigramaDocumentoAprobacion,
+		UnidadOrganicaNombre:           job.Contrato.UnidadOrganicaNombre,
+		UnidadOrganicaTipo:             job.Contrato.UnidadOrganicaTipo,
+		SueldoBasicoHistorico:          job.Contrato.SueldoBasicoHistorico,
 	}
 
 	mesActualStr := strconv.Itoa(job.MesActual)
@@ -231,8 +239,19 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 
 		boleta.TotalIngresos += montoProporcional
 		ctxTrabajador.IngresosProcesados[strconv.Itoa(cp.MaestroID)] = montoProporcional
+
+		var ctIDVal *int
+		if cp.TenantID > 0 {
+			v := cp.TenantID
+			ctIDVal = &v
+		}
 		boleta.LineasConceptos = append(boleta.LineasConceptos, models.PlanillaConcepto{
-			ConceptoTenantID: cp.TenantID, TipoConcepto: "INGRESO", Monto: montoProporcional,
+			ConceptoTenantID: ctIDVal,
+			TipoConcepto:     "INGRESO",
+			Monto:            montoProporcional,
+			MaestroID:        cp.MaestroID,
+			CodigoSunat:      cp.MaestroCodigo,
+			NombreEnBoleta:   cp.Nombre,
 		})
 	}
 
@@ -321,8 +340,18 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 			boleta.TotalAportes += montoFinal
 		}
 
+		var ctIDVal *int
+		if cp.TenantID > 0 {
+			v := cp.TenantID
+			ctIDVal = &v
+		}
 		boleta.LineasConceptos = append(boleta.LineasConceptos, models.PlanillaConcepto{
-			MaestroID: cp.MaestroID, ConceptoTenantID: cp.TenantID, TipoConcepto: tipo, Monto: montoFinal,
+			ConceptoTenantID: ctIDVal,
+			TipoConcepto:     tipo,
+			Monto:            montoFinal,
+			MaestroID:        cp.MaestroID,
+			CodigoSunat:      cp.MaestroCodigo,
+			NombreEnBoleta:   cp.Nombre,
 		})
 	}
 

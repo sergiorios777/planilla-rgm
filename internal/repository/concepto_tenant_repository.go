@@ -373,3 +373,64 @@ func (r *ConceptoTenantRepository) ObtenerRegimenesPorConcepto(id int, tenantID 
 	}
 	return ids, nil
 }
+
+// SincronizarDesdeModeloAvanzado sincroniza conceptos del modelo al tenant de forma atómica y bajo filtros específicos
+func (r *ConceptoTenantRepository) SincronizarDesdeModeloAvanzado(tenantID int, modo string, fechaInicio string, fechaFin string) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fmt.Errorf("error al iniciar transaccion: %w", err)
+	}
+	defer tx.Rollback()
+
+	// 1. Construir query dinámico para insertar conceptos
+	queryInsert := `
+		INSERT INTO conceptos_tenant 
+		(tenant_id, concepto_id, modelo_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, activo,
+		 es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales)
+		SELECT 
+			$1, concepto_id, id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, true,
+			es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales
+		FROM conceptos_modelo
+		WHERE 1=1
+	`
+	var args []interface{}
+	args = append(args, tenantID)
+
+	if modo == "FECHAS" {
+		queryInsert += " AND created_at::date BETWEEN $2::date AND $3::date"
+		args = append(args, fechaInicio, fechaFin)
+	} else if modo == "EXTRAORDINARIOS" {
+		queryInsert += " AND es_extraordinario = true"
+	}
+
+	queryInsert += " ON CONFLICT (tenant_id, modelo_id) DO NOTHING"
+
+	_, err = tx.Exec(queryInsert, args...)
+	if err != nil {
+		return fmt.Errorf("error al insertar conceptos tenant: %w", err)
+	}
+
+	// 2. Sincronizar relaciones de regímenes
+	queryRegimenes := `
+		INSERT INTO regimen_concepto_tenant (tenant_id, regimen_id, concepto_tenant_id)
+		SELECT 
+			ct.tenant_id, 
+			rcm.regimen_id, 
+			ct.id 
+		FROM conceptos_tenant ct
+		INNER JOIN regimen_concepto_modelo rcm ON ct.modelo_id = rcm.concepto_modelo_id
+		WHERE ct.tenant_id = $1
+		ON CONFLICT (tenant_id, regimen_id, concepto_tenant_id) DO NOTHING
+	`
+	_, err = tx.Exec(queryRegimenes, tenantID)
+	if err != nil {
+		return fmt.Errorf("error al clonar relaciones de regimenes: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("error al confirmar transaccion: %w", err)
+	}
+
+	return nil
+}
+

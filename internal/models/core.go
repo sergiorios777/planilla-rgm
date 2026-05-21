@@ -156,6 +156,14 @@ type ContratoPlanilla struct {
 	AfpTipoComision    string
 	FechaInicio        time.Time
 	FechaFin           *time.Time
+	TrabajadorNombreCompleto       string
+	TrabajadorNumeroDocumento      string
+	PuestoNombre                   string
+	PuestoCodigoAirhsp             string
+	OrganigramaDocumentoAprobacion string
+	UnidadOrganicaNombre           string
+	UnidadOrganicaTipo             string
+	SueldoBasicoHistorico          float64
 }
 
 // ConceptoPlanilla representa un rubro de la estructura de costos del puesto
@@ -193,26 +201,65 @@ type MetaPresupuestal struct {
 	Activo      bool   `json:"activo"`
 }
 
+// Organigrama representa la ordenanza o estructura de oficinas vigente
+type Organigrama struct {
+	ID                  int       `json:"id"`
+	TenantID            int       `json:"tenant_id"`
+	DocumentoAprobacion string    `json:"documento_aprobacion"`
+	Descripcion         string    `json:"descripcion"`
+	FechaVigencia       time.Time `json:"fecha_vigencia"`
+	Activo              bool      `json:"activo"`
+	CreatedAt           time.Time `json:"created_at"`
+	UpdatedAt           time.Time `json:"updated_at"`
+}
+
+// UnidadOrganica es un nodo de la estructura orgánica en la base de datos
+type UnidadOrganica struct {
+	ID            int       `json:"id"`
+	TenantID      int       `json:"tenant_id"`
+	OrganigramaID int       `json:"organigrama_id"`
+	ParentID      *int      `json:"parent_id"`
+	CodigoMef     string    `json:"codigo_mef"`
+	Nombre        string    `json:"nombre"`
+	Tipo          string    `json:"tipo"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+// UnidadNodo representa un nodo procesado listo para renderizar jerárquicamente en la UI
+type UnidadNodo struct {
+	ID           int          `json:"id"`
+	Nombre       string       `json:"nombre"`
+	Tipo         string       `json:"tipo"`
+	CodigoMef    string       `json:"codigo_mef"`
+	ParentID     *int         `json:"parent_id"`
+	TotalPuestos int          `json:"total_puestos"`
+	Hijos        []UnidadNodo `json:"hijos"`
+}
+
 // Puesto (Plaza) representa una "silla" dentro de la municipalidad, esté ocupada o vacante.
 // Es la base para el cálculo del Presupuesto Anual.
 type Puesto struct {
-	ID                  int `json:"id"`
-	TenantID            int `json:"tenant_id"`
-	MetaID              int `json:"meta_id"`
-	FuenteRubroID       int `json:"fuente_rubro_id"`
-	RegimenID           int `json:"regimen_id"`
-	RegimenCodigo       string
+	ID                  int     `json:"id"`
+	TenantID            int     `json:"tenant_id"`
+	MetaID              int     `json:"meta_id"`
+	FuenteRubroID       int     `json:"fuente_rubro_id"`
+	RegimenID           int     `json:"regimen_id"`
+	RegimenCodigo       string  `json:"-"`
 	Nombre              string  `json:"nombre"`
 	SueldoPresupuestado float64 `json:"sueldo_presupuestado"`
 	Estado              string  `json:"estado"` // VACANTE u OCUPADO
 	Activo              bool    `json:"activo"`
 	EsDietario          bool    `json:"es_dietario"`
+	UnidadOrganicaID    *int    `json:"unidad_organica_id,omitempty"`
+	CodigoAirhsp        *string `json:"codigo_airhsp,omitempty"`
 
 	// Campos auxiliares para pintar tablas dinámicas sin hacer múltiples consultas
-	MetaCodigo       string `json:"meta_codigo,omitempty"`
-	FuenteRubroDesc  string `json:"fuente_rubro_desc,omitempty"`
-	RegimenDesc      string `json:"regimen_desc,omitempty"`
-	RequiereRevision bool
+	MetaCodigo           string `json:"meta_codigo,omitempty"`
+	FuenteRubroDesc      string `json:"fuente_rubro_desc,omitempty"`
+	RegimenDesc          string `json:"regimen_desc,omitempty"`
+	UnidadOrganicaNombre string `json:"unidad_organica_nombre,omitempty"`
+	RequiereRevision     bool   `json:"-"`
 }
 
 // PuestoConcepto es el detalle de qué conceptos arman el costo de una Plaza específica
@@ -244,18 +291,25 @@ type Planilla struct {
 
 // PlanillaDetalle representa la boleta consolidada de un trabajador
 type PlanillaDetalle struct {
-	ID               int     `json:"id"`
-	PlanillaID       int     `json:"planilla_id"`
-	ContratoID       int     `json:"contrato_id"`
-	TotalIngresos    float64 `json:"total_ingresos"`
-	TotalRetenciones float64 `json:"total_retenciones"`
-	TotalAportes     float64 `json:"total_aportes"`
-	NetoPagar        float64 `json:"neto_pagar"`
+	ID                             int     `json:"id"`
+	PlanillaID                     int     `json:"planilla_id"`
+	ContratoID                     int     `json:"contrato_id"`
+	TotalIngresos                  float64 `json:"total_ingresos"`
+	TotalRetenciones               float64 `json:"total_retenciones"`
+	TotalAportes                   float64 `json:"total_aportes"`
+	NetoPagar                      float64 `json:"neto_pagar"`
+	TrabajadorNombreCompleto       string  `json:"trabajador_nombre_completo"`
+	TrabajadorNumeroDocumento      string  `json:"trabajador_numero_documento"`
+	PuestoCodigoAirhsp             string  `json:"puesto_codigo_airhsp"`
+	PuestoNombre                   string  `json:"puesto_nombre"`
+	OrganigramaDocumentoAprobacion string  `json:"organigrama_documento_aprobacion"`
+	UnidadOrganicaNombre           string  `json:"unidad_organica_nombre"`
+	UnidadOrganicaTipo             string  `json:"unidad_organica_tipo"`
+	SueldoBasicoHistorico          float64 `json:"sueldo_basico_historico"`
 
 	// Campos auxiliares para pintar la boleta (JOINs)
 	TrabajadorNombre string `json:"trabajador_nombre,omitempty"`
 	TrabajadorDoc    string `json:"trabajador_doc,omitempty"`
-	PuestoNombre     string `json:"puesto_nombre,omitempty"`
 	RegimenDesc      string `json:"regimen_desc,omitempty"`
 }
 
@@ -263,10 +317,12 @@ type PlanillaDetalle struct {
 type PlanillaConcepto struct {
 	ID                int     `json:"id"`
 	PlanillaDetalleID int     `json:"planilla_detalle_id"`
-	ConceptoTenantID  int     `json:"concepto_tenant_id"`
+	ConceptoTenantID  *int    `json:"concepto_tenant_id"`
 	TipoConcepto      string  `json:"tipo_concepto"` // INGRESO, RETENCION, APORTE
 	Monto             float64 `json:"monto"`
 	MaestroID         int     `json:"maestro_id"`
+	CodigoSunat       string  `json:"codigo_sunat"`
+	NombreEnBoleta    string  `json:"nombre_en_boleta"`
 
 	// Campo auxiliar
 	NombrePersonalizado string `json:"nombre_personalizado,omitempty"`

@@ -1,18 +1,21 @@
 package handlers
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
 	"strconv"
+	"strings"
 )
 
 type ConceptoModeloHandler struct {
 	Repo               *repository.ConceptoModeloRepository
 	PuestoRepo         *repository.PuestoRepository         // Lo necesitaremos para el select
 	ConceptoTenantRepo *repository.ConceptoTenantRepository // Conceptos Maestros y clasificadores
+	TenantRepo         *repository.TenantRepository         // Para la sincronización masiva
 }
 
 // VistaUI carga la página principal del módulo
@@ -32,16 +35,55 @@ func (h *ConceptoModeloHandler) VistaUI(w http.ResponseWriter, r *http.Request) 
 	tmpl.Execute(w, data)
 }
 
-// Listar extrae la tabla filtrada por régimen para HTMX
+// Listar extrae la tabla filtrada y paginada para HTMX
 func (h *ConceptoModeloHandler) Listar(w http.ResponseWriter, r *http.Request) {
-	modelos, err := h.Repo.ObtenerTodos()
+	busqueda := r.URL.Query().Get("buscar")
+	atributo := r.URL.Query().Get("atributo")
+	regimenIDStr := r.URL.Query().Get("regimen_id")
+	paginaStr := r.URL.Query().Get("pagina")
+	limiteStr := r.URL.Query().Get("limite")
+
+	limite, err := strconv.Atoi(limiteStr)
+	if err != nil || limite <= 0 {
+		limite = 10 // Por defecto mostramos 10
+	}
+
+	pagina, err := strconv.Atoi(paginaStr)
+	if err != nil || pagina <= 0 {
+		pagina = 1 // Por defecto empezamos en la página 1
+	}
+
+	regimenID, _ := strconv.Atoi(regimenIDStr)
+
+	offset := (pagina - 1) * limite
+
+	modelos, totalRegistros, err := h.Repo.ObtenerTodosPaginacion(busqueda, atributo, regimenID, limite, offset)
 	if err != nil {
-		http.Error(w, "Error al obtener modelos", 500)
+		http.Error(w, "Error al obtener modelos con paginación", http.StatusInternalServerError)
 		return
 	}
 
+	totalPaginas := (totalRegistros + limite - 1) / limite
+	if totalPaginas == 0 {
+		totalPaginas = 1
+	}
+
+	datosVista := struct {
+		Conceptos       []models.ConceptoModelo
+		TotalPaginas    int
+		PaginaActual    int
+		PaginaAnterior  int
+		PaginaSiguiente int
+	}{
+		Conceptos:       modelos,
+		TotalPaginas:    totalPaginas,
+		PaginaActual:    pagina,
+		PaginaAnterior:  pagina - 1,
+		PaginaSiguiente: pagina + 1,
+	}
+
 	tmpl, _ := template.ParseFiles("ui/templates/admin/conceptos_modelo_ui.html")
-	tmpl.ExecuteTemplate(w, "tabla_modelos", modelos)
+	tmpl.ExecuteTemplate(w, "tabla_modelos", datosVista)
 }
 
 // Crear procesa el formulario y devuelve la tabla actualizada
@@ -183,3 +225,90 @@ func (h *ConceptoModeloHandler) Eliminar(w http.ResponseWriter, r *http.Request)
 	log.Println("✅ Eliminado con éxito.")
 	h.Listar(w, r)
 }
+
+// Sincronizar realiza la propagación masiva de conceptos modelo a todos los tenants activos
+func (h *ConceptoModeloHandler) Sincronizar(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	r.ParseForm()
+	modo := r.FormValue("modo")
+	fechaInicio := r.FormValue("fecha_inicio")
+	fechaFin := r.FormValue("fecha_fin")
+
+	if modo == "FECHAS" && (fechaInicio == "" || fechaFin == "") {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(`
+			<div id="alerta-sincronizacion" hx-swap-oob="true">
+				<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #ef9a9a;">
+					❌ Error: Debe especificar ambas fechas (Inicio y Fin) para la sincronización por fechas.
+				</article>
+			</div>
+		`))
+		return
+	}
+
+	tenants, err := h.TenantRepo.ObtenerTodos("")
+	if err != nil {
+		log.Println("❌ Error al obtener inquilinos:", err)
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(`
+			<div id="alerta-sincronizacion" hx-swap-oob="true">
+				<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #ef9a9a;">
+					❌ Error al obtener la lista de municipalidades desde el servidor.
+				</article>
+			</div>
+		`))
+		return
+	}
+
+	var exitos, fallas int
+	var erroresDetalle []string
+
+	for _, tenant := range tenants {
+		if !tenant.Activo {
+			continue
+		}
+
+		err := h.ConceptoTenantRepo.SincronizarDesdeModeloAvanzado(tenant.ID, modo, fechaInicio, fechaFin)
+		if err != nil {
+			fallas++
+			erroresDetalle = append(erroresDetalle, fmt.Sprintf("<li><strong>%s (RUC: %s)</strong>: %s</li>", tenant.Nombre, tenant.Ruc, err.Error()))
+			log.Printf("❌ Error sincronizando tenant %d (%s): %v\n", tenant.ID, tenant.Nombre, err)
+		} else {
+			exitos++
+		}
+	}
+
+	w.Header().Set("HX-Trigger", "cerrarModal")
+	w.Header().Set("Content-Type", "text/html")
+
+	var htmlResponse string
+	if fallas > 0 {
+		htmlResponse = fmt.Sprintf(`
+			<div id="alerta-sincronizacion" hx-swap-oob="true">
+				<article style="background-color: #fff3e0; color: #e65100; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #ffe0b2;">
+					<strong>⚠️ Sincronización masiva finalizada con advertencias:</strong>
+					<p style="margin: 0.5rem 0;">Exitosas: %d | Fallidas: %d</p>
+					<ul style="margin-top: 0.5rem; margin-bottom: 0; padding-left: 1.5rem;">
+						%s
+					</ul>
+				</article>
+			</div>
+		`, exitos, fallas, strings.Join(erroresDetalle, ""))
+	} else {
+		htmlResponse = fmt.Sprintf(`
+			<div id="alerta-sincronizacion" hx-swap-oob="true">
+				<article style="background-color: #e8f5e9; color: #2e7d32; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #c8e6c9;">
+					✅ Sincronización masiva finalizada con éxito. Se procesaron %d municipalidades activas satisfactoriamente.
+				</article>
+			</div>
+		`, exitos)
+	}
+
+	w.Write([]byte(htmlResponse))
+	h.Listar(w, r)
+}
+

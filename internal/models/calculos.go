@@ -39,6 +39,14 @@ type BoletaResultado struct {
 	// Aquí guardamos el detalle de rubros (Sueldo, EsSalud, AFP, etc.)
 	LineasConceptos       []PlanillaConcepto
 	OcurrenciasProcesadas []int
+	TrabajadorNombreCompleto       string
+	TrabajadorNumeroDocumento      string
+	PuestoCodigoAirhsp             string
+	PuestoNombre                   string
+	OrganigramaDocumentoAprobacion string
+	UnidadOrganicaNombre           string
+	UnidadOrganicaTipo             string
+	SueldoBasicoHistorico          float64
 }
 
 // OcurrenciaAsistencia representa una falta o tardanza extraída de la BD

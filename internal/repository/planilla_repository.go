@@ -93,16 +93,26 @@ func (r *PlanillaRepository) ObtenerParametrosGlobales(anio int, mes int) (map[s
 	return parametros, nil
 }
 
-// ObtenerContratosActivosPlanilla busca a todos los que trabajaron en ese mes y trae su info de AFP desde el trabajador
+// ObtenerContratosActivosPlanilla busca a todos los que trabajaron en ese mes y trae su info de AFP desde el trabajador, así como los datos históricos para snapshot
 func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio int, mes int) ([]models.ContratoPlanilla, error) {
 	query := `
 		SELECT c.id, c.puesto_id, rl.codigo, 
 		       COALESCE(t.regimen_pensionario, 'ONP'), COALESCE(t.afp_id, 0), COALESCE(t.afp_tipo_comision, ''),
-		       c.fecha_inicio, c.fecha_fin
+		       c.fecha_inicio, c.fecha_fin,
+		       t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre_completo,
+		       t.numero_documento AS trabajador_numero_documento,
+		       p.nombre AS puesto_nombre,
+		       COALESCE(p.codigo_airhsp, '') AS puesto_codigo_airhsp,
+		       COALESCE(o.documento_aprobacion, 'N/A') AS organigrama_documento_aprobacion,
+		       COALESCE(uo.nombre, 'Sin Unidad') AS unidad_organica_nombre,
+		       COALESCE(uo.tipo, 'N/A') AS unidad_organica_tipo,
+		       p.sueldo_presupuestado AS sueldo_basico_historico
 		FROM contratos c
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
 		INNER JOIN puestos p ON c.puesto_id = p.id
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
+		LEFT JOIN unidades_organicas uo ON p.unidad_organica_id = uo.id
+		LEFT JOIN organigramas o ON uo.organigrama_id = o.id
 		WHERE c.tenant_id = $1 AND c.activo = true
 		  AND c.fecha_inicio <= (make_date($2, $3, 1) + interval '1 month' - interval '1 day')::date
 		  AND (c.fecha_fin IS NULL OR c.fecha_fin >= make_date($2, $3, 1)::date)
@@ -117,8 +127,9 @@ func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio 
 	var lista []models.ContratoPlanilla
 	for rows.Next() {
 		var c models.ContratoPlanilla
-		// El escaneo sigue siendo exactamente igual, llenando nuestra estructura en memoria
-		err := rows.Scan(&c.ID, &c.PuestoID, &c.Regimen, &c.RegimenPensionario, &c.AfpID, &c.AfpTipoComision, &c.FechaInicio, &c.FechaFin)
+		err := rows.Scan(&c.ID, &c.PuestoID, &c.Regimen, &c.RegimenPensionario, &c.AfpID, &c.AfpTipoComision, &c.FechaInicio, &c.FechaFin,
+			&c.TrabajadorNombreCompleto, &c.TrabajadorNumeroDocumento, &c.PuestoNombre, &c.PuestoCodigoAirhsp,
+			&c.OrganigramaDocumentoAprobacion, &c.UnidadOrganicaNombre, &c.UnidadOrganicaTipo, &c.SueldoBasicoHistorico)
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +166,7 @@ func (r *PlanillaRepository) ObtenerConceptosPuesto(puestoID int) ([]models.Conc
 	return lista, nil
 }
 
-// GuardarPlanillaCalculada recibe los cálculos en memoria y los inserta en bloque
+// GuardarPlanillaCalculada recibe los cálculos en memoria y los inserta en bloque con snapshot de inmutabilidad
 func (r *PlanillaRepository) GuardarPlanillaCalculada(planillaID int, boletas []models.BoletaResultado) error {
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -171,18 +182,25 @@ func (r *PlanillaRepository) GuardarPlanillaCalculada(planillaID int, boletas []
 
 	// 2. PREPARAR SENTENCIAS
 	stmtDetalle, _ := tx.Prepare(`
-		INSERT INTO planilla_detalles (planilla_id, contrato_id, total_ingresos, total_retenciones, total_aportes, neto_pagar) 
-		VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`)
+		INSERT INTO planilla_detalles (
+			planilla_id, contrato_id, total_ingresos, total_retenciones, total_aportes, neto_pagar,
+			trabajador_nombre_completo, trabajador_numero_documento, puesto_codigo_airhsp, puesto_nombre,
+			organigrama_documento_aprobacion, unidad_organica_nombre, unidad_organica_tipo, sueldo_basico_historico
+		) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`)
 
-	// 💡 CORRECCIÓN CRÍTICA: Añadidos concepto_tenant_id y las columnas exactas de tu tabla
 	stmtConcepto, _ := tx.Prepare(`
-		INSERT INTO planilla_conceptos (planilla_detalle_id, concepto_tenant_id, maestro_id, tipo_concepto, monto) 
-		VALUES ($1, $2, $3, $4, $5)`)
+		INSERT INTO planilla_conceptos (planilla_detalle_id, concepto_tenant_id, maestro_id, tipo_concepto, monto, codigo_sunat, nombre_en_boleta) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`)
 
 	// 3. BUCLE DE GUARDADO
 	for _, b := range boletas {
 		var detalleID int
-		err := stmtDetalle.QueryRow(planillaID, b.ContratoID, b.TotalIngresos, b.TotalRetenciones, b.TotalAportes, b.NetoPagar).Scan(&detalleID)
+		err := stmtDetalle.QueryRow(
+			planillaID, b.ContratoID, b.TotalIngresos, b.TotalRetenciones, b.TotalAportes, b.NetoPagar,
+			b.TrabajadorNombreCompleto, b.TrabajadorNumeroDocumento, b.PuestoCodigoAirhsp, b.PuestoNombre,
+			b.OrganigramaDocumentoAprobacion, b.UnidadOrganicaNombre, b.UnidadOrganicaTipo, b.SueldoBasicoHistorico,
+		).Scan(&detalleID)
 		if err != nil {
 			log.Println("Error insertando detalle:", err)
 			tx.Rollback()
@@ -190,8 +208,13 @@ func (r *PlanillaRepository) GuardarPlanillaCalculada(planillaID int, boletas []
 		}
 
 		for _, linea := range b.LineasConceptos {
-			// 💡 CORRECCIÓN: Pasamos el ConceptoTenantID y el MaestroID que la tabla exige
-			_, err = stmtConcepto.Exec(detalleID, linea.ConceptoTenantID, linea.MaestroID, linea.TipoConcepto, linea.Monto)
+			var tenantIDVal interface{}
+			if linea.ConceptoTenantID != nil && *linea.ConceptoTenantID > 0 {
+				tenantIDVal = *linea.ConceptoTenantID
+			} else {
+				tenantIDVal = nil
+			}
+			_, err = stmtConcepto.Exec(detalleID, tenantIDVal, linea.MaestroID, linea.TipoConcepto, linea.Monto, linea.CodigoSunat, linea.NombreEnBoleta)
 			if err != nil {
 				log.Println("Error insertando concepto:", err)
 				tx.Rollback()
@@ -432,7 +455,7 @@ func (r *PlanillaRepository) ObtenerConceptosPorPuestoMasivo(puestoIDs []int) (m
 
 	query := `
 		SELECT pc.puesto_id, pc.concepto_tenant_id, cm.id, cm.codigo, cm.tipo, pc.monto,
-		       ct.frecuencia_meses, ct.es_extraordinario, COALESCE(cm.parent_id, 0)
+		       ct.frecuencia_meses, ct.es_extraordinario, COALESCE(cm.parent_id, 0), ct.nombre_personalizado
 		FROM puesto_conceptos pc
 		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
 		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
@@ -452,7 +475,7 @@ func (r *PlanillaRepository) ObtenerConceptosPorPuestoMasivo(puestoIDs []int) (m
 		var m sql.NullFloat64 // Usamos esto por si el monto está vacío en la BD
 
 		err := rows.Scan(&pID, &cp.TenantID, &cp.MaestroID, &cp.MaestroCodigo, &cp.Tipo, &m,
-			&cp.Frecuencia, &cp.EsExtraordinario, &cp.ParentID)
+			&cp.Frecuencia, &cp.EsExtraordinario, &cp.ParentID, &cp.Nombre)
 		if err != nil {
 			log.Println("Error Scan ObtenerConceptosPorPuestoMasivo:", err)
 			continue
@@ -557,7 +580,7 @@ func (r *PlanillaRepository) ObtenerIngresosPreviosMasivo(contratoIDs []int, ani
 }
 
 // ObtenerDatosParaReporte extrae absolutamente todo el detalle de una planilla
-// agrupando los conceptos (Ingresos, Retenciones, Aportes) por trabajador.
+// agrupando los conceptos (Ingresos, Retenciones, Aportes) por trabajador, leyendo desde las tablas históricas des-normalizadas.
 func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID int) (*models.DatosReportePlanilla, error) {
 	var reporte models.DatosReportePlanilla
 
@@ -576,21 +599,18 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 		return nil, err
 	}
 
-	// 2. Obtener los Trabajadores (Detalles)
+	// 2. Obtener los Trabajadores (Directo desde la boleta inmutable)
 	queryDetalles := `
 		SELECT 
 			pd.id, 
-			tr.numero_documento, 
-			tr.nombres || ' ' || tr.apellido_paterno || ' ' || tr.apellido_materno AS trabajador_nombre,
-			pu.nombre AS cargo, rl.descripcion AS regimen,
+			pd.trabajador_numero_documento, 
+			pd.trabajador_nombre_completo,
+			pd.puesto_nombre,
+			COALESCE(pd.unidad_organica_nombre, 'Sin Unidad'),
 			pd.total_ingresos, pd.total_retenciones, pd.total_aportes, pd.neto_pagar
 		FROM planilla_detalles pd
-		INNER JOIN contratos c ON pd.contrato_id = c.id
-		INNER JOIN trabajadores tr ON c.trabajador_id = tr.id
-		INNER JOIN puestos pu ON c.puesto_id = pu.id
-		INNER JOIN regimenes_laborales rl ON pu.regimen_id = rl.id
 		WHERE pd.planilla_id = $1
-		ORDER BY tr.apellido_paterno ASC
+		ORDER BY pd.trabajador_nombre_completo ASC
 	`
 	rowsDet, err := r.db.Query(queryDetalles, planillaID)
 	if err != nil {
@@ -618,13 +638,11 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 		reporte.Boletas = append(reporte.Boletas, b) // Mantenemos el orden alfabético
 	}
 
-	// 3. Obtener TODOS los conceptos de esa planilla y apilarlos donde correspondan
+	// 3. Obtener TODOS los conceptos históricos inmutables
 	queryConceptos := `
 		SELECT 
-			pc.planilla_detalle_id, ct.nombre_personalizado, cm.tipo, pc.monto
+			pc.planilla_detalle_id, pc.nombre_en_boleta, pc.tipo_concepto, pc.monto
 		FROM planilla_conceptos pc
-		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
-		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
 		WHERE pc.planilla_detalle_id IN (SELECT id FROM planilla_detalles WHERE planilla_id = $1)
 		ORDER BY pc.monto DESC -- Opcional: para que los montos más altos salgan primero
 	`
@@ -649,7 +667,6 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 
 		// Apilamos en la columna correspondiente según tu idea de diseño
 		if boleta, existe := mapaBoletas[detalleID]; existe {
-			// 💡 SOLUCIÓN: Normalizamos a mayúsculas para evitar errores por "Ingreso" vs "INGRESO"
 			tipoNormalizado := strings.ToUpper(strings.TrimSpace(tipo))
 			switch tipoNormalizado {
 			case "INGRESO":

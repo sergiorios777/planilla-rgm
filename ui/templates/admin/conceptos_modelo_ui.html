@@ -2,67 +2,163 @@
     <header>
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3 style="margin: 0;">🛠️ Catálogo de Conceptos Modelo (SaaS)</h3>
-            <button class="outline" onclick="document.getElementById('modal-nuevo-modelo').showModal()">
-                <svg class="icono-menu">
-                    <use href="#icono-nuevo-1"></use>
-                </svg> Nuevo Concepto Modelo
-            </button>
+            <div style="display: flex; gap: 10px;">
+                <button class="outline" onclick="document.getElementById('modal-sincronizar').showModal()">
+                    <svg class="icono-menu">
+                        <use href="#icono-sincronizar-punto"></use>
+                    </svg> Sincronizar Conceptos
+                </button>
+                <button class="outline" onclick="document.getElementById('modal-nuevo-modelo').showModal()">
+                    <svg class="icono-menu">
+                        <use href="#icono-nuevo-1"></use>
+                    </svg> Nuevo Concepto Modelo
+                </button>
+            </div>
         </div>
     </header>
 
-    <div id="lista-modelos" hx-get="/admin/conceptos-modelo/lista" hx-trigger="load" hx-target="#cuerpo-tabla-modelos"
-        hx-swap="innerHTML">
-        <table class="striped">
-            <thead>
-                <tr>
-                    <th>Concepto Maestro</th>
-                    <th>Nombre en Boleta</th>
-                    <th>Regímenes Aplicables</th>
-                    <th>Clasificador MEF</th>
-                    <th>¿Monto?</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="cuerpo-tabla-modelos">
-                <tr>
-                    <td colspan="6" style="text-align: center;" aria-busy="true">Cargando catálogo maestro...</td>
-                </tr>
-            </tbody>
-        </table>
+    <div id="alerta-sincronizacion"></div>
+
+    <!-- Formulario de Búsqueda y Filtros -->
+    <form id="form-filtros-modelos" class="grid">
+        <label>
+            Buscar
+            <input type="search" name="buscar" placeholder="Código, Clasificador o descripción..."
+                hx-get="/admin/conceptos-modelo/lista" hx-trigger="keyup changed delay:500ms, search"
+                hx-include="#form-filtros-modelos" hx-target="#lista-modelos">
+        </label>
+
+        <label>
+            Atributo
+            <select name="atributo" hx-get="/admin/conceptos-modelo/lista"
+                hx-include="#form-filtros-modelos" hx-target="#lista-modelos">
+                <option value="">Todos</option>
+                <option value="es_pensionable">Es Pensionable</option>
+                <option value="es_remunerativa">Es Remunerativa</option>
+                <option value="es_base_cts">Base CTS</option>
+                <option value="es_base_beneficios_sociales">Base Beneficios Sociales</option>
+            </select>
+        </label>
+
+        <label>
+            Régimen Laboral
+            <select name="regimen_id" hx-get="/admin/conceptos-modelo/lista"
+                hx-include="#form-filtros-modelos" hx-target="#lista-modelos">
+                <option value="">Todos</option>
+                {{range .Regimenes}}
+                <option value="{{.ID}}">{{.Descripcion}}</option>
+                {{end}}
+            </select>
+        </label>
+
+        <label style="width: 150px;">
+            Mostrar
+            <select name="limite" hx-get="/admin/conceptos-modelo/lista"
+                hx-include="#form-filtros-modelos" hx-target="#lista-modelos">
+                <option value="10">10 filas</option>
+                <option value="20">20 filas</option>
+                <option value="50">50 filas</option>
+                <option value="100">100 filas</option>
+            </select>
+        </label>
+    </form>
+
+    <!-- Contenedor dinámico de la lista de modelos -->
+    <div id="lista-modelos" hx-get="/admin/conceptos-modelo/lista" hx-trigger="load, recargarTablaModelos from:body"
+        hx-include="#form-filtros-modelos" hx-target="this" hx-swap="innerHTML">
+        <p aria-busy="true">Cargando catálogo maestro...</p>
     </div>
 </article>
 
 {{define "tabla_modelos"}}
-{{range .}}
-<tr>
-    <td><small>{{.ConceptoCodigo}}</small><br>{{.ConceptoDescripcion}}</td>
-    <td><strong>{{.NombrePersonalizado}}</strong></td>
-    <td><small>{{.RegimenesNombres}}</small></td>
-    <td><mark>{{.ClasificadorCodigo}}</mark></td>
-    <td>{{if .RequiereMonto}}✅{{else}}🤖{{end}}</td>
-    <td>
-        <div role="group">
-            <button class="outline contrast" style="padding: 0.2rem 0.5rem;"
-                hx-get="/admin/conceptos-modelo/editar_ui?id={{.ID}}" hx-target="#modal-editar-modelo"
-                hx-swap="innerHTML">
-                Editar
-            </button>
-            <button class="outline contrast" style="padding: 0.2rem 0.5rem;"
-                hx-delete="/admin/conceptos-modelo/eliminar?id={{.ID}}" hx-target="#cuerpo-tabla-modelos"
-                hx-confirm="¿Eliminar este concepto del catálogo modelo?">
-                Borrar
-            </button>
-        </div>
-    </td>
-</tr>
-{{else}}
-<tr>
-    <td colspan="6" style="text-align: center;">No hay conceptos configurados en el catálogo modelo.</td>
-</tr>
-{{end}}
+<div style="overflow-x: auto;">
+    <table class="striped">
+        <thead>
+            <tr>
+                <th>Concepto Maestro</th>
+                <th>Nombre en Boleta</th>
+                <th>Regímenes Aplicables</th>
+                <th>Atributos</th>
+                <th>Clasificador MEF</th>
+                <th>¿Monto?</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Conceptos}}
+            <tr>
+                <td><small>{{.ConceptoCodigo}}</small><br>{{.ConceptoDescripcion}}</td>
+                <td><strong>{{.NombrePersonalizado}}</strong></td>
+                <td><small>{{.RegimenesNombres}}</small></td>
+                <td>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                        {{if .EsPensionable}}
+                        <mark style="background-color: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #c8e6c9;">PENS</mark>
+                        {{end}}
+                        {{if .EsRemunerativa}}
+                        <mark style="background-color: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #bbdefb;">REM</mark>
+                        {{end}}
+                        {{if .EsBaseCts}}
+                        <mark style="background-color: #fff3e0; color: #e65100; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #ffe0b2;">CTS</mark>
+                        {{end}}
+                        {{if .EsBaseBeneficiosSociales}}
+                        <mark style="background-color: #f3e5f5; color: #6a1b9a; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #e1bee7;">BEN_SOC</mark>
+                        {{end}}
+                    </div>
+                </td>
+                <td><mark>{{if .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}}</mark></td>
+                <td>{{if .RequiereMonto}}✅{{else}}🤖{{end}}</td>
+                <td>
+                    <div role="group">
+                        <button class="outline contrast" style="padding: 0.2rem 0.5rem;"
+                            hx-get="/admin/conceptos-modelo/editar_ui?id={{.ID}}" hx-target="#modal-editar-modelo"
+                            hx-swap="innerHTML">
+                            Editar
+                        </button>
+                        <button class="outline contrast" style="padding: 0.2rem 0.5rem;"
+                            hx-delete="/admin/conceptos-modelo/eliminar?id={{.ID}}" hx-target="#lista-modelos"
+                            hx-confirm="¿Eliminar este concepto del catálogo modelo?">
+                            Borrar
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="7" style="text-align: center;">No hay conceptos configurados en el catálogo modelo.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<!-- Controles de paginación-->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+    <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
+
+    <div role="group">
+        {{if gt .PaginaAnterior 0}}
+        <button class="outline" hx-get="/admin/conceptos-modelo/lista" hx-include="#form-filtros-modelos"
+            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#lista-modelos">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Anterior
+        </button>
+        {{end}}
+
+        {{if lt .PaginaActual .TotalPaginas}}
+        <button class="outline" hx-get="/admin/conceptos-modelo/lista" hx-include="#form-filtros-modelos"
+            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#lista-modelos">
+            Siguiente <svg class="icono-menu">
+                <use href="#icono-siguiente-cuadrado"></use>
+            </svg>
+        </button>
+        {{end}}
+    </div>
+</div>
 {{end}}
 
-<!-- Modal para nuevo registo -->
+<!-- Modal para nuevo registro -->
 <dialog id="modal-nuevo-modelo">
     <article style="max-width: 800px; width: 90%;">
         <header>
@@ -70,7 +166,7 @@
                 onclick="document.getElementById('modal-nuevo-modelo').close()"></a>
             <h4>Configurar Nuevo Concepto Modelo</h4>
         </header>
-        <form hx-post="/admin/conceptos-modelo/crear" hx-target="#cuerpo-tabla-modelos">
+        <form hx-post="/admin/conceptos-modelo/crear" hx-target="#lista-modelos">
             <fieldset>
                 <legend><strong>Asignar a Regímenes Laborales:</strong></legend>
                 <div
@@ -111,8 +207,7 @@
 
             <div class="grid">
                 <label><input type="checkbox" role="switch" name="requiere_monto" value="true"> ¿Monto manual?</label>
-                <label><input type="checkbox" role="switch" name="es_extraordinario" value="true">
-                    ¿Extraordinario?</label>
+                <label><input type="checkbox" role="switch" name="es_extraordinario" value="true"> ¿Extraordinario?</label>
             </div>
             
             <div class="grid">
@@ -129,7 +224,7 @@
     </article>
 </dialog>
 
-<!-- Modal para editar registo -->
+<!-- Modal para editar registro -->
 <dialog id="modal-editar-modelo" hx-on::after-settle="this.showModal()">
 </dialog>
 
@@ -140,7 +235,7 @@
             onclick="document.getElementById('modal-editar-modelo').close()"></a>
         <h4>Editar Concepto Modelo</h4>
     </header>
-    <form hx-post="/admin/conceptos-modelo/actualizar" hx-target="#cuerpo-tabla-modelos">
+    <form hx-post="/admin/conceptos-modelo/actualizar" hx-target="#lista-modelos">
         <input type="hidden" name="id" value="{{.Concepto.ID}}">
 
         <fieldset>
@@ -208,11 +303,63 @@
 </article>
 {{end}}
 
+<!-- Modal para sincronización masiva -->
+<dialog id="modal-sincronizar">
+    <article style="max-width: 600px; width: 90%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-sincronizar').close()"></a>
+            <h4>Sincronizar Conceptos a Municipalidades</h4>
+        </header>
+        <form hx-post="/admin/conceptos-modelo/sincronizar" hx-target="#lista-modelos">
+            <label>
+                Modo de Sincronización
+                <select id="select-modo-sincronizar" name="modo" onchange="toggleRangoFechas(this.value)">
+                    <option value="FALTANTES">FALTANTES (Solo copiar conceptos nuevos que falten)</option>
+                    <option value="EXTRAORDINARIOS">EXTRAORDINARIOS (Solo copiar conceptos extraordinarios)</option>
+                    <option value="FECHAS">FECHAS (Copiar por rango de fecha de creación)</option>
+                </select>
+            </label>
+
+            <div id="rango-fechas-sincronizar" class="grid" style="display: none; margin-top: 1rem;">
+                <label>
+                    Fecha Inicio
+                    <input type="date" name="fecha_inicio">
+                </label>
+                <label>
+                    Fecha Fin
+                    <input type="date" name="fecha_fin">
+                </label>
+            </div>
+
+            <p style="font-size: 0.85rem; color: #666; margin-top: 1rem;">
+                ℹ️ Esta acción propagará los conceptos seleccionados a todas las municipalidades activas en el sistema, vinculando automáticamente sus regímenes laborales correspondientes.
+            </p>
+
+            <footer>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-sincronizar').close()" style="margin-bottom: 0;">Cancelar</button>
+                    <button type="submit" style="margin-bottom: 0;">Iniciar Sincronización Masiva</button>
+                </div>
+            </footer>
+        </form>
+    </article>
+</dialog>
+
 <script>
+    function toggleRangoFechas(value) {
+        const divFechas = document.getElementById('rango-fechas-sincronizar');
+        if (divFechas) {
+            divFechas.style.display = value === 'FECHAS' ? 'grid' : 'none';
+        }
+    }
+
     document.body.addEventListener("cerrarModal", function () {
         const m1 = document.getElementById('modal-nuevo-modelo');
         const m2 = document.getElementById('modal-editar-modelo');
+        const m3 = document.getElementById('modal-sincronizar');
         if (m1 && m1.open) m1.close();
         if (m2 && m2.open) m2.close();
+        if (m3 && m3.open) m3.close();
     });
 </script>

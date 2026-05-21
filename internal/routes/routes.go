@@ -130,15 +130,19 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	conceptosModeloRepo := repository.NewConceptoModeloRepository(db)
 	puestoRepo := repository.NewPuestoRepository(db)
 	conceptosTenantRepo := repository.NewConceptoTenantRepository(db)
-	cm := handlers.ConceptoModeloHandler{Repo: conceptosModeloRepo,
+	cm := handlers.ConceptoModeloHandler{
+		Repo:               conceptosModeloRepo,
 		PuestoRepo:         puestoRepo,
-		ConceptoTenantRepo: conceptosTenantRepo}
+		ConceptoTenantRepo: conceptosTenantRepo,
+		TenantRepo:         tenantRepo,
+	}
 	mux.HandleFunc("/admin/ui/conceptos-modelo", middleware.RequireRole("super_admin", cm.VistaUI))
 	mux.HandleFunc("/admin/conceptos-modelo/lista", middleware.RequireRole("super_admin", cm.Listar))
 	mux.HandleFunc("/admin/conceptos-modelo/crear", middleware.RequireRole("super_admin", cm.Crear))
 	mux.HandleFunc("/admin/conceptos-modelo/editar_ui", middleware.RequireRole("super_admin", cm.EditarUI))
 	mux.HandleFunc("/admin/conceptos-modelo/actualizar", middleware.RequireRole("super_admin", cm.Actualizar))
 	mux.HandleFunc("/admin/conceptos-modelo/eliminar", middleware.RequireRole("super_admin", cm.Eliminar))
+	mux.HandleFunc("/admin/conceptos-modelo/sincronizar", middleware.RequireRole("super_admin", cm.Sincronizar))
 }
 
 // --- SECCIÓN TENANT (MUNICIPALIDADES) ---
@@ -200,6 +204,17 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/contratos/formulario-crear", middleware.RequireAuth(contratoHandler.FormularioCrearUI))
 	mux.HandleFunc("/tenant/contratos/editar-ui", middleware.RequireAuth(contratoHandler.EditarUI))
 	mux.HandleFunc("/tenant/contratos/actualizar", middleware.RequireAuth(contratoHandler.Actualizar))
+
+	// Rutas de Estructura Orgánica (Organigramas)
+	organigramaRepo := repository.NewOrganigramaRepository(db)
+	organigramaHandler := handlers.OrganigramaHandler{Repo: organigramaRepo, PuestoRepo: puestoRepo}
+	mux.HandleFunc("/tenant/ui/organigrama", middleware.RequireAuth(organigramaHandler.VistaUI))
+	mux.HandleFunc("/tenant/organigrama/arbol", middleware.RequireAuth(organigramaHandler.ArbolUI))
+	mux.HandleFunc("/tenant/organigrama/clonar", middleware.RequireAuth(organigramaHandler.ClonarVersion))
+	mux.HandleFunc("/tenant/organigrama/unidad/guardar", middleware.RequireAuth(organigramaHandler.GuardarUnidad))
+	mux.HandleFunc("/tenant/organigrama/unidad/eliminar", middleware.RequireAuth(organigramaHandler.EliminarUnidad))
+	mux.HandleFunc("/tenant/organigrama/unidad/agregar_hijo_ui", middleware.RequireAuth(organigramaHandler.AgregarHijoUI))
+	mux.HandleFunc("/tenant/organigrama/unidad/editar_ui", middleware.RequireAuth(organigramaHandler.EditarUnidadUI))
 
 	// Rutas protegidas (Bajo la sección de Inquilinos/Presupuesto)
 	conceptoTenantRepo := repository.NewConceptoTenantRepository(db)
