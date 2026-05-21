@@ -251,11 +251,11 @@ func (r *PuestoRepository) AsignarConceptosAPuesto(puestoID int, conceptoTenantI
 func (r *PuestoRepository) ObtenerConceptosModeloPorRegimen(tenantID int, regimenID int) ([]int, error) {
 	query := `
 		SELECT ct.id 
-		FROM conceptos_modelo cm
-		INNER JOIN regimen_concepto_modelo rcm ON cm.id = rcm.concepto_modelo_id
-		INNER JOIN conceptos_tenant ct ON ct.modelo_id = cm.id AND ct.tenant_id = $1
+		FROM conceptos_tenant ct
+		INNER JOIN regimen_concepto_tenant rct ON ct.id = rct.concepto_tenant_id
 		INNER JOIN conceptos_maestros cma ON ct.concepto_id = cma.id
-		WHERE rcm.regimen_id = $2 
+		WHERE rct.tenant_id = $1 
+		  AND rct.regimen_id = $2 
 		  AND ct.activo = true
 		  AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
 	`
@@ -300,11 +300,11 @@ func (r *PuestoRepository) RestaurarPlantillaBase(puestoID int, tenantID int, re
 	// 2. Traemos la lista base desde el modelo (ya excluye pensiones)
 	query := `
 		SELECT ct.id 
-		FROM conceptos_modelo cm
-		INNER JOIN regimen_concepto_modelo rcm ON cm.id = rcm.concepto_modelo_id
-		INNER JOIN conceptos_tenant ct ON ct.modelo_id = cm.id AND ct.tenant_id = $1
+		FROM conceptos_tenant ct
+		INNER JOIN regimen_concepto_tenant rct ON ct.id = rct.concepto_tenant_id
 		INNER JOIN conceptos_maestros cma ON ct.concepto_id = cma.id
-		WHERE rcm.regimen_id = $2
+		WHERE rct.tenant_id = $1 
+		  AND rct.regimen_id = $2
 		  AND ct.activo = true
 		  AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
 	`

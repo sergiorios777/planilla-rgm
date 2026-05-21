@@ -11,16 +11,19 @@ import (
 )
 
 type ConceptoTenantHandler struct {
-	Repo *repository.ConceptoTenantRepository
+	Repo       *repository.ConceptoTenantRepository
+	PuestoRepo *repository.PuestoRepository
 }
 
 func (h *ConceptoTenantHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 	maestros, _ := h.Repo.ObtenerMaestros()
 	clasificadores, _ := h.Repo.ObtenerClasificadores()
+	regimenes, _ := h.PuestoRepo.ObtenerRegimenes()
 
 	datos := map[string]interface{}{
 		"Maestros":       maestros,
 		"Clasificadores": clasificadores,
+		"Regimenes":      regimenes,
 	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/conceptos_tenant_ui.html")
@@ -89,6 +92,14 @@ func (h *ConceptoTenantHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var regimenesIDs []int
+	for _, idStr := range r.Form["regimenes_ids"] {
+		idParsed, err := strconv.Atoi(idStr)
+		if err == nil {
+			regimenesIDs = append(regimenesIDs, idParsed)
+		}
+	}
+
 	nuevoConcepto := models.ConceptoTenant{
 		TenantID:                 tenantID,
 		ConceptoID:               cID,
@@ -101,6 +112,7 @@ func (h *ConceptoTenantHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		EsRemunerativa:           r.FormValue("es_remunerativa") == "on",
 		EsBaseCts:                r.FormValue("es_base_cts") == "on",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "on",
+		RegimenesIDs:             regimenesIDs,
 	}
 
 	err := h.Repo.Crear(&nuevoConcepto)
@@ -147,6 +159,17 @@ func (h *ConceptoTenantHandler) EditarUI(w http.ResponseWriter, r *http.Request)
 	// 2. Traer las listas para los <select> (USA TUS FUNCIONES EXISTENTES AQUÍ)
 	maestros, _ := h.Repo.ObtenerMaestros()
 	clasificadores, _ := h.Repo.ObtenerClasificadores()
+	regimenes, _ := h.PuestoRepo.ObtenerRegimenes()
+
+	regimenesIDs, err := h.Repo.ObtenerRegimenesPorConcepto(c.ID, tenantID)
+	if err != nil {
+		log.Println("Error al obtener regímenes del concepto local:", err)
+	}
+
+	marcados := make(map[int]bool)
+	for _, rid := range regimenesIDs {
+		marcados[rid] = true
+	}
 
 	// 3. Enviar todo a la plantilla
 	data := map[string]interface{}{
@@ -154,6 +177,8 @@ func (h *ConceptoTenantHandler) EditarUI(w http.ResponseWriter, r *http.Request)
 		"ClasificadorIDSeleccionado": clasificadorID,
 		"Maestros":                   maestros,
 		"Clasificadores":             clasificadores,
+		"Regimenes":                  regimenes,
+		"RegimenesMarcados":          marcados,
 	}
 
 	tmpl, err := template.ParseFiles("ui/templates/tenant/conceptos_tenant_ui.html")
@@ -188,6 +213,14 @@ func (h *ConceptoTenantHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 	frecuencia := r.FormValue("frecuencia_meses")
 	activo := r.FormValue("activo") == "on"
 
+	var regimenesIDs []int
+	for _, idStr := range r.Form["regimenes_ids"] {
+		idParsed, err := strconv.Atoi(idStr)
+		if err == nil {
+			regimenesIDs = append(regimenesIDs, idParsed)
+		}
+	}
+
 	editado := models.ConceptoTenant{
 		ID:                       id,
 		TenantID:                 tenantID,
@@ -201,6 +234,7 @@ func (h *ConceptoTenantHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		EsRemunerativa:           r.FormValue("es_remunerativa") == "on",
 		EsBaseCts:                r.FormValue("es_base_cts") == "on",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "on",
+		RegimenesIDs:             regimenesIDs,
 	}
 
 	// 1. Actualizar en BD
@@ -225,10 +259,12 @@ func (h *ConceptoTenantHandler) FormularioCrearUI(w http.ResponseWriter, r *http
 	// 1. Traer los datos para los selectores (Usa tus nombres de función reales)
 	maestros, _ := h.Repo.ObtenerMaestros()
 	clasificadores, _ := h.Repo.ObtenerClasificadores()
+	regimenes, _ := h.PuestoRepo.ObtenerRegimenes()
 
 	data := map[string]interface{}{
 		"Maestros":       maestros,
 		"Clasificadores": clasificadores,
+		"Regimenes":      regimenes,
 	}
 
 	// 2. Renderizar solo el bloque "formulario_crear" definido en tu HTML
@@ -292,6 +328,13 @@ func (h *ConceptoTenantHandler) Restaurar(w http.ResponseWriter, r *http.Request
 	err := h.Repo.ClonarDesdeModelo(tenantID)
 	if err != nil {
 		http.Error(w, "No se pudieron restaurar los conceptos", http.StatusInternalServerError)
+		return
+	}
+
+	err = h.Repo.ClonarRelacionesRegimen(tenantID)
+	if err != nil {
+		log.Println("⚠️ Advertencia: Error al clonar relaciones de régimen:", err)
+		http.Error(w, "Error parcial: conceptos restaurados pero fallaron relaciones", http.StatusInternalServerError)
 		return
 	}
 

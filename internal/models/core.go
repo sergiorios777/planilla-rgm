@@ -80,6 +80,7 @@ type ConceptoTenant struct {
 	EsBaseBeneficiosSociales bool   `json:"es_base_beneficios_sociales"`
 
 	// Campos Auxiliares (JOINs desde la tabla conceptos_maestros)
+	RegimenesIDs       []int  `json:"regimenes_ids"` // Para los checkboxes (POST/PUT)
 	ConceptoCodigo     string `json:"concepto_codigo,omitempty"`
 	ConceptoNombre     string `json:"concepto_nombre,omitempty"`
 	ConceptoTipo       string `json:"concepto_tipo,omitempty"`
@@ -335,6 +336,13 @@ type ConceptoModelo struct {
 type RegimenConceptoModelo struct {
 	RegimenID        int `json:"regimen_id"`
 	ConceptoModeloID int `json:"concepto_modelo_id"`
+}
+
+// RegimenConceptoTenant representa la relación Muchos a Muchos entre regimenes_laborales y conceptos_tenant
+type RegimenConceptoTenant struct {
+	TenantID         int `json:"tenant_id"`
+	RegimenID        int `json:"regimen_id"`
+	ConceptoTenantID int `json:"concepto_tenant_id"`
 }
 
 // ConceptoAsignacion representa la estructura temporal para la vista de

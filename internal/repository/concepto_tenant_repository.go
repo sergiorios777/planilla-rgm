@@ -166,26 +166,80 @@ func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda
 	return lista, totalRegistros, nil
 }
 
-// Crear inserta la configuración local
+// Crear inserta la configuración local y sus relaciones con los regímenes laborales en una transacción
 func (r *ConceptoTenantRepository) Crear(ct *models.ConceptoTenant) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+
 	query := `
 		INSERT INTO conceptos_tenant (tenant_id, concepto_id, modelo_id, nombre_personalizado, frecuencia_meses, clasificador_id, activo, es_extraordinario, es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id
 	`
-	return r.db.QueryRow(query, ct.TenantID, ct.ConceptoID, ct.ModeloID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario, ct.EsPensionable, ct.EsRemunerativa, ct.EsBaseCts, ct.EsBaseBeneficiosSociales).Scan(&ct.ID)
+	err = tx.QueryRow(query, ct.TenantID, ct.ConceptoID, ct.ModeloID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario, ct.EsPensionable, ct.EsRemunerativa, ct.EsBaseCts, ct.EsBaseBeneficiosSociales).Scan(&ct.ID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	queryRegimen := `
+		INSERT INTO regimen_concepto_tenant (tenant_id, regimen_id, concepto_tenant_id)
+		VALUES ($1, $2, $3)
+	`
+	for _, regimenID := range ct.RegimenesIDs {
+		_, err = tx.Exec(queryRegimen, ct.TenantID, regimenID, ct.ID)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
-// Actualizar actualiza la configuración local
+// Actualizar actualiza la configuración local y sus relaciones de regímenes en una transacción (Limpiar e Insertar)
 func (r *ConceptoTenantRepository) Actualizar(ct *models.ConceptoTenant) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+
 	query := `
 		UPDATE conceptos_tenant 
 		SET concepto_id = $2, nombre_personalizado = $3, frecuencia_meses = $4, clasificador_id = $5, activo = $6, es_extraordinario = $7,
 		    es_pensionable = $8, es_remunerativa = $9, es_base_cts = $10, es_base_beneficios_sociales = $11, updated_at = CURRENT_TIMESTAMP
 		WHERE id = $1 AND tenant_id = $12
 	`
-	_, err := r.db.Exec(query, ct.ID, ct.ConceptoID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario,
+	_, err = tx.Exec(query, ct.ID, ct.ConceptoID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario,
 		ct.EsPensionable, ct.EsRemunerativa, ct.EsBaseCts, ct.EsBaseBeneficiosSociales, ct.TenantID)
-	return err
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Limpiar relaciones previas
+	queryDelete := `DELETE FROM regimen_concepto_tenant WHERE concepto_tenant_id = $1 AND tenant_id = $2`
+	_, err = tx.Exec(queryDelete, ct.ID, ct.TenantID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Insertar nuevas relaciones
+	queryInsert := `
+		INSERT INTO regimen_concepto_tenant (tenant_id, regimen_id, concepto_tenant_id)
+		VALUES ($1, $2, $3)
+	`
+	for _, regimenID := range ct.RegimenesIDs {
+		_, err = tx.Exec(queryInsert, ct.TenantID, regimenID, ct.ID)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 // 1. NUEVA FUNCIÓN: Para llenar el menú desplegable en el formulario
@@ -282,4 +336,40 @@ func (r *ConceptoTenantRepository) ClonarDesdeModelo(tenantID int) error {
 	`
 	_, err := r.db.Exec(query, tenantID)
 	return err
+}
+
+// ClonarRelacionesRegimen copia las relaciones régimen <-> concepto del catálogo modelo al tenant local
+func (r *ConceptoTenantRepository) ClonarRelacionesRegimen(tenantID int) error {
+	query := `
+		INSERT INTO regimen_concepto_tenant (tenant_id, regimen_id, concepto_tenant_id)
+		SELECT 
+			ct.tenant_id, 
+			rcm.regimen_id, 
+			ct.id 
+		FROM conceptos_tenant ct
+		INNER JOIN regimen_concepto_modelo rcm ON ct.modelo_id = rcm.concepto_modelo_id
+		WHERE ct.tenant_id = $1
+		ON CONFLICT (tenant_id, regimen_id, concepto_tenant_id) DO NOTHING;
+	`
+	_, err := r.db.Exec(query, tenantID)
+	return err
+}
+
+// ObtenerRegimenesPorConcepto obtiene los IDs de los regímenes asociados a un concepto del tenant
+func (r *ConceptoTenantRepository) ObtenerRegimenesPorConcepto(id int, tenantID int) ([]int, error) {
+	query := `SELECT regimen_id FROM regimen_concepto_tenant WHERE concepto_tenant_id = $1 AND tenant_id = $2`
+	rows, err := r.db.Query(query, id, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []int
+	for rows.Next() {
+		var rID int
+		if err := rows.Scan(&rID); err == nil {
+			ids = append(ids, rID)
+		}
+	}
+	return ids, nil
 }

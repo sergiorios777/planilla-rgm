@@ -84,6 +84,11 @@ func (h *AdminHandler) CrearInquilino(w http.ResponseWriter, r *http.Request) {
 			// Solo logueamos el error, no detenemos el flujo porque el tenant ya se creó
 			log.Println("⚠️ Advertencia: Error al clonar conceptos modelo para el tenant", nuevoTenant.ID, ":", errClon)
 		}
+
+		errRel := h.ConceptoTenantRepo.ClonarRelacionesRegimen(nuevoTenant.ID)
+		if errRel != nil {
+			log.Println("⚠️ Advertencia: Error al clonar relaciones de régimen para el tenant", nuevoTenant.ID, ":", errRel)
+		}
 	}
 
 	// 5. TRUCO DE HTMX: En lugar de redirigir, simplemente volvemos a llamar

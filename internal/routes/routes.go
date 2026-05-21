@@ -203,7 +203,10 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 
 	// Rutas protegidas (Bajo la sección de Inquilinos/Presupuesto)
 	conceptoTenantRepo := repository.NewConceptoTenantRepository(db)
-	conceptoTenantHandler := handlers.ConceptoTenantHandler{Repo: conceptoTenantRepo}
+	conceptoTenantHandler := handlers.ConceptoTenantHandler{
+		Repo:       conceptoTenantRepo,
+		PuestoRepo: puestoRepo,
+	}
 	mux.HandleFunc("/tenant/ui/conceptos-locales", middleware.RequireAuth(conceptoTenantHandler.VistaUI))
 	mux.HandleFunc("/tenant/conceptos-locales/lista", middleware.RequireAuth(conceptoTenantHandler.Listar))
 	mux.HandleFunc("/tenant/conceptos-locales/crear", middleware.RequireAuth(conceptoTenantHandler.Crear))

@@ -175,6 +175,19 @@
                 </select>
             </label>
 
+            <fieldset>
+                <legend><strong>Asignar a Regímenes Laborales:</strong></legend>
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    {{range .Regimenes}}
+                    <label>
+                        <input type="checkbox" name="regimenes_ids" value="{{.ID}}">
+                        {{.Descripcion}}
+                    </label>
+                    {{end}}
+                </div>
+            </fieldset>
+
             <label>Nombre Personalizado (Máscara para la Boleta)
                 <input type="text" name="nombre_personalizado" placeholder="Ej. Remuneración CAS, Bono Frontera..."
                     required>
@@ -254,6 +267,19 @@
                     {{end}}
                 </select>
             </label>
+
+            <fieldset>
+                <legend><strong>Regímenes Laborales donde aplica:</strong></legend>
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    {{range .Regimenes}}
+                    <label>
+                        <input type="checkbox" name="regimenes_ids" value="{{.ID}}" {{if index $.RegimenesMarcados .ID}}checked{{end}}>
+                        {{.Descripcion}}
+                    </label>
+                    {{end}}
+                </div>
+            </fieldset>
 
             <label>Nombre Local en Boleta
                 <input type="text" name="nombre_personalizado" value="{{.Concepto.NombrePersonalizado}}" required>
