@@ -182,14 +182,23 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/metas/editar-ui", middleware.RequireAuth(metaHandler.EditarUI))
 	mux.HandleFunc("/tenant/metas/actualizar", middleware.RequireAuth(metaHandler.Actualizar))
 
+	// Rutas de Estructura Orgánica (Organigramas)
+	organigramaRepo := repository.NewOrganigramaRepository(db)
+
 	// Rutas de Puestos
 	puestoRepo := repository.NewPuestoRepository(db)
 	fuenteRubroRepo := repository.NewFuenteRubroRepository(db)
-	puestoHandler := handlers.PuestoHandler{Repo: puestoRepo, MetaRepo: metaRepo, FuenteRubroRepo: fuenteRubroRepo}
+	puestoHandler := handlers.PuestoHandler{
+		Repo:            puestoRepo,
+		MetaRepo:        metaRepo,
+		FuenteRubroRepo: fuenteRubroRepo,
+		OrganigramaRepo: organigramaRepo,
+	}
 	mux.HandleFunc("/tenant/ui/puestos", middleware.RequireAuth(puestoHandler.VistaUI))
 	mux.HandleFunc("/tenant/puestos/lista", middleware.RequireAuth(puestoHandler.Listar))
 	mux.HandleFunc("/tenant/puestos/crear", middleware.RequireAuth(puestoHandler.Crear))
 	mux.HandleFunc("/tenant/puestos/editar", middleware.RequireAuth(puestoHandler.Editar))
+	mux.HandleFunc("/tenant/puestos/editar-ui", middleware.RequireAuth(puestoHandler.EditarUI))
 	mux.HandleFunc("/tenant/puestos/actualizar", middleware.RequireAuth(puestoHandler.Actualizar))
 	mux.HandleFunc("/tenant/puestos/formulario-crear", middleware.RequireAuth(puestoHandler.FormularioCrearUI))
 	mux.HandleFunc("/tenant/puestos/asignar-conceptos-ui", middleware.RequireAuth(puestoHandler.AsignarConceptosUI))
@@ -205,8 +214,6 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/contratos/editar-ui", middleware.RequireAuth(contratoHandler.EditarUI))
 	mux.HandleFunc("/tenant/contratos/actualizar", middleware.RequireAuth(contratoHandler.Actualizar))
 
-	// Rutas de Estructura Orgánica (Organigramas)
-	organigramaRepo := repository.NewOrganigramaRepository(db)
 	organigramaHandler := handlers.OrganigramaHandler{Repo: organigramaRepo, PuestoRepo: puestoRepo}
 	mux.HandleFunc("/tenant/ui/organigrama", middleware.RequireAuth(organigramaHandler.VistaUI))
 	mux.HandleFunc("/tenant/organigrama/arbol", middleware.RequireAuth(organigramaHandler.ArbolUI))

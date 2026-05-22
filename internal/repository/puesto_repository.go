@@ -64,11 +64,13 @@ func (r *PuestoRepository) ObtenerRegimenes() ([]models.RegimenLaboral, error) {
 func (r *PuestoRepository) ObtenerTodos(tenantID int) ([]models.Puesto, error) {
 	query := `
 		SELECT p.id, p.nombre, p.sueldo_presupuestado, p.estado, p.activo,
-		       m.codigo, fr.rubro, rl.descripcion
+		       m.codigo, fr.rubro, rl.descripcion, p.unidad_organica_id, p.codigo_airhsp,
+		       COALESCE(u.nombre, 'Sin asignar') AS unidad_organica_nombre
 		FROM puestos p
 		INNER JOIN metas_presupuestales m ON p.meta_id = m.id
 		INNER JOIN fuentes_rubros fr ON p.fuente_rubro_id = fr.id
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
+		LEFT JOIN unidades_organicas u ON p.unidad_organica_id = u.id
 		WHERE p.tenant_id = $1
 		ORDER BY p.id DESC
 	`
@@ -82,7 +84,7 @@ func (r *PuestoRepository) ObtenerTodos(tenantID int) ([]models.Puesto, error) {
 	for rows.Next() {
 		var p models.Puesto
 		err := rows.Scan(&p.ID, &p.Nombre, &p.SueldoPresupuestado, &p.Estado, &p.Activo,
-			&p.MetaCodigo, &p.FuenteRubroDesc, &p.RegimenDesc)
+			&p.MetaCodigo, &p.FuenteRubroDesc, &p.RegimenDesc, &p.UnidadOrganicaID, &p.CodigoAirhsp, &p.UnidadOrganicaNombre)
 		if err == nil {
 			lista = append(lista, p)
 		}
@@ -137,11 +139,13 @@ func (r *PuestoRepository) ObtenerTodosPaginacion(tenantID int, metaID int, regi
 
 	query := fmt.Sprintf(`
 		SELECT p.id, p.nombre, p.sueldo_presupuestado, p.estado, p.activo,
-		       m.codigo, fr.rubro, rl.descripcion, p.es_dietario
+		       m.codigo, fr.rubro, rl.descripcion, p.es_dietario,
+		       p.unidad_organica_id, p.codigo_airhsp, COALESCE(u.nombre, 'Sin asignar') AS unidad_organica_nombre
 		FROM puestos p
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
 		LEFT JOIN metas_presupuestales m ON p.meta_id = m.id
 		LEFT JOIN fuentes_rubros fr ON p.fuente_rubro_id = fr.id
+		LEFT JOIN unidades_organicas u ON p.unidad_organica_id = u.id
 		%s
 		ORDER BY p.id DESC
 		LIMIT $%d OFFSET $%d
@@ -158,7 +162,7 @@ func (r *PuestoRepository) ObtenerTodosPaginacion(tenantID int, metaID int, regi
 	var lista []models.Puesto
 	for rows.Next() {
 		var p models.Puesto
-		err := rows.Scan(&p.ID, &p.Nombre, &p.SueldoPresupuestado, &p.Estado, &p.Activo, &p.MetaCodigo, &p.FuenteRubroDesc, &p.RegimenDesc, &p.EsDietario)
+		err := rows.Scan(&p.ID, &p.Nombre, &p.SueldoPresupuestado, &p.Estado, &p.Activo, &p.MetaCodigo, &p.FuenteRubroDesc, &p.RegimenDesc, &p.EsDietario, &p.UnidadOrganicaID, &p.CodigoAirhsp, &p.UnidadOrganicaNombre)
 		if err == nil {
 			lista = append(lista, p)
 		}
@@ -168,19 +172,19 @@ func (r *PuestoRepository) ObtenerTodosPaginacion(tenantID int, metaID int, regi
 
 func (r *PuestoRepository) Crear(p *models.Puesto) error {
 	query := `
-		INSERT INTO puestos (tenant_id, meta_id, fuente_rubro_id, regimen_id, nombre, sueldo_presupuestado, estado, activo, es_dietario)
-		VALUES ($1, $2, $3, $4, $5, $6, 'VACANTE', $7, $8) RETURNING id
+		INSERT INTO puestos (tenant_id, meta_id, fuente_rubro_id, regimen_id, nombre, sueldo_presupuestado, estado, activo, es_dietario, unidad_organica_id, codigo_airhsp)
+		VALUES ($1, $2, $3, $4, $5, $6, 'VACANTE', $7, $8, $9, $10) RETURNING id
 	`
-	return r.db.QueryRow(query, p.TenantID, p.MetaID, p.FuenteRubroID, p.RegimenID, p.Nombre, p.SueldoPresupuestado, p.Activo, p.EsDietario).Scan(&p.ID)
+	return r.db.QueryRow(query, p.TenantID, p.MetaID, p.FuenteRubroID, p.RegimenID, p.Nombre, p.SueldoPresupuestado, p.Activo, p.EsDietario, p.UnidadOrganicaID, p.CodigoAirhsp).Scan(&p.ID)
 }
 
 func (r *PuestoRepository) Actualizar(p *models.Puesto) error {
 	query := `
 		UPDATE puestos 
-		SET nombre = $1, meta_id = $2, fuente_rubro_id = $3, regimen_id = $4, sueldo_presupuestado = $5, activo = $6, es_dietario = $7
-		WHERE id = $8 AND tenant_id = $9
+		SET nombre = $1, meta_id = $2, fuente_rubro_id = $3, regimen_id = $4, sueldo_presupuestado = $5, activo = $6, es_dietario = $7, unidad_organica_id = $8, codigo_airhsp = $9
+		WHERE id = $10 AND tenant_id = $11
 	`
-	_, err := r.db.Exec(query, p.Nombre, p.MetaID, p.FuenteRubroID, p.RegimenID, p.SueldoPresupuestado, p.Activo, p.EsDietario, p.ID, p.TenantID)
+	_, err := r.db.Exec(query, p.Nombre, p.MetaID, p.FuenteRubroID, p.RegimenID, p.SueldoPresupuestado, p.Activo, p.EsDietario, p.UnidadOrganicaID, p.CodigoAirhsp, p.ID, p.TenantID)
 	return err
 }
 
@@ -340,7 +344,8 @@ func (r *PuestoRepository) ObtenerPorID(id int, tenantID int) (models.Puesto, er
 	var p models.Puesto
 	query := `
 		SELECT p.id, p.tenant_id, p.meta_id, p.fuente_rubro_id, p.regimen_id,
-		       p.nombre, p.sueldo_presupuestado, p.estado, p.activo, p.es_dietario, rl.codigo 
+		       p.nombre, p.sueldo_presupuestado, p.estado, p.activo, p.es_dietario, rl.codigo,
+		       p.unidad_organica_id, p.codigo_airhsp
 		FROM puestos p 
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id 
 		WHERE p.id = $1 AND p.tenant_id = $2
@@ -348,6 +353,7 @@ func (r *PuestoRepository) ObtenerPorID(id int, tenantID int) (models.Puesto, er
 	err := r.db.QueryRow(query, id, tenantID).Scan(
 		&p.ID, &p.TenantID, &p.MetaID, &p.FuenteRubroID, &p.RegimenID,
 		&p.Nombre, &p.SueldoPresupuestado, &p.Estado, &p.Activo, &p.EsDietario, &p.RegimenCodigo,
+		&p.UnidadOrganicaID, &p.CodigoAirhsp,
 	)
 	return p, err
 }

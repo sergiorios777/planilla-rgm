@@ -14,6 +14,7 @@ type PuestoHandler struct {
 	Repo            *repository.PuestoRepository
 	MetaRepo        *repository.MetaRepository
 	FuenteRubroRepo *repository.FuenteRubroRepository
+	OrganigramaRepo *repository.OrganigramaRepository
 }
 
 func (h *PuestoHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
@@ -23,15 +24,28 @@ func (h *PuestoHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 	metas, _ := h.MetaRepo.ObtenerTodos(tenantID)
 	fuentes, _ := h.FuenteRubroRepo.ObtenerPorAnio(2026, "")
 	regimenes, _ := h.Repo.ObtenerRegimenes()
+	unidades, _ := h.OrganigramaRepo.ObtenerUnidadesDelOrganigramaActivo(tenantID)
 
 	datos := map[string]interface{}{
-		"Metas":     metas,
-		"Fuentes":   fuentes,
-		"Regimenes": regimenes,
+		"Metas":           metas,
+		"Fuentes":         fuentes,
+		"Regimenes":       regimenes,
+		"Unidades":        unidades,
+		"CurrentUnidadID": 0,
 	}
 
-	tmpl, _ := template.ParseFiles("ui/templates/tenant/puestos_ui.html")
-	tmpl.Execute(w, datos)
+	tmpl, err := template.ParseFiles("ui/templates/tenant/puestos_ui.html")
+
+	if err != nil {
+		log.Println("❌ Error CRÍTICO al cargar la plantilla de puestos:", err)
+		http.Error(w, "Error interno del servidor al cargar la interfaz", 500)
+		return
+	}
+
+	err = tmpl.Execute(w, datos)
+	if err != nil {
+		log.Println("❌ Error al renderizar la plantilla:", err)
+	}
 }
 
 func (h *PuestoHandler) Listar(w http.ResponseWriter, r *http.Request) {
@@ -96,6 +110,21 @@ func (h *PuestoHandler) Crear(w http.ResponseWriter, r *http.Request) {
 	regimenID, _ := strconv.Atoi(r.FormValue("regimen_id"))
 	sueldo, _ := strconv.ParseFloat(r.FormValue("sueldo_presupuestado"), 64)
 
+	var unidadOrganicaID *int
+	idStr := r.FormValue("unidad_organica_id")
+	if idStr != "" && idStr != "0" {
+		idVal, err := strconv.Atoi(idStr)
+		if err == nil {
+			unidadOrganicaID = &idVal
+		}
+	}
+
+	var codigoAirhsp *string
+	airhspStr := r.FormValue("codigo_airhsp")
+	if airhspStr != "" {
+		codigoAirhsp = &airhspStr
+	}
+
 	nuevoPuesto := models.Puesto{
 		TenantID:            obtenerTenantID(r),
 		MetaID:              metaID,
@@ -105,14 +134,21 @@ func (h *PuestoHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		SueldoPresupuestado: sueldo,
 		Activo:              r.FormValue("activo") == "on",
 		EsDietario:          r.FormValue("es_dietario") == "on",
+		UnidadOrganicaID:    unidadOrganicaID,
+		CodigoAirhsp:        codigoAirhsp,
 	}
 
 	servicioPuesto := services.PuestoService{Repo: h.Repo}
 	err := servicioPuesto.CrearPuestoConPlantilla(&nuevoPuesto)
 	if err != nil {
 		log.Println("Error creando puesto con plantilla:", err)
+		http.Error(w, "Error al crear el puesto: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
-	h.Listar(w, r)
+
+	w.Header().Set("HX-Trigger", "refrescarPuestos")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("✅ Plaza creada correctamente."))
 }
 
 // Editar prepara los datos del puesto y las listas para el formulario de edición
@@ -140,6 +176,51 @@ func (h *PuestoHandler) Editar(w http.ResponseWriter, r *http.Request) {
 	tmpl.ExecuteTemplate(w, "formulario_editar", datos)
 }
 
+// EditarUI prepara los datos del puesto y las listas para el modal de edición
+func (h *PuestoHandler) EditarUI(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+	currentUnidadID := 0
+
+	puesto, err := h.Repo.ObtenerPorID(id, tenantID)
+	if err != nil {
+		log.Println("Error al obtener puesto por ID:", err)
+		http.Error(w, "No se pudo obtener el puesto", http.StatusInternalServerError)
+		return
+	}
+
+	if puesto.UnidadOrganicaID != nil {
+		currentUnidadID = *puesto.UnidadOrganicaID
+	}
+
+	metas, _ := h.MetaRepo.ObtenerTodos(tenantID)
+	fuentes, _ := h.FuenteRubroRepo.ObtenerPorAnio(2026, "")
+	regimenes, _ := h.Repo.ObtenerRegimenes()
+	unidades, _ := h.OrganigramaRepo.ObtenerUnidadesDelOrganigramaActivo(tenantID)
+
+	datos := map[string]interface{}{
+		"Puesto":          puesto,
+		"Metas":           metas,
+		"Fuentes":         fuentes,
+		"Regimenes":       regimenes,
+		"Unidades":        unidades,
+		"CurrentUnidadID": currentUnidadID,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/tenant/puestos_ui.html")
+	if err != nil {
+		log.Println("Error al leer puestos_ui.html:", err)
+		http.Error(w, "Error de plantilla", http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(w, "formulario_editar", datos)
+	if err != nil {
+		log.Println("Error al ejecutar fragmento formulario_editar:", err)
+		http.Error(w, "Error al inyectar fragmento", http.StatusInternalServerError)
+	}
+}
+
 // Actualizar procesa los cambios y refresca la lista
 func (h *PuestoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
@@ -149,6 +230,21 @@ func (h *PuestoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 	fuenteID, _ := strconv.Atoi(r.FormValue("fuente_rubro_id"))
 	regimenID, _ := strconv.Atoi(r.FormValue("regimen_id"))
 	sueldo, _ := strconv.ParseFloat(r.FormValue("sueldo_presupuestado"), 64)
+
+	var unidadOrganicaID *int
+	idStr := r.FormValue("unidad_organica_id")
+	if idStr != "" && idStr != "0" {
+		idVal, err := strconv.Atoi(idStr)
+		if err == nil {
+			unidadOrganicaID = &idVal
+		}
+	}
+
+	var codigoAirhsp *string
+	airhspStr := r.FormValue("codigo_airhsp")
+	if airhspStr != "" {
+		codigoAirhsp = &airhspStr
+	}
 
 	puestoActualizado := models.Puesto{
 		ID:                  id,
@@ -160,12 +256,20 @@ func (h *PuestoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 		SueldoPresupuestado: sueldo,
 		Activo:              r.FormValue("activo") == "on",
 		EsDietario:          r.FormValue("es_dietario") == "on",
+		UnidadOrganicaID:    unidadOrganicaID,
+		CodigoAirhsp:        codigoAirhsp,
 	}
 
-	h.Repo.Actualizar(&puestoActualizado)
+	err := h.Repo.Actualizar(&puestoActualizado)
+	if err != nil {
+		log.Println("Error al actualizar puesto:", err)
+		http.Error(w, "Error al actualizar el puesto: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	// Tras actualizar, mostramos el formulario de "Crear" nuevamente
-	h.VistaUI(w, r)
+	w.Header().Set("HX-Trigger", "refrescarPuestos")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("✅ Plaza actualizada correctamente."))
 }
 
 // FormularioCrearUI devuelve el formulario limpio

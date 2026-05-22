@@ -1,20 +1,16 @@
 <article>
-    <header>
+    <header style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
         <h3 style="margin-bottom: 0;">
             <svg class="icono-menu">
                 <use href="#icono-puestos"></use>
             </svg>
             Cuadro de Puestos (Plazas)
         </h3>
+        <button class="primary" style="width: auto; margin-bottom: 0;"
+                onclick="document.getElementById('modal-nuevo-puesto').showModal()">
+            ➕ Registrar Nueva Plaza
+        </button>
     </header>
-    <div class="grid">
-        <div id="contenedor-formulario">
-            {{template "formulario_crear" .}}
-        </div>
-        <div>
-            <!--Espacio en blanco para que el formulario no se estire-->
-        </div>
-    </div>
     <div>
         <form id="form-filtros-puestos" class="grid">
             <label>
@@ -67,143 +63,161 @@
                 </select>
             </label>
         </form>
-        <div id="lista-puestos" hx-get="/tenant/puestos/lista" hx-trigger="load">
+        <div id="lista-puestos" hx-get="/tenant/puestos/lista" hx-trigger="load, refrescarPuestos from:body" hx-include="#form-filtros-puestos">
             <p aria-busy="true">Cargando plazas...</p>
         </div>
     </div>
 </article>
 
 {{define "formulario_crear"}}
-<details close>
-    <summary role="button" class="secondary outline">
-        <svg class="icono-menu">
-            <use href="#icono-nuevo-1"></use>
-        </svg>
-        Registrar Nueva Plaza
-    </summary>
-    <div style="padding-top: 1rem;">
-        <form hx-post="/tenant/puestos/crear" hx-target="#lista-puestos" hx-swap="innerHTML">
+<form hx-post="/tenant/puestos/crear" hx-swap="none" hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-nuevo-puesto').close(); this.reset(); }">
+    <label>Nombre del Puesto / Cargo
+        <input type="text" name="nombre" placeholder="Ej. Especialista en Logística II" required>
+    </label>
 
-            <label>Nombre del Puesto / Cargo
-                <input type="text" name="nombre" placeholder="Ej. Especialista en Logística II" required>
-            </label>
+    <div class="grid">
+        <label>Meta Presupuestal
+            <select name="meta_id" required>
+                <option value="">-- Seleccione Meta --</option>
+                {{range .Metas}}{{if .Activo}}
+                <option value="{{.ID}}">{{.Codigo}} - {{.Descripcion}}</option>
+                {{end}}{{end}}
+            </select>
+        </label>
 
-            <label>Meta Presupuestal
-                <select name="meta_id" required>
-                    <option value="">-- Seleccione Meta --</option>
-                    {{range .Metas}}{{if .Activo}}
-                    <option value="{{.ID}}">{{.Codigo}} - {{.Descripcion}}</option>
-                    {{end}}{{end}}
-                </select>
-            </label>
-
-            <label>Fuente y Rubro de Financiamiento
-                <select name="fuente_rubro_id" required>
-                    <option value="">-- Seleccione Fte. Fto. --</option>
-                    {{range .Fuentes}}{{if .Activo}}
-                    <option value="{{.ID}}">{{.FuenteFinanciamiento}} | {{.Rubro}}</option>
-                    {{end}}{{end}}
-                </select>
-            </label>
-
-            <div class="grid">
-                <label>Régimen Esperado
-                    <select name="regimen_id" required>
-                        <option value="">-- Régimen --</option>
-                        {{range .Regimenes}}
-                        <option value="{{.ID}}">{{.Descripcion}}</option>
-                        {{end}}
-                    </select>
-                </label>
-                <label>Sueldo Presupuestado (S/)
-                    <input type="number" step="0.01" name="sueldo_presupuestado" placeholder="Ej. 2500.00" required>
-                </label>
-            </div>
-
-            <label>
-                <input type="checkbox" name="activo" checked> Plaza Activa
-            </label>
-
-            <label>
-                <input type="checkbox" name="es_dietario"> Es Puesto de Dieta (Regidor/Consejero)
-            </label>
-
-            <button type="submit">Generar Plaza</button>
-        </form>
+        <label>Fuente y Rubro de Financiamiento
+            <select name="fuente_rubro_id" required>
+                <option value="">-- Seleccione Fte. Fto. --</option>
+                {{range .Fuentes}}{{if .Activo}}
+                <option value="{{.ID}}">{{.FuenteFinanciamiento}} | {{.Rubro}}</option>
+                {{end}}{{end}}
+            </select>
+        </label>
     </div>
-</details>
+
+    <div class="grid">
+        <label for="unidad_organica_id">Unidad Orgánica (Oficina):
+            <select id="unidad_organica_id" name="unidad_organica_id">
+                <option value="0">— Sin asignar —</option>
+                {{range .Unidades}}
+                    <option value="{{.ID}}">[{{.Tipo}}] {{.Nombre}}</option>
+                {{end}}
+            </select>
+        </label> 
+
+        <label for="codigo_airhsp">Código AIRHSP (MEF):
+            <input type="text" id="codigo_airhsp" name="codigo_airhsp" placeholder="Ej: 001245">
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>Régimen Esperado
+            <select name="regimen_id" required>
+                <option value="">-- Régimen --</option>
+                {{range .Regimenes}}
+                <option value="{{.ID}}">{{.Descripcion}}</option>
+                {{end}}
+            </select>
+        </label>
+        <label>Sueldo Presupuestado (S/)
+            <input type="number" step="0.01" name="sueldo_presupuestado" placeholder="Ej. 2500.00" required>
+        </label>
+    </div>
+
+    <div class="grid" style="margin-bottom: 1.5rem;">
+        <label>
+            <input type="checkbox" name="activo" role="switch" checked> Plaza Activa
+        </label>
+
+        <label>
+            <input type="checkbox" name="es_dietario" role="switch"> Es Puesto de Dieta (Regidor/Consejero)
+        </label>
+    </div>
+
+    <button type="submit">Generar Plaza</button>
+</form>
 {{end}}
 
 {{define "formulario_editar"}}
-<details open>
-    <summary role="button" class="contrast">
-        <svg class="icono-menu">
-            <use href="#icono-lapiz-cuadrado"></use>
-        </svg>
-        Editando Plaza: {{.Puesto.Nombre}}
-    </summary>
-    <div style="padding-top: 1rem;">
-        <form hx-put="/tenant/puestos/actualizar" hx-target="#contenido-tenant">
-            <input type="hidden" name="id" value="{{.Puesto.ID}}">
+<header>
+    <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-editar-puesto').close()"></a>
+    <h4 style="margin-bottom: 0;">✏️ Editando Plaza: {{.Puesto.Nombre}}</h4>
+</header>
+<form hx-put="/tenant/puestos/actualizar" hx-swap="none" hx-on::after-request="if(event.detail.successful) document.getElementById('modal-editar-puesto').close()">
+    <input type="hidden" name="id" value="{{.Puesto.ID}}">
 
-            <label>Nombre del Puesto / Cargo
-                <input type="text" name="nombre" value="{{.Puesto.Nombre}}" required>
-            </label>
+    <label>Nombre del Puesto / Cargo
+        <input type="text" name="nombre" value="{{.Puesto.Nombre}}" required>
+    </label>
 
-            <label>Meta Presupuestal
-                <select name="meta_id" required>
-                    {{$pMeta := .Puesto.MetaID}}
-                    {{range .Metas}}
-                    <option value="{{.ID}}" {{if eq .ID $pMeta}}selected{{end}}>{{.Codigo}} - {{.Descripcion}}
-                    </option>
-                    {{end}}
-                </select>
-            </label>
+    <div class="grid">
+        <label>Meta Presupuestal
+            <select name="meta_id" required>
+                {{$pMeta := .Puesto.MetaID}}
+                {{range .Metas}}
+                <option value="{{.ID}}" {{if eq .ID $pMeta}}selected{{end}}>{{.Codigo}} - {{.Descripcion}}</option>
+                {{end}}
+            </select>
+        </label>
 
-            <label>Fuente y Rubro
-                <select name="fuente_rubro_id" required>
-                    {{$pFuente := .Puesto.FuenteRubroID}}
-                    {{range .Fuentes}}
-                    <option value="{{.ID}}" {{if eq .ID $pFuente}}selected{{end}}>{{.FuenteFinanciamiento}} |
-                        {{.Rubro}}</option>
-                    {{end}}
-                </select>
-            </label>
-
-            <div class="grid">
-                <label>Régimen Laboral
-                    <select name="regimen_id" required>
-                        {{$pReg := .Puesto.RegimenID}}
-                        {{range .Regimenes}}
-                        <option value="{{.ID}}" {{if eq .ID $pReg}}selected{{end}}>{{.Descripcion}}</option>
-                        {{end}}
-                    </select>
-                </label>
-
-                <label>Sueldo Presupuestado (S/)
-                    <input type="number" step="0.01" name="sueldo_presupuestado" value="{{.Puesto.SueldoPresupuestado}}"
-                        required>
-                </label>
-            </div>
-
-            <label>
-                <input type="checkbox" name="activo" role="switch" {{if .Puesto.Activo}}checked{{end}}>
-                Plaza Activa para el ejercicio
-            </label>
-
-            <label>
-                <input type="checkbox" name="es_dietario" role="switch" {{if .Puesto.EsDietario}}checked{{end}}>
-                Es Puesto de Dieta (Regidor/Consejero)
-            </label>
-
-            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                <button type="submit" class="primary">Guardar Cambios</button>
-                <button type="button" class="secondary outline" hx-get="/tenant/puestos/formulario-crear"
-                    hx-target="#contenedor-formulario">Cancelar</button>
-            </div>
-        </form>
+        <label>Fuente y Rubro
+            <select name="fuente_rubro_id" required>
+                {{$pFuente := .Puesto.FuenteRubroID}}
+                {{range .Fuentes}}
+                <option value="{{.ID}}" {{if eq .ID $pFuente}}selected{{end}}>{{.FuenteFinanciamiento}} | {{.Rubro}}</option>
+                {{end}}
+            </select>
+        </label>
     </div>
-</details>
+
+    <div class="grid">
+        <label for="unidad_organica_id">Unidad Orgánica (Oficina):
+            <select id="unidad_organica_id" name="unidad_organica_id">
+                <option value="0" {{if eq $.CurrentUnidadID 0}}selected{{end}}>— Sin asignar —</option>
+                
+                {{range $.Unidades}}
+                    <option value="{{.ID}}" {{if eq .ID $.CurrentUnidadID}}selected{{end}}>[{{.Tipo}}] {{.Nombre}}</option>
+                {{end}}
+            </select>
+        </label> 
+
+        <label for="codigo_airhsp_edit">Código AIRHSP (MEF):
+            <input type="text" id="codigo_airhsp_edit" name="codigo_airhsp" value="{{if .Puesto.CodigoAirhsp}}{{.Puesto.CodigoAirhsp}}{{end}}" placeholder="Ej: 001245">
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>Régimen Laboral
+            <select name="regimen_id" required>
+                {{$pReg := .Puesto.RegimenID}}
+                {{range .Regimenes}}
+                <option value="{{.ID}}" {{if eq .ID $pReg}}selected{{end}}>{{.Descripcion}}</option>
+                {{end}}
+            </select>
+        </label>
+
+        <label>Sueldo Presupuestado (S/)
+            <input type="number" step="0.01" name="sueldo_presupuestado" value="{{.Puesto.SueldoPresupuestado}}" required>
+        </label>
+    </div>
+
+    <div class="grid" style="margin-bottom: 1.5rem;">
+        <label>
+            <input type="checkbox" name="activo" role="switch" {{if .Puesto.Activo}}checked{{end}}>
+            Plaza Activa para el ejercicio
+        </label>
+
+        <label>
+            <input type="checkbox" name="es_dietario" role="switch" {{if .Puesto.EsDietario}}checked{{end}}>
+            Es Puesto de Dieta (Regidor/Consejero)
+        </label>
+    </div>
+
+    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+        <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-puesto').close()">Cancelar</button>
+        <button type="submit" class="primary">Guardar Cambios</button>
+    </div>
+</form>
 {{end}}
 
 {{define "tabla_puestos"}}
@@ -211,6 +225,8 @@
     <thead>
         <tr>
             <th>Puesto y Presupuesto</th>
+            <th>Código AIRHSP</th>
+            <th>Unidad Orgánica</th>
             <th>Estructura de Gasto</th>
             <th>Estado</th>
             <th>Configuración</th>
@@ -222,6 +238,16 @@
             <td>
                 <strong>{{.Nombre}}</strong><br>
                 <small>{{.RegimenDesc}} | S/ {{.SueldoPresupuestado}}</small>
+            </td>
+            <td>
+                {{if .CodigoAirhsp}}
+                <code>{{.CodigoAirhsp}}</code>
+                {{else}}
+                <span style="color: #999; font-size: 0.85rem;">— Sin AIRHSP —</span>
+                {{end}}
+            </td>
+            <td>
+                <small>{{.UnidadOrganicaNombre}}</small>
             </td>
             <td>
                 <small>Meta: <strong>{{.MetaCodigo}}</strong></small><br>
@@ -248,7 +274,8 @@
             <td>
                 <div style="display: flex; gap: 0.5rem;">
                     <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
-                        hx-get="/tenant/puestos/editar?id={{.ID}}" hx-target="#contenedor-formulario">
+                        hx-get="/tenant/puestos/editar-ui?id={{.ID}}"
+                        hx-target="#contenido-modal-editar-puesto">
                         Editar
                     </button>
 
@@ -267,7 +294,7 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="4" style="text-align: center;">No hay plazas registradas.</td>
+            <td colspan="6" style="text-align: center;">No hay plazas registradas.</td>
         </tr>
         {{end}}
     </tbody>
@@ -275,7 +302,6 @@
 
 <!-- Controles de paginación-->
 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-    <!-- Mostramos el estado completo de la navegación -->
     <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
 
     <div role="group">
@@ -286,7 +312,6 @@
         </button>
         {{end}}
 
-        <!-- Evaluamos si estamos antes del final para mostrar el botón "Siguiente" -->
         {{if lt .PaginaActual .TotalPaginas}}
         <button class="outline" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
             hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#lista-puestos">
@@ -297,12 +322,24 @@
 </div>
 {{end}}
 
-<dialog id="modal-asignacion-puesto" hx-on::after-settle="this.showModal()">
+<!-- Modal de Creación de Puesto -->
+<dialog id="modal-nuevo-puesto">
+    <article style="max-width: 700px; width: 95%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nuevo-puesto').close()"></a>
+            <h4 style="margin-bottom: 0;">➕ Registrar Nueva Plaza</h4>
+        </header>
+        {{template "formulario_crear" .}}
+    </article>
+</dialog>
+
+<!-- Modal de Asignación de Conceptos -->
+<dialog id="modal-asignacion-puesto" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-asignacion') this.showModal()">
     <article style="max-width: 900px; width: 95%;">
         <header>
             <a href="#close" aria-label="Close" class="close"
                 onclick="document.getElementById('modal-asignacion-puesto').close()"></a>
-            <h4>Configurar Estructura de Pago</h4>
+            <h4 style="margin-bottom: 0;">Configurar Estructura de Pago</h4>
         </header>
         <div id="contenido-modal-asignacion">
         </div>
@@ -354,10 +391,15 @@
 </form>
 {{end}}
 
+<!-- Modal de Edición de Puesto -->
+<dialog id="modal-editar-puesto" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar-puesto') this.showModal()">
+    <article id="contenido-modal-editar-puesto" style="max-width: 700px; width: 95%;">
+        <!-- Rellenado dinámicamente por HTMX -->
+    </article>
+</dialog>
+
 <script>
     document.body.addEventListener("cerrarModalAsignacion", function () {
         document.getElementById('modal-asignacion-puesto').close();
-        // Opcional: refrescar la tabla de puestos si muestras montos ahí
-        // htmx.trigger("#tabla-puestos", "refresh");
     });
 </script>

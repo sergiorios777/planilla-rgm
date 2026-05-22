@@ -363,3 +363,30 @@ func (r *OrganigramaRepository) ClonarEstructuraYTrasladarPuestos(tenantID, orig
 
 	return tx.Commit()
 }
+
+// ObtenerUnidadesDelOrganigramaActivo obtiene las unidades orgánicas asociadas al organigrama activo
+func (r *OrganigramaRepository) ObtenerUnidadesDelOrganigramaActivo(tenantID int) ([]models.UnidadOrganica, error) {
+	query := `
+		SELECT id, nombre, tipo
+		FROM unidades_organicas
+		WHERE tenant_id = $1
+		  AND organigrama_id = (SELECT id FROM organigramas WHERE tenant_id = $1 AND activo = true LIMIT 1)
+		ORDER BY nombre ASC
+	`
+	rows, err := r.db.Query(query, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.UnidadOrganica
+	for rows.Next() {
+		var u models.UnidadOrganica
+		if err := rows.Scan(&u.ID, &u.Nombre, &u.Tipo); err != nil {
+			return nil, err
+		}
+		lista = append(lista, u)
+	}
+	return lista, nil
+}
+
