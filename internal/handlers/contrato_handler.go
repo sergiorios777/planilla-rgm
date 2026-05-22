@@ -4,9 +4,11 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"planilla-rgm/internal/config"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
 	"planilla-rgm/internal/services"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -130,24 +132,32 @@ func (h *ContratoHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		FechaInicio:  r.FormValue("fecha_inicio"),
 		FechaFin:     fFin,
 		Activo:       r.FormValue("activo") == "on",
+		TipoContrato: r.FormValue("tipo_contrato"),
 	}
 
-	h.Repo.Crear(&nuevoContrato)
-
-	// Si el contrato se crea con éxito, enviamos una orden OOB para "limpiar" cualquier alerta anterior
-	w.Write([]byte(`<div id="alerta-contrato" hx-swap-oob="true"></div>`))
-
-	// Instanciamos el contrato service para llamar a la funcion AsignarPensionesAutomaticas
+	// Instanciamos el contrato service para llamar a la funcion CrearContrato
 	servicioContrato := services.ContratoService{
 		RepoPuesto:     h.PuestoRepo,
 		Repo:           h.Repo,
 		RepoTrabajador: h.TrabajadorRepo,
 	}
 
-	// Disparamos la inyección automática de AFP/ONP según el puesto
-	err = servicioContrato.AsignarPensionesAutomaticas(pID, tID, tenantID)
+	// Si el contrato se crea con éxito, enviamos una orden OOB para "limpiar" cualquier alerta anterior
+	w.Write([]byte(`<div id="alerta-contrato" hx-swap-oob="true"></div>`))
+
+	// Disparamos la creación e inyección automática de conceptos y pensiones
+	err = servicioContrato.CrearContrato(&nuevoContrato)
 	if err != nil {
-		log.Println("Error al asignar pensiones:", err)
+		log.Println("Error al crear contrato:", err)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`
+			<div id="alerta-contrato" hx-swap-oob="true">
+				<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; font-weight: bold;">
+					❌ Error: No se pudo generar el contrato. Verifique la configuración del régimen y los clasificadores.
+				</article>
+			</div>
+		`))
+		return
 	}
 
 	// Finalmente, devolvemos la tabla actualizada como siempre
@@ -160,6 +170,54 @@ func (h *ContratoHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Reque
 	trabajadores, _ := h.TrabajadorRepo.ObtenerTodos(tenantID)
 	puestos, _ := h.PuestoRepo.ObtenerVacantes(tenantID)
 	datos := map[string]interface{}{"Trabajadores": trabajadores, "Puestos": puestos}
+
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/contratos_ui.html")
+	tmpl.ExecuteTemplate(w, "formulario_crear", datos)
+}
+
+// FormularioDinamicoUI devuelve el formulario de creación parcial/completo con opciones dinámicas de contrato
+func (h *ContratoHandler) FormularioDinamicoUI(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	puestoIDStr := r.URL.Query().Get("puesto_id")
+	pID, _ := strconv.Atoi(puestoIDStr)
+
+	// Extraemos otros campos para preservar su estado
+	trabajadorIDStr := r.URL.Query().Get("trabajador_id")
+	tID, _ := strconv.Atoi(trabajadorIDStr)
+	fechaInicio := r.URL.Query().Get("fecha_inicio")
+	fechaFin := r.URL.Query().Get("fecha_fin")
+	
+	_, hasPuesto := r.URL.Query()["puesto_id"]
+	_, hasActivo := r.URL.Query()["activo"]
+	activo := hasActivo || !hasPuesto
+
+	var opciones []string
+	if pID > 0 {
+		puesto, err := h.PuestoRepo.ObtenerPorID(pID, tenantID)
+		if err == nil {
+			key := config.MapRegimenToKey(puesto.RegimenCodigo)
+			if mapOpciones, ok := config.ClasificadorMefPorContrato[key]; ok {
+				for k := range mapOpciones {
+					opciones = append(opciones, k)
+				}
+				sort.Strings(opciones)
+			}
+		}
+	}
+
+	trabajadores, _ := h.TrabajadorRepo.ObtenerTodos(tenantID)
+	puestos, _ := h.PuestoRepo.ObtenerVacantes(tenantID)
+
+	datos := map[string]interface{}{
+		"Trabajadores":             trabajadores,
+		"Puestos":                  puestos,
+		"PuestoSeleccionadoID":     pID,
+		"OpcionesContrato":         opciones,
+		"TrabajadorSeleccionadoID": tID,
+		"FechaInicio":              fechaInicio,
+		"FechaFin":                 fechaFin,
+		"Activo":                   activo,
+	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/contratos_ui.html")
 	tmpl.ExecuteTemplate(w, "formulario_crear", datos)

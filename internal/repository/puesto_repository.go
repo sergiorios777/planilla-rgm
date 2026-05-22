@@ -93,7 +93,7 @@ func (r *PuestoRepository) ObtenerTodos(tenantID int) ([]models.Puesto, error) {
 }
 
 // ObtenerTodosPaginacion todos los registros para paginacion
-func (r *PuestoRepository) ObtenerTodosPaginacion(tenantID int, metaID int, regimenID int, busqueda string, estado string, limite int, offset int) ([]models.Puesto, int, error) {
+func (r *PuestoRepository) ObtenerTodosPaginacion(tenantID int, metaID int, regimenID int, unidadOrganicaID int, busqueda string, estado string, limite int, offset int) ([]models.Puesto, int, error) {
 	whereClause := "WHERE p.tenant_id = $1"
 
 	params := []interface{}{tenantID}
@@ -107,6 +107,11 @@ func (r *PuestoRepository) ObtenerTodosPaginacion(tenantID int, metaID int, regi
 	if regimenID > 0 {
 		whereClause += fmt.Sprintf(" AND p.regimen_id = $%d", paramIndex)
 		params = append(params, regimenID)
+		paramIndex++
+	}
+	if unidadOrganicaID > 0 {
+		whereClause += fmt.Sprintf(" AND p.unidad_organica_id = $%d", paramIndex)
+		params = append(params, unidadOrganicaID)
 		paramIndex++
 	}
 	if busqueda != "" {
@@ -229,17 +234,46 @@ func (r *PuestoRepository) AsignarConceptosAPuesto(puestoID int, conceptoTenantI
 		return err
 	}
 
-	stmt, _ := tx.Prepare(`
+	// Consultamos los códigos SUNAT de los conceptos tenant a asignar
+	rows, err := tx.Query(`
+		SELECT ct.id, cm.codigo 
+		FROM conceptos_tenant ct 
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id 
+		WHERE ct.id = ANY($1)
+	`, pq.Array(conceptoTenantIDs))
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer rows.Close()
+
+	conceptosSueldo := make(map[int]bool)
+	for rows.Next() {
+		var id int
+		var codigo string
+		if err := rows.Scan(&id, &codigo); err == nil {
+			if codigo == "2001" || codigo == "2039" {
+				conceptosSueldo[id] = true
+			}
+		}
+	}
+
+	stmt, err := tx.Prepare(`
 		INSERT INTO puesto_conceptos (puesto_id, concepto_tenant_id, monto, activo) 
 		VALUES ($1, $2, $3, true)
 		ON CONFLICT (puesto_id, concepto_tenant_id) DO NOTHING -- Evita duplicados por si acaso
 	`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
 	defer stmt.Close()
 
 	for _, ctID := range conceptoTenantIDs {
-		// Por defecto el monto es 0 (para conceptos variables/calculados),
-		// pero podríamos inyectar el sueldo_presupuestado si logramos identificar cuál es el concepto de sueldo
 		monto := 0.00
+		if conceptosSueldo[ctID] {
+			monto = sueldoBase
+		}
 		_, err := stmt.Exec(puestoID, ctID, monto)
 		if err != nil {
 			tx.Rollback()
@@ -248,6 +282,24 @@ func (r *PuestoRepository) AsignarConceptosAPuesto(puestoID int, conceptoTenantI
 	}
 
 	return tx.Commit()
+}
+
+// ObtenerConceptoRemunerativoPorClasificador busca el ID de un concepto de tenant configurado bajo un régimen y con un clasificador específico
+func (r *PuestoRepository) ObtenerConceptoRemunerativoPorClasificador(tenantID int, regimenID int, codigoMefLimpio string) (int, error) {
+	var id int
+	query := `
+		SELECT ct.id 
+		FROM conceptos_tenant ct
+		INNER JOIN clasificadores_mef mef ON ct.clasificador_id = mef.id
+		INNER JOIN regimen_concepto_tenant rct ON ct.id = rct.concepto_tenant_id
+		WHERE ct.tenant_id = $1
+		  AND rct.regimen_id = $2
+		  AND mef.codigo_limpio = $3
+		  AND ct.activo = true
+		LIMIT 1
+	`
+	err := r.db.QueryRow(query, tenantID, regimenID, codigoMefLimpio).Scan(&id)
+	return id, err
 }
 
 // ObtenerConceptosModeloPorRegimen lee la tabla intermedia y trae los conceptos

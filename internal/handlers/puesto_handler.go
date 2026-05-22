@@ -53,12 +53,14 @@ func (h *PuestoHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	busqueda := r.URL.Query().Get("buscar")
 	metaIDStr := r.URL.Query().Get("meta_id")
 	regimenIDStr := r.URL.Query().Get("regimen_id")
+	unidadIDStr := r.URL.Query().Get("unidad_organica_id")
 	estado := r.URL.Query().Get("estado")
 	limiteStr := r.URL.Query().Get("limite")
 	paginaStr := r.URL.Query().Get("pagina")
 
 	metaID, err := strconv.Atoi(metaIDStr)
 	regimenID, err := strconv.Atoi(regimenIDStr)
+	unidadID, _ := strconv.Atoi(unidadIDStr)
 
 	limite, err := strconv.Atoi(limiteStr)
 	if err != nil || limite <= 0 {
@@ -72,7 +74,7 @@ func (h *PuestoHandler) Listar(w http.ResponseWriter, r *http.Request) {
 
 	offset := (pagina - 1) * limite
 
-	puestos, totalRegistros, err := h.Repo.ObtenerTodosPaginacion(tenantID, metaID, regimenID, busqueda, estado, limite, offset)
+	puestos, totalRegistros, err := h.Repo.ObtenerTodosPaginacion(tenantID, metaID, regimenID, unidadID, busqueda, estado, limite, offset)
 	if err != nil {
 		http.Error(w, "Error al obtener las metas", http.StatusInternalServerError)
 		return

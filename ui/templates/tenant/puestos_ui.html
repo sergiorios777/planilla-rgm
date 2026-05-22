@@ -2,7 +2,7 @@
     <header style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
         <h3 style="margin-bottom: 0;">
             <svg class="icono-menu">
-                <use href="#icono-puestos"></use>
+                <use href="#icono-flujo-trabajo"></use>
             </svg>
             Cuadro de Puestos (Plazas)
         </h3>
@@ -43,25 +43,39 @@
             </label>
 
             <label>
-                Estado
-                <select name="estado" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
+                Unidad Orgánica
+                <select name="unidad_organica_id" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
                     hx-target="#lista-puestos">
-                    <option value="">Todos</option>
-                    <option value="vacante">Libre</option>
-                    <option value="ocupado">Ocupada</option>
+                    <option value="">Todas</option>
+                    {{range .Unidades}}
+                    <option value="{{.ID}}">{{.Nombre}}</option>
+                    {{end}}
                 </select>
             </label>
 
-            <label style="width: 150px;">
-                Mostrar
-                <select name="limite" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
-                    hx-target="#lista-puestos">
-                    <option value="10">10 filas</option>
-                    <option value="20">20 filas</option>
-                    <option value="50">50 filas</option>
-                    <option value="100">100 filas</option>
-                </select>
-            </label>
+            <div class="grid">
+                <label>
+                    Estado
+                    <select name="estado" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
+                        hx-target="#lista-puestos">
+                        <option value="">Todos</option>
+                        <option value="vacante">Libre</option>
+                        <option value="ocupado">Ocupada</option>
+                    </select>
+                </label>
+
+                <label>
+                    Mostrar
+                    <select name="limite" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
+                        hx-target="#lista-puestos">
+                        <option value="10">10 filas</option>
+                        <option value="20">20 filas</option>
+                        <option value="50">50 filas</option>
+                        <option value="100">100 filas</option>
+                    </select>
+                </label>
+            </div>
+
         </form>
         <div id="lista-puestos" hx-get="/tenant/puestos/lista" hx-trigger="load, refrescarPuestos from:body" hx-include="#form-filtros-puestos">
             <p aria-busy="true">Cargando plazas...</p>

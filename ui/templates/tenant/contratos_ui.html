@@ -53,7 +53,7 @@
 </article>
 
 {{define "formulario_crear"}}
-<details>
+<details {{if or .PuestoSeleccionadoID .TrabajadorSeleccionadoID .FechaInicio .FechaFin}}open{{end}}>
     <summary role="button" class="secondary outline">➕ Asignar Puesto a Trabajador</summary>
     <div style="padding-top: 1rem;">
         <div id="alerta-contrato"></div>
@@ -62,34 +62,49 @@
             <label>Seleccionar Trabajador
                 <select name="trabajador_id" required>
                     <option value="">-- Seleccione personal --</option>
+                    {{$selTrabajador := .TrabajadorSeleccionadoID}}
                     {{range .Trabajadores}}
                     {{if .Activo}}
-                    <option value="{{.ID}}">{{.ApellidoPaterno}} {{.ApellidoMaterno}}, {{.Nombres}}</option>
+                    <option value="{{.ID}}" {{if eq .ID $selTrabajador}}selected{{end}}>{{.ApellidoPaterno}} {{.ApellidoMaterno}}, {{.Nombres}}</option>
                     {{end}}
                     {{end}}
                 </select>
             </label>
 
             <label>Puesto (Plaza) a Ocupar
-                <select name="puesto_id" required>
+                <select name="puesto_id" required
+                        hx-get="/tenant/contratos/formulario-dinamico"
+                        hx-target="#contenedor-formulario"
+                        hx-include="closest form"
+                        hx-trigger="change">
                     <option value="">-- Seleccione una plaza vacante --</option>
+                    {{$selPuesto := .PuestoSeleccionadoID}}
                     {{range .Puestos}}
-                    <option value="{{.ID}}">{{.Nombre}} | {{.RegimenDesc}} | S/ {{.SueldoPresupuestado}}</option>
+                    <option value="{{.ID}}" {{if eq .ID $selPuesto}}selected{{end}}>{{.Nombre}} | {{.RegimenDesc}} | S/ {{.SueldoPresupuestado}}</option>
+                    {{end}}
+                </select>
+            </label>
+
+            <label>Tipo de Contrato (MEF)
+                <select name="tipo_contrato" required {{if not .OpcionesContrato}}disabled{{end}}>
+                    <option value="">-- Seleccione tipo de contrato --</option>
+                    {{range .OpcionesContrato}}
+                    <option value="{{.}}">{{.}}</option>
                     {{end}}
                 </select>
             </label>
 
             <div class="grid">
                 <label>Fecha de Inicio de Labores
-                    <input type="date" name="fecha_inicio" required>
+                    <input type="date" name="fecha_inicio" value="{{.FechaInicio}}" required>
                 </label>
                 <label>Fecha de Fin (Dejar vacío si es indeterminado)
-                    <input type="date" name="fecha_fin">
+                    <input type="date" name="fecha_fin" value="{{.FechaFin}}">
                 </label>
             </div>
 
             <label>
-                <input type="checkbox" name="activo" checked> Contrato Activo
+                <input type="checkbox" name="activo" {{if or (eq (index . "Activo") nil) .Activo}}checked{{end}}> Contrato Activo
             </label>
 
             <button type="submit">Generar Contrato y Ocupar Plaza</button>

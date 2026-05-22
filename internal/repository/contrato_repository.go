@@ -20,7 +20,7 @@ func (r *ContratoRepository) ObtenerTodos(tenantID int) ([]models.Contrato, erro
 		SELECT c.id, c.trabajador_id, c.puesto_id, 
 		       TO_CHAR(c.fecha_inicio, 'YYYY-MM-DD'), TO_CHAR(c.fecha_fin, 'YYYY-MM-DD'), c.activo,
 		       t.numero_documento, t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres,
-		       p.nombre, p.sueldo_presupuestado, rl.descripcion
+		       p.nombre, p.sueldo_presupuestado, rl.descripcion, COALESCE(c.tipo_contrato, '')
 		FROM contratos c
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
 		INNER JOIN puestos p ON c.puesto_id = p.id
@@ -40,7 +40,7 @@ func (r *ContratoRepository) ObtenerTodos(tenantID int) ([]models.Contrato, erro
 		var fFin sql.NullString
 
 		err := rows.Scan(&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fFin, &c.Activo,
-			&c.TrabajadorDoc, &c.TrabajadorNombre, &c.PuestoNombre, &c.SueldoPresupuestado, &c.RegimenDesc)
+			&c.TrabajadorDoc, &c.TrabajadorNombre, &c.PuestoNombre, &c.SueldoPresupuestado, &c.RegimenDesc, &c.TipoContrato)
 		if err == nil {
 			if fFin.Valid {
 				c.FechaFin = &fFin.String
@@ -96,7 +96,8 @@ func (r *ContratoRepository) ObtenerTodosPaginado(tenantID int, busqueda string,
 		SELECT c.id, c.trabajador_id, c.puesto_id, 
 		       TO_CHAR(c.fecha_inicio, 'YYYY-MM-DD'), TO_CHAR(c.fecha_fin, 'YYYY-MM-DD'), c.activo,
 		       t.numero_documento, t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
-		       p.nombre AS puesto_nombre, p.sueldo_presupuestado, rl.descripcion AS regimen_descripcion
+		       p.nombre AS puesto_nombre, p.sueldo_presupuestado, rl.descripcion AS regimen_descripcion,
+		       COALESCE(c.tipo_contrato, '') AS tipo_contrato
 		FROM contratos c
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
 		INNER JOIN puestos p ON c.puesto_id = p.id
@@ -119,7 +120,7 @@ func (r *ContratoRepository) ObtenerTodosPaginado(tenantID int, busqueda string,
 		var c models.Contrato
 		var fechaFin sql.NullString
 		err := rows.Scan(&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fechaFin, &c.Activo,
-			&c.TrabajadorDoc, &c.TrabajadorNombre, &c.PuestoNombre, &c.SueldoPresupuestado, &c.RegimenDesc)
+			&c.TrabajadorDoc, &c.TrabajadorNombre, &c.PuestoNombre, &c.SueldoPresupuestado, &c.RegimenDesc, &c.TipoContrato)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -140,10 +141,10 @@ func (r *ContratoRepository) Crear(c *models.Contrato) error {
 
 	// 1. Insertamos el contrato
 	queryContrato := `
-		INSERT INTO contratos (tenant_id, trabajador_id, puesto_id, fecha_inicio, fecha_fin, activo)
-		VALUES ($1, $2, $3, $4, NULLIF($5, '')::DATE, $6) RETURNING id
+		INSERT INTO contratos (tenant_id, trabajador_id, puesto_id, fecha_inicio, fecha_fin, activo, tipo_contrato)
+		VALUES ($1, $2, $3, $4, NULLIF($5, '')::DATE, $6, $7) RETURNING id
 	`
-	err = tx.QueryRow(queryContrato, c.TenantID, c.TrabajadorID, c.PuestoID, c.FechaInicio, c.FechaFin, c.Activo).Scan(&c.ID)
+	err = tx.QueryRow(queryContrato, c.TenantID, c.TrabajadorID, c.PuestoID, c.FechaInicio, c.FechaFin, c.Activo, c.TipoContrato).Scan(&c.ID)
 	if err != nil {
 		tx.Rollback()
 		return err

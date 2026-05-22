@@ -137,6 +137,7 @@ type Contrato struct {
 	FechaInicio  string  `json:"fecha_inicio"`
 	FechaFin     *string `json:"fecha_fin"` // Puntero para permitir nulos
 	Activo       bool    `json:"activo"`
+	TipoContrato string  `json:"tipo_contrato"`
 
 	// Campos auxiliares para la interfaz web (JOINs)
 	TrabajadorNombre    string  `json:"trabajador_nombre,omitempty"`

@@ -25,3 +25,39 @@ var ConceptosQueRequierenMonto = map[string]bool{
 	"2027": true, // Otros ingresos no remunerativos
 	"2006": true, // Aguinaldos (aunque se puede automatizar, a veces es variable)
 }
+
+// ClasificadorMefPorContrato mapea [Régimen][Tipo Contrato] -> Código Limpio MEF
+var ClasificadorMefPorContrato = map[string]map[string]string{
+	"DL 276": {
+		"Nombrado":     "2.1.1 1.1 2",
+		"A plazo fijo": "2.1.1 1.1 3",
+	},
+	"Ley 30057": {
+		"Alta dirección - Libre designación y remoción": "2.1.1 1.1 7",
+		"Alcalde": "2.1.1 1.1 1",
+	},
+	"DL 1057": {
+		"Indeterminado": "2.1.1 13.1 1",
+		"Transitorio":   "2.1.1 13.1 2",
+	},
+	"DL 728": {
+		"Permanentes":  "2.1.1 8.1 1",
+		"A plazo fijo": "2.1.1 8.2 1",
+	},
+}
+
+// MapRegimenToKey normaliza los códigos de régimen a las claves de nuestro mapa
+func MapRegimenToKey(codigo string) string {
+	switch codigo {
+	case "276":
+		return "DL 276"
+	case "30057":
+		return "Ley 30057"
+	case "1057":
+		return "DL 1057"
+	case "728":
+		return "DL 728"
+	default:
+		return ""
+	}
+}

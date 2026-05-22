@@ -147,11 +147,12 @@ func (r *ConceptoRepository) ProcesarImportacion(conceptos []models.ConceptoMaes
 func (r *ContratoRepository) ObtenerPorID(id int, tenantID int) (models.Contrato, error) {
 	var c models.Contrato
 	var fFin sql.NullString
+	var tipoContrato sql.NullString
 	query := `
 		SELECT c.id, c.trabajador_id, c.puesto_id, 
 		       TO_CHAR(c.fecha_inicio, 'YYYY-MM-DD'), TO_CHAR(c.fecha_fin, 'YYYY-MM-DD'), c.activo,
 		       t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
-		       p.nombre AS puesto_nombre
+		       p.nombre AS puesto_nombre, COALESCE(c.tipo_contrato, '') AS tipo_contrato
 		FROM contratos c
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
 		INNER JOIN puestos p ON c.puesto_id = p.id
@@ -159,10 +160,13 @@ func (r *ContratoRepository) ObtenerPorID(id int, tenantID int) (models.Contrato
 	`
 	err := r.db.QueryRow(query, id, tenantID).Scan(
 		&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fFin, &c.Activo,
-		&c.TrabajadorNombre, &c.PuestoNombre,
+		&c.TrabajadorNombre, &c.PuestoNombre, &tipoContrato,
 	)
 	if fFin.Valid {
 		c.FechaFin = &fFin.String
+	}
+	if tipoContrato.Valid {
+		c.TipoContrato = tipoContrato.String
 	}
 	return c, err
 }
