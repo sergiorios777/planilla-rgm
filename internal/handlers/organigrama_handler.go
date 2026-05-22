@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-
 type OrganigramaHandler struct {
 	Repo       *repository.OrganigramaRepository
 	PuestoRepo *repository.PuestoRepository

@@ -228,13 +228,14 @@ type UnidadOrganica struct {
 
 // UnidadNodo representa un nodo procesado listo para renderizar jerárquicamente en la UI
 type UnidadNodo struct {
-	ID           int          `json:"id"`
-	Nombre       string       `json:"nombre"`
-	Tipo         string       `json:"tipo"`
-	CodigoMef    string       `json:"codigo_mef"`
-	ParentID     *int         `json:"parent_id"`
-	TotalPuestos int          `json:"total_puestos"`
-	Hijos        []UnidadNodo `json:"hijos"`
+	ID             int          `json:"id"`
+	Nombre         string       `json:"nombre"`
+	Tipo           string       `json:"tipo"`
+	CodigoMef      string       `json:"codigo_mef"`
+	ParentID       *int         `json:"parent_id"`
+	TotalPuestos   int          `json:"total_puestos"`
+	PuestosPropios int          `json:"puestos_propios"`
+	Hijos          []UnidadNodo `json:"hijos"`
 }
 
 // Puesto (Plaza) representa una "silla" dentro de la municipalidad, esté ocupada o vacante.

@@ -93,6 +93,11 @@
                     📁 [{{.Tipo}}] {{.Nombre}} 
                     <small style="color: #666; font-weight: normal; margin-left: 10px;">
                         (Código MEF: {{if .CodigoMef}}{{.CodigoMef}}{{else}}N/A{{end}})
+                        {{if .Hijos}}
+                            | 👤 Directas: {{.PuestosPropios}} | 🏢 Totales: {{.TotalPuestos}}
+                        {{else}}
+                            | 👤 Plazas: {{.PuestosPropios}}
+                        {{end}}
                     </small>
                     <span style="float: right; font-weight: normal; font-size: 0.8rem;">
                         <a href="#" hx-get="/tenant/organigrama/unidad/editar_ui?id={{.ID}}" hx-target="#modal-unidad-contenido" onclick="document.getElementById('modal-unidad-global').showModal()" style="margin-right: 15px;">✏️ Editar</a>
@@ -103,8 +108,8 @@
                 {{if .Hijos}}
                     {{template "nodo_organigrama" .Hijos}}
                 {{else}}
-                    <p style="margin-left: 2rem; margin-bottom: 0; font-style: italic; color: #888;">
-                        <small>📍 No tiene subunidades. Plazas asignadas: {{.TotalPuestos}}</small>
+                    <p style="margin-left: 2rem; margin-bottom: 0; font-style: italic; color: #888; display:none;">
+                        <small>📍 Sin subunidades.</small>
                     </p>
                 {{end}}
             </details>

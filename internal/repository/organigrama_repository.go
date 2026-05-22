@@ -203,13 +203,14 @@ func (r *OrganigramaRepository) ObtenerArbolNodos(organigramaID int) ([]models.U
 
 	for _, u := range unidades {
 		n := &models.UnidadNodo{
-			ID:           u.ID,
-			Nombre:       u.Nombre,
-			Tipo:         u.Tipo,
-			CodigoMef:    u.CodigoMef,
-			ParentID:     u.ParentID,
-			TotalPuestos: conteoPuestos[u.ID],
-			Hijos:        []models.UnidadNodo{},
+			ID:             u.ID,
+			Nombre:         u.Nombre,
+			Tipo:           u.Tipo,
+			CodigoMef:      u.CodigoMef,
+			ParentID:       u.ParentID,
+			TotalPuestos:   conteoPuestos[u.ID],
+			PuestosPropios: conteoPuestos[u.ID],
+			Hijos:          []models.UnidadNodo{},
 		}
 		nodosMap[u.ID] = n
 	}
@@ -246,16 +247,19 @@ func construirArbol(unidades []models.UnidadOrganica, conteoPuestos map[int]int)
 	var construirNodo func(u models.UnidadOrganica) models.UnidadNodo
 	construirNodo = func(u models.UnidadOrganica) models.UnidadNodo {
 		nodo := models.UnidadNodo{
-			ID:           u.ID,
-			Nombre:       u.Nombre,
-			Tipo:         u.Tipo,
-			CodigoMef:    u.CodigoMef,
-			ParentID:     u.ParentID,
-			TotalPuestos: conteoPuestos[u.ID],
-			Hijos:        []models.UnidadNodo{},
+			ID:             u.ID,
+			Nombre:         u.Nombre,
+			Tipo:           u.Tipo,
+			CodigoMef:      u.CodigoMef,
+			ParentID:       u.ParentID,
+			TotalPuestos:   conteoPuestos[u.ID],
+			PuestosPropios: conteoPuestos[u.ID],
+			Hijos:          []models.UnidadNodo{},
 		}
 		for _, hijo := range hijosMap[u.ID] {
-			nodo.Hijos = append(nodo.Hijos, construirNodo(hijo))
+			hijoNodo := construirNodo(hijo)
+			nodo.TotalPuestos += hijoNodo.TotalPuestos
+			nodo.Hijos = append(nodo.Hijos, hijoNodo)
 		}
 		return nodo
 	}
