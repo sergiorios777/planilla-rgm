@@ -1,20 +1,16 @@
 <article>
-    <header>
-        <h3 style="margin-bottom: 0;">
+    <header style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
             <svg class="icono-menu">
                 <use href="#icono-carpeta-usuario"></use>
             </svg>
             Gestión de Contratos Laborales
         </h3>
+        <button class="primary" style="width: auto; margin-bottom: 0;"
+            onclick="document.getElementById('modal-nuevo-contrato').showModal()">
+            ➕ Asignar Puesto a Trabajador
+        </button>
     </header>
-    <div class="grid">
-        <div id="contenedor-formulario">
-            {{template "formulario_crear" .}}
-        </div>
-        <div>
-            <!-- Vacío -->
-        </div>
-    </div>
     <div>
         <form id="form-filtros-contratos" class="grid">
             <label>
@@ -50,110 +46,131 @@
             <p aria-busy="true">Cargando contratos...</p>
         </div>
     </div>
+
+    <!-- Modal de Creación de Contrato -->
+    <dialog id="modal-nuevo-contrato">
+        <article style="max-width: 750px; width: 95%;">
+            <header>
+                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nuevo-contrato').close()"></a>
+                <h4 style="margin-bottom: 0;">➕ Asignar Puesto a Trabajador</h4>
+            </header>
+            <div id="contenido-modal-nuevo">
+                {{template "formulario_crear" .}}
+            </div>
+        </article>
+    </dialog>
+
+    <!-- Modal de Edición de Contrato -->
+    <dialog id="modal-editar-contrato" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
+        <article style="max-width: 750px; width: 95%;">
+            <header>
+                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-editar-contrato').close()"></a>
+                <h4 style="margin-bottom: 0;">✏️ Editar Contrato</h4>
+            </header>
+            <div id="contenido-modal-editar">
+                <!-- Cargar formulario aquí -->
+            </div>
+        </article>
+    </dialog>
 </article>
 
 {{define "formulario_crear"}}
-<details {{if or .PuestoSeleccionadoID .TrabajadorSeleccionadoID .FechaInicio .FechaFin}}open{{end}}>
-    <summary role="button" class="secondary outline">➕ Asignar Puesto a Trabajador</summary>
-    <div style="padding-top: 1rem;">
-        <div id="alerta-contrato"></div>
-        <form hx-post="/tenant/contratos/crear" hx-target="#lista-contratos" hx-swap="innerHTML">
+<div style="padding-top: 1rem;">
+    <div id="alerta-contrato"></div>
+    <form hx-post="/tenant/contratos/crear" hx-target="#lista-contratos" hx-swap="innerHTML"
+        hx-on::after-request="if (event.detail.successful && !event.detail.xhr.responseText.includes('<article')) { document.getElementById('modal-nuevo-contrato').close(); this.reset(); }">
 
-            <label>Seleccionar Trabajador
-                <select name="trabajador_id" required>
-                    <option value="">-- Seleccione personal --</option>
-                    {{$selTrabajador := .TrabajadorSeleccionadoID}}
-                    {{range .Trabajadores}}
-                    {{if .Activo}}
-                    <option value="{{.ID}}" {{if eq .ID $selTrabajador}}selected{{end}}>{{.ApellidoPaterno}} {{.ApellidoMaterno}}, {{.Nombres}}</option>
-                    {{end}}
-                    {{end}}
-                </select>
+        <label>Seleccionar Trabajador
+            <select name="trabajador_id" required class="select-con-buscador">
+                <option value="">-- Seleccione personal --</option>
+                {{$selTrabajador := .TrabajadorSeleccionadoID}}
+                {{range .Trabajadores}}
+                {{if .Activo}}
+                <option value="{{.ID}}" {{if eq .ID $selTrabajador}}selected{{end}}>{{.ApellidoPaterno}} {{.ApellidoMaterno}}, {{.Nombres}}</option>
+                {{end}}
+                {{end}}
+            </select>
+        </label>
+
+        <label>Puesto (Plaza) a Ocupar
+            <select name="puesto_id" required class="select-con-buscador"
+                    hx-get="/tenant/contratos/formulario-dinamico"
+                    hx-target="#contenido-modal-nuevo"
+                    hx-include="closest form"
+                    hx-trigger="change">
+                <option value="">-- Seleccione una plaza vacante --</option>
+                {{$selPuesto := .PuestoSeleccionadoID}}
+                {{range .Puestos}}
+                <option value="{{.ID}}" {{if eq .ID $selPuesto}}selected{{end}}>{{.Nombre}} | {{.RegimenDesc}} | {{.UnidadOrganicaNombre}} | S/ {{.SueldoPresupuestado}}</option>
+                {{end}}
+            </select>
+        </label>
+
+        <label>Tipo de Contrato (MEF)
+            <select name="tipo_contrato" required {{if not .OpcionesContrato}}disabled{{end}}>
+                <option value="">-- Seleccione tipo de contrato --</option>
+                {{range .OpcionesContrato}}
+                <option value="{{.}}">{{.}}</option>
+                {{end}}
+            </select>
+        </label>
+
+        <div class="grid">
+            <label>Fecha de Inicio de Labores
+                <input type="date" name="fecha_inicio" value="{{.FechaInicio}}" required>
             </label>
-
-            <label>Puesto (Plaza) a Ocupar
-                <select name="puesto_id" required
-                        hx-get="/tenant/contratos/formulario-dinamico"
-                        hx-target="#contenedor-formulario"
-                        hx-include="closest form"
-                        hx-trigger="change">
-                    <option value="">-- Seleccione una plaza vacante --</option>
-                    {{$selPuesto := .PuestoSeleccionadoID}}
-                    {{range .Puestos}}
-                    <option value="{{.ID}}" {{if eq .ID $selPuesto}}selected{{end}}>{{.Nombre}} | {{.RegimenDesc}} | S/ {{.SueldoPresupuestado}}</option>
-                    {{end}}
-                </select>
+            <label>Fecha de Fin (Dejar vacío si es indeterminado)
+                <input type="date" name="fecha_fin" value="{{.FechaFin}}">
             </label>
+        </div>
 
-            <label>Tipo de Contrato (MEF)
-                <select name="tipo_contrato" required {{if not .OpcionesContrato}}disabled{{end}}>
-                    <option value="">-- Seleccione tipo de contrato --</option>
-                    {{range .OpcionesContrato}}
-                    <option value="{{.}}">{{.}}</option>
-                    {{end}}
-                </select>
-            </label>
+        <label>
+            <input type="checkbox" name="activo" {{if or (eq (index . "Activo") nil) .Activo}}checked{{end}}> Contrato Activo
+        </label>
 
-            <div class="grid">
-                <label>Fecha de Inicio de Labores
-                    <input type="date" name="fecha_inicio" value="{{.FechaInicio}}" required>
-                </label>
-                <label>Fecha de Fin (Dejar vacío si es indeterminado)
-                    <input type="date" name="fecha_fin" value="{{.FechaFin}}">
-                </label>
-            </div>
-
-            <label>
-                <input type="checkbox" name="activo" {{if or (eq (index . "Activo") nil) .Activo}}checked{{end}}> Contrato Activo
-            </label>
-
-            <button type="submit">Generar Contrato y Ocupar Plaza</button>
-        </form>
-    </div>
-</details>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
+            <button type="button" class="secondary outline" onclick="document.getElementById('modal-nuevo-contrato').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
+            <button type="submit" style="margin-bottom: 0; width: auto;">Generar Contrato y Ocupar Plaza</button>
+        </div>
+    </form>
+</div>
 {{end}}
 
 {{define "formulario_editar"}}
-<details open>
-    <summary role="button" class="secondary outline">✏️ Editando Contrato</summary>
-    <div style="padding-top: 1rem;">
-        <div id="alerta-contrato"></div>
-        <form hx-post="/tenant/contratos/actualizar" hx-target="#contenedor-formulario" hx-swap="innerHTML">
-            <input type="hidden" name="id" value="{{.ID}}">
-            <input type="hidden" name="puesto_id" value="{{.PuestoID}}">
+<div style="padding-top: 1rem;">
+    <form hx-post="/tenant/contratos/actualizar" hx-swap="none"
+        hx-on::after-request="if (event.detail.successful) { document.getElementById('modal-editar-contrato').close(); }">
+        <input type="hidden" name="id" value="{{.ID}}">
+        <input type="hidden" name="puesto_id" value="{{.PuestoID}}">
 
-            <label>Trabajador (Solo Lectura)
-                <input type="text" value="{{.TrabajadorNombre}}" disabled>
+        <label>Trabajador (Solo Lectura)
+            <input type="text" value="{{.TrabajadorNombre}}" disabled>
+        </label>
+
+        <label>Plaza Asignada (Solo Lectura)
+            <input type="text" value="{{.PuestoNombre}}" disabled>
+            <small>Para cambiar de plaza, finalice este contrato y cree uno nuevo.</small>
+        </label>
+
+        <div class="grid">
+            <label>Fecha de Inicio
+                <input type="date" name="fecha_inicio" value="{{.FechaInicio}}" required>
             </label>
-
-            <label>Plaza Asignada (Solo Lectura)
-                <input type="text" value="{{.PuestoNombre}}" disabled>
-                <small>Para cambiar de plaza, finalice este contrato y cree uno nuevo.</small>
+            <label>Fecha de Fin
+                <input type="date" name="fecha_fin" value="{{if .FechaFin}}{{.FechaFin}}{{end}}">
             </label>
+        </div>
 
-            <div class="grid">
-                <label>Fecha de Inicio
-                    <input type="date" name="fecha_inicio" value="{{.FechaInicio}}" required>
-                </label>
-                <label>Fecha de Fin
-                    <input type="date" name="fecha_fin" value="{{if .FechaFin}}{{.FechaFin}}{{end}}">
-                </label>
-            </div>
+        <label>
+            <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Contrato Activo
+        </label>
 
-            <label>
-                <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Contrato Activo
-            </label>
-
-            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                <button type="submit" class="primary">Guardar Cambios</button>
-                <button type="button" class="secondary outline" hx-get="/tenant/contratos/formulario-crear"
-                    hx-target="#contenedor-formulario">
-                    Cancelar
-                </button>
-            </div>
-        </form>
-    </div>
-</details>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
+            <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-contrato').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
+            <button type="submit" style="margin-bottom: 0; width: auto;">Guardar Cambios</button>
+        </div>
+    </form>
+</div>
 {{end}}
 
 {{define "tabla_contratos"}}
@@ -185,7 +202,7 @@
                     {{end}}
 
                     <button class="outline secondary" style="padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
-                        hx-get="/tenant/contratos/editar-ui?id={{.ID}}" hx-target="#contenedor-formulario">
+                        hx-get="/tenant/contratos/editar-ui?id={{.ID}}" hx-target="#contenido-modal-editar" hx-swap="innerHTML">
                         Editar
                     </button>
                 </div>
@@ -222,3 +239,33 @@
     </div>
 </div>
 {{end}}
+
+<script>
+    // Función maestra para inicializar TomSelect en un contenedor específico
+    function inicializarBuscadores(contenedor) {
+        if (!contenedor) return;
+        contenedor.querySelectorAll('.select-con-buscador').forEach((el) => {
+            // Evitamos duplicar la inicialización si el elemento ya tiene TomSelect activo
+            if (!el.tomselect) {
+                new TomSelect(el, {
+                    create: false,
+                    maxItems: 1,
+                    placeholder: "-- Seleccione una opción --",
+                    sortField: { field: "text", direction: "asc" },
+                    plugins: ['dropdown_input'] // Asegura una barra de entrada limpia
+                });
+            }
+        });
+    }
+
+    // 1. Ejecutar en la carga inicial de la página
+    document.addEventListener('DOMContentLoaded', () => {
+        inicializarBuscadores(document.body);
+    });
+
+    // 2. ¡MAGIA HTMX!: Ejecutar automáticamente cada vez que HTMX inyecte o reemplace HTML
+    document.body.addEventListener('htmx:afterSettle', (event) => {
+        // Inicializamos únicamente los elementos nuevos que acaban de caer en el target de HTMX
+        inicializarBuscadores(event.detail.target);
+    });
+</script>

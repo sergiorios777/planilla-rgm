@@ -1,204 +1,223 @@
 <article>
-    <header>
-        <h3 style="margin-bottom: 0;">
+    <header style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
             <svg class="icono-menu">
                 <use href="#icono-usuarios"></use>
             </svg>
             Legajo de Trabajadores
         </h3>
+        <button class="primary" style="width: auto; margin-bottom: 0;"
+            onclick="document.getElementById('modal-nuevo-trabajador').showModal()">
+            ➕ Registrar Nuevo Trabajador
+        </button>
     </header>
-    <div class="grid">
-        <div id="contenedor-formulario">
-            {{template "formulario_crear" .}}
-        </div>
 
-        <div id="contenedor-lista">
-            <div class="card">
-                <div style="display:flex; justify-content: end;">
-                    <input id="input-buscar-trabajador" class="form-control" type="search" name="buscar"
-                        placeholder="Buscar por nombre o DNI..." hx-get="/tenant/trabajadores/lista"
-                        hx-trigger="keyup changed delay:500ms, search" hx-target="#lista-trabajadores">
-                </div>
+    <div id="contenedor-lista">
+        <div class="card">
+            <div style="display:flex; justify-content: end;">
+                <input id="input-buscar-trabajador" class="form-control" type="search" name="buscar"
+                    placeholder="Buscar por nombre o DNI..." hx-get="/tenant/trabajadores/lista"
+                    hx-trigger="keyup changed delay:500ms, search" hx-target="#lista-trabajadores">
             </div>
-            <div id="lista-trabajadores" hx-get="/tenant/trabajadores/lista" hx-trigger="load">
-                <p aria-busy="true">Cargando personal...</p>
-            </div>
+        </div>
+        <div id="lista-trabajadores" hx-get="/tenant/trabajadores/lista" hx-trigger="load">
+            <p aria-busy="true">Cargando personal...</p>
         </div>
     </div>
+
+    <!-- Modal de Creación de Trabajador -->
+    <dialog id="modal-nuevo-trabajador">
+        <article style="max-width: 750px; width: 95%;">
+            <header>
+                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nuevo-trabajador').close()"></a>
+                <h4 style="margin-bottom: 0;">➕ Registrar Nuevo Trabajador</h4>
+            </header>
+            {{template "formulario_crear" .}}
+        </article>
+    </dialog>
+
+    <!-- Modal de Edición de Trabajador -->
+    <dialog id="modal-editar-trabajador" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
+        <article style="max-width: 750px; width: 95%;">
+            <header>
+                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-editar-trabajador').close()"></a>
+                <h4 style="margin-bottom: 0;">✏️ Editar Trabajador</h4>
+            </header>
+            <div id="contenido-modal-editar">
+                <!-- Cargar formulario aquí -->
+            </div>
+        </article>
+    </dialog>
 </article>
 
 {{define "formulario_crear"}}
-<details>
-    <summary role="button" class="secondary outline">➕ Registrar Nuevo Trabajador</summary>
-    <div style="padding-top: 1rem;">
-        <form hx-post="/tenant/trabajadores/crear" hx-target="#lista-trabajadores" hx-swap="innerHTML">
+<form hx-post="/tenant/trabajadores/crear" hx-target="#lista-trabajadores" hx-swap="innerHTML"
+    hx-include="#input-buscar-trabajador"
+    hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-nuevo-trabajador').close(); this.reset(); }">
 
-            <div class="grid">
-                <label>Tipo Documento
-                    <select name="tipo_documento" required>
-                        <option value="DNI">DNI</option>
-                        <option value="CE">Carnet de Extranjería</option>
-                        <option value="PASAPORTE">Pasaporte</option>
-                    </select>
-                </label>
-                <label>Número Documento
-                    <input type="text" name="numero_documento" required>
-                </label>
-            </div>
-
-            <label>Nombres Completos
-                <input type="text" name="nombres" required>
-            </label>
-
-            <div class="grid">
-                <label>Apellido Paterno
-                    <input type="text" name="apellido_paterno" required>
-                </label>
-                <label>Apellido Materno
-                    <input type="text" name="apellido_materno" required>
-                </label>
-            </div>
-
-            <div class="grid">
-                <label>Fecha de Nacimiento
-                    <input type="date" name="fecha_nacimiento">
-                </label>
-                <label>Sexo
-                    <select name="sexo">
-                        <option value="M">Masculino</option>
-                        <option value="F">Femenino</option>
-                    </select>
-                </label>
-            </div>
-
-            <div class="grid">
-                <label>Régimen pensionario
-                    <select name="regimen_pensionario">
-                        <option value="ONP">ONP</option>
-                        <option value="AFP">AFP</option>
-                    </select>
-                </label>
-
-                <label>Seleccionar AFP
-                    <select name="afp_id">
-                        <option value=""> -- No aplica -- </option>
-                        {{range $id, $afp := .ListaAFPs}}
-                        <option value="{{$id}}">{{$afp}}</option>
-                        {{end}}
-                    </select>
-                </label>
-
-                <label>Tipo de Comisión
-                    <select name="afp_tipo_comision">
-                        <option value=""> -- No aplica -- </option>
-                        <option value="FLUJO">Comisión Flujo</option>
-                        <option value="MIXTA">Comisión Mixta</option>
-                    </select>
-                </label>
-
-                <label>CUSPP
-                    <input type="text" name="cuspp" placeholder="Código Único">
-                </label>
-            </div>
-
-            <label>
-                <input type="checkbox" name="activo" checked> Personal Activo
-            </label>
-
-            <button type="submit">Guardar Trabajador</button>
-        </form>
+    <div class="grid">
+        <label>Tipo Documento
+            <select name="tipo_documento" required>
+                <option value="DNI">DNI</option>
+                <option value="CE">Carnet de Extranjería</option>
+                <option value="PASAPORTE">Pasaporte</option>
+            </select>
+        </label>
+        <label>Número Documento
+            <input type="text" name="numero_documento" required>
+        </label>
     </div>
-</details>
+
+    <label>Nombres Completos
+        <input type="text" name="nombres" required>
+    </label>
+
+    <div class="grid">
+        <label>Apellido Paterno
+            <input type="text" name="apellido_paterno" required>
+        </label>
+        <label>Apellido Materno
+            <input type="text" name="apellido_materno" required>
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>Fecha de Nacimiento
+            <input type="date" name="fecha_nacimiento">
+        </label>
+        <label>Sexo
+            <select name="sexo">
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>Régimen pensionario
+            <select name="regimen_pensionario">
+                <option value="ONP">ONP</option>
+                <option value="AFP">AFP</option>
+            </select>
+        </label>
+
+        <label>Seleccionar AFP
+            <select name="afp_id">
+                <option value=""> -- No aplica -- </option>
+                {{range $id, $afp := .ListaAFPs}}
+                <option value="{{$id}}">{{$afp}}</option>
+                {{end}}
+            </select>
+        </label>
+
+        <label>Tipo de Comisión
+            <select name="afp_tipo_comision">
+                <option value=""> -- No aplica -- </option>
+                <option value="FLUJO">Comisión Flujo</option>
+                <option value="MIXTA">Comisión Mixta</option>
+            </select>
+        </label>
+
+        <label>CUSPP
+            <input type="text" name="cuspp" placeholder="Código Único">
+        </label>
+    </div>
+
+    <label>
+        <input type="checkbox" name="activo" checked> Personal Activo
+    </label>
+
+    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
+        <button type="button" class="secondary outline" onclick="document.getElementById('modal-nuevo-trabajador').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
+        <button type="submit" style="margin-bottom: 0; width: auto;">Guardar Trabajador</button>
+    </div>
+</form>
 {{end}}
 
 {{define "formulario_editar"}}
-<details open>
-    <summary role="button" class="contrast outline">✏️ Editando: {{.NombreCompleto}}</summary>
-    <div style="padding-top: 1rem;">
-        <form hx-post="/tenant/trabajadores/actualizar" hx-target="#contenido-tenant" hx-swap="innerHTML">
-            <input type="hidden" name="id" value="{{.ID}}">
+<form hx-post="/tenant/trabajadores/actualizar" hx-target="#lista-trabajadores" hx-swap="innerHTML"
+    hx-include="#input-buscar-trabajador"
+    hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-editar-trabajador').close(); }">
+    <input type="hidden" name="id" value="{{.ID}}">
 
-            <div class="grid">
-                <label>Tipo Documento
-                    <select name="tipo_documento" required>
-                        <option value="DNI" {{if eq .TipoDocumento "DNI" }}selected{{end}}>DNI</option>
-                        <option value="CE" {{if eq .TipoDocumento "CE" }}selected{{end}}>Carnet de Extranjería</option>
-                        <option value="PASAPORTE" {{if eq .TipoDocumento "PASAPORTE" }}selected{{end}}>Pasaporte
-                        </option>
-                    </select>
-                </label>
-                <label>Número Documento
-                    <input type="text" name="numero_documento" value="{{.NumeroDocumento}}" required>
-                </label>
-            </div>
-
-            <label>Nombres Completos
-                <input type="text" name="nombres" value="{{.Nombres}}" required>
-            </label>
-
-            <div class="grid">
-                <label>Apellido Paterno
-                    <input type="text" name="apellido_paterno" value="{{.ApellidoPaterno}}" required>
-                </label>
-                <label>Apellido Materno
-                    <input type="text" name="apellido_materno" value="{{.ApellidoMaterno}}" required>
-                </label>
-            </div>
-
-            <div class="grid">
-                <label>Fecha de Nacimiento
-                    <input type="date" name="fecha_nacimiento" value="{{.FechaNacimiento}}">
-                </label>
-                <label>Sexo
-                    <select name="sexo">
-                        <option value="M" {{if eq .Sexo "M" }}selected{{end}}>Masculino</option>
-                        <option value="F" {{if eq .Sexo "F" }}selected{{end}}>Femenino</option>
-                    </select>
-                </label>
-            </div>
-
-            <div class="grid">
-                <label>Régimen pensionario
-                    <select name="regimen_pensionario">
-                        <option value="ONP" {{if eq .RegimenPensionario "ONP" }}selected{{end}}>ONP</option>
-                        <option value="AFP" {{if eq .RegimenPensionario "AFP" }}selected{{end}}>AFP</option>
-                    </select>
-                </label>
-
-                <label>Seleccionar AFP
-                    <select name="afp_id">
-                        <option value=""> -- No aplica -- </option>
-                        {{range $id, $afp := .ListaAFPs}}
-                        <option value="{{$id}}" {{if eq $id $.AfpID}}selected{{end}}>{{$afp}}</option>
-                        {{end}}
-                    </select>
-                </label>
-
-                <label>Tipo de Comisión
-                    <select name="afp_tipo_comision">
-                        <option value=""> -- No aplica -- </option>
-                        <option value="FLUJO" {{if eq .AfpTipoComision "FLUJO" }}selected{{end}}>Comisión Flujo</option>
-                        <option value="MIXTA" {{if eq .AfpTipoComision "MIXTA" }}selected{{end}}>Comisión Mixta</option>
-                    </select>
-                </label>
-
-                <label>CUSPP
-                    <input type="text" name="cuspp" value="{{.Cuspp}}" placeholder="Código Único">
-                </label>
-            </div>
-
-            <label>
-                <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Personal Activo
-            </label>
-
-            <div class="grid">
-                <button type="submit">Actualizar</button>
-                <button type="button" class="secondary outline" hx-get="/tenant/ui/trabajadores"
-                    hx-target="#contenido-tenant">Cancelar</button>
-            </div>
-        </form>
+    <div class="grid">
+        <label>Tipo Documento
+            <select name="tipo_documento" required>
+                <option value="DNI" {{if eq .TipoDocumento "DNI" }}selected{{end}}>DNI</option>
+                <option value="CE" {{if eq .TipoDocumento "CE" }}selected{{end}}>Carnet de Extranjería</option>
+                <option value="PASAPORTE" {{if eq .TipoDocumento "PASAPORTE" }}selected{{end}}>Pasaporte
+                </option>
+            </select>
+        </label>
+        <label>Número Documento
+            <input type="text" name="numero_documento" value="{{.NumeroDocumento}}" required>
+        </label>
     </div>
-</details>
+
+    <label>Nombres Completos
+        <input type="text" name="nombres" value="{{.Nombres}}" required>
+    </label>
+
+    <div class="grid">
+        <label>Apellido Paterno
+            <input type="text" name="apellido_paterno" value="{{.ApellidoPaterno}}" required>
+        </label>
+        <label>Apellido Materno
+            <input type="text" name="apellido_materno" value="{{.ApellidoMaterno}}" required>
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>Fecha de Nacimiento
+            <input type="date" name="fecha_nacimiento" value="{{.FechaNacimiento}}">
+        </label>
+        <label>Sexo
+            <select name="sexo">
+                <option value="M" {{if eq .Sexo "M" }}selected{{end}}>Masculino</option>
+                <option value="F" {{if eq .Sexo "F" }}selected{{end}}>Femenino</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>Régimen pensionario
+            <select name="regimen_pensionario">
+                <option value="ONP" {{if eq .RegimenPensionario "ONP" }}selected{{end}}>ONP</option>
+                <option value="AFP" {{if eq .RegimenPensionario "AFP" }}selected{{end}}>AFP</option>
+            </select>
+        </label>
+
+        <label>Seleccionar AFP
+            <select name="afp_id">
+                <option value=""> -- No aplica -- </option>
+                {{range $id, $afp := .ListaAFPs}}
+                <option value="{{$id}}" {{if eq $id $.AfpID}}selected{{end}}>{{$afp}}</option>
+                {{end}}
+            </select>
+        </label>
+
+        <label>Tipo de Comisión
+            <select name="afp_tipo_comision">
+                <option value=""> -- No aplica -- </option>
+                <option value="FLUJO" {{if eq .AfpTipoComision "FLUJO" }}selected{{end}}>Comisión Flujo</option>
+                <option value="MIXTA" {{if eq .AfpTipoComision "MIXTA" }}selected{{end}}>Comisión Mixta</option>
+            </select>
+        </label>
+
+        <label>CUSPP
+            <input type="text" name="cuspp" value="{{.Cuspp}}" placeholder="Código Único">
+        </label>
+    </div>
+
+    <label>
+        <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Personal Activo
+    </label>
+
+    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
+        <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-trabajador').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
+        <button type="submit" style="margin-bottom: 0; width: auto;">Actualizar</button>
+    </div>
+</form>
 {{end}}
 
 {{define "tabla_trabajadores"}}
@@ -227,7 +246,7 @@
             </td>
             <td>
                 <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
-                    hx-get="/tenant/trabajadores/editar_ui?id={{.ID}}" hx-target="#contenedor-formulario"
+                    hx-get="/tenant/trabajadores/editar_ui?id={{.ID}}" hx-target="#contenido-modal-editar"
                     hx-swap="innerHTML">
                     Editar
                 </button>

@@ -7,6 +7,8 @@
     <title>Panel Municipal - Planillas RGM</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     <style>
         /* Reducimos el tamaño base de la fuente de toda la aplicación */
         html {
@@ -27,6 +29,31 @@
             cursor: not-allowed;
             text-decoration: none;
             color: #888;
+        }
+
+        /* Ajuste estético para que se integre perfectamente con Pico CSS */
+        .ts-control {
+            border-radius: var(--pico-border-radius) !important;
+            border: 1px solid var(--pico-border-color) !important;
+            background-color: var(--pico-background-color) !important;
+            color: var(--pico-color) !important;
+            padding: 0.5rem 0.75rem !important;
+        }
+        .ts-wrapper.disabled .ts-control {
+            background-color: var(--pico-form-element-disabled-background-color) !important;
+            opacity: var(--pico-form-element-disabled-opacity) !important;
+        }
+        .ts-dropdown {
+            background-color: var(--pico-background-color) !important;
+            color: var(--pico-color) !important;
+            border: 1px solid var(--pico-border-color) !important;
+        }
+        .ts-dropdown .active {
+            background-color: var(--pico-primary-hover-background) !important;
+            color: var(--pico-primary-inverse) !important;
+        }
+        .ts-dropdown .option {
+            padding: 0.5rem 0.75rem !important;
         }
     </style>
 </head>

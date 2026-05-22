@@ -21,9 +21,11 @@ func NewPuestoRepository(db *sql.DB) *PuestoRepository {
 // ObtenerVacantes lista solo los puestos que no están ocupados
 func (r *PuestoRepository) ObtenerVacantes(tenantID int) ([]models.Puesto, error) {
 	query := `
-		SELECT p.id, p.nombre, p.sueldo_presupuestado, rl.descripcion
+		SELECT p.id, p.nombre, p.sueldo_presupuestado, rl.descripcion,
+		       COALESCE(u.nombre, 'Sin asignar') AS unidad_organica_nombre
 		FROM puestos p
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
+		LEFT JOIN unidades_organicas u ON p.unidad_organica_id = u.id
 		WHERE p.tenant_id = $1 AND p.estado = 'VACANTE' AND p.activo = true
 		ORDER BY p.nombre ASC
 	`
@@ -36,7 +38,7 @@ func (r *PuestoRepository) ObtenerVacantes(tenantID int) ([]models.Puesto, error
 	var lista []models.Puesto
 	for rows.Next() {
 		var p models.Puesto
-		rows.Scan(&p.ID, &p.Nombre, &p.SueldoPresupuestado, &p.RegimenDesc)
+		rows.Scan(&p.ID, &p.Nombre, &p.SueldoPresupuestado, &p.RegimenDesc, &p.UnidadOrganicaNombre)
 		lista = append(lista, p)
 	}
 	return lista, nil

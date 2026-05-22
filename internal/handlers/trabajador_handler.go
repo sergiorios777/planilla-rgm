@@ -34,9 +34,9 @@ func (h *TrabajadorHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 
 func (h *TrabajadorHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
-	busqueda := r.URL.Query().Get("buscar")
-	limiteStr := r.URL.Query().Get("limite")
-	paginaStr := r.URL.Query().Get("pagina")
+	busqueda := r.FormValue("buscar")
+	limiteStr := r.FormValue("limite")
+	paginaStr := r.FormValue("pagina")
 
 	limite, err := strconv.Atoi(limiteStr)
 	if err != nil || limite <= 0 {
@@ -155,5 +155,5 @@ func (h *TrabajadorHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Repo.Actualizar(&trabajadorEditado)
-	h.VistaUI(w, r)
+	h.Listar(w, r)
 }
