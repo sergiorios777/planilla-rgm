@@ -1,13 +1,17 @@
 package handlers
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/xuri/excelize/v2"
 )
 
 type OrganigramaHandler struct {
@@ -228,6 +232,148 @@ func (h *OrganigramaHandler) EliminarUnidad(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "Error al eliminar la unidad: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("HX-Trigger", "reloadArbol")
+	w.WriteHeader(http.StatusOK)
+}
+
+// DescargarPlantilla genera y envía un archivo Excel base para la importación
+func (h *OrganigramaHandler) DescargarPlantilla(w http.ResponseWriter, r *http.Request) {
+	f := excelize.NewFile()
+	defer f.Close()
+
+	sheet := "Estructura_Organica"
+	f.SetSheetName("Sheet1", sheet)
+
+	// Cabeceras
+	cabeceras := []string{"ID_TEMPORAL", "NOMBRE", "TIPO", "ID_PADRE", "CODIGO_MEF"}
+	for i, cabecera := range cabeceras {
+		col := fmt.Sprintf("%c1", 'A'+i)
+		f.SetCellValue(sheet, col, cabecera)
+	}
+
+	// Datos de ejemplo
+	ejemplos := [][]interface{}{
+		{1, "Concejo Municipal", "Alta_Dirección", "", "300000"},
+		{2, "Alcaldía", "Alta_Dirección", "", "300001"},
+		{3, "Gerencia Municipal", "Gerencia", 2, "300002"},
+		{4, "Subgerencia de Recursos Humanos", "Subgerencia", 3, "300003"},
+	}
+	for rIdx, fila := range ejemplos {
+		for cIdx, valor := range fila {
+			col := fmt.Sprintf("%c%d", 'A'+cIdx, rIdx+2)
+			f.SetCellValue(sheet, col, valor)
+		}
+	}
+
+	// Hoja de instrucciones
+	instruccionesSheet := "Instrucciones"
+	f.NewSheet(instruccionesSheet)
+	f.SetCellValue(instruccionesSheet, "A1", "INSTRUCCIONES DE LLENADO")
+	f.SetCellValue(instruccionesSheet, "A3", "ID_TEMPORAL: Número único en esta tabla (ej. 1, 2, 3...)")
+	f.SetCellValue(instruccionesSheet, "A4", "NOMBRE: Nombre de la unidad (ej. Gerencia de Administración)")
+	f.SetCellValue(instruccionesSheet, "A5", "TIPO: Debe ser uno exacto de: Alta_Dirección, Gerencia, Subgerencia, Oficina, Unidad, Dirección, Departamento")
+	f.SetCellValue(instruccionesSheet, "A6", "ID_PADRE: El ID_TEMPORAL de la unidad de la que depende. Dejar vacío si no depende de nadie.")
+	f.SetCellValue(instruccionesSheet, "A7", "CODIGO_MEF: Opcional. Código del Ministerio de Economía y Finanzas.")
+
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", "attachment; filename=plantilla_organigrama.xlsx")
+
+	if err := f.Write(w); err != nil {
+		log.Printf("Error al generar plantilla Excel: %v", err)
+	}
+}
+
+// ImportarExcel lee el archivo subido y llama al repositorio
+func (h *OrganigramaHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	session := obtenerTenantID(r)
+	orgIDStr := r.FormValue("organigrama_id")
+	orgID, err := strconv.Atoi(orgIDStr)
+	if err != nil {
+		http.Error(w, "ID de organigrama inválido", http.StatusBadRequest)
+		return
+	}
+
+	file, _, err := r.FormFile("archivo_excel")
+	if err != nil {
+		http.Error(w, "Debe seleccionar un archivo válido", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	f, err := excelize.OpenReader(file)
+	if err != nil {
+		http.Error(w, "Error al leer el archivo Excel", http.StatusBadRequest)
+		return
+	}
+	defer f.Close()
+
+	sheet := f.GetSheetName(0)
+	rows, err := f.GetRows(sheet)
+	if err != nil || len(rows) < 2 {
+		http.Error(w, "El archivo está vacío o no tiene la estructura correcta", http.StatusBadRequest)
+		return
+	}
+
+	var unidades []repository.UnidadImport
+
+	// Validar y mapear filas
+	for i, row := range rows {
+		if i == 0 { // Saltar cabecera
+			continue
+		}
+
+		// Normalizar longitud de la fila a 5 columnas
+		for len(row) < 5 {
+			row = append(row, "")
+		}
+
+		idTempStr := strings.TrimSpace(row[0])
+		nombre := strings.TrimSpace(row[1])
+		tipo := strings.TrimSpace(row[2])
+		idPadreStr := strings.TrimSpace(row[3])
+		codigoMef := strings.TrimSpace(row[4])
+
+		if idTempStr == "" || nombre == "" || tipo == "" {
+			http.Error(w, fmt.Sprintf("Fila %d: ID_TEMPORAL, NOMBRE y TIPO son obligatorios", i+1), http.StatusBadRequest)
+			return
+		}
+
+		idTemp, err := strconv.Atoi(idTempStr)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Fila %d: ID_TEMPORAL debe ser un número entero", i+1), http.StatusBadRequest)
+			return
+		}
+
+		var idPadre *int
+		if idPadreStr != "" {
+			padreTemp, err := strconv.Atoi(idPadreStr)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Fila %d: ID_PADRE debe ser un número entero o estar vacío", i+1), http.StatusBadRequest)
+				return
+			}
+			idPadre = &padreTemp
+		}
+
+		unidades = append(unidades, repository.UnidadImport{
+			IDTemporal: idTemp,
+			Nombre:     nombre,
+			Tipo:       tipo,
+			IDPadre:    idPadre,
+			CodigoMef:  codigoMef,
+		})
+	}
+
+	if err := h.Repo.ImportarUnidadesTransaccional(session, orgID, unidades); err != nil {
+		log.Printf("[ERROR] ImportarExcel falló: %v (tenant_id=%d, org_id=%d)", err, session, orgID)
+		http.Error(w, `<div class="error" style="color:red; padding:1rem; border:1px solid red;">Error en importación: `+err.Error()+`</div>`, http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("HX-Trigger", "reloadArbol")
 	w.WriteHeader(http.StatusOK)
 }

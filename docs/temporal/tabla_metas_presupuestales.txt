@@ -1,0 +1,20 @@
+planilla_rgm=# \d metas_presupuestales
+                                         Tabla «public.metas_presupuestales»
+   Columna   |           Tipo           | Ordenamiento | Nulable  |                   Por omisión
+-------------+--------------------------+--------------+----------+--------------------------------------------------
+ id          | integer                  |              | not null | nextval('metas_presupuestales_id_seq'::regclass)
+ tenant_id   | integer                  |              | not null |
+ anio        | integer                  |              | not null |
+ codigo      | character varying(20)    |              | not null |
+ descripcion | character varying(255)   |              | not null |
+ activo      | boolean                  |              |          | true
+ created_at  | timestamp with time zone |              |          | CURRENT_TIMESTAMP
+ updated_at  | timestamp with time zone |              |          | CURRENT_TIMESTAMP
+Índices:
+    "metas_presupuestales_pkey" PRIMARY KEY, btree (id)
+    "idx_metas_tenant_anio" btree (tenant_id, anio)
+    "unique_meta_anio_tenant" UNIQUE CONSTRAINT, btree (tenant_id, anio, codigo)
+Restricciones de llave foránea:
+    "metas_presupuestales_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+Referenciada por:
+    TABLE "puestos" CONSTRAINT "puestos_meta_id_fkey" FOREIGN KEY (meta_id) REFERENCES metas_presupuestales(id)

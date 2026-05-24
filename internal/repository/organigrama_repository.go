@@ -394,3 +394,70 @@ func (r *OrganigramaRepository) ObtenerUnidadesDelOrganigramaActivo(tenantID int
 	return lista, nil
 }
 
+// UnidadImport representa una unidad temporal leída del Excel para importación
+type UnidadImport struct {
+	IDTemporal int
+	Nombre     string
+	Tipo       string
+	IDPadre    *int
+	CodigoMef  string
+}
+
+// ImportarUnidadesTransaccional reemplaza las unidades de un organigrama a partir del Excel
+func (r *OrganigramaRepository) ImportarUnidadesTransaccional(tenantID, organigramaID int, unidades []UnidadImport) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// 1. Borrar existentes (dispara ON DELETE SET NULL en puestos)
+	_, err = tx.Exec(`DELETE FROM unidades_organicas WHERE organigrama_id = $1 AND tenant_id = $2`, organigramaID, tenantID)
+	if err != nil {
+		return err
+	}
+
+	// 2. Insertar nuevas unidades usando lógica de resolución de jerarquía
+	mapaIDs := make(map[int]int)
+	pendientes := unidades
+
+	for len(pendientes) > 0 {
+		progreso := false
+		var siguienteRonda []UnidadImport
+
+		for _, u := range pendientes {
+			if u.IDPadre == nil || mapaIDs[*u.IDPadre] > 0 {
+				var parentIDInsert *int
+				if u.IDPadre != nil {
+					newParent := mapaIDs[*u.IDPadre]
+					parentIDInsert = &newParent
+				}
+
+				var nuevoID int
+				insertQuery := `
+					INSERT INTO unidades_organicas (tenant_id, organigrama_id, parent_id, codigo_mef, nombre, tipo)
+					VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
+				`
+				err = tx.QueryRow(insertQuery, tenantID, organigramaID, parentIDInsert, u.CodigoMef, u.Nombre, u.Tipo).Scan(&nuevoID)
+				if err != nil {
+					return err
+				}
+
+				mapaIDs[u.IDTemporal] = nuevoID
+				progreso = true
+			} else {
+				// Postponer para la siguiente vuelta si su padre aún no ha sido insertado
+				siguienteRonda = append(siguienteRonda, u)
+			}
+		}
+
+		if !progreso && len(pendientes) > 0 {
+			return errors.New("error en la importación: se detectó una jerarquía cíclica o referencias a un ID_PADRE inexistente")
+		}
+
+		pendientes = siguienteRonda
+	}
+
+	return tx.Commit()
+}
+

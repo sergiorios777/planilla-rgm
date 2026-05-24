@@ -181,6 +181,8 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/metas/formulario-crear", middleware.RequireAuth(metaHandler.FormularioCrearUI))
 	mux.HandleFunc("/tenant/metas/editar-ui", middleware.RequireAuth(metaHandler.EditarUI))
 	mux.HandleFunc("/tenant/metas/actualizar", middleware.RequireAuth(metaHandler.Actualizar))
+	mux.HandleFunc("/tenant/metas/importar", middleware.RequireAuth(metaHandler.ImportarExcel))
+	mux.HandleFunc("/tenant/metas/plantilla", middleware.RequireAuth(metaHandler.DescargarPlantilla))
 
 	// Rutas de Estructura Orgánica (Organigramas)
 	organigramaRepo := repository.NewOrganigramaRepository(db)
@@ -223,6 +225,8 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/organigrama/unidad/eliminar", middleware.RequireAuth(organigramaHandler.EliminarUnidad))
 	mux.HandleFunc("/tenant/organigrama/unidad/agregar_hijo_ui", middleware.RequireAuth(organigramaHandler.AgregarHijoUI))
 	mux.HandleFunc("/tenant/organigrama/unidad/editar_ui", middleware.RequireAuth(organigramaHandler.EditarUnidadUI))
+	mux.HandleFunc("/tenant/organigrama/importar", middleware.RequireAuth(organigramaHandler.ImportarExcel))
+	mux.HandleFunc("/tenant/organigrama/plantilla", middleware.RequireAuth(organigramaHandler.DescargarPlantilla))
 
 	// Rutas protegidas (Bajo la sección de Inquilinos/Presupuesto)
 	conceptoTenantRepo := repository.NewConceptoTenantRepository(db)

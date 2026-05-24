@@ -122,3 +122,22 @@ func (r *MetaRepository) Actualizar(m *models.MetaPresupuestal) error {
 	_, err := r.db.Exec(query, m.Codigo, m.Descripcion, m.Activo, m.ID, m.TenantID)
 	return err
 }
+
+// ImportarMetas procesa la inserción atómica de múltiples metas
+func (r *MetaRepository) ImportarMetas(tenantID int, metas []models.MetaPresupuestal) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query := `INSERT INTO metas_presupuestales (tenant_id, anio, codigo, descripcion, activo) VALUES ($1, $2, $3, $4, $5)`
+	for _, m := range metas {
+		_, err := tx.Exec(query, tenantID, m.Anio, m.Codigo, m.Descripcion, m.Activo)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}

@@ -1,21 +1,28 @@
 <article>
-    <header>
-        <h3 style="margin-bottom: 0;">
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="margin-bottom: 0; display: flex; align-items: center;">
             <svg class="icono-menu">
                 <use href="#icono-bloc-notas"></use>
             </svg> Catálogo Local de Conceptos
         </h3>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+            <button class="primary" style="width: auto; margin-bottom: 0;"
+                onclick="document.getElementById('modal-crear-concepto').showModal()">
+                <svg class="icono-menu">
+                    <use href="#icono-nuevo-1"></use>
+                </svg> Registrar Nuevo Concepto
+            </button>
+            <button class="outline contrast" style="width: auto; margin-bottom: 0;"
+                hx-post="/tenant/conceptos-locales/restaurar" hx-target="#lista-conceptos-tenant"
+                hx-confirm="¿Desea restaurar los conceptos faltantes desde el catálogo maestro? Esto no afectará a los conceptos que ya tiene configurados.">
+                <svg class="icono-menu">
+                    <use href="#icono-refrescar-giro-derecha"></use>
+                </svg> Restaurar Conceptos
+            </button>
+        </div>
     </header>
     <p><small>Configura cómo se llamarán los conceptos en tus boletas y vincúlalos al SIAF (Clasificadores).</small></p>
 
-    <div class="grid">
-        <div id="contenedor-formulario">
-            {{template "formulario_crear" .}}
-        </div>
-        <div>
-            {{template "botonera_acciones" .}}
-        </div>
-    </div>
     <div>
         <form id="form-filtros-conceptos-tenant" class="grid">
             <label>
@@ -52,6 +59,31 @@
         </div>
     </div>
 
+    <!-- Modal de Creación -->
+    <dialog id="modal-crear-concepto">
+        <article style="max-width: 750px; width: 95%;">
+            <header>
+                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-crear-concepto').close()"></a>
+                <h4 style="margin-bottom: 0;">➕ Agregar Concepto a la Municipalidad</h4>
+            </header>
+            <div id="contenedor-formulario">
+                {{template "formulario_crear" .}}
+            </div>
+        </article>
+    </dialog>
+
+    <!-- Modal de Edición -->
+    <dialog id="modal-editar-concepto" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
+        <article style="max-width: 750px; width: 95%;">
+            <header>
+                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-editar-concepto').close()"></a>
+                <h4 style="margin-bottom: 0;">✏️ Editar Concepto Local</h4>
+            </header>
+            <div id="contenido-modal-editar">
+                <!-- Formulario se carga aquí vía HTMX -->
+            </div>
+        </article>
+    </dialog>
 </article>
 
 {{define "tabla_conceptos_tenant"}}
@@ -99,7 +131,7 @@
                 <td><small>Cód: {{.ConceptoCodigo}}</small></td>
                 <td>
                     <button class="outline secondary" style="padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
-                        hx-get="/tenant/conceptos-locales/editar-ui?id={{.ID}}" hx-target="#contenedor-formulario"
+                        hx-get="/tenant/conceptos-locales/editar-ui?id={{.ID}}" hx-target="#contenido-modal-editar"
                         hx-swap="innerHTML">
                         Editar
                     </button>
@@ -153,196 +185,178 @@
 {{end}}
 
 {{define "formulario_crear"}}
-<details close>
-    <summary role="button" class="secondary outline">
-        <svg class="icono-menu">
-            <use href="#icono-nuevo-1"></use>
-        </svg>
-        Agregar Concepto a la Municipalidad
-    </summary>
-    <div style="padding-top: 1rem;">
+<div id="alerta-concepto"></div>
 
-        <div id="alerta-concepto"></div>
+<form hx-post="/tenant/conceptos-locales/crear" hx-target="#lista-conceptos-tenant" hx-swap="innerHTML"
+    hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-crear-concepto').close(); this.reset(); }">
 
-        <form hx-post="/tenant/conceptos-locales/crear" hx-target="#lista-conceptos-tenant" hx-swap="innerHTML">
+    <label>Concepto Base (SUNAT / PLAME)
+        <select name="concepto_id" required>
+            <option value="">-- Seleccione Concepto Maestro --</option>
+            {{range .Maestros}}
+            <option value="{{.ID}}">[{{.Tipo}}] {{.Codigo}} - {{.Descripcion}}</option>
+            {{end}}
+        </select>
+    </label>
 
-            <label>Concepto Base (SUNAT / PLAME)
-                <select name="concepto_id" required>
-                    <option value="">-- Seleccione Concepto Maestro --</option>
-                    {{range .Maestros}}
-                    <option value="{{.ID}}">[{{.Tipo}}] {{.Codigo}} - {{.Descripcion}}</option>
-                    {{end}}
-                </select>
-            </label>
-
-            <fieldset>
-                <legend><strong>Asignar a Regímenes Laborales:</strong></legend>
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                    {{range .Regimenes}}
-                    <label>
-                        <input type="checkbox" name="regimenes_ids" value="{{.ID}}">
-                        {{.Descripcion}}
-                    </label>
-                    {{end}}
-                </div>
-            </fieldset>
-
-            <label>Nombre Personalizado (Máscara para la Boleta)
-                <input type="text" name="nombre_personalizado" placeholder="Ej. Remuneración CAS, Bono Frontera..."
-                    required>
-            </label>
-
-            <div class="grid">
-                <label>Frecuencia de Pago (Meses)
-                    <input type="text" name="frecuencia_meses" value="1,2,3,4,5,6,7,8,9,10,11,12" required>
-                    <small>Ej. Todos = 1,2..12 | Aguinaldo = 7,12 | Escolaridad = 1</small>
-                </label>
-                <label>Clasificador Presupuestal (SIAF)
-                    <select name="clasificador_id">
-                        <option value="">-- Sin Clasificador --</option>
-                        {{range .Clasificadores}}
-                        <option value="{{.ID}}">{{.CodigoLimpio}} - {{.Descripcion}}</option>
-                        {{end}}
-                    </select>
-                </label>
-            </div>
-
+    <fieldset>
+        <legend><strong>Asignar a Regímenes Laborales:</strong></legend>
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+            {{range .Regimenes}}
             <label>
-                <input type="checkbox" name="activo" role="switch" checked> Concepto Activo
+                <input type="checkbox" name="regimenes_ids" value="{{.ID}}">
+                {{.Descripcion}}
             </label>
+            {{end}}
+        </div>
+    </fieldset>
 
-            <label>
-                <input type="checkbox" name="es_extraordinario" role="switch"> Concepto Extraordinario
-            </label>
+    <label>Nombre Personalizado (Máscara para la Boleta)
+        <input type="text" name="nombre_personalizado" placeholder="Ej. Remuneración CAS, Bono Frontera..."
+            required>
+    </label>
 
-            <div class="grid">
-                <label>
-                    <input type="checkbox" name="es_pensionable" role="switch"> ¿Es Pensionable?
-                </label>
-                <label>
-                    <input type="checkbox" name="es_remunerativa" role="switch"> ¿Es Remunerativa?
-                </label>
-            </div>
-
-            <div class="grid">
-                <label>
-                    <input type="checkbox" name="es_base_cts" role="switch"> ¿Base CTS?
-                </label>
-                <label>
-                    <input type="checkbox" name="es_base_beneficios_sociales" role="switch"> ¿Base Beneficios Sociales?
-                </label>
-            </div>
-
-            <button type="submit">
-                <svg class="icono-menu">
-                    <use href="#icono-guardar"></use>
-                </svg>
-                Guardar Configuración
-            </button>
-        </form>
+    <div class="grid">
+        <label>Frecuencia de Pago (Meses)
+            <input type="text" name="frecuencia_meses" value="1,2,3,4,5,6,7,8,9,10,11,12" required>
+            <small>Ej. Todos = 1,2..12 | Aguinaldo = 7,12 | Escolaridad = 1</small>
+        </label>
+        <label>Clasificador Presupuestal (SIAF)
+            <select name="clasificador_id">
+                <option value="">-- Sin Clasificador --</option>
+                {{range .Clasificadores}}
+                <option value="{{.ID}}">{{.CodigoLimpio}} - {{.Descripcion}}</option>
+                {{end}}
+            </select>
+        </label>
     </div>
-</details>
+
+    <label>
+        <input type="checkbox" name="activo" role="switch" checked> Concepto Activo
+    </label>
+
+    <label>
+        <input type="checkbox" name="es_extraordinario" role="switch"> Concepto Extraordinario
+    </label>
+
+    <div class="grid">
+        <label>
+            <input type="checkbox" name="es_pensionable" role="switch"> ¿Es Pensionable?
+        </label>
+        <label>
+            <input type="checkbox" name="es_remunerativa" role="switch"> ¿Es Remunerativa?
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>
+            <input type="checkbox" name="es_base_cts" role="switch"> ¿Base CTS?
+        </label>
+        <label>
+            <input type="checkbox" name="es_base_beneficios_sociales" role="switch"> ¿Base Beneficios Sociales?
+        </label>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
+        <button type="button" class="secondary outline" onclick="document.getElementById('modal-crear-concepto').close()" style="margin-bottom: 0; width: auto;">
+            Cancelar
+        </button>
+        <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">
+            <svg class="icono-menu">
+                <use href="#icono-guardar"></use>
+            </svg> Guardar Configuración
+        </button>
+    </div>
+</form>
 {{end}}
 
 {{define "formulario_editar"}}
-<details open>
-    <summary role="button" class="primary outline" style="margin-bottom: 0;">
-        <svg class="icono-menu">
-            <use href="#icono-lapiz-cuadrado"></use>
-        </svg>
-        Editando Concepto: {{.Concepto.NombrePersonalizado}}
-    </summary>
-    <div style="padding-top: 1rem;">
+<form hx-put="/tenant/conceptos-locales/actualizar" hx-target="#contenedor-formulario" hx-swap="innerHTML"
+    hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-editar-concepto').close(); }">
+    <input type="hidden" name="id" value="{{.Concepto.ID}}">
 
-        <form hx-put="/tenant/conceptos-locales/actualizar" hx-target="#contenedor-formulario" hx-swap="innerHTML">
-            <input type="hidden" name="id" value="{{.Concepto.ID}}">
+    <label>Concepto Base (SUNAT / PLAME)
+        <select name="concepto_id" required>
+            {{range .Maestros}}
+            <option value="{{.ID}}" {{if eq .ID $.Concepto.ConceptoID}}selected{{end}}>
+                [{{.Tipo}}] {{.CodigoLimpio}} - {{.Descripcion}}
+            </option>
+            {{end}}
+        </select>
+    </label>
 
-            <label>Concepto Base (SUNAT / PLAME)
-                <select name="concepto_id" required>
-                    {{range .Maestros}}
-                    <option value="{{.ID}}" {{if eq .ID $.Concepto.ConceptoID}}selected{{end}}>
-                        [{{.Tipo}}] {{.CodigoLimpio}} - {{.Descripcion}}
-                    </option>
-                    {{end}}
-                </select>
-            </label>
-
-            <fieldset>
-                <legend><strong>Regímenes Laborales donde aplica:</strong></legend>
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                    {{range .Regimenes}}
-                    <label>
-                        <input type="checkbox" name="regimenes_ids" value="{{.ID}}" {{if index $.RegimenesMarcados .ID}}checked{{end}}>
-                        {{.Descripcion}}
-                    </label>
-                    {{end}}
-                </div>
-            </fieldset>
-
-            <label>Nombre Local en Boleta
-                <input type="text" name="nombre_personalizado" value="{{.Concepto.NombrePersonalizado}}" required>
-            </label>
-
-            <div class="grid">
-
-                <label>Frecuencia (Meses ej: 1,2,3...12)
-                    <input type="text" name="frecuencia_meses" value="{{.Concepto.FrecuenciaMeses}}" required>
-                </label>
-
-                <label>Clasificador SIAF (Opcional)
-                    <select name="clasificador_id">
-                        <option value="">-- Sin Clasificador SIAF --</option>
-                        {{range .Clasificadores}}
-                        <option value="{{.ID}}" {{if eq .ID $.ClasificadorIDSeleccionado}}selected{{end}}>
-                            {{.CodigoLimpio}} - {{.Descripcion}}
-                        </option>
-                        {{end}}
-                    </select>
-                </label>
-            </div>
-
+    <fieldset>
+        <legend><strong>Regímenes Laborales donde aplica:</strong></legend>
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+            {{range .Regimenes}}
             <label>
-                <input type="checkbox" role="switch" name="activo" {{if .Concepto.Activo}}checked{{end}}> Concepto Activo
+                <input type="checkbox" name="regimenes_ids" value="{{.ID}}" {{if index $.RegimenesMarcados .ID}}checked{{end}}>
+                {{.Descripcion}}
             </label>
-            <label>
-                <input type="checkbox" role="switch" name="es_extraordinario" {{if
-                    .Concepto.EsExtraordinario}}checked{{end}}>
-                Concepto Extraordinario
-            </label>
+            {{end}}
+        </div>
+    </fieldset>
 
-            <div class="grid">
-                <label>
-                    <input type="checkbox" role="switch" name="es_pensionable" {{if .Concepto.EsPensionable}}checked{{end}}> Es Pensionable
-                </label>
-                <label>
-                    <input type="checkbox" role="switch" name="es_remunerativa" {{if .Concepto.EsRemunerativa}}checked{{end}}> Es Remunerativa
-                </label>
-            </div>
+    <label>Nombre Local en Boleta
+        <input type="text" name="nombre_personalizado" value="{{.Concepto.NombrePersonalizado}}" required>
+    </label>
 
-            <div class="grid">
-                <label>
-                    <input type="checkbox" role="switch" name="es_base_cts" {{if .Concepto.EsBaseCts}}checked{{end}}> Base CTS
-                </label>
-                <label>
-                    <input type="checkbox" role="switch" name="es_base_beneficios_sociales" {{if .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> Base Beneficios Sociales
-                </label>
-            </div>
+    <div class="grid">
 
-            <div class="grid">
-                <button type="submit" class="primary" style="margin-bottom: 0;">
-                    <svg class="icono-menu">
-                        <use href="#icono-guardar"></use>
-                    </svg> Guardar Cambios
-                </button>
-                <button type="button" class="secondary outline" style="margin-bottom: 0;"
-                    hx-get="/tenant/conceptos-locales/formulario-crear" hx-target="#contenedor-formulario">
-                    Cancelar
-                </button>
-            </div>
+        <label>Frecuencia (Meses ej: 1,2,3...12)
+            <input type="text" name="frecuencia_meses" value="{{.Concepto.FrecuenciaMeses}}" required>
+        </label>
 
-        </form>
+        <label>Clasificador SIAF (Opcional)
+            <select name="clasificador_id">
+                <option value="">-- Sin Clasificador SIAF --</option>
+                {{range .Clasificadores}}
+                <option value="{{.ID}}" {{if eq .ID $.ClasificadorIDSeleccionado}}selected{{end}}>
+                    {{.CodigoLimpio}} - {{.Descripcion}}
+                </option>
+                {{end}}
+            </select>
+        </label>
     </div>
-</details>
+
+    <label>
+        <input type="checkbox" role="switch" name="activo" {{if .Concepto.Activo}}checked{{end}}> Concepto Activo
+    </label>
+    <label>
+        <input type="checkbox" role="switch" name="es_extraordinario" {{if
+            .Concepto.EsExtraordinario}}checked{{end}}>
+        Concepto Extraordinario
+    </label>
+
+    <div class="grid">
+        <label>
+            <input type="checkbox" role="switch" name="es_pensionable" {{if .Concepto.EsPensionable}}checked{{end}}> Es Pensionable
+        </label>
+        <label>
+            <input type="checkbox" role="switch" name="es_remunerativa" {{if .Concepto.EsRemunerativa}}checked{{end}}> Es Remunerativa
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>
+            <input type="checkbox" role="switch" name="es_base_cts" {{if .Concepto.EsBaseCts}}checked{{end}}> Base CTS
+        </label>
+        <label>
+            <input type="checkbox" role="switch" name="es_base_beneficios_sociales" {{if .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> Base Beneficios Sociales
+        </label>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
+        <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-concepto').close()" style="margin-bottom: 0; width: auto;">
+            Cancelar
+        </button>
+        <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">
+            <svg class="icono-menu">
+                <use href="#icono-guardar"></use>
+            </svg> Guardar Cambios
+        </button>
+    </div>
+</form>
 {{end}}

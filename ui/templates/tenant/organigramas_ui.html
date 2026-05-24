@@ -9,15 +9,23 @@
             <select name="organigrama_id" 
                     hx-get="/tenant/organigrama/arbol" 
                     hx-target="#contenedor-arbol-organico"
-                    style="margin-bottom: 0; max-width: 250px;">
-                {{range .Organigramas}}
-                    <option value="{{.ID}}" {{if .Activo}}selected{{end}}>
-                        {{.DocumentoAprobacion}} {{if .Activo}}(Activo){{end}}
-                    </option>
+                    style="margin-bottom: 0; max-width: 250px;"
+                    {{if not .Organigramas}}disabled{{end}}>
+                {{if not .Organigramas}}
+                    <option value="">Sin versiones creadas</option>
+                {{else}}
+                    {{range .Organigramas}}
+                        <option value="{{.ID}}" {{if .Activo}}selected{{end}}>
+                            {{.DocumentoAprobacion}} {{if .Activo}}(Activo){{end}}
+                        </option>
+                    {{end}}
                 {{end}}
             </select>
             <button class="outline" onclick="abrirModalClonacion()">
                 ✨ Nueva Versión (Clonar)
+            </button>
+            <button class="outline" onclick="abrirModalImportacion()" style="border-color: var(--pico-primary); color: var(--pico-primary);" {{if not .Organigramas}}disabled{{end}}>
+                📥 Importar Excel
             </button>
         </div>
     </header>
@@ -61,6 +69,45 @@
     </article>
 </dialog>
 
+<!-- Modal para Importar de Excel -->
+<dialog id="modal-importar-organigrama">
+    <article>
+        <header>
+            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-organigrama').close()"></a>
+            <h3>📥 Importar Estructura Orgánica</h3>
+        </header>
+        <div style="background-color: #fff3cd; color: #856404; padding: 1rem; border: 1px solid #ffeeba; border-radius: 5px; margin-bottom: 1rem;">
+            <strong>⚠️ ADVERTENCIA CRÍTICA:</strong>
+            <p style="margin-bottom: 0.5rem; font-size: 0.9em;">
+                Esta acción borrará todas las unidades orgánicas del organigrama seleccionado y cargará la nueva estructura desde el archivo.
+            </p>
+            <p style="margin-bottom: 0; font-size: 0.9em;">
+                <strong>Todos los puestos vinculados a la estructura actual serán DESVINCULADOS automáticamente</strong> y deberán ser reasignados manualmente a las nuevas unidades. Asegúrese de tener identificados los puestos afectados antes de proceder, mucho mejor con su código AIRHSP.
+            </p>
+        </div>
+        
+        <form hx-post="/tenant/organigrama/importar" hx-target="#resultado-importacion-organigrama" enctype="multipart/form-data" hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-importar-organigrama').close(); document.getElementById('archivo_excel').value = ''; document.getElementById('resultado-importacion-organigrama').innerHTML = ''; }">
+            <input type="hidden" name="organigrama_id" id="importar-organigrama-id">
+            
+            <p>
+                <a href="/tenant/organigrama/plantilla" target="_blank" style="text-decoration: underline;">
+                    📄 Descargar Plantilla Excel de Ejemplo
+                </a>
+            </p>
+
+            <label for="archivo_excel">Seleccione el archivo Excel (.xlsx):</label>
+            <input type="file" id="archivo_excel" name="archivo_excel" accept=".xlsx" required>
+
+            <div id="resultado-importacion-organigrama" style="margin-top: 1rem;"></div>
+
+            <footer>
+                <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-organigrama').close()">Cancelar</button>
+                <button type="submit" style="background-color: #d9534f; border-color: #d43f3a; color: white;">Confirmar e Importar</button>
+            </footer>
+        </form>
+    </article>
+</dialog>
+
 <script>
     function abrirModalClonacion() {
         const select = document.querySelector('select[name="organigrama_id"]');
@@ -68,6 +115,17 @@
             document.getElementById('clonar-origen-id').value = select.value;
         }
         document.getElementById('modal-clonar-organigrama').showModal();
+    }
+
+    function abrirModalImportacion() {
+        const select = document.querySelector('select[name="organigrama_id"]');
+        if (select) {
+            document.getElementById('importar-organigrama-id').value = select.value;
+        } else {
+            alert("Seleccione un organigrama primero.");
+            return;
+        }
+        document.getElementById('modal-importar-organigrama').showModal();
     }
 </script>
 
