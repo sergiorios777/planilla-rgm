@@ -1,4 +1,4 @@
-Tabla: trabajadores
+1. Tabla: trabajadores
 
 planilla_rgm=# \d trabajadores
                                            Table "public.trabajadores"
@@ -31,7 +31,8 @@ Referenced by:
     TABLE "contratos" CONSTRAINT "contratos_trabajador_id_fkey" FOREIGN KEY (trabajador_id) REFERENCES trabajadores(id) ON DELETE CASCADE
 
 
-Tabla: afps
+2. Tabla: afps
+
 planilla_rgm=# \d afps
                                      Table "public.afps"
    Column   |         Type          | Collation | Nullable |             Default
@@ -47,7 +48,7 @@ Referenced by:
     TABLE "afp_tasas_mensuales" CONSTRAINT "afp_tasas_mensuales_afp_id_fkey" FOREIGN KEY (afp_id) REFERENCES afps(id)
     TABLE "trabajadores" CONSTRAINT "trabajadores_afp_id_fkey" FOREIGN KEY (afp_id) REFERENCES afps(id)
 
-Registros de la tabla afps:
+2.1 Registros de la tabla afps:
 
 planilla_rgm=# SELECT * FROM afps;
  id | codigo_sbs |  nombre   | activo
@@ -57,3 +58,14 @@ planilla_rgm=# SELECT * FROM afps;
   3 | PRM        | PRIMA     | t
   4 | PFR        | PROFUTURO | t
 (4 rows)
+
+3. Principales archivos:
+   - internal\handlers\trabajador_handler.go
+   - internal\repository\trabajador_repository.go
+   - ui\templates\tenant\trabajadores_ui.html
+
+4. Ideas para el importador:
+   - Agregar un ejemplo de la estructura del excel en la pantalla del importador.
+   - Entregar un modelo del excel disponible para descargar, que incluya una hoja adicional con las instrucciones para el correcto llenado.
+   - Disponer de una validación de campos robusta.
+   - Si los trabajadores son muchos (1000 - 5000) evalúa la posiblidad de de utilizar un trabajo en segundo plano como en la función procesar de internal\services\planilla_service.go

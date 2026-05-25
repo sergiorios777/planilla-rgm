@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"planilla-rgm/internal/models"
+	"strings"
 )
 
 type TrabajadorRepository struct {
@@ -32,6 +33,32 @@ func (r *TrabajadorRepository) ObtenerAFPsActivas() (map[int]string, error) {
 	}
 	return afps, nil
 }
+
+// ObtenerMapaAFPsParaImportar carga todas las AFPs activas y mapea sus nombres y códigos SBS (en mayúsculas) a su ID de BD
+func (r *TrabajadorRepository) ObtenerMapaAFPsParaImportar() (map[string]int, error) {
+	query := `SELECT id, codigo_sbs, nombre FROM afps WHERE activo = true`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	mapa := make(map[string]int)
+	for rows.Next() {
+		var id int
+		var codigoSBS sql.NullString
+		var nombre string
+		if err := rows.Scan(&id, &codigoSBS, &nombre); err != nil {
+			return nil, err
+		}
+		mapa[strings.ToUpper(strings.TrimSpace(nombre))] = id
+		if codigoSBS.Valid && codigoSBS.String != "" {
+			mapa[strings.ToUpper(strings.TrimSpace(codigoSBS.String))] = id
+		}
+	}
+	return mapa, nil
+}
+
 
 // Obtener todos los trabajadores de un tenant (sin paginación)
 func (r *TrabajadorRepository) ObtenerTodos(tenantID int) ([]models.Trabajador, error) {
@@ -163,3 +190,47 @@ func (r *TrabajadorRepository) Actualizar(t *models.Trabajador) error {
 	_, err := r.db.Exec(query, t.TipoDocumento, t.NumeroDocumento, t.Nombres, t.ApellidoPaterno, t.ApellidoMaterno, t.FechaNacimiento, t.Sexo, t.Activo, t.RegimenPensionario, t.AfpID, t.AfpTipoComision, t.Cuspp, t.ID, t.TenantID)
 	return err
 }
+
+// ExisteDocumento verifica si ya existe un trabajador con el mismo tipo y número de documento para el tenant
+func (r *TrabajadorRepository) ExisteDocumento(tenantID int, tipoDoc string, numDoc string) (bool, error) {
+	var existe bool
+	query := `SELECT EXISTS(SELECT 1 FROM trabajadores WHERE tenant_id = $1 AND tipo_documento = $2 AND numero_documento = $3)`
+	err := r.db.QueryRow(query, tenantID, tipoDoc, numDoc).Scan(&existe)
+	return existe, err
+}
+
+// ImportarTrabajadores inserta de manera atómica (transaccional) una lista de trabajadores
+func (r *TrabajadorRepository) ImportarTrabajadores(tenantID int, trabajadores []models.Trabajador) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query := `
+		INSERT INTO trabajadores (
+			tenant_id, tipo_documento, numero_documento, nombres, 
+			apellido_paterno, apellido_materno, fecha_nacimiento, sexo, 
+			activo, regimen_pensionario, afp_id, afp_tipo_comision, cuspp
+		) VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::DATE, $8, $9, $10, NULLIF($11, 0), $12, $13)
+	`
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, t := range trabajadores {
+		_, err = stmt.Exec(
+			tenantID, t.TipoDocumento, t.NumeroDocumento, t.Nombres,
+			t.ApellidoPaterno, t.ApellidoMaterno, t.FechaNacimiento, t.Sexo,
+			t.Activo, t.RegimenPensionario, t.AfpID, t.AfpTipoComision, t.Cuspp,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+

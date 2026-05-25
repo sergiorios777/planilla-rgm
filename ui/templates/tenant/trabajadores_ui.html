@@ -1,15 +1,23 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center;">
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
             <svg class="icono-menu">
                 <use href="#icono-usuarios"></use>
             </svg>
             Legajo de Trabajadores
         </h3>
-        <button class="primary" style="width: auto; margin-bottom: 0;"
-            onclick="document.getElementById('modal-nuevo-trabajador').showModal()">
-            ➕ Registrar Nuevo Trabajador
-        </button>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="primary" style="width: auto; margin-bottom: 0;"
+                onclick="document.getElementById('modal-nuevo-trabajador').showModal()">
+                ➕ Registrar Nuevo Trabajador
+            </button>
+            <button class="contrast outline" style="width: auto; margin-bottom: 0;"
+                onclick="document.getElementById('modal-importar-trabajador').showModal()">
+                <svg class="icono-menu">
+                    <use href="#icono-importar"></use>
+                </svg> Importación Masiva (Excel)
+            </button>
+        </div>
     </header>
 
     <div id="contenedor-lista">
@@ -33,6 +41,19 @@
                 <h4 style="margin-bottom: 0;">➕ Registrar Nuevo Trabajador</h4>
             </header>
             {{template "formulario_crear" .}}
+        </article>
+    </dialog>
+
+    <!-- Modal de Importación de Trabajador -->
+    <dialog id="modal-importar-trabajador">
+        <article style="max-width: 750px; width: 95%;">
+            <header>
+                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-trabajador').close()"></a>
+                <h4 style="margin-bottom: 0;">📤 Importación Masiva (Excel)</h4>
+            </header>
+            <div id="contenedor-formulario-importar-trabajadores">
+                {{template "formulario_importar_trabajadores" .}}
+            </div>
         </article>
     </dialog>
 
@@ -280,6 +301,99 @@
             Siguiente ➡️
         </button>
         {{end}}
+    </div>
+</div>
+{{end}}
+
+{{define "formulario_importar_trabajadores"}}
+<div>
+    <p><small>Sube un archivo <b>.xlsx</b> con las 12 columnas en el orden exacto indicado a continuación. La primera fila (cabecera) se omitirá durante el procesamiento.</small></p>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <strong>Estructura del Archivo Excel:</strong>
+        <a href="/tenant/trabajadores/plantilla" class="button outline primary" style="padding: 4px 12px; font-size: 0.85rem; margin-bottom: 0;">
+            <svg class="icono-menu" style="margin-right: 4px;">
+                <use href="#icono-importar"></use>
+            </svg> Descargar Plantilla (.xlsx)
+        </a>
+    </div>
+
+    <div style="overflow-x: auto; margin-bottom: 1rem; border: 1px solid #e0e0e0; border-radius: 4px;">
+        <table class="striped" style="width: 100%; font-size: 0.7rem; margin-bottom: 0; white-space: nowrap;">
+            <thead>
+                <tr>
+                    <th>A: TIPO_DOCUMENTO</th>
+                    <th>B: NUMERO_DOCUMENTO</th>
+                    <th>C: NOMBRES</th>
+                    <th>D: APELLIDO_PATERNO</th>
+                    <th>E: APELLIDO_MATERNO</th>
+                    <th>F: FECHA_NACIMIENTO</th>
+                    <th>G: SEXO</th>
+                    <th>H: REGIMEN_PENSIONARIO</th>
+                    <th>I: AFP</th>
+                    <th>J: TIPO_COMISION</th>
+                    <th>K: CUSPP</th>
+                    <th>L: ACTIVO</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>DNI</td>
+                    <td>45678912</td>
+                    <td>Juan Carlos</td>
+                    <td>Perez</td>
+                    <td>Gomez</td>
+                    <td>1990-05-15</td>
+                    <td>M</td>
+                    <td>ONP</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>SI</td>
+                </tr>
+                <tr>
+                    <td>DNI</td>
+                    <td>78912345</td>
+                    <td>Maria Elena</td>
+                    <td>Flores</td>
+                    <td>Ramos</td>
+                    <td>1988-11-23</td>
+                    <td>F</td>
+                    <td>AFP</td>
+                    <td>INTEGRA</td>
+                    <td>MIXTA</td>
+                    <td>123456789012</td>
+                    <td>SI</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <form hx-post="/tenant/trabajadores/importar" hx-encoding="multipart/form-data"
+        hx-target="#resultado-importacion-trabajador" hx-indicator="#cargando-excel-trabajadores"
+        hx-on::after-request="if(event.detail.successful) { htmx.trigger('#input-buscar-trabajador', 'search'); }">
+
+        <div class="grid" style="margin-top: 1rem;">
+            <label>Archivo Excel (.xlsx)
+                <input type="file" name="archivo_excel" accept=".xlsx" required>
+            </label>
+
+            <div style="display: flex; align-items: end; padding-bottom: var(--spacing);">
+                <button type="submit" class="contrast" style="margin-bottom: 0;">Procesar Archivo</button>
+            </div>
+        </div>
+
+        <span id="cargando-excel-trabajadores" class="htmx-indicator">
+            <svg class="icono-menu">
+                <use href="#icono-reloj-arena"></use>
+            </svg> Procesando filas y validando legajo...
+        </span>
+    </form>
+
+    <div id="resultado-importacion-trabajador" style="margin-top: 1rem;"></div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
+        <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-trabajador').close()" style="margin-bottom: 0; width: auto;">Cerrar</button>
     </div>
 </div>
 {{end}}

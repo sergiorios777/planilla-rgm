@@ -171,6 +171,8 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/trabajadores/crear", middleware.RequireAuth(trabajadorHandler.Crear))
 	mux.HandleFunc("/tenant/trabajadores/editar_ui", middleware.RequireAuth(trabajadorHandler.EditarUI))
 	mux.HandleFunc("/tenant/trabajadores/actualizar", middleware.RequireAuth(trabajadorHandler.Actualizar))
+	mux.HandleFunc("/tenant/trabajadores/plantilla", middleware.RequireAuth(trabajadorHandler.DescargarPlantilla))
+	mux.HandleFunc("/tenant/trabajadores/importar", middleware.RequireAuth(trabajadorHandler.ImportarExcel))
 
 	// Rutas de Metas
 	metaRepo := repository.NewMetaRepository(db)
