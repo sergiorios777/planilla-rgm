@@ -186,7 +186,7 @@ func (h *ContratoHandler) FormularioDinamicoUI(w http.ResponseWriter, r *http.Re
 	tID, _ := strconv.Atoi(trabajadorIDStr)
 	fechaInicio := r.URL.Query().Get("fecha_inicio")
 	fechaFin := r.URL.Query().Get("fecha_fin")
-	
+
 	_, hasPuesto := r.URL.Query()["puesto_id"]
 	_, hasActivo := r.URL.Query()["activo"]
 	activo := hasActivo || !hasPuesto
