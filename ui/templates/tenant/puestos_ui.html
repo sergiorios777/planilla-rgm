@@ -1,15 +1,23 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-        <h3 style="margin-bottom: 0;">
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
             <svg class="icono-menu">
                 <use href="#icono-flujo-trabajo"></use>
             </svg>
             Cuadro de Puestos (Plazas)
         </h3>
-        <button class="primary" style="width: auto; margin-bottom: 0;"
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="primary" style="width: auto; margin-bottom: 0;"
                 onclick="document.getElementById('modal-nuevo-puesto').showModal()">
-            ➕ Registrar Nueva Plaza
-        </button>
+                ➕ Registrar Nueva Plaza
+            </button>
+            <button class="contrast outline" style="width: auto; margin-bottom: 0;"
+                onclick="document.getElementById('modal-importar-puesto').showModal()">
+                <svg class="icono-menu">
+                    <use href="#icono-importar"></use>
+                </svg> Importación Masiva (Excel)
+            </button>
+        </div>
     </header>
     <div>
         <form id="form-filtros-puestos" class="grid">
@@ -347,6 +355,19 @@
     </article>
 </dialog>
 
+<!-- Modal de Importación de Puesto -->
+<dialog id="modal-importar-puesto">
+    <article style="max-width: 750px; width: 95%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-puesto').close()"></a>
+            <h4 style="margin-bottom: 0;">📤 Importación Masiva (Excel)</h4>
+        </header>
+        <div id="contenedor-formulario-importar-puestos">
+            {{template "formulario_importar_puestos" .}}
+        </div>
+    </article>
+</dialog>
+
 <!-- Modal de Asignación de Conceptos -->
 <dialog id="modal-asignacion-puesto" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-asignacion') this.showModal()">
     <article style="max-width: 900px; width: 95%;">
@@ -417,3 +438,87 @@
         document.getElementById('modal-asignacion-puesto').close();
     });
 </script>
+
+{{define "formulario_importar_puestos"}}
+<div>
+    <p><small>Sube un archivo <b>.xlsx</b> con las 9 columnas en el orden exacto indicado a continuación. La primera fila (cabecera) se omitirá durante el procesamiento.</small></p>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <strong>Estructura del Archivo Excel:</strong>
+        <a href="/tenant/puestos/plantilla" class="button outline primary" style="padding: 4px 12px; font-size: 0.85rem; margin-bottom: 0;">
+            <svg class="icono-menu" style="margin-right: 4px;">
+                <use href="#icono-importar"></use>
+            </svg> Descargar Plantilla (.xlsx)
+        </a>
+    </div>
+
+    <div style="overflow-x: auto; margin-bottom: 1rem; border: 1px solid #e0e0e0; border-radius: 4px;">
+        <table class="striped" style="width: 100%; font-size: 0.65rem; margin-bottom: 0; white-space: nowrap;">
+            <thead>
+                <tr>
+                    <th>A: NOMBRE</th>
+                    <th>B: SUELDO_PRESUPUESTADO</th>
+                    <th>C: REGIMEN_LABORAL</th>
+                    <th>D: META_PRESUPUESTAL</th>
+                    <th>E: CODIGO_FUENTE_RUBRO</th>
+                    <th>F: CODIGO_MEF_UNIDAD</th>
+                    <th>G: CODIGO_AIRHSP</th>
+                    <th>H: ES_DIETARIO</th>
+                    <th>I: ACTIVO</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Especialista en Logística II</td>
+                    <td>3500.00</td>
+                    <td>276</td>
+                    <td>0015</td>
+                    <td>1.00</td>
+                    <td>300003</td>
+                    <td>000456</td>
+                    <td>NO</td>
+                    <td>SI</td>
+                </tr>
+                <tr>
+                    <td>Regidor</td>
+                    <td>1500.00</td>
+                    <td>30057</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>SI</td>
+                    <td>SI</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <form hx-post="/tenant/puestos/importar" hx-encoding="multipart/form-data"
+        hx-target="#resultado-importacion-puesto" hx-indicator="#cargando-excel-puestos"
+        hx-on::after-request="if(event.detail.successful) { htmx.trigger('body', 'refrescarPuestos'); }">
+
+        <div class="grid" style="margin-top: 1rem;">
+            <label>Archivo Excel (.xlsx)
+                <input type="file" name="archivo_excel" accept=".xlsx" required>
+            </label>
+
+            <div style="display: flex; align-items: end; padding-bottom: var(--spacing);">
+                <button type="submit" class="contrast" style="margin-bottom: 0;">Procesar Archivo</button>
+            </div>
+        </div>
+
+        <span id="cargando-excel-puestos" class="htmx-indicator">
+            <svg class="icono-menu">
+                <use href="#icono-reloj-arena"></use>
+            </svg> Procesando filas y validando plazas...
+        </span>
+    </form>
+
+    <div id="resultado-importacion-puesto" style="margin-top: 1rem;"></div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
+        <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-puesto').close()" style="margin-bottom: 0; width: auto;">Cerrar</button>
+    </div>
+</div>
+{{end}}

@@ -289,7 +289,7 @@ func (r *OrganigramaRepository) ClonarEstructuraYTrasladarPuestos(tenantID, orig
 
 	mapaIDs := make(map[int]int) // ViejoID -> NuevoID
 	pendientes := unidades
-	
+
 	// 2. Loop de resolución de jerarquías (Postponing recursivo)
 	for len(pendientes) > 0 {
 		progreso := false
@@ -371,7 +371,7 @@ func (r *OrganigramaRepository) ClonarEstructuraYTrasladarPuestos(tenantID, orig
 // ObtenerUnidadesDelOrganigramaActivo obtiene las unidades orgánicas asociadas al organigrama activo
 func (r *OrganigramaRepository) ObtenerUnidadesDelOrganigramaActivo(tenantID int) ([]models.UnidadOrganica, error) {
 	query := `
-		SELECT id, nombre, tipo
+		SELECT id, nombre, tipo, codigo_mef
 		FROM unidades_organicas
 		WHERE tenant_id = $1
 		  AND organigrama_id = (SELECT id FROM organigramas WHERE tenant_id = $1 AND activo = true LIMIT 1)
@@ -386,7 +386,7 @@ func (r *OrganigramaRepository) ObtenerUnidadesDelOrganigramaActivo(tenantID int
 	var lista []models.UnidadOrganica
 	for rows.Next() {
 		var u models.UnidadOrganica
-		if err := rows.Scan(&u.ID, &u.Nombre, &u.Tipo); err != nil {
+		if err := rows.Scan(&u.ID, &u.Nombre, &u.Tipo, &u.CodigoMef); err != nil {
 			return nil, err
 		}
 		lista = append(lista, u)
@@ -460,4 +460,3 @@ func (r *OrganigramaRepository) ImportarUnidadesTransaccional(tenantID, organigr
 
 	return tx.Commit()
 }
-

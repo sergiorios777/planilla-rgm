@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -8,6 +9,9 @@ import (
 	"planilla-rgm/internal/repository"
 	"planilla-rgm/internal/services"
 	"strconv"
+	"strings"
+
+	"github.com/xuri/excelize/v2"
 )
 
 type PuestoHandler struct {
@@ -357,4 +361,391 @@ func (h *PuestoHandler) GuardarAsignacion(w http.ResponseWriter, r *http.Request
 	// Si todo sale bien, enviamos la señal de éxito para cerrar el modal
 	w.Header().Set("HX-Trigger", "cerrarModalAsignacion")
 	w.Write([]byte("✅ Estructura de pago actualizada correctamente."))
+}
+
+// DescargarPlantilla genera y envía un archivo Excel base para la importación de puestos
+func (h *PuestoHandler) DescargarPlantilla(w http.ResponseWriter, r *http.Request) {
+	f := excelize.NewFile()
+	defer f.Close()
+
+	sheet := "Puestos"
+	f.SetSheetName("Sheet1", sheet)
+
+	// Cabeceras
+	cabeceras := []string{
+		"NOMBRE", "SUELDO_PRESUPUESTADO", "REGIMEN_LABORAL", "META_PRESUPUESTAL",
+		"CODIGO_FUENTE_RUBRO", "CODIGO_MEF_UNIDAD", "CODIGO_AIRHSP", "ES_DIETARIO", "ACTIVO",
+	}
+	for i, cabecera := range cabeceras {
+		col := fmt.Sprintf("%c1", 'A'+i)
+		f.SetCellValue(sheet, col, cabecera)
+	}
+
+	// Datos de ejemplo
+	ejemplos := [][]interface{}{
+		{"Especialista en Logística II", 3500.00, "276", "0015", "1.00", "300003", "000456", "NO", "SI"},
+		{"Especialista en Sistemas I", 4200.00, "1057", "0016", "2.09", "", "", "NO", "SI"},
+		{"Regidor", 1500.00, "30057", "", "", "", "", "SI", "SI"},
+	}
+	for rIdx, fila := range ejemplos {
+		for cIdx, valor := range fila {
+			col := fmt.Sprintf("%c%d", 'A'+cIdx, rIdx+2)
+			f.SetCellValue(sheet, col, valor)
+		}
+	}
+
+	// Hoja de instrucciones
+	instruccionesSheet := "Instrucciones"
+	f.NewSheet(instruccionesSheet)
+	f.SetCellValue(instruccionesSheet, "A1", "INSTRUCCIONES DE LLENADO PARA PUESTOS")
+	f.SetCellValue(instruccionesSheet, "A3", "NOMBRE: Obligatorio. Nombre de la plaza (ej. Especialista en Logística II). Max 150 caracteres.")
+	f.SetCellValue(instruccionesSheet, "A4", "SUELDO_PRESUPUESTADO: Obligatorio. Monto mensual presupuestado (ej. 3500.00).")
+	f.SetCellValue(instruccionesSheet, "A5", "REGIMEN_LABORAL: Obligatorio. Código del régimen laboral. Debe ser uno de: 276, 728, 1057, 30057.")
+	f.SetCellValue(instruccionesSheet, "A6", "META_PRESUPUESTAL: Opcional. Código de la meta presupuestal del año en curso (ej. 0015). Si no existe, se informará como advertencia y se dejará en blanco.")
+	f.SetCellValue(instruccionesSheet, "A7", "CODIGO_FUENTE_RUBRO: Opcional. Código del rubro/fuente del año en curso (ej. 1.00, 2.09, 5.07). Si no existe, se informará como advertencia y se dejará en blanco.")
+	f.SetCellValue(instruccionesSheet, "A8", "CODIGO_MEF_UNIDAD: Opcional. Código MEF de la unidad orgánica correspondiente (ej. 300003). Si no existe, se informará como advertencia y se dejará en blanco.")
+	f.SetCellValue(instruccionesSheet, "A9", "CODIGO_AIRHSP: Opcional. Código del aplicativo informático AIRHSP. Max 50 caracteres.")
+	f.SetCellValue(instruccionesSheet, "A10", "ES_DIETARIO: Opcional. SI o NO. Indica si es dieta para regidores. Por defecto es NO.")
+	f.SetCellValue(instruccionesSheet, "A11", "ACTIVO: Opcional. SI o NO. Indica si la plaza está vigente. Por defecto es SI.")
+
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", "attachment; filename=plantilla_puestos.xlsx")
+
+	if err := f.Write(w); err != nil {
+		log.Printf("[ERROR] Al generar plantilla Excel de puestos: %v", err)
+	}
+}
+
+// ImportarExcel procesa la subida de un archivo Excel, lo valida de manera atómica con un pool de workers y lo importa
+func (h *PuestoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	tenantID := obtenerTenantID(r)
+
+	// 1. Leer el formulario multipart (máximo 10 MB)
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(`<p style="color:red; margin:0;">⚠️ Error al procesar el formulario de subida.</p>`))
+		return
+	}
+
+	file, _, err := r.FormFile("archivo_excel")
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(`<p style="color:red; margin:0;">⚠️ Error al leer el archivo seleccionado.</p>`))
+		return
+	}
+	defer file.Close()
+
+	// 2. Abrir el libro Excel
+	f, err := excelize.OpenReader(file)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(`<p style="color:red; margin:0;">⚠️ El archivo subido no es un formato de Excel válido.</p>`))
+		return
+	}
+	defer f.Close()
+
+	hoja := f.GetSheetName(0)
+	filas, err := f.GetRows(hoja)
+	if err != nil || len(filas) == 0 {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(`<p style="color:red; margin:0;">⚠️ No se pudo leer el contenido de la primera hoja del Excel.</p>`))
+		return
+	}
+
+	// 3. Cargar catálogos en memoria para resolución de claves
+	regList, err := h.Repo.ObtenerRegimenes()
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de regímenes: %v</p>`, err)))
+		return
+	}
+	mapaRegimenes := make(map[string]int)
+	for _, rg := range regList {
+		mapaRegimenes[strings.TrimSpace(rg.Codigo)] = rg.ID
+	}
+
+	metaList, err := h.MetaRepo.ObtenerTodos(tenantID)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de metas: %v</p>`, err)))
+		return
+	}
+	mapaMetas := make(map[string]int)
+	for _, m := range metaList {
+		mapaMetas[strings.TrimSpace(m.Codigo)] = m.ID
+	}
+
+	fuenteList, err := h.FuenteRubroRepo.ObtenerPorAnio(2026, "")
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de fuentes/rubros: %v</p>`, err)))
+		return
+	}
+	mapaFuentes := make(map[string]int)
+	for _, fr := range fuenteList {
+		mapaFuentes[strings.TrimSpace(fr.CodigoFuenteRubro)] = fr.ID
+	}
+
+	unidadList, err := h.OrganigramaRepo.ObtenerUnidadesDelOrganigramaActivo(tenantID)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de unidades orgánicas: %v</p>`, err)))
+		return
+	}
+	mapaUnidades := make(map[string]int)
+	for _, u := range unidadList {
+		if u.CodigoMef != "" {
+			mapaUnidades[strings.TrimSpace(u.CodigoMef)] = u.ID
+		}
+	}
+
+	// Estructuras para la concurrencia
+	type RowJob struct {
+		Index int
+		Row   []string
+	}
+	type RowResult struct {
+		Index    int
+		Puesto   models.Puesto
+		Warnings []string
+		Error    error
+	}
+
+	numFilas := len(filas)
+	jobs := make(chan RowJob, numFilas)
+	results := make(chan RowResult, numFilas)
+
+	// Worker Pool: 4 workers
+	numWorkers := 4
+	if numFilas-1 < numWorkers {
+		numWorkers = numFilas - 1
+	}
+	if numWorkers <= 0 {
+		numWorkers = 1
+	}
+
+	for wIdx := 0; wIdx < numWorkers; wIdx++ {
+		go func() {
+			for job := range jobs {
+				fila := job.Row
+				numFila := job.Index + 1
+
+				// Ignorar fila vacía
+				filaVacia := true
+				for _, celda := range fila {
+					if strings.TrimSpace(celda) != "" {
+						filaVacia = false
+						break
+					}
+				}
+				if filaVacia {
+					results <- RowResult{Index: job.Index, Error: nil}
+					continue
+				}
+
+				// Validar columnas mínimas (al menos Nombre, Sueldo y Régimen)
+				if len(fila) < 3 {
+					results <- RowResult{Index: job.Index, Error: fmt.Errorf("Fila %d: Columnas incompletas (mínimo se requieren 3 columnas: Nombre, Sueldo Presupuestado y Régimen Laboral)", numFila)}
+					continue
+				}
+
+				nombre := strings.TrimSpace(fila[0])
+				sueldoRaw := strings.TrimSpace(fila[1])
+				regimenRaw := strings.TrimSpace(fila[2])
+
+				// Val: Nombre
+				if nombre == "" {
+					results <- RowResult{Index: job.Index, Error: fmt.Errorf("Fila %d: El Nombre del puesto es obligatorio", numFila)}
+					continue
+				}
+				if len(nombre) > 150 {
+					results <- RowResult{Index: job.Index, Error: fmt.Errorf("Fila %d: El nombre del puesto '%s' supera los 150 caracteres", numFila, nombre)}
+					continue
+				}
+
+				// Val: Sueldo
+				sueldo, errSueldo := strconv.ParseFloat(sueldoRaw, 64)
+				if errSueldo != nil || sueldo < 0 {
+					results <- RowResult{Index: job.Index, Error: fmt.Errorf("Fila %d: Sueldo Presupuestado '%s' inválido. Debe ser un número positivo", numFila, sueldoRaw)}
+					continue
+				}
+
+				// Val: Régimen Laboral (Obligatorio)
+				regID, existeReg := mapaRegimenes[regimenRaw]
+				if !existeReg {
+					results <- RowResult{Index: job.Index, Error: fmt.Errorf("Fila %d: El Código de Régimen Laboral '%s' es obligatorio y no existe en el sistema", numFila, regimenRaw)}
+					continue
+				}
+
+				var warnings []string
+
+				// Val: Meta Presupuestal (Opcional)
+				var metaID int
+				if len(fila) >= 4 {
+					metaRaw := strings.TrimSpace(fila[3])
+					if metaRaw != "" {
+						mID, existeMeta := mapaMetas[metaRaw]
+						if existeMeta {
+							metaID = mID
+						} else {
+							warnings = append(warnings, fmt.Sprintf("Fila %d: El código de Meta '%s' no existe para el año en curso. Se importará sin asignar meta.", numFila, metaRaw))
+						}
+					}
+				}
+
+				// Val: Fuente/Rubro (Opcional)
+				var fuenteID int
+				if len(fila) >= 5 {
+					fuenteRaw := strings.TrimSpace(fila[4])
+					if fuenteRaw != "" {
+						fID, existeFuente := mapaFuentes[fuenteRaw]
+						if existeFuente {
+							fuenteID = fID
+						} else {
+							warnings = append(warnings, fmt.Sprintf("Fila %d: El código de Fuente y Rubro '%s' no existe en el sistema. Se importará sin asignar fuente/rubro.", numFila, fuenteRaw))
+						}
+					}
+				}
+
+				// Val: Unidad Orgánica (Opcional)
+				var unidadID *int
+				if len(fila) >= 6 {
+					unidadRaw := strings.TrimSpace(fila[5])
+					if unidadRaw != "" {
+						uID, existeUnidad := mapaUnidades[unidadRaw]
+						if existeUnidad {
+							unidadID = &uID
+						} else {
+							warnings = append(warnings, fmt.Sprintf("Fila %d: El código MEF de Unidad Orgánica '%s' no existe en el organigrama activo. Se importará sin asignar unidad.", numFila, unidadRaw))
+						}
+					}
+				}
+
+				// Val: Código AIRHSP (Opcional)
+				var airhsp *string
+				if len(fila) >= 7 {
+					airRaw := strings.TrimSpace(fila[6])
+					if airRaw != "" {
+						if len(airRaw) > 50 {
+							results <- RowResult{Index: job.Index, Error: fmt.Errorf("Fila %d: El Código AIRHSP '%s' supera los 50 caracteres", numFila, airRaw)}
+							continue
+						}
+						airhsp = &airRaw
+					}
+				}
+
+				// Val: Es Dietario (Opcional)
+				esDietario := false
+				if len(fila) >= 8 {
+					dietRaw := strings.ToUpper(strings.TrimSpace(fila[7]))
+					if dietRaw != "" {
+						esDietario = (dietRaw == "SI" || dietRaw == "TRUE" || dietRaw == "1" || dietRaw == "DIETARIO")
+					}
+				}
+
+				// Val: Activo (Opcional)
+				activo := true
+				if len(fila) >= 9 {
+					activoRaw := strings.ToUpper(strings.TrimSpace(fila[8]))
+					if activoRaw != "" {
+						activo = (activoRaw == "SI" || activoRaw == "TRUE" || activoRaw == "1" || activoRaw == "ACTIVO")
+					}
+				}
+
+				p := models.Puesto{
+					TenantID:            tenantID,
+					MetaID:              metaID,
+					FuenteRubroID:       fuenteID,
+					RegimenID:           regID,
+					Nombre:              nombre,
+					SueldoPresupuestado: sueldo,
+					Activo:              activo,
+					EsDietario:          esDietario,
+					UnidadOrganicaID:    unidadID,
+					CodigoAirhsp:        airhsp,
+				}
+
+				results <- RowResult{Index: job.Index, Puesto: p, Warnings: warnings, Error: nil}
+			}
+		}()
+	}
+
+	// Enviar a procesar (saltando fila 0 de cabecera)
+	for i := 1; i < len(filas); i++ {
+		jobs <- RowJob{Index: i, Row: filas[i]}
+	}
+	close(jobs)
+
+	// Recopilar resultados
+	var puestos []models.Puesto
+	var warnings []string
+	var validationError error
+
+	for i := 1; i < len(filas); i++ {
+		res := <-results
+		if res.Error != nil {
+			validationError = res.Error
+			continue
+		}
+		if res.Puesto.Nombre == "" {
+			continue
+		}
+		puestos = append(puestos, res.Puesto)
+		if len(res.Warnings) > 0 {
+			warnings = append(warnings, res.Warnings...)
+		}
+	}
+
+	if validationError != nil {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ %v. Se canceló toda la importación.</p>`, validationError)))
+		return
+	}
+
+	if len(puestos) == 0 {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(`<p style="color:red; margin:0;">⚠️ El archivo Excel no contiene filas de puestos válidas para importar.</p>`))
+		return
+	}
+
+	// 4. Inserción atómica en base de datos
+	err = h.Repo.ImportarPuestos(tenantID, puestos)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error de Base de Datos: %v. Se canceló toda la importación.</p>`, err)))
+		return
+	}
+
+	// 5. Devolver HTML con el resultado y advertencias
+	w.Header().Set("Content-Type", "text/html")
+
+	warningsHTML := ""
+	if len(warnings) > 0 {
+		warningsList := ""
+		for _, wr := range warnings {
+			warningsList += fmt.Sprintf("<li><small>%s</small></li>", wr)
+		}
+		warningsHTML = fmt.Sprintf(`
+			<details style="margin-top: 1rem; border: 1px solid #ffe0b2; background: #fff8e1; border-radius: 4px; padding: 0.5rem 1rem;">
+				<summary style="color: #e65100; font-weight: 500; cursor: pointer;">⚠️ Observaciones y Advertencias (%d asignaciones omitidas)</summary>
+				<ul style="margin: 0.5rem 0 0 1.2rem; padding: 0; color: #5d4037; text-align: left;">
+					%s
+				</ul>
+			</details>
+		`, len(warnings), warningsList)
+	}
+
+	w.Write([]byte(fmt.Sprintf(`
+		<article style="background-color: #e8f5e9; color: #1b5e20; padding: 1rem; border-radius: 5px; margin: 0; text-align: center;">
+			✅ Importación Exitosa.<br>
+			Se registraron <strong>%d</strong> puestos de trabajo (plazas) correctamente y la transacción fue confirmada.
+			%s
+		</article>
+	`, len(puestos), warningsHTML)))
 }

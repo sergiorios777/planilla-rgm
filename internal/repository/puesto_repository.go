@@ -66,11 +66,11 @@ func (r *PuestoRepository) ObtenerRegimenes() ([]models.RegimenLaboral, error) {
 func (r *PuestoRepository) ObtenerTodos(tenantID int) ([]models.Puesto, error) {
 	query := `
 		SELECT p.id, p.nombre, p.sueldo_presupuestado, p.estado, p.activo,
-		       m.codigo, fr.rubro, rl.descripcion, p.unidad_organica_id, p.codigo_airhsp,
+		       COALESCE(m.codigo, '') AS meta_codigo, COALESCE(fr.rubro, '') AS fuente_rubro_desc, rl.descripcion, p.unidad_organica_id, p.codigo_airhsp,
 		       COALESCE(u.nombre, 'Sin asignar') AS unidad_organica_nombre
 		FROM puestos p
-		INNER JOIN metas_presupuestales m ON p.meta_id = m.id
-		INNER JOIN fuentes_rubros fr ON p.fuente_rubro_id = fr.id
+		LEFT JOIN metas_presupuestales m ON p.meta_id = m.id
+		LEFT JOIN fuentes_rubros fr ON p.fuente_rubro_id = fr.id
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
 		LEFT JOIN unidades_organicas u ON p.unidad_organica_id = u.id
 		WHERE p.tenant_id = $1
@@ -146,7 +146,7 @@ func (r *PuestoRepository) ObtenerTodosPaginacion(tenantID int, metaID int, regi
 
 	query := fmt.Sprintf(`
 		SELECT p.id, p.nombre, p.sueldo_presupuestado, p.estado, p.activo,
-		       m.codigo, fr.rubro, rl.descripcion, p.es_dietario,
+		       COALESCE(m.codigo, '') AS meta_codigo, COALESCE(fr.rubro, '') AS fuente_rubro_desc, rl.descripcion, p.es_dietario,
 		       p.unidad_organica_id, p.codigo_airhsp, COALESCE(u.nombre, 'Sin asignar') AS unidad_organica_nombre
 		FROM puestos p
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
@@ -180,7 +180,7 @@ func (r *PuestoRepository) ObtenerTodosPaginacion(tenantID int, metaID int, regi
 func (r *PuestoRepository) Crear(p *models.Puesto) error {
 	query := `
 		INSERT INTO puestos (tenant_id, meta_id, fuente_rubro_id, regimen_id, nombre, sueldo_presupuestado, estado, activo, es_dietario, unidad_organica_id, codigo_airhsp)
-		VALUES ($1, $2, $3, $4, $5, $6, 'VACANTE', $7, $8, $9, $10) RETURNING id
+		VALUES ($1, NULLIF($2, 0), NULLIF($3, 0), $4, $5, $6, 'VACANTE', $7, $8, $9, $10) RETURNING id
 	`
 	return r.db.QueryRow(query, p.TenantID, p.MetaID, p.FuenteRubroID, p.RegimenID, p.Nombre, p.SueldoPresupuestado, p.Activo, p.EsDietario, p.UnidadOrganicaID, p.CodigoAirhsp).Scan(&p.ID)
 }
@@ -188,7 +188,7 @@ func (r *PuestoRepository) Crear(p *models.Puesto) error {
 func (r *PuestoRepository) Actualizar(p *models.Puesto) error {
 	query := `
 		UPDATE puestos 
-		SET nombre = $1, meta_id = $2, fuente_rubro_id = $3, regimen_id = $4, sueldo_presupuestado = $5, activo = $6, es_dietario = $7, unidad_organica_id = $8, codigo_airhsp = $9
+		SET nombre = $1, meta_id = NULLIF($2, 0), fuente_rubro_id = NULLIF($3, 0), regimen_id = $4, sueldo_presupuestado = $5, activo = $6, es_dietario = $7, unidad_organica_id = $8, codigo_airhsp = $9
 		WHERE id = $10 AND tenant_id = $11
 	`
 	_, err := r.db.Exec(query, p.Nombre, p.MetaID, p.FuenteRubroID, p.RegimenID, p.SueldoPresupuestado, p.Activo, p.EsDietario, p.UnidadOrganicaID, p.CodigoAirhsp, p.ID, p.TenantID)
@@ -397,7 +397,7 @@ func (r *PuestoRepository) RestaurarPlantillaBase(puestoID int, tenantID int, re
 func (r *PuestoRepository) ObtenerPorID(id int, tenantID int) (models.Puesto, error) {
 	var p models.Puesto
 	query := `
-		SELECT p.id, p.tenant_id, p.meta_id, p.fuente_rubro_id, p.regimen_id,
+		SELECT p.id, p.tenant_id, COALESCE(p.meta_id, 0), COALESCE(p.fuente_rubro_id, 0), p.regimen_id,
 		       p.nombre, p.sueldo_presupuestado, p.estado, p.activo, p.es_dietario, rl.codigo,
 		       p.unidad_organica_id, p.codigo_airhsp
 		FROM puestos p 
@@ -421,13 +421,13 @@ func (r *PuestoRepository) DB() *sql.DB {
 func (r *PuestoRepository) ObtenerPuestosParaPAP(tenantID int) ([]models.PuestoPAP, error) {
 	query := `
 		SELECT p.id, rl.codigo, 
-		       m.codigo, m.descripcion, 
+		       COALESCE(m.codigo, '') AS meta_codigo, COALESCE(m.descripcion, '') AS meta_desc, 
 		       -- Enviamos el ID como código corto, y el nombre completo a la descripción (que soporta 255 caracteres)
-		       CAST(fr.id AS VARCHAR), fr.fuente_financiamiento || ' | ' || fr.rubro 
+		       COALESCE(CAST(fr.id AS VARCHAR), '') AS fr_id, COALESCE(fr.fuente_financiamiento || ' | ' || fr.rubro, '') AS fr_desc 
 		FROM puestos p
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
-		INNER JOIN metas_presupuestales m ON p.meta_id = m.id
-		INNER JOIN fuentes_rubros fr ON p.fuente_rubro_id = fr.id
+		LEFT JOIN metas_presupuestales m ON p.meta_id = m.id
+		LEFT JOIN fuentes_rubros fr ON p.fuente_rubro_id = fr.id
 		WHERE p.tenant_id = $1 AND p.activo = true
 	`
 	rows, err := r.db.Query(query, tenantID)
@@ -515,5 +515,39 @@ func (r *PuestoRepository) GuardarAsignacionConceptos(puestoID int, asignaciones
 	}
 
 	// Confirmamos los cambios
+	return tx.Commit()
+}
+
+// ImportarPuestos guarda de manera atómica (transaccional) una lista de puestos
+func (r *PuestoRepository) ImportarPuestos(tenantID int, puestos []models.Puesto) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query := `
+		INSERT INTO puestos (
+			tenant_id, meta_id, fuente_rubro_id, regimen_id, nombre, 
+			sueldo_presupuestado, estado, activo, es_dietario, 
+			unidad_organica_id, codigo_airhsp
+		) VALUES ($1, NULLIF($2, 0), NULLIF($3, 0), $4, $5, $6, 'VACANTE', $7, $8, $9, $10)
+	`
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, p := range puestos {
+		_, err = stmt.Exec(
+			tenantID, p.MetaID, p.FuenteRubroID, p.RegimenID, p.Nombre,
+			p.SueldoPresupuestado, p.Activo, p.EsDietario, p.UnidadOrganicaID, p.CodigoAirhsp,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
 	return tx.Commit()
 }
