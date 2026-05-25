@@ -16,7 +16,7 @@ func NewFuenteRubroRepository(db *sql.DB) *FuenteRubroRepository {
 // ObtenerPorAnio lista el catálogo para un año específico
 func (r *FuenteRubroRepository) ObtenerPorAnio(anio int, buscar string) ([]models.FuenteRubro, error) {
 	query := `
-		SELECT id, anio, fuente_financiamiento, rubro, activo 
+		SELECT id, anio, fuente_financiamiento, rubro, COALESCE(codigo_fuente_rubro, ''), activo 
 		FROM fuentes_rubros 
 		WHERE anio = $1 AND (fuente_financiamiento ILIKE '%' || $2 || '%' OR rubro ILIKE '%' || $2 || '%')
 		ORDER BY fuente_financiamiento, rubro ASC
@@ -30,7 +30,7 @@ func (r *FuenteRubroRepository) ObtenerPorAnio(anio int, buscar string) ([]model
 	var lista []models.FuenteRubro
 	for rows.Next() {
 		var fr models.FuenteRubro
-		err := rows.Scan(&fr.ID, &fr.Anio, &fr.FuenteFinanciamiento, &fr.Rubro, &fr.Activo)
+		err := rows.Scan(&fr.ID, &fr.Anio, &fr.FuenteFinanciamiento, &fr.Rubro, &fr.CodigoFuenteRubro, &fr.Activo)
 		if err == nil {
 			lista = append(lista, fr)
 		}

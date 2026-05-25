@@ -189,6 +189,7 @@ type FuenteRubro struct {
 	Anio                 int    `json:"anio"`
 	FuenteFinanciamiento string `json:"fuente_financiamiento"`
 	Rubro                string `json:"rubro"`
+	CodigoFuenteRubro    string `json:"codigo_fuente_rubro"`
 	Activo               bool   `json:"activo"`
 }
 

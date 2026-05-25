@@ -34,6 +34,7 @@
 <table class="striped">
     <thead>
         <tr>
+            <th style="width: 100px;">Código</th>
             <th>Fuente de Financiamiento</th>
             <th>Rubro</th>
             <th>Estado</th>
@@ -48,6 +49,7 @@
 {{define "filas_fuentes"}}
 {{range .}}
 <tr>
+    <td><code>{{.CodigoFuenteRubro}}</code></td>
     <td><strong>{{.FuenteFinanciamiento}}</strong></td>
     <td><small>{{.Rubro}}</small></td>
     <td>
@@ -60,7 +62,7 @@
 </tr>
 {{else}}
 <tr>
-    <td colspan="3" style="text-align: center;">No hay registros para este año.</td>
+    <td colspan="4" style="text-align: center;">No hay registros para este año.</td>
 </tr>
 {{end}}
 {{end}}

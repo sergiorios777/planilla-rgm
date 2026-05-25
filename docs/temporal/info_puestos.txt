@@ -1,0 +1,144 @@
+Idea: Implementar importador en módulo Puestos
+
+1. Tablas relacionadas:
+
+ Table "public.puestos"
+
+        Column        |           Type           | Collation | Nullable |               Default
+----------------------+--------------------------+-----------+----------+-------------------------------------
+ id                   | integer                  |           | not null | nextval('puestos_id_seq'::regclass)
+ tenant_id            | integer                  |           | not null |
+ meta_id              | integer                  |           | not null |
+ fuente_rubro_id      | integer                  |           | not null |
+ regimen_id           | integer                  |           | not null |
+ nombre               | character varying(150)   |           | not null |
+ sueldo_presupuestado | numeric(10,2)            |           | not null |
+ estado               | character varying(20)    |           |          | 'VACANTE'::character varying
+ activo               | boolean                  |           |          | true
+ created_at           | timestamp with time zone |           |          | CURRENT_TIMESTAMP
+ updated_at           | timestamp with time zone |           |          | CURRENT_TIMESTAMP
+ es_dietario          | boolean                  |           |          | false
+ unidad_organica_id   | integer                  |           |          |
+ codigo_airhsp        | character varying(50)    |           |          |
+Indexes:
+    "puestos_pkey" PRIMARY KEY, btree (id)
+    "idx_puestos_tenant" btree (tenant_id)
+Foreign-key constraints:
+    "puestos_fuente_rubro_id_fkey" FOREIGN KEY (fuente_rubro_id) REFERENCES fuentes_rubros(id)
+    "puestos_meta_id_fkey" FOREIGN KEY (meta_id) REFERENCES metas_presupuestales(id)
+    "puestos_regimen_id_fkey" FOREIGN KEY (regimen_id) REFERENCES regimenes_laborales(id)
+    "puestos_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    "puestos_unidad_organica_id_fkey" FOREIGN KEY (unidad_organica_id) REFERENCES unidades_organicas(id) ON DELETE SET NULL
+Referenced by:
+    TABLE "contratos" CONSTRAINT "contratos_puesto_id_fkey" FOREIGN KEY (puesto_id) REFERENCES puestos(id)
+    TABLE "puesto_conceptos" CONSTRAINT "puesto_conceptos_puesto_id_fkey" FOREIGN KEY (puesto_id) REFERENCES puestos(id) ON DELETE CASCADE
+
+
+
+Table "public.metas_presupuestales"
+
+   Column    |           Type           | Collation | Nullable |                     Default
+-------------+--------------------------+-----------+----------+--------------------------------------------------
+ id          | integer                  |           | not null | nextval('metas_presupuestales_id_seq'::regclass)
+ tenant_id   | integer                  |           | not null |
+ anio        | integer                  |           | not null |
+ codigo      | character varying(20)    |           | not null |
+ descripcion | character varying(512)   |           | not null |
+ activo      | boolean                  |           |          | true
+ created_at  | timestamp with time zone |           |          | CURRENT_TIMESTAMP
+ updated_at  | timestamp with time zone |           |          | CURRENT_TIMESTAMP
+Indexes:
+    "metas_presupuestales_pkey" PRIMARY KEY, btree (id)
+    "idx_metas_tenant_anio" btree (tenant_id, anio)
+    "unique_meta_anio_tenant" UNIQUE CONSTRAINT, btree (tenant_id, anio, codigo)
+Foreign-key constraints:
+    "metas_presupuestales_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "puestos" CONSTRAINT "puestos_meta_id_fkey" FOREIGN KEY (meta_id) REFERENCES metas_presupuestales(id)
+
+
+
+Table "public.fuentes_rubros"
+
+        Column         |           Type           | Collation | Nullable |                  Default
+-----------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                    | integer                  |           | not null | nextval('fuentes_rubros_id_seq'::regclass)
+ anio                  | integer                  |           | not null |
+ fuente_financiamiento | character varying(150)   |           | not null |
+ rubro                 | character varying(150)   |           | not null |
+ activo                | boolean                  |           |          | true
+ created_at            | timestamp with time zone |           |          | CURRENT_TIMESTAMP
+ codigo_fuente_rubro   | character varying(20)    |           |          |
+Indexes:
+    "fuentes_rubros_pkey" PRIMARY KEY, btree (id)
+    "unique_fuente_rubro_anio" UNIQUE CONSTRAINT, btree (anio, fuente_financiamiento, rubro)
+Referenced by:
+    TABLE "puestos" CONSTRAINT "puestos_fuente_rubro_id_fkey" FOREIGN KEY (fuente_rubro_id) REFERENCES fuentes_rubros(id)
+
+
+Table "public.regimenes_laborales"
+   Column    |          Type          | Collation | Nullable |                     Default
+-------------+------------------------+-----------+----------+-------------------------------------------------
+ id          | integer                |           | not null | nextval('regimenes_laborales_id_seq'::regclass)
+ codigo      | character varying(10)  |           | not null |
+ descripcion | character varying(150) |           | not null |
+Indexes:
+    "regimenes_laborales_pkey" PRIMARY KEY, btree (id)
+    "regimenes_laborales_codigo_key" UNIQUE CONSTRAINT, btree (codigo)
+Referenced by:
+    TABLE "puestos" CONSTRAINT "puestos_regimen_id_fkey" FOREIGN KEY (regimen_id) REFERENCES regimenes_laborales(id)
+    TABLE "regimen_concepto_modelo" CONSTRAINT "regimen_concepto_modelo_regimen_id_fkey" FOREIGN KEY (regimen_id) REFERENCES regimenes_laborales(id) ON DELETE CASCADE
+    TABLE "regimen_concepto_tenant" CONSTRAINT "regimen_concepto_tenant_regimen_id_fkey" FOREIGN KEY (regimen_id) REFERENCES regimenes_laborales(id) ON DELETE CASCADE
+
+
+ Table "public.unidades_organicas"
+     Column     |           Type           | Collation | Nullable |                    Default
+----------------+--------------------------+-----------+----------+------------------------------------------------
+ id             | integer                  |           | not null | nextval('unidades_organicas_id_seq'::regclass)
+ tenant_id      | integer                  |           | not null |
+ organigrama_id | integer                  |           | not null |
+ parent_id      | integer                  |           |          |
+ codigo_mef     | character varying(50)    |           |          |
+ nombre         | character varying(200)   |           | not null |
+ tipo           | character varying(50)    |           | not null |
+ created_at     | timestamp with time zone |           |          | CURRENT_TIMESTAMP
+ updated_at     | timestamp with time zone |           |          | CURRENT_TIMESTAMP
+Indexes:
+    "unidades_organicas_pkey" PRIMARY KEY, btree (id)
+    "idx_unidades_organicas_org" btree (organigrama_id)
+    "unique_organigrama_nombre" UNIQUE CONSTRAINT, btree (organigrama_id, nombre)
+Foreign-key constraints:
+    "unidades_organicas_organigrama_id_fkey" FOREIGN KEY (organigrama_id) REFERENCES organigramas(id) ON DELETE CASCADE
+    "unidades_organicas_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES unidades_organicas(id) ON DELETE SET NULL
+    "unidades_organicas_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "puestos" CONSTRAINT "puestos_unidad_organica_id_fkey" FOREIGN KEY (unidad_organica_id) REFERENCES unidades_organicas(id) ON DELETE SET NULL
+    TABLE "unidades_organicas" CONSTRAINT "unidades_organicas_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES unidades_organicas(id) ON DELETE SET NULL
+
+
+2. El archivo excel de importación
+   - Se debe proveer una plantilla de excel con dos hojas, la primero referida a los puestos y la segunda las instrucciones detalladas, enums y ejemplos.
+   - En la pantalla del importador se debe indicar la estructura del archivo de excel.
+
+3. Asignación Dinámica de claves foráneas
+   - Solo el regimen laboral será obligatorio en la información de la plantilla de excel.
+   - son opcionales: las metas presupuestales, las unidades orgánicas y las fuentes y rubros.
+   - Para la asignación dinámica de las unidades orgánicas la plantilla de excel debe pedir el codigo_mef de su entidad, si no existe entregar un mensaje detallado, pero no detener la importación porque es una columna opcional.
+   - Para la asignación dinámica de las fuentes y rubros la plantilla de excel debe pedir el codigo_fuente_rubro del año en curso, si no existe entregar un mensaje detallado, pero no detener la importación porque es una columna opcional.
+   - Para la asignación dinámica de las metas presupuestales la plantilla de excel debe pedir el codigo de la meta del año en curso, si no existe entregar un mensaje detallado, pero no detener la importación porque es una columna opcional.
+
+4. Ejecución de puesto_service.go
+   - Actualmente durante la creación el un puesto se ejecuta puesto_service, verificar cómo impacta esto en nuestro importador.
+
+5. Ingreso de alto volumen:
+   - Utilicemos un worker pool para la gestión segura de un alto volumen de puestos (1000 a 5000) aprovechando la gestión de concurrencias de Go.
+
+6. Algunos valores de columnas:
+   fuentes_rubros.codigo_fuente_rubro = {1.00, 2.09, 3.19, 4.13, 5.07, 5.15, 5.04, 5.18, 5.08}
+   regimenes_laborales.codigo = {276, 728, 1057, 30057}
+
+7. Principales archivos relacionados:
+   - internal\handlers\puesto_handler.go
+   - internal\repository\puesto_repository.go
+   - ui\templates\tenant\puestos_ui.html
+   - internal\services\puesto_service.go
