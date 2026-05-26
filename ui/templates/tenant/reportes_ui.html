@@ -1,0 +1,111 @@
+<article>
+    <header>
+        <h3 style="margin: 0;">📊 Centro de Informes y Reportes Institucionales</h3>
+        <small>Extrae, visualiza y exporta la información oficial de la municipalidad.</small>
+    </header>
+
+    <div class="grid" style="grid-template-columns: 250px 1fr; gap: 2rem;">
+        
+        <aside>
+            <nav>
+                <h5 style="margin-top: 0; padding-left: 0.5rem; color: var(--pico-muted-color);">Módulos</h5>
+                <ul style="list-style: none; padding-left: 0;">
+                    <li><button class="outline secondary style-btn" hx-get="/tenant/reportes/filtrar?modulo=TODOS" hx-target="#panel-lista-reportes" style="width: 100%; text-align: left; margin-bottom: 0.5rem;">📂 Todos los Reportes</button></li>
+                    <li><button class="outline secondary style-btn" hx-get="/tenant/reportes/filtrar?modulo=TRABAJADORES" hx-target="#panel-lista-reportes" style="width: 100%; text-align: left; margin-bottom: 0.5rem;">👥 Trabajadores</button></li>
+                    <li><button class="outline secondary style-btn" hx-get="/tenant/reportes/filtrar?modulo=ORGANIGRAMA" hx-target="#panel-lista-reportes" style="width: 100%; text-align: left; margin-bottom: 0.5rem;">🏢 Organigrama</button></li>
+                    <li><button class="outline secondary style-btn" hx-get="/tenant/reportes/filtrar?modulo=PUESTOS" hx-target="#panel-lista-reportes" style="width: 100%; text-align: left; margin-bottom: 0.5rem;">📊 Puestos (Plazas)</button></li>
+                    <li><button class="outline secondary style-btn" hx-get="/tenant/reportes/filtrar?modulo=CONCEPTOS" hx-target="#panel-lista-reportes" style="width: 100%; text-align: left; margin-bottom: 0.5rem;">⚙️ Conceptos</button></li>
+                    <li><button class="outline secondary style-btn" hx-get="/tenant/reportes/filtrar?modulo=CONTRATOS" hx-target="#panel-lista-reportes" style="width: 100%; text-align: left; margin-bottom: 0.5rem;">⏳ Contratos</button></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <section>
+            <div id="panel-lista-reportes" hx-get="/tenant/reportes/filtrar?modulo=TODOS" hx-trigger="load">
+                <div aria-busy="true" style="text-align: center;">Cargando catálogo de informes...</div>
+            </div>
+        </section>
+
+    </div>
+</article>
+
+{{define "lista_reportes"}}
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {{range .Reportes}}
+        <div style="border: 1px solid var(--pico-border-color); padding: 1.25rem; border-radius: var(--pico-border-radius); background: var(--pico-card-background-color);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                <div style="flex: 1; min-width: 250px;">
+                    <h5 style="margin: 0 0 0.25rem 0;">{{.Nombre}}</h5>
+                    <p style="margin: 0; font-size: 0.85rem; color: var(--pico-muted-color);">{{.Descripcion}}</p>
+                    
+                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                        <span style="font-size: 0.7rem; background: var(--pico-secondary-background); padding: 2px 8px; border-radius: 4px; font-weight: bold; height: fit-content;">
+                            📂 {{.Modulo}}
+                        </span>
+
+                        {{if eq .ID "trab_cumple"}}
+                        <!-- Selector de Mes de Cumpleaños -->
+                        <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                            <label style="margin: 0; font-size: 0.8rem; font-weight: bold;">Mes:</label>
+                            <select style="width: auto; margin: 0; padding: 0.2rem 1.5rem 0.2rem 0.5rem; font-size: 0.8rem; height: auto;" 
+                                    onchange="document.getElementById('pdf-trab_cumple').href='/tenant/reportes/ver-pdf?id=trab_cumple&mes=' + this.value; document.getElementById('excel-trab_cumple').href='/tenant/reportes/descargar-excel?id=trab_cumple&mes=' + this.value;">
+                                <option value="1" {{if eq $.MesActual 1}}selected{{end}}>Enero</option>
+                                <option value="2" {{if eq $.MesActual 2}}selected{{end}}>Febrero</option>
+                                <option value="3" {{if eq $.MesActual 3}}selected{{end}}>Marzo</option>
+                                <option value="4" {{if eq $.MesActual 4}}selected{{end}}>Abril</option>
+                                <option value="5" {{if eq $.MesActual 5}}selected{{end}}>Mayo</option>
+                                <option value="6" {{if eq $.MesActual 6}}selected{{end}}>Junio</option>
+                                <option value="7" {{if eq $.MesActual 7}}selected{{end}}>Julio</option>
+                                <option value="8" {{if eq $.MesActual 8}}selected{{end}}>Agosto</option>
+                                <option value="9" {{if eq $.MesActual 9}}selected{{end}}>Septiembre</option>
+                                <option value="10" {{if eq $.MesActual 10}}selected{{end}}>Octubre</option>
+                                <option value="11" {{if eq $.MesActual 11}}selected{{end}}>Noviembre</option>
+                                <option value="12" {{if eq $.MesActual 12}}selected{{end}}>Diciembre</option>
+                            </select>
+                        </div>
+                        {{end}}
+
+                        {{if eq .ID "contrato_vence"}}
+                        <!-- Input de Días de Vencimiento -->
+                        <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                            <label style="margin: 0; font-size: 0.8rem; font-weight: bold;">Rango (días):</label>
+                            <input type="number" value="30" min="1" max="365" style="width: 70px; margin: 0; padding: 0.2rem 0.4rem; font-size: 0.8rem; height: auto;"
+                                   oninput="document.getElementById('pdf-contrato_vence').href='/tenant/reportes/ver-pdf?id=contrato_vence&dias=' + this.value; document.getElementById('excel-contrato_vence').href='/tenant/reportes/descargar-excel?id=contrato_vence&dias=' + this.value;">
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+                
+                <div role="group" style="margin-bottom: 0; width: auto; display: inline-flex; gap: 0.5rem;">
+                    {{if eq .ID "trab_cumple"}}
+                    <a id="pdf-trab_cumple" href="/tenant/reportes/ver-pdf?id=trab_cumple&mes={{$.MesActual}}" target="_blank" class="button outline secondary" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; text-decoration: none;">
+                        👁️ Ver PDF
+                    </a>
+                    <a id="excel-trab_cumple" href="/tenant/reportes/descargar-excel?id=trab_cumple&mes={{$.MesActual}}" class="button outline contrast" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; text-decoration: none;">
+                        📥 Excel
+                    </a>
+                    {{else if eq .ID "contrato_vence"}}
+                    <a id="pdf-contrato_vence" href="/tenant/reportes/ver-pdf?id=contrato_vence&dias=30" target="_blank" class="button outline secondary" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; text-decoration: none;">
+                        👁️ Ver PDF
+                    </a>
+                    <a id="excel-contrato_vence" href="/tenant/reportes/descargar-excel?id=contrato_vence&dias=30" class="button outline contrast" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; text-decoration: none;">
+                        📥 Excel
+                    </a>
+                    {{else}}
+                    <a href="/tenant/reportes/ver-pdf?id={{.ID}}" target="_blank" class="button outline secondary" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; text-decoration: none;">
+                        👁️ Ver PDF
+                    </a>
+                    <a href="/tenant/reportes/descargar-excel?id={{.ID}}" class="button outline contrast" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; text-decoration: none;">
+                        📥 Excel
+                    </a>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+        {{else}}
+        <div style="text-align: center; padding: 2rem; font-style: italic; color: var(--pico-muted-color);">
+            No se encontraron reportes disponibles para este módulo.
+        </div>
+        {{end}}
+    </div>
+{{end}}

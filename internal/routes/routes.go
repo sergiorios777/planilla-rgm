@@ -296,4 +296,22 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	// Ruta para descargar el PDF de planilla y boeltas
 	mux.HandleFunc("/tenant/planillas/descargar-reporte", middleware.RequireAuth(planillaHandler.DescargarReportePDF))
 	mux.HandleFunc("/tenant/planillas/descargar-boletas", middleware.RequireAuth(planillaHandler.DescargarBoletasPDF))
+
+	// Módulo de Reportes Generales
+	reporteService := services.NewReporteService(
+		trabajadorRepo,
+		organigramaRepo,
+		puestoRepo,
+		conceptoTenantRepo,
+		contratoRepo,
+		tenantRepo,
+	)
+	reporteHandler := handlers.ReporteHandler{
+		Service: reporteService,
+	}
+	mux.HandleFunc("/tenant/ui/reportes", middleware.RequireAuth(reporteHandler.VistaUI))
+	mux.HandleFunc("/tenant/reportes/filtrar", middleware.RequireAuth(reporteHandler.FiltrarUI))
+	mux.HandleFunc("/tenant/reportes/ver-pdf", middleware.RequireAuth(reporteHandler.ExportarPDF))
+	mux.HandleFunc("/tenant/reportes/descargar-excel", middleware.RequireAuth(reporteHandler.ExportarExcel))
 }
+

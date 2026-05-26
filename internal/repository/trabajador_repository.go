@@ -59,7 +59,6 @@ func (r *TrabajadorRepository) ObtenerMapaAFPsParaImportar() (map[string]int, er
 	return mapa, nil
 }
 
-
 // Obtener todos los trabajadores de un tenant (sin paginación)
 func (r *TrabajadorRepository) ObtenerTodos(tenantID int) ([]models.Trabajador, error) {
 	query := `
@@ -234,3 +233,34 @@ func (r *TrabajadorRepository) ImportarTrabajadores(tenantID int, trabajadores [
 	return tx.Commit()
 }
 
+// ObtenerCumpleaniosMes obtiene los trabajadores que cumplen años en el mes indicado
+func (r *TrabajadorRepository) ObtenerCumpleaniosMes(tenantID int, mes int) ([]models.Trabajador, error) {
+	query := `
+		SELECT id, tenant_id, tipo_documento, numero_documento, nombres, apellido_paterno, apellido_materno, 
+		       TO_CHAR(fecha_nacimiento, 'YYYY-MM-DD'), sexo, activo,
+		       COALESCE(regimen_pensionario, 'ONP'), COALESCE(afp_id, 0), COALESCE(afp_tipo_comision, ''), COALESCE(cuspp, '')
+		FROM trabajadores 
+		WHERE tenant_id = $1 AND EXTRACT(MONTH FROM fecha_nacimiento) = $2 AND activo = true
+		ORDER BY EXTRACT(DAY FROM fecha_nacimiento) ASC, apellido_paterno ASC
+	`
+	rows, err := r.db.Query(query, tenantID, mes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.Trabajador
+	for rows.Next() {
+		var t models.Trabajador
+		var fecha sql.NullString
+		err := rows.Scan(&t.ID, &t.TenantID, &t.TipoDocumento, &t.NumeroDocumento, &t.Nombres, &t.ApellidoPaterno, &t.ApellidoMaterno, &fecha, &t.Sexo, &t.Activo, &t.RegimenPensionario, &t.AfpID, &t.AfpTipoComision, &t.Cuspp)
+		if err != nil {
+			return nil, err
+		}
+		if fecha.Valid {
+			t.FechaNacimiento = fecha.String
+		}
+		lista = append(lista, t)
+	}
+	return lista, nil
+}

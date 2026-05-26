@@ -175,3 +175,44 @@ func (r *ContratoRepository) TieneContratoActivo(trabajadorID int, tenantID int)
 	// Si la cantidad es mayor a 0, significa que sí tiene un contrato activo
 	return cantidad > 0, nil
 }
+
+// ObtenerContratosVencimiento trae los contratos que están próximos a vencer en un rango de días determinado (ej. 30 días)
+func (r *ContratoRepository) ObtenerContratosVencimiento(tenantID int, dias int) ([]models.Contrato, error) {
+	query := `
+		SELECT c.id, c.trabajador_id, c.puesto_id, 
+		       TO_CHAR(c.fecha_inicio, 'YYYY-MM-DD'), TO_CHAR(c.fecha_fin, 'YYYY-MM-DD'), c.activo,
+		       t.numero_documento, t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres,
+		       p.nombre, p.sueldo_presupuestado, rl.descripcion, COALESCE(c.tipo_contrato, '')
+		FROM contratos c
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		INNER JOIN puestos p ON c.puesto_id = p.id
+		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
+		WHERE c.tenant_id = $1 AND c.activo = true 
+		  AND c.fecha_fin IS NOT NULL 
+		  AND c.fecha_fin >= CURRENT_DATE 
+		  AND c.fecha_fin <= CURRENT_DATE + ($2 * INTERVAL '1 day')
+		ORDER BY c.fecha_fin ASC, t.apellido_paterno ASC
+	`
+	rows, err := r.db.Query(query, tenantID, dias)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.Contrato
+	for rows.Next() {
+		var c models.Contrato
+		var fFin sql.NullString
+
+		err := rows.Scan(&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fFin, &c.Activo,
+			&c.TrabajadorDoc, &c.TrabajadorNombre, &c.PuestoNombre, &c.SueldoPresupuestado, &c.RegimenDesc, &c.TipoContrato)
+		if err == nil {
+			if fFin.Valid {
+				c.FechaFin = &fFin.String
+			}
+			lista = append(lista, c)
+		}
+	}
+	return lista, nil
+}
+
