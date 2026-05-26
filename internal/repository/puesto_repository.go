@@ -305,19 +305,41 @@ func (r *PuestoRepository) ObtenerConceptoRemunerativoPorClasificador(tenantID i
 }
 
 // ObtenerConceptosModeloPorRegimen lee la tabla intermedia y trae los conceptos
-// que corresponden al régimen, excluyendo automáticamente los previsionales (ONP/AFP).
-func (r *PuestoRepository) ObtenerConceptosModeloPorRegimen(tenantID int, regimenID int) ([]int, error) {
-	query := `
-		SELECT ct.id 
-		FROM conceptos_tenant ct
-		INNER JOIN regimen_concepto_tenant rct ON ct.id = rct.concepto_tenant_id
-		INNER JOIN conceptos_maestros cma ON ct.concepto_id = cma.id
-		WHERE rct.tenant_id = $1 
-		  AND rct.regimen_id = $2 
-		  AND ct.activo = true
-		  AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
-	`
-	rows, err := r.db.Query(query, tenantID, regimenID)
+// que corresponden al régimen, excluyendo automáticamente los previsionales (ONP/AFP)
+// y los específicos de algún tipo de contrato (según su clasificador).
+func (r *PuestoRepository) ObtenerConceptosModeloPorRegimen(tenantID int, regimenID int, excluidosMEF []string) ([]int, error) {
+	var query string
+	var rows *sql.Rows
+	var err error
+
+	if len(excluidosMEF) > 0 {
+		query = `
+			SELECT ct.id 
+			FROM conceptos_tenant ct
+			INNER JOIN regimen_concepto_tenant rct ON ct.id = rct.concepto_tenant_id
+			INNER JOIN conceptos_maestros cma ON ct.concepto_id = cma.id
+			LEFT JOIN clasificadores_mef mef ON ct.clasificador_id = mef.id
+			WHERE rct.tenant_id = $1 
+			  AND rct.regimen_id = $2 
+			  AND ct.activo = true
+			  AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
+			  AND (mef.codigo_limpio IS NULL OR NOT (mef.codigo_limpio = ANY($3)))
+		`
+		rows, err = r.db.Query(query, tenantID, regimenID, pq.Array(excluidosMEF))
+	} else {
+		query = `
+			SELECT ct.id 
+			FROM conceptos_tenant ct
+			INNER JOIN regimen_concepto_tenant rct ON ct.id = rct.concepto_tenant_id
+			INNER JOIN conceptos_maestros cma ON ct.concepto_id = cma.id
+			WHERE rct.tenant_id = $1 
+			  AND rct.regimen_id = $2 
+			  AND ct.activo = true
+			  AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
+		`
+		rows, err = r.db.Query(query, tenantID, regimenID)
+	}
+
 	if err != nil {
 		return nil, err
 	}

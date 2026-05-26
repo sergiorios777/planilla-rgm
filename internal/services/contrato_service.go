@@ -27,8 +27,16 @@ func (s *ContratoService) CrearContrato(c *models.Contrato) error {
 		return err
 	}
 
-	// 3. Obtener la plantilla de conceptos base según el régimen (excluyendo pensiones)
-	idsLocales, err := s.RepoPuesto.ObtenerConceptosModeloPorRegimen(c.TenantID, puesto.RegimenID)
+	// 3. Obtener la plantilla de conceptos base según el régimen (excluyendo pensiones y clasificadores de contratos específicos)
+	var excluidos []string
+	for _, mappings := range config.ClasificadorMefPorContrato {
+		for _, codigoMef := range mappings {
+			excluidos = append(excluidos, codigoMef)
+		}
+	}
+
+	idsLocales, err := s.RepoPuesto.ObtenerConceptosModeloPorRegimen(c.TenantID, puesto.RegimenID, excluidos)
+	log.Println("idsLocales:", idsLocales)
 	if err != nil {
 		return err
 	}
@@ -43,6 +51,7 @@ func (s *ContratoService) CrearContrato(c *models.Contrato) error {
 				if err != nil {
 					log.Printf("Advertencia: no se encontró el concepto local para el clasificador %s bajo régimen %d: %v", codigoMef, puesto.RegimenID, err)
 				} else {
+					log.Println("conceptoID:", conceptoID)
 					idsLocales = append(idsLocales, conceptoID)
 				}
 			}
