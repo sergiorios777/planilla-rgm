@@ -1,0 +1,47 @@
+Creación de Importador para contratos
+
+1. Tabla contratos:
+
+contratos
+                                        Table "public.contratos"
+    Column     |           Type           | Collation | Nullable |                Default
+---------------+--------------------------+-----------+----------+---------------------------------------
+ id            | integer                  |           | not null | nextval('contratos_id_seq'::regclass)
+ tenant_id     | integer                  |           | not null |
+ trabajador_id | integer                  |           | not null |
+ fecha_inicio  | date                     |           | not null |
+ fecha_fin     | date                     |           |          |
+ activo        | boolean                  |           |          | true
+ created_at    | timestamp with time zone |           |          | CURRENT_TIMESTAMP
+ updated_at    | timestamp with time zone |           |          | CURRENT_TIMESTAMP
+ puesto_id     | integer                  |           | not null |
+ tipo_contrato | character varying(100)   |           |          |
+Indexes:
+    "contratos_pkey" PRIMARY KEY, btree (id)
+    "idx_contratos_puesto" btree (puesto_id)
+    "idx_contratos_tenant" btree (tenant_id)
+    "idx_contratos_trabajador" btree (trabajador_id)
+Foreign-key constraints:
+    "contratos_puesto_id_fkey" FOREIGN KEY (puesto_id) REFERENCES puestos(id)
+    "contratos_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    "contratos_trabajador_id_fkey" FOREIGN KEY (trabajador_id) REFERENCES trabajadores(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "ocurrencias_asistencia" CONSTRAINT "ocurrencias_asistencia_contrato_id_fkey" FOREIGN KEY (contrato_id) REFERENCES contratos(id)
+    TABLE "planilla_detalles" CONSTRAINT "planilla_detalles_contrato_id_fkey" FOREIGN KEY (contrato_id) REFERENCES contratos(id)
+
+
+2. Plantilla de importación excel:
+   - Se crea y entrega la plantilla al usuario, con la estructura de los datos requeridos, y una hoja con instrucciones detalladas.
+
+3. Precisiones:
+   - La identificación del trabajador se hace mediante su DNI o documento de identidad.
+   - La identificación del puesto se hace necesariamente utilizando el código airhsp del puesto, para comodidad del trabajo del usuario se agrega una columna para el nombre del puesto en la plantilla de excel, pero que no será utilizada al procesar.
+   - Si hay fallas en identificar a los trabajadores o al puesto se pasa al siguiente, pero se informa detalladamente al usuario de las fallas (¿es este enfoque adecuado?).
+   - Utilizamos un worker pool para prevenir el procesamiento cantidades masivas de contratos.
+   - Debemos asegurar que durante la imoprtación se ejecute la asignación de los conceptos tenant por cada puesto (contratos_servicios).
+
+4. Principales archivos:
+   - internal\handlers\contrato_handler.go
+   - internal\repository\contrato_repository.go
+   - internal\services\contrato_service.go
+   - ui\templates\tenant\contratos_ui.html

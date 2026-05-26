@@ -6,10 +6,16 @@
             </svg>
             Gestión de Contratos Laborales
         </h3>
-        <button class="primary" style="width: auto; margin-bottom: 0;"
-            onclick="document.getElementById('modal-nuevo-contrato').showModal()">
-            ➕ Asignar Puesto a Trabajador
-        </button>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 0;">
+            <button class="primary" style="width: auto; margin-bottom: 0;"
+                onclick="document.getElementById('modal-nuevo-contrato').showModal()">
+                ➕ Asignar Puesto a Trabajador
+            </button>
+            <button class="secondary outline" style="width: auto; margin-bottom: 0;"
+                onclick="document.getElementById('modal-importar-contrato').showModal()">
+                📤 Importación Masiva (Excel)
+            </button>
+        </div>
     </header>
     <div>
         <form id="form-filtros-contratos" class="grid">
@@ -72,6 +78,90 @@
             </div>
         </article>
     </dialog>
+
+    <!-- Modal de Importación de Contrato -->
+    <dialog id="modal-importar-contrato">
+        <article style="max-width: 850px; width: 95%;">
+            <header>
+                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';"></a>
+                <h4 style="margin-bottom: 0;">📤 Importación Masiva (Excel)</h4>
+            </header>
+            <div>
+                <p><small>Sube un archivo <b>.xlsx</b> con las 7 columnas en el orden exacto indicado a continuación. La primera fila (cabecera) se omitirá.</small></p>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <strong>Estructura del Archivo Excel:</strong>
+                    <a href="/tenant/contratos/plantilla" class="button outline primary" style="padding: 4px 12px; font-size: 0.85rem; margin-bottom: 0;">
+                        <svg class="icono-menu" style="margin-right: 4px;">
+                            <use href="#icono-importar"></use>
+                        </svg> Descargar Plantilla (.xlsx)
+                    </a>
+                </div>
+
+                <div style="overflow-x: auto; margin-bottom: 1rem; border: 1px solid #e0e0e0; border-radius: 4px;">
+                    <table class="striped" style="width: 100%; font-size: 0.65rem; margin-bottom: 0; white-space: nowrap;">
+                        <thead>
+                            <tr>
+                                <th>A: DOCUMENTO_TRABAJADOR</th>
+                                <th>B: CODIGO_AIRHSP</th>
+                                <th>C: NOMBRE_PUESTO (Info)</th>
+                                <th>D: TIPO_CONTRATO</th>
+                                <th>E: FECHA_INICIO</th>
+                                <th>F: FECHA_FIN</th>
+                                <th>G: ACTIVO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>74839201</td>
+                                <td>000456</td>
+                                <td>Especialista en Logística II</td>
+                                <td>Nombrado</td>
+                                <td>2026-01-01</td>
+                                <td></td>
+                                <td>SI</td>
+                            </tr>
+                            <tr>
+                                <td>83920184</td>
+                                <td>000789</td>
+                                <td>Especialista en Sistemas I</td>
+                                <td>Transitorio</td>
+                                <td>2026-02-15</td>
+                                <td>2026-12-31</td>
+                                <td>SI</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <form hx-post="/tenant/contratos/importar" hx-encoding="multipart/form-data"
+                    hx-target="#resultado-importacion-contrato" hx-indicator="#cargando-excel-contratos"
+                    hx-on::after-request="if(event.detail.successful) { document.getElementById('archivo-excel-contratos').value=''; }">
+
+                    <div class="grid" style="margin-top: 1rem;">
+                        <label>Archivo Excel (.xlsx)
+                            <input type="file" id="archivo-excel-contratos" name="archivo_excel" accept=".xlsx" required>
+                        </label>
+
+                        <div style="display: flex; align-items: end; padding-bottom: var(--spacing);">
+                            <button type="submit" class="contrast" style="margin-bottom: 0;">Procesar Archivo</button>
+                        </div>
+                    </div>
+
+                    <span id="cargando-excel-contratos" class="htmx-indicator">
+                        <svg class="icono-menu">
+                            <use href="#icono-reloj-arena"></use>
+                        </svg> Procesando filas y validando contratos...
+                    </span>
+                </form>
+
+                <div id="resultado-importacion-contrato" style="margin-top: 1rem;"></div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
+                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';" style="margin-bottom: 0; width: auto;">Cerrar</button>
+                </div>
+            </div>
+        </dialog>
 </article>
 
 {{define "formulario_crear"}}

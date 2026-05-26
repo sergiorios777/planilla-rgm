@@ -220,6 +220,8 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/contratos/formulario-dinamico", middleware.RequireAuth(contratoHandler.FormularioDinamicoUI))
 	mux.HandleFunc("/tenant/contratos/editar-ui", middleware.RequireAuth(contratoHandler.EditarUI))
 	mux.HandleFunc("/tenant/contratos/actualizar", middleware.RequireAuth(contratoHandler.Actualizar))
+	mux.HandleFunc("/tenant/contratos/plantilla", middleware.RequireAuth(contratoHandler.DescargarPlantilla))
+	mux.HandleFunc("/tenant/contratos/importar", middleware.RequireAuth(contratoHandler.ImportarExcel))
 
 	organigramaHandler := handlers.OrganigramaHandler{Repo: organigramaRepo, PuestoRepo: puestoRepo}
 	mux.HandleFunc("/tenant/ui/organigrama", middleware.RequireAuth(organigramaHandler.VistaUI))
