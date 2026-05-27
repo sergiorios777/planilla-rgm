@@ -52,8 +52,8 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 		pdf = gofpdf.New("L", "mm", "A4", "")
 		pdf.AddPage()
 		tr := pdf.UnicodeTranslatorFromDescriptor("")
-		s.agregarCabeceraPDF(pdf, tenantID, "👥 PADRÓN GENERAL DE PERSONAL", "Listado completo de trabajadores de la entidad")
-		
+		s.agregarCabeceraPDF(pdf, tenantID, "PADRÓN GENERAL DE PERSONAL", "Listado completo de trabajadores de la entidad")
+
 		trabajadores, err := s.TrabajadorRepo.ObtenerTodos(tenantID)
 		if err != nil {
 			return nil, "", fmt.Errorf("error cargando trabajadores: %w", err)
@@ -76,7 +76,7 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 			if t.Activo {
 				estado = "ACTIVO"
 			}
-			
+
 			afpInfo := "-"
 			if t.RegimenPensionario == "AFP" {
 				afpInfo = fmt.Sprintf("AFP (%s)", t.Cuspp)
@@ -108,7 +108,7 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 		if mes < 1 || mes > 12 {
 			mes = int(time.Now().Month())
 		}
-		
+
 		mesesNombres := map[int]string{
 			1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO",
 			7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE",
@@ -117,7 +117,7 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 		pdf = gofpdf.New("P", "mm", "A4", "")
 		pdf.AddPage()
 		tr := pdf.UnicodeTranslatorFromDescriptor("")
-		s.agregarCabeceraPDF(pdf, tenantID, "🎂 CUMPLEAÑOS DEL MES", "Personal que celebra su onomástico en: "+mesesNombres[mes])
+		s.agregarCabeceraPDF(pdf, tenantID, "CUMPLEAÑOS DEL MES", "Personal que celebra su onomástico en: "+mesesNombres[mes])
 
 		cumpleaneros, err := s.TrabajadorRepo.ObtenerCumpleaniosMes(tenantID, mes)
 		if err != nil {
@@ -153,7 +153,7 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 			pdf.CellFormat(anchos[4], 6, tr(t.FechaNacimiento), "1", 0, "C", rellenar, 0, "")
 			pdf.Ln(-1)
 		}
-		
+
 		if len(cumpleaneros) == 0 {
 			pdf.SetFont("Arial", "I", 10)
 			pdf.Ln(5)
@@ -165,7 +165,7 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 		pdf = gofpdf.New("P", "mm", "A4", "")
 		pdf.AddPage()
 		tr := pdf.UnicodeTranslatorFromDescriptor("")
-		s.agregarCabeceraPDF(pdf, tenantID, "🏢 DIRECTORIO DE DEPENDENCIAS MUNICIPALES", "Estructura orgánica de la versión activa de la municipalidad")
+		s.agregarCabeceraPDF(pdf, tenantID, "DIRECTORIO DE DEPENDENCIAS MUNICIPALES", "Estructura orgánica de la versión activa de la municipalidad")
 
 		org, err := s.OrganigramaRepo.ObtenerOrganigramaActivo(tenantID)
 		if err != nil || org == nil {
@@ -211,7 +211,7 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 		pdf = gofpdf.New("P", "mm", "A4", "")
 		pdf.AddPage()
 		tr := pdf.UnicodeTranslatorFromDescriptor("")
-		s.agregarCabeceraPDF(pdf, tenantID, "📊 OCUPABILIDAD DE PLAZAS (CAP/PAP)", "Estado ocupacional de las plazas registradas")
+		s.agregarCabeceraPDF(pdf, tenantID, "OCUPABILIDAD DE PLAZAS (CAP/PAP)", "Estado ocupacional de las plazas registradas")
 
 		puestos, err := s.PuestoRepo.ObtenerTodos(tenantID)
 		if err != nil {
@@ -243,25 +243,107 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 				codAirhsp = *p.CodigoAirhsp
 			}
 
+			nombre := tr(p.Nombre)
+			unidad := tr(p.UnidadOrganicaNombre)
+			regimen := tr(p.RegimenDesc)
+			estado := tr(p.Estado)
+			idxStr := fmt.Sprintf("%d", idx+1)
+			codStr := tr(codAirhsp)
+
+			// Calcular líneas por columna
+			lineasNombre := pdf.SplitLines([]byte(nombre), anchos[2])
+			lineasUnidad := pdf.SplitLines([]byte(unidad), anchos[3])
+			lineasRegimen := pdf.SplitLines([]byte(regimen), anchos[4])
+
+			// Encontrar el número máximo de líneas
+			maxLineas := 1
+			if len(lineasNombre) > maxLineas {
+				maxLineas = len(lineasNombre)
+			}
+			if len(lineasUnidad) > maxLineas {
+				maxLineas = len(lineasUnidad)
+			}
+			if len(lineasRegimen) > maxLineas {
+				maxLineas = len(lineasRegimen)
+			}
+
+			lineSpacing := 4.5
+			alturaFila := float64(maxLineas) * lineSpacing
+
+			// Verificar salto de página (A4 alto: 297mm, margen inferior: 20mm)
+			if pdf.GetY()+alturaFila > 275 {
+				pdf.AddPage()
+				s.agregarCabeceraPDF(pdf, tenantID, "OCUPABILIDAD DE PLAZAS (CAP/PAP)", "Estado ocupacional de las plazas registradas")
+				// Volver a dibujar cabecera de la tabla
+				pdf.SetFillColor(235, 235, 240)
+				pdf.SetFont("Arial", "B", 9)
+				for i, h := range headers {
+					pdf.CellFormat(anchos[i], 6, tr(h), "1", 0, "C", true, 0, "")
+				}
+				pdf.Ln(-1)
+				pdf.SetFont("Arial", "", 8)
+			}
+
 			rellenar := idx%2 == 1
 			if rellenar {
 				pdf.SetFillColor(248, 248, 250)
+			} else {
+				pdf.SetFillColor(255, 255, 255)
 			}
 
-			pdf.CellFormat(anchos[0], 5, fmt.Sprintf("%d", idx+1), "1", 0, "C", rellenar, 0, "")
-			pdf.CellFormat(anchos[1], 5, tr(codAirhsp), "1", 0, "C", rellenar, 0, "")
-			pdf.CellFormat(anchos[2], 5, tr(p.Nombre), "1", 0, "L", rellenar, 0, "")
-			pdf.CellFormat(anchos[3], 5, tr(p.UnidadOrganicaNombre), "1", 0, "L", rellenar, 0, "")
-			pdf.CellFormat(anchos[4], 5, tr(p.RegimenDesc), "1", 0, "C", rellenar, 0, "")
-			
+			yIni := pdf.GetY()
+			// 1. Dibujar el fondo y el borde exterior para todas las celdas de la fila
+			for _, ancho := range anchos {
+				pdf.CellFormat(ancho, alturaFila, "", "1", 0, "C", rellenar, 0, "")
+			}
+
+			// Restaurar X e Y para escribir el texto
+			xIni := 10.0
+			pdf.SetXY(xIni, yIni)
+
+			// Col 0: N°
+			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
+			pdf.CellFormat(anchos[0], 4.5, idxStr, "", 0, "C", false, 0, "")
+			xIni += anchos[0]
+
+			// Col 1: Cód. AIRHSP
+			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
+			pdf.CellFormat(anchos[1], 4.5, codStr, "", 0, "C", false, 0, "")
+			xIni += anchos[1]
+
+			// Col 2: Nombre del Puesto
+			numLineasNombre := len(lineasNombre)
+			alturaNombre := float64(numLineasNombre) * lineSpacing
+			pdf.SetXY(xIni, yIni+(alturaFila-alturaNombre)/2)
+			pdf.MultiCell(anchos[2], lineSpacing, nombre, "", "L", false)
+			xIni += anchos[2]
+
+			// Col 3: Unidad Orgánica
+			numLineasUnidad := len(lineasUnidad)
+			alturaUnidad := float64(numLineasUnidad) * lineSpacing
+			pdf.SetXY(xIni, yIni+(alturaFila-alturaUnidad)/2)
+			pdf.MultiCell(anchos[3], lineSpacing, unidad, "", "L", false)
+			xIni += anchos[3]
+
+			// Col 4: Régimen
+			numLineasRegimen := len(lineasRegimen)
+			alturaRegimen := float64(numLineasRegimen) * lineSpacing
+			pdf.SetXY(xIni, yIni+(alturaFila-alturaRegimen)/2)
+			pdf.MultiCell(anchos[4], lineSpacing, regimen, "", "C", false)
+			xIni += anchos[4]
+
+			// Col 5: Estado
 			if p.Estado == "VACANTE" {
 				pdf.SetTextColor(0, 100, 250)
 			} else {
 				pdf.SetTextColor(0, 120, 0)
 			}
-			pdf.CellFormat(anchos[5], 5, tr(p.Estado), "1", 0, "C", rellenar, 0, "")
+			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
+			pdf.CellFormat(anchos[5], 4.5, estado, "", 0, "C", false, 0, "")
 			pdf.SetTextColor(0, 0, 0)
-			pdf.Ln(-1)
+
+			// Volvemos a colocar la posición para la siguiente fila
+			pdf.SetXY(10, yIni+alturaFila)
 		}
 
 		pdf.Ln(4)
@@ -273,7 +355,7 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 		pdf = gofpdf.New("P", "mm", "A4", "")
 		pdf.AddPage()
 		tr := pdf.UnicodeTranslatorFromDescriptor("")
-		s.agregarCabeceraPDF(pdf, tenantID, "💰 PRESUPUESTO ANALÍTICO DE PERSONAL (PAP) RESUMIDO", "Cuadro resumido de costos mensuales por plaza")
+		s.agregarCabeceraPDF(pdf, tenantID, "PRESUPUESTO ANALÍTICO DE PERSONAL (PAP) RESUMIDO", "Cuadro resumido de costos mensuales por plaza")
 
 		puestos, err := s.PuestoRepo.ObtenerTodos(tenantID)
 		if err != nil {
@@ -320,7 +402,7 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 		pdf = gofpdf.New("L", "mm", "A4", "")
 		pdf.AddPage()
 		tr := pdf.UnicodeTranslatorFromDescriptor("")
-		s.agregarCabeceraPDF(pdf, tenantID, "⚙️ CATÁLOGO LOCAL DE CONCEPTOS Y AFECTACIONES", "Ingresos, retenciones y aportaciones del tenant")
+		s.agregarCabeceraPDF(pdf, tenantID, "CATÁLOGO LOCAL DE CONCEPTOS Y AFECTACIONES", "Ingresos, retenciones y aportaciones del tenant")
 
 		conceptos, err := s.ConceptoTenantRepo.ObtenerTodos(tenantID)
 		if err != nil {
@@ -329,7 +411,7 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 
 		pdf.SetFillColor(230, 230, 240)
 		pdf.SetFont("Arial", "B", 8)
-		anchos := []float64{10, 15, 75, 20, 20, 20, 20, 40, 20, 17}
+		anchos := []float64{10, 15, 80, 20, 17, 17, 17, 30, 45, 19}
 		headers := []string{"N°", "Código", "Concepto Local", "Tipo", "Remun.", "Pens.", "Extra.", "Clasificador MEF", "Frec.", "Estado"}
 		for i, h := range headers {
 			pdf.CellFormat(anchos[i], 6, tr(h), "1", 0, "C", true, 0, "")
@@ -361,22 +443,122 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 				codClasif = "-"
 			}
 
+			nombre := tr(c.NombrePersonalizado)
+			tipo := tr(c.ConceptoTipo)
+			clasif := tr(codClasif)
+			frec := tr(fmt.Sprintf("C/%s M", c.FrecuenciaMeses))
+			estado := tr(activo)
+			idxStr := fmt.Sprintf("%d", idx+1)
+			codStr := tr(c.ConceptoCodigo)
+
+			// Calcular líneas por columna
+			lineasNombre := pdf.SplitLines([]byte(nombre), anchos[2])
+			lineasClasif := pdf.SplitLines([]byte(clasif), anchos[7])
+			lineasFrec := pdf.SplitLines([]byte(frec), anchos[8])
+
+			// Encontrar el número máximo de líneas
+			maxLineas := 1
+			if len(lineasNombre) > maxLineas {
+				maxLineas = len(lineasNombre)
+			}
+			if len(lineasClasif) > maxLineas {
+				maxLineas = len(lineasClasif)
+			}
+			if len(lineasFrec) > maxLineas {
+				maxLineas = len(lineasFrec)
+			}
+
+			lineSpacing := 4.5
+			alturaFila := float64(maxLineas) * lineSpacing
+
+			// Verificar salto de página (A4 Landscape alto: 210mm, margen inferior: 15-20mm)
+			if pdf.GetY()+alturaFila > 185 {
+				pdf.AddPage()
+				s.agregarCabeceraPDF(pdf, tenantID, "CATÁLOGO LOCAL DE CONCEPTOS Y AFECTACIONES", "Ingresos, retenciones y aportaciones del tenant")
+				// Volver a dibujar cabecera de la tabla
+				pdf.SetFillColor(230, 230, 240)
+				pdf.SetFont("Arial", "B", 8)
+				for i, h := range headers {
+					pdf.CellFormat(anchos[i], 6, tr(h), "1", 0, "C", true, 0, "")
+				}
+				pdf.Ln(-1)
+				pdf.SetFont("Arial", "", 8)
+			}
+
 			rellenar := idx%2 == 1
 			if rellenar {
 				pdf.SetFillColor(245, 245, 250)
+			} else {
+				pdf.SetFillColor(255, 255, 255)
 			}
 
-			pdf.CellFormat(anchos[0], 5, fmt.Sprintf("%d", idx+1), "1", 0, "C", rellenar, 0, "")
-			pdf.CellFormat(anchos[1], 5, tr(c.ConceptoCodigo), "1", 0, "C", rellenar, 0, "")
-			pdf.CellFormat(anchos[2], 5, tr(c.NombrePersonalizado), "1", 0, "L", rellenar, 0, "")
-			pdf.CellFormat(anchos[3], 5, tr(c.ConceptoTipo), "1", 0, "C", rellenar, 0, "")
-			pdf.CellFormat(anchos[4], 5, tr(esRem), "1", 0, "C", rellenar, 0, "")
-			pdf.CellFormat(anchos[5], 5, tr(esPen), "1", 0, "C", rellenar, 0, "")
-			pdf.CellFormat(anchos[6], 5, tr(esExt), "1", 0, "C", rellenar, 0, "")
-			pdf.CellFormat(anchos[7], 5, tr(codClasif), "1", 0, "C", rellenar, 0, "")
-			pdf.CellFormat(anchos[8], 5, fmt.Sprintf("C/%s M", c.FrecuenciaMeses), "1", 0, "C", rellenar, 0, "")
-			pdf.CellFormat(anchos[9], 5, tr(activo), "1", 0, "C", rellenar, 0, "")
-			pdf.Ln(-1)
+			yIni := pdf.GetY()
+			// 1. Dibujar el fondo y el borde exterior para todas las celdas de la fila
+			for _, ancho := range anchos {
+				pdf.CellFormat(ancho, alturaFila, "", "1", 0, "C", rellenar, 0, "")
+			}
+
+			// Restaurar X e Y para escribir el texto
+			xIni := 10.0
+			pdf.SetXY(xIni, yIni)
+
+			// Col 0: N°
+			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
+			pdf.CellFormat(anchos[0], 4.5, idxStr, "", 0, "C", false, 0, "")
+			xIni += anchos[0]
+
+			// Col 1: Código
+			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
+			pdf.CellFormat(anchos[1], 4.5, codStr, "", 0, "C", false, 0, "")
+			xIni += anchos[1]
+
+			// Col 2: Concepto Local
+			numLineasNombre := len(lineasNombre)
+			alturaNombre := float64(numLineasNombre) * lineSpacing
+			pdf.SetXY(xIni, yIni+(alturaFila-alturaNombre)/2)
+			pdf.MultiCell(anchos[2], lineSpacing, nombre, "", "L", false)
+			xIni += anchos[2]
+
+			// Col 3: Tipo
+			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
+			pdf.CellFormat(anchos[3], 4.5, tipo, "", 0, "C", false, 0, "")
+			xIni += anchos[3]
+
+			// Col 4: Remun.
+			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
+			pdf.CellFormat(anchos[4], 4.5, tr(esRem), "", 0, "C", false, 0, "")
+			xIni += anchos[4]
+
+			// Col 5: Pens.
+			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
+			pdf.CellFormat(anchos[5], 4.5, tr(esPen), "", 0, "C", false, 0, "")
+			xIni += anchos[5]
+
+			// Col 6: Extra.
+			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
+			pdf.CellFormat(anchos[6], 4.5, tr(esExt), "", 0, "C", false, 0, "")
+			xIni += anchos[6]
+
+			// Col 7: Clasificador MEF
+			numLineasClasif := len(lineasClasif)
+			alturaClasif := float64(numLineasClasif) * lineSpacing
+			pdf.SetXY(xIni, yIni+(alturaFila-alturaClasif)/2)
+			pdf.MultiCell(anchos[7], lineSpacing, clasif, "", "C", false)
+			xIni += anchos[7]
+
+			// Col 8: Frec.
+			numLineasFrec := len(lineasFrec)
+			alturaFrec := float64(numLineasFrec) * lineSpacing
+			pdf.SetXY(xIni, yIni+(alturaFila-alturaFrec)/2)
+			pdf.MultiCell(anchos[8], lineSpacing, frec, "", "C", false)
+			xIni += anchos[8]
+
+			// Col 9: Estado
+			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
+			pdf.CellFormat(anchos[9], 4.5, estado, "", 0, "C", false, 0, "")
+
+			// Volvemos a colocar la posición para la siguiente fila
+			pdf.SetXY(10, yIni+alturaFila)
 		}
 
 	case "contrato_vence":
@@ -390,7 +572,7 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 		pdf = gofpdf.New("P", "mm", "A4", "")
 		pdf.AddPage()
 		tr := pdf.UnicodeTranslatorFromDescriptor("")
-		s.agregarCabeceraPDF(pdf, tenantID, "⏳ ALERTAS DE VENCIMIENTO DE CONTRATOS", fmt.Sprintf("Contratos transitorios que vencen en los próximos %d días", dias))
+		s.agregarCabeceraPDF(pdf, tenantID, "ALERTAS DE VENCIMIENTO DE CONTRATOS", fmt.Sprintf("Contratos transitorios que vencen en los próximos %d días", dias))
 
 		contratos, err := s.ContratoRepo.ObtenerContratosVencimiento(tenantID, dias)
 		if err != nil {
@@ -454,8 +636,8 @@ func (s *ReporteService) GenerarExcel(tenantID int, id string, params map[string
 
 	// Estilos Premium (Azul Marino Municipal)
 	styleCabecera, _ := f.NewStyle(&excelize.Style{
-		Font: &excelize.Font{Bold: true, Color: "FFFFFF", Family: "Segoe UI", Size: 11},
-		Fill: excelize.Fill{Type: "pattern", Color: []string{"1F4E79"}, Pattern: 1},
+		Font:      &excelize.Font{Bold: true, Color: "FFFFFF", Family: "Segoe UI", Size: 11},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"1F4E79"}, Pattern: 1},
 		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 		Border: []excelize.Border{
 			{Type: "left", Color: "D9D9D9", Style: 1},
@@ -466,7 +648,7 @@ func (s *ReporteService) GenerarExcel(tenantID int, id string, params map[string
 	})
 
 	styleDatos, _ := f.NewStyle(&excelize.Style{
-		Font: &excelize.Font{Family: "Segoe UI", Size: 10},
+		Font:      &excelize.Font{Family: "Segoe UI", Size: 10},
 		Alignment: &excelize.Alignment{Horizontal: "left", Vertical: "center"},
 		Border: []excelize.Border{
 			{Type: "left", Color: "F2F2F2", Style: 1},
@@ -477,7 +659,7 @@ func (s *ReporteService) GenerarExcel(tenantID int, id string, params map[string
 	})
 
 	styleCentrado, _ := f.NewStyle(&excelize.Style{
-		Font: &excelize.Font{Family: "Segoe UI", Size: 10},
+		Font:      &excelize.Font{Family: "Segoe UI", Size: 10},
 		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
 		Border: []excelize.Border{
 			{Type: "left", Color: "F2F2F2", Style: 1},
@@ -488,9 +670,9 @@ func (s *ReporteService) GenerarExcel(tenantID int, id string, params map[string
 	})
 
 	styleMonto, _ := f.NewStyle(&excelize.Style{
-		Font: &excelize.Font{Family: "Segoe UI", Size: 10},
+		Font:      &excelize.Font{Family: "Segoe UI", Size: 10},
 		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center"},
-		NumFmt: 2,
+		NumFmt:    2,
 		Border: []excelize.Border{
 			{Type: "left", Color: "F2F2F2", Style: 1},
 			{Type: "right", Color: "F2F2F2", Style: 1},
@@ -519,7 +701,7 @@ func (s *ReporteService) GenerarExcel(tenantID int, id string, params map[string
 		for idx, t := range trabajadores {
 			rowNum := idx + 2
 			f.SetRowHeight(hoja, rowNum, 20)
-			
+
 			estado := "INACTIVO"
 			if t.Activo {
 				estado = "ACTIVO"
@@ -549,7 +731,7 @@ func (s *ReporteService) GenerarExcel(tenantID int, id string, params map[string
 			f.SetCellStyle(hoja, fmt.Sprintf("J%d", rowNum), fmt.Sprintf("J%d", rowNum), styleDatos)
 			f.SetCellStyle(hoja, fmt.Sprintf("K%d", rowNum), fmt.Sprintf("K%d", rowNum), styleCentrado)
 		}
-		
+
 		s.ajustarAnchosColumnas(f, hoja, len(cabeceras))
 
 	case "trab_cumple":
@@ -807,9 +989,9 @@ func (s *ReporteService) GenerarExcel(tenantID int, id string, params map[string
 func (s *ReporteService) agregarCabeceraPDF(pdf *gofpdf.Fpdf, tenantID int, titulo string, subtitulo string) {
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 	pdf.SetMargins(10, 10, 10)
-	
+
 	tenant, _ := s.TenantRepo.ObtenerPorID(tenantID)
-	
+
 	if tenant != nil && tenant.LogoURL != nil && *tenant.LogoURL != "" {
 		rutaLogo := strings.TrimPrefix(*tenant.LogoURL, "/")
 		if _, err := os.Stat(rutaLogo); err == nil {
@@ -824,7 +1006,7 @@ func (s *ReporteService) agregarCabeceraPDF(pdf *gofpdf.Fpdf, tenantID int, titu
 	} else {
 		pdf.Cell(100, 6, tr("MUNICIPALIDAD DISTRITAL"))
 	}
-	
+
 	pdf.SetFont("Arial", "", 8)
 	pdf.SetXY(35, 16)
 	if tenant != nil {
@@ -848,11 +1030,11 @@ func (s *ReporteService) agregarCabeceraPDF(pdf *gofpdf.Fpdf, tenantID int, titu
 
 	pdf.SetDrawColor(180, 180, 180)
 	pdf.Line(10, 27, anchoPagina-10, 27)
-	
-	pdf.Ln(14)
+
+	pdf.SetY(32)
 	pdf.SetFont("Arial", "B", 14)
 	pdf.CellFormat(anchoPagina-20, 7, tr(titulo), "", 1, "C", false, 0, "")
-	
+
 	if subtitulo != "" {
 		pdf.SetFont("Arial", "I", 9)
 		pdf.CellFormat(anchoPagina-20, 5, tr(subtitulo), "", 1, "C", false, 0, "")

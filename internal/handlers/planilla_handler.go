@@ -61,6 +61,7 @@ func (h *PlanillaHandler) Crear(w http.ResponseWriter, r *http.Request) {
 
 	// Limpiamos alertas previas y actualizamos la tabla
 	w.Write([]byte(`<div id="alerta-planilla" hx-swap-oob="true"></div>`))
+	w.Header().Set("HX-Trigger", "cerrarModal")
 	h.Listar(w, r)
 }
 
