@@ -1,34 +1,51 @@
 <article>
-    <header>
-        <h3><svg class="icono-menu">
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="margin: 0;">
+            <svg class="icono-menu">
                 <use href="#icono-maletin"></use>
             </svg>
             Catálogo: Conceptos Maestros (SUNAT)
         </h3>
+        <button class="outline secondary" style="width: auto; margin-bottom: 0;" onclick="document.getElementById('modal-importar-conceptos').showModal()">
+            <svg class="icono-menu">
+                <use href="#icono-importar"></use>
+            </svg> Importación Masiva
+        </button>
     </header>
-    <div class="grid">
-        <div>
-            <h4>Importación Masiva (CSV)</h4>
-            <p><small>Columnas requeridas: CODIGO, DESCRIPCION, TIPO, AFECTA_A (opcional, separado por comas).</small>
-            </p>
 
-            <form hx-post="/admin/conceptos/importar" hx-encoding="multipart/form-data" hx-target="#lista-conceptos"
-                hx-swap="innerHTML">
-                <input type="file" name="archivo_csv" accept=".csv" required>
-                <button type="submit" class="secondary">Importar Conceptos</button>
-            </form>
-        </div>
-
-        <div>
-            <div>
-                {{template "filtros_conceptos" .}}
-            </div>
-            <div id="lista-conceptos" hx-get="/admin/conceptos/lista" hx-trigger="load">
-                <p aria-busy="true">Cargando conceptos...</p>
-            </div>
-        </div>
+    <div>
+        {{template "filtros_conceptos" .}}
+    </div>
+    <div id="lista-conceptos" hx-get="/admin/conceptos/lista" hx-trigger="load">
+        <p aria-busy="true">Cargando conceptos...</p>
     </div>
 </article>
+
+<!-- Modal de Importación Masiva -->
+<dialog id="modal-importar-conceptos">
+    <article style="max-width: 600px; width: 90%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-importar-conceptos').close()"></a>
+            <h4 style="margin: 0;"><svg class="icono-menu">
+                    <use href="#icono-importar"></use>
+                </svg> Importación Masiva (CSV)</h4>
+        </header>
+        <p><small>Columnas requeridas: CODIGO, DESCRIPCION, TIPO, AFECTA_A (opcional, separado por comas).</small></p>
+        <form hx-post="/admin/conceptos/importar" hx-encoding="multipart/form-data" hx-target="#lista-conceptos"
+            hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) this.reset();">
+            <label>Archivo CSV
+                <input type="file" name="archivo_csv" accept=".csv" required>
+            </label>
+            <footer>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-conceptos').close()" style="margin-bottom: 0;">Cancelar</button>
+                    <button type="submit" class="secondary" style="margin-bottom: 0;">Importar Conceptos</button>
+                </div>
+            </footer>
+        </form>
+    </article>
+</dialog>
 
 {{define "tabla_conceptos"}}
 <table class="striped">
@@ -118,3 +135,10 @@
     </label>
 </form>
 {{end}}
+
+<script>
+    document.body.addEventListener("cerrarModal", function () {
+        const modal = document.getElementById('modal-importar-conceptos');
+        if (modal && modal.open) modal.close();
+    });
+</script>

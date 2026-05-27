@@ -31,22 +31,43 @@
             color: #888;
         }
 
-        /* Ajuste estético para que se integre perfectamente con Pico CSS */
+        /* Ajuste estético de tomSelect para que se integre perfectamente con Pico CSS */
         .ts-control {
             border-radius: var(--pico-border-radius) !important;
-            border: 1px solid var(--pico-border-color) !important;
-            background-color: var(--pico-background-color) !important;
+            border: var(--pico-border-width) solid var(--pico-form-element-border-color) !important;
+            background-color: var(--pico-form-element-background-color) !important;
+            background-image: none !important;
             color: var(--pico-color) !important;
-            padding: 0.5rem 0.75rem !important;
+            display: flex !important;
+            align-items: center !important;
+            height: calc(1.5em + var(--pico-form-element-spacing-vertical) * 2 + var(--pico-border-width) * 2) !important;
+            padding: 0 var(--pico-form-element-spacing-horizontal) !important;
+            position: relative !important;
+            box-shadow: none !important;
+        }
+        .ts-control input,
+        .ts-control .item {
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            background: transparent !important;
+            height: auto !important;
+            min-height: 0 !important;
+            box-shadow: none !important;
+            line-height: inherit !important;
+        }
+        .ts-wrapper.focus .ts-control {
+            border-color: var(--pico-form-element-active-border-color) !important;
+            box-shadow: 0 0 0 var(--pico-outline-width) var(--pico-form-element-focus-color) !important;
         }
         .ts-wrapper.disabled .ts-control {
             background-color: var(--pico-form-element-disabled-background-color) !important;
             opacity: var(--pico-form-element-disabled-opacity) !important;
         }
         .ts-dropdown {
-            background-color: var(--pico-background-color) !important;
+            background-color: var(--pico-form-element-background-color) !important;
             color: var(--pico-color) !important;
-            border: 1px solid var(--pico-border-color) !important;
+            border: var(--pico-border-width) solid var(--pico-form-element-border-color) !important;
         }
         .ts-dropdown .active {
             background-color: var(--pico-primary-hover-background) !important;

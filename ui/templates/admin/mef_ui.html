@@ -1,22 +1,32 @@
 <article>
     <header>
-        <h3><svg class="icono-menu">
-                <use href="#icono-clasificador"></use>
-            </svg>
-            Catálogo: Clasificadores Presupuestales (MEF)</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <h3 style="margin: 0;">
+                <svg class="icono-menu">
+                    <use href="#icono-clasificador"></use>
+                </svg>
+                Catálogo: Clasificadores Presupuestales (MEF)
+            </h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="outline" onclick="document.getElementById('modal-crear-clasificador').showModal()">
+                    <svg class="icono-menu">
+                        <use href="#icono-nuevo-1"></use>
+                    </svg> Registrar Clasificador
+                </button>
+                <button class="outline secondary" onclick="document.getElementById('modal-importacion-masiva').showModal()">
+                    <svg class="icono-menu">
+                        <use href="#icono-importar"></use>
+                    </svg> Importación Masiva
+                </button>
+                <button class="outline secondary" onclick="document.getElementById('modal-vinculacion-jerarquica').showModal()">
+                    <svg class="icono-menu">
+                        <use href="#icono-enlace"></use>
+                    </svg> Vincular Jerarquía
+                </button>
+            </div>
+        </div>
     </header>
 
-    <div class="grid">
-        <div>
-            {{ template "crear_clasificador" . }}
-            <hr>
-            {{ template "importacion_masiva" . }}
-        </div>
-        <div>
-            {{ template "vinculacion_jerarquica" . }}
-        </div>
-
-    </div>
     <form id="form-filtros-mef" class="grid" style="margin-bottom: 1rem;">
         <label>
             Año
@@ -61,58 +71,114 @@
     </div>
 </article>
 
+<!-- Modales -->
+{{ template "crear_clasificador" . }}
+{{ template "importacion_masiva" . }}
+{{ template "vinculacion_jerarquica" . }}
+
 {{ define "crear_clasificador"}}
-<details close>
-    <summary role="button" class="secondary outline"><svg class="icono-menu">
-            <use href="#icono-nuevo-1"></use>
-        </svg>Registrar Clasificador</summary>
-    <h4>Registrar Clasificador</h4>
-    <form hx-post="/admin/mef/crear" hx-target="#lista-mef" hx-swap="innerHTML">
-        <div class="grid">
-            <input type="number" name="anio" value="2026" placeholder="Año" required>
-            <input type="text" name="codigo" placeholder="Código (ej. 2.1. 1 1)" required>
-            <input type="number" name="nivel" min="1" max="6" placeholder="Nivel (1-6)" required>
-        </div>
-        <input type="text" name="descripcion" placeholder="Descripción" required>
-        <select name="tipo_transaccion" required>
-            <option value="Gasto">Gasto</option>
-            <option value="Ingreso">Ingreso</option>
-        </select>
-        <button type="submit">Guardar Clasificador</button>
-    </form>
-</details>
+<dialog id="modal-crear-clasificador">
+    <article style="max-width: 600px; width: 90%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-crear-clasificador').close()"></a>
+            <h4 style="margin: 0;"><svg class="icono-menu">
+                    <use href="#icono-nuevo-1"></use>
+                </svg> Registrar Clasificador</h4>
+        </header>
+        <form hx-post="/admin/mef/crear" hx-target="#lista-mef" hx-swap="innerHTML"
+            hx-on::after-request="if(event.detail.successful) this.reset();">
+            <div class="grid">
+                <label>Año
+                    <input type="number" name="anio" value="2026" placeholder="Año" required>
+                </label>
+                <label>Código
+                    <input type="text" name="codigo" placeholder="Código (ej. 2.1. 1 1)" required>
+                </label>
+                <label>Nivel
+                    <input type="number" name="nivel" min="1" max="6" placeholder="Nivel (1-6)" required>
+                </label>
+            </div>
+            <label>Descripción
+                <input type="text" name="descripcion" placeholder="Descripción" required>
+            </label>
+            <label>Tipo de Transacción
+                <select name="tipo_transaccion" required>
+                    <option value="Gasto">Gasto</option>
+                    <option value="Ingreso">Ingreso</option>
+                </select>
+            </label>
+            <footer>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-crear-clasificador').close()" style="margin-bottom: 0;">Cancelar</button>
+                    <button type="submit" style="margin-bottom: 0;">Guardar Clasificador</button>
+                </div>
+            </footer>
+        </form>
+    </article>
+</dialog>
 {{ end }}
 
 {{define "importacion_masiva"}}
-<details close>
-    <summary role="button" class="secondary outline"><svg class="icono-menu">
-            <use href="#icono-importar"></use>
-        </svg>Importación Masiva (CSV)</summary>
-    <h4>Importación Masiva (CSV)</h4>
-    <p><small>Sube el archivo oficial del MEF. Columnas requeridas: ANIO, CLASIFICADOR, DESCRIPCION.</small>
-    </p>
-
-    <form hx-post="/admin/mef/importar" hx-encoding="multipart/form-data" hx-target="#lista-mef" hx-swap="innerHTML">
-        <input type="file" name="archivo_csv" accept=".csv" required>
-        <button type="submit" class="secondary">Importar Catálogo</button>
-    </form>
-</details>
+<dialog id="modal-importacion-masiva">
+    <article style="max-width: 600px; width: 90%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-importacion-masiva').close()"></a>
+            <h4 style="margin: 0;"><svg class="icono-menu">
+                    <use href="#icono-importar"></use>
+                </svg> Importación Masiva (CSV)</h4>
+        </header>
+        <p><small>Sube el archivo oficial del MEF. Columnas requeridas: ANIO, CLASIFICADOR, DESCRIPCION.</small></p>
+        <form hx-post="/admin/mef/importar" hx-encoding="multipart/form-data" hx-target="#lista-mef" hx-swap="innerHTML"
+            hx-on::after-request="if(event.detail.successful) this.reset();">
+            <label>Archivo CSV
+                <input type="file" name="archivo_csv" accept=".csv" required>
+            </label>
+            <footer>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-importacion-masiva').close()" style="margin-bottom: 0;">Cancelar</button>
+                    <button type="submit" class="secondary" style="margin-bottom: 0;">Importar Catálogo</button>
+                </div>
+            </footer>
+        </form>
+    </article>
+</dialog>
 {{end}}
 
 {{define "vinculacion_jerarquica"}}
-<details open>
-    <summary role="button" class="secondary outline"><svg class="icono-menu">
-            <use href="#icono-enlace"></use>
-        </svg>Vincular Jerarquía</summary>
-    <p><small>Ejecuta la vinculación de jerarquías (Padre/Hijo) para un año específico si los datos se
-            desincronizan.</small></p>
-
-    <form hx-post="/admin/mef/vincular" hx-target="#lista-mef" hx-swap="innerHTML">
-        <fieldset role="group">
-            <input type="number" name="anio_vincular" value="2026" style="max-width: 120px;margin-right: 10px;"
-                required>
-            <button type="submit" class="outline">Re-vincular Jerarquía</button>
-        </fieldset>
-    </form>
-</details>
+<dialog id="modal-vinculacion-jerarquica">
+    <article style="max-width: 600px; width: 90%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-vinculacion-jerarquica').close()"></a>
+            <h4 style="margin: 0;"><svg class="icono-menu">
+                    <use href="#icono-enlace"></use>
+                </svg> Vincular Jerarquía</h4>
+        </header>
+        <p><small>Ejecuta la vinculación de jerarquías (Padre/Hijo) para un año específico si los datos se desincronizan.</small></p>
+        <form hx-post="/admin/mef/vincular" hx-target="#lista-mef" hx-swap="innerHTML">
+            <label>Año a Vincular
+                <input type="number" name="anio_vincular" value="2026" style="max-width: 150px;" required>
+            </label>
+            <footer>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-vinculacion-jerarquica').close()" style="margin-bottom: 0;">Cancelar</button>
+                    <button type="submit" class="outline" style="margin-bottom: 0;">Re-vincular Jerarquía</button>
+                </div>
+            </footer>
+        </form>
+    </article>
+</dialog>
 {{end}}
+
+<script>
+    document.body.addEventListener("cerrarModal", function () {
+        const m1 = document.getElementById('modal-crear-clasificador');
+        const m2 = document.getElementById('modal-importacion-masiva');
+        const m3 = document.getElementById('modal-vinculacion-jerarquica');
+        if (m1 && m1.open) m1.close();
+        if (m2 && m2.open) m2.close();
+        if (m3 && m3.open) m3.close();
+    });
+</script>

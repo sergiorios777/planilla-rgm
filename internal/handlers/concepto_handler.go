@@ -113,5 +113,6 @@ func (h *ConceptoHandler) ImportarCSV(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Repo.ProcesarImportacion(lista, afectaciones)
+	w.Header().Set("HX-Trigger", "cerrarModal")
 	h.ListarConceptos(w, r)
 }

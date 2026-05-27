@@ -103,6 +103,7 @@ func (h *MefHandler) CrearClasificador(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("HX-Trigger", "cerrarModal")
 	h.ListarClasificadores(w, r)
 }
 
@@ -204,6 +205,7 @@ func (h *MefHandler) ImportarCSV(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	w.Header().Set("HX-Trigger", "cerrarModal")
 	// 5. Devolvemos la tabla actualizada a HTMX
 	h.ListarClasificadores(w, r)
 }
@@ -230,6 +232,7 @@ func (h *MefHandler) VincularJerarquiaManual(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	w.Header().Set("HX-Trigger", "cerrarModal")
 	// Devolvemos la tabla actualizada
 	h.ListarClasificadores(w, r)
 }

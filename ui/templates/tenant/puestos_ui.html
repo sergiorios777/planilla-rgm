@@ -99,7 +99,7 @@
 
     <div class="grid">
         <label>Meta Presupuestal
-            <select name="meta_id" required>
+            <select name="meta_id" required class="select-con-buscador">
                 <option value="">-- Seleccione Meta --</option>
                 {{range .Metas}}{{if .Activo}}
                 <option value="{{.ID}}">{{.Codigo}} - {{.Descripcion}}</option>
@@ -119,8 +119,8 @@
 
     <div class="grid">
         <label for="unidad_organica_id">Unidad Orgánica (Oficina):
-            <select id="unidad_organica_id" name="unidad_organica_id">
-                <option value="0">— Sin asignar —</option>
+            <select id="unidad_organica_id" name="unidad_organica_id" class="select-con-buscador">
+                <option value="">-- Sin asignar --</option>
                 {{range .Unidades}}
                     <option value="{{.ID}}">[{{.Tipo}}] {{.Nombre}}</option>
                 {{end}}
@@ -174,7 +174,7 @@
 
     <div class="grid">
         <label>Meta Presupuestal
-            <select name="meta_id" required>
+            <select name="meta_id" required class="select-con-buscador">
                 {{$pMeta := .Puesto.MetaID}}
                 {{range .Metas}}
                 <option value="{{.ID}}" {{if eq .ID $pMeta}}selected{{end}}>{{.Codigo}} - {{.Descripcion}}</option>
@@ -194,7 +194,7 @@
 
     <div class="grid">
         <label for="unidad_organica_id">Unidad Orgánica (Oficina):
-            <select id="unidad_organica_id" name="unidad_organica_id">
+            <select id="unidad_organica_id" name="unidad_organica_id" class="select-con-buscador">
                 <option value="0" {{if eq $.CurrentUnidadID 0}}selected{{end}}>— Sin asignar —</option>
                 
                 {{range $.Unidades}}
@@ -436,6 +436,33 @@
 <script>
     document.body.addEventListener("cerrarModalAsignacion", function () {
         document.getElementById('modal-asignacion-puesto').close();
+    });
+
+    // Función maestra para inicializar TomSelect en un contenedor específico
+    function inicializarBuscadores(contenedor) {
+        if (!contenedor) return;
+        contenedor.querySelectorAll('.select-con-buscador').forEach((el) => {
+            // Evitamos duplicar la inicialización si el elemento ya tiene TomSelect activo
+            if (!el.tomselect) {
+                new TomSelect(el, {
+                    create: false,
+                    maxItems: 1,
+                    placeHolder: '-- Seleccionar opción ---',
+                    plugins: ['dropdown_input'] // Asegura una barra de entrada limpia
+                });
+            }
+        });
+    }
+
+    // 1. Ejecutar en la carga inicial de la página
+    document.addEventListener('DOMContentLoaded', () => {
+        inicializarBuscadores(document.body);
+    });
+
+    // 2. ¡MAGIA HTMX!: Ejecutar automáticamente cada vez que HTMX inyecte o reemplace HTML
+    document.body.addEventListener('htmx:afterSettle', (event) => {
+        // Inicializamos únicamente los elementos nuevos que acaban de caer en el target de HTMX
+        inicializarBuscadores(event.detail.target);
     });
 </script>
 
