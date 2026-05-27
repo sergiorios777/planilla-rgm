@@ -396,10 +396,11 @@ func (r *ConceptoTenantRepository) SincronizarDesdeModeloAvanzado(tenantID int, 
 	var args []interface{}
 	args = append(args, tenantID)
 
-	if modo == "FECHAS" {
+	switch modo {
+	case "FECHAS":
 		queryInsert += " AND created_at::date BETWEEN $2::date AND $3::date"
 		args = append(args, fechaInicio, fechaFin)
-	} else if modo == "EXTRAORDINARIOS" {
+	case "EXTRAORDINARIOS":
 		queryInsert += " AND es_extraordinario = true"
 	}
 
@@ -433,4 +434,3 @@ func (r *ConceptoTenantRepository) SincronizarDesdeModeloAvanzado(tenantID int, 
 
 	return nil
 }
-

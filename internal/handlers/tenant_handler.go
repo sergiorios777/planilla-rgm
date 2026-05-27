@@ -7,9 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"planilla-rgm/internal/middleware"
 	"planilla-rgm/internal/repository"
-	"strconv"
 	"strings"
 )
 
@@ -19,29 +17,52 @@ type TenantHandler struct {
 
 // PerfilUI muestra la información actual de la municipalidad
 func (h *TenantHandler) PerfilUI(w http.ResponseWriter, r *http.Request) {
-	// Extraemos el tenant_id del JWT (gracias al middleware)
-	tenantID := r.Context().Value(middleware.UsuarioIDKey).(float64) // El JWT guarda números como float64
+	// Extraemos el tenant_id de la sesión ( JWT )
+	var tID int
+	if val, ok := r.Context().Value("tenant_id").(float64); ok {
+		tID = int(val)
+	} else {
+		http.Error(w, "Acceso no autorizado: no se encontró tenant en la sesión", http.StatusUnauthorized)
+		return
+	}
 
-	// En un paso real, el middleware debería darnos el TenantID directamente.
-	// Por ahora, asumiremos que el usuario logueado tiene un tenant_id asociado.
-	// (Asegúrate de haber guardado el tenant_id en el contexto en tu middleware)
+	tenant, err := h.Repo.ObtenerPorID(tID)
+	if err != nil || tenant == nil {
+		http.Error(w, "No se encontró el perfil institucional", http.StatusNotFound)
+		return
+	}
 
-	// Para esta demo, usaremos el ID que viene en el contexto (debes ajustar tu middleware para pasar TenantID)
-	tID := int(tenantID)
-
-	tenant, _ := h.Repo.ObtenerPorID(tID)
-
-	tmpl, _ := template.ParseFiles("ui/templates/tenant/perfil_ui.html")
+	tmpl, err := template.ParseFiles("ui/templates/tenant/perfil_ui.html")
+	if err != nil {
+		http.Error(w, "Error al cargar plantilla: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 	tmpl.Execute(w, tenant)
 }
 
 // ActualizarPerfil procesa datos y el archivo del logo
 func (h *TenantHandler) ActualizarPerfil(w http.ResponseWriter, r *http.Request) {
 	// 1. Limitar el tamaño del archivo (2MB)
-	r.ParseMultipartForm(2 << 20)
+	err := r.ParseMultipartForm(2 << 20)
+	if err != nil {
+		http.Error(w, "Archivo demasiado grande o formulario inválido", http.StatusBadRequest)
+		return
+	}
 
-	tID, _ := strconv.Atoi(r.FormValue("id"))
-	tenant, _ := h.Repo.ObtenerPorID(tID)
+	// Extraemos el tenant_id seguro de la sesión en lugar de confiar en el formulario HTML
+	var tID int
+	if val, ok := r.Context().Value("tenant_id").(float64); ok {
+		tID = int(val)
+	} else {
+		http.Error(w, "Acceso no autorizado", http.StatusUnauthorized)
+		return
+	}
+
+	tenant, err := h.Repo.ObtenerPorID(tID)
+	if err != nil || tenant == nil {
+		http.Error(w, "Perfil institucional no encontrado", http.StatusNotFound)
+		return
+	}
 
 	// 2. Procesar el Logo si se subió uno nuevo
 	file, header, err := r.FormFile("logo")
@@ -53,28 +74,43 @@ func (h *TenantHandler) ActualizarPerfil(w http.ResponseWriter, r *http.Request)
 		nombreArchivo := fmt.Sprintf("logo_%d%s", tID, ext)
 		rutaDestino := filepath.Join("ui", "static", "uploads", "logos", nombreArchivo)
 
-		// Guardar archivo en disco
-		dst, _ := os.Create(rutaDestino)
-		defer dst.Close()
-		io.Copy(dst, file)
+		// Asegurar que la ruta exista y crear el archivo
+		dst, err := os.Create(rutaDestino)
+		if err == nil {
+			defer dst.Close()
+			io.Copy(dst, file)
 
-		// Actualizar URL en el modelo
-		url := "/static/uploads/logos/" + nombreArchivo
-		tenant.LogoURL = &url
+			// Actualizar URL en el modelo
+			url := "/static/uploads/logos/" + nombreArchivo
+			tenant.LogoURL = &url
+		}
 	}
 
-	// 3. Actualizar otros campos
-	dir := r.FormValue("direccion")
-	frase := r.FormValue("frase_gestion")
-	slug := strings.ToLower(r.FormValue("slug"))
+	// 3. Actualizar otros campos (mapeando a nil si están vacíos para guardarse como NULL)
+	var dir *string
+	if dirVal := strings.TrimSpace(r.FormValue("direccion")); dirVal != "" {
+		dir = &dirVal
+	}
+	var frase *string
+	if fraseVal := strings.TrimSpace(r.FormValue("frase_gestion")); fraseVal != "" {
+		frase = &fraseVal
+	}
+	var slug *string
+	if slugVal := strings.TrimSpace(strings.ToLower(r.FormValue("slug"))); slugVal != "" {
+		slug = &slugVal
+	}
 
-	tenant.Direccion = &dir
-	tenant.FraseGestion = &frase
-	tenant.Slug = &slug
+	tenant.Direccion = dir
+	tenant.FraseGestion = frase
+	tenant.Slug = slug
 	tenant.Nombre = r.FormValue("nombre")
 
-	h.Repo.Actualizar(tenant)
+	err = h.Repo.Actualizar(tenant)
+	if err != nil {
+		http.Error(w, "Error al guardar en la base de datos: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	// Recargar la vista con un mensaje de éxito (o simplemente refrescar)
+	// Recargar la vista del perfil
 	h.PerfilUI(w, r)
 }
