@@ -63,11 +63,11 @@
         <ul>
             <li><strong><svg class="icono-menu">
                         <use href="#icono-edificio-2"></use>
-                    </svg> Mi Municipalidad</strong>
+                    </svg> {{if .TenantNombre}}{{.TenantNombre}}{{else}}Mi Municipalidad{{end}}</strong>
             </li>
         </ul>
         <ul>
-            <li><small>Operador de Planillas</small></li>
+            <li><small>{{if .UsuarioNombre}}👤 {{.UsuarioNombre}} ({{.UsuarioRol}}){{else}}Operador de Planillas{{end}}</small></li>
             <li>
                 <button class="outline secondary" style="padding: 0.25rem 0.75rem; font-size: 0.85rem;"
                     hx-post="/logout">

@@ -149,13 +149,58 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	// Ruta al esqueleto de tenant
 	mux.HandleFunc("/tenant", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		// 1. Obtener IDs de la sesión
+		var uID, tID int
+		if val, ok := r.Context().Value(middleware.UsuarioIDKey).(float64); ok {
+			uID = int(val)
+		}
+		if val, ok := r.Context().Value("tenant_id").(float64); ok {
+			tID = int(val)
+		}
+
+		// 2. Cargar datos de la BD
+		usuarioRepo := repository.NewUsuarioRepository(db)
+		tenantRepo := repository.NewTenantRepository(db)
+
+		var tenantNombre string
+		if tID > 0 {
+			t, err := tenantRepo.ObtenerPorID(tID)
+			if err == nil && t != nil {
+				tenantNombre = t.Nombre
+			}
+		}
+
+		var usuarioNombre, usuarioRol string
+		if uID > 0 {
+			u, err := usuarioRepo.ObtenerPorID(uID)
+			if err == nil && u != nil {
+				usuarioNombre = u.Nombre
+				// Traducir rol de forma amigable
+				usuarioRol = u.Rol
+				if u.Rol == "tenant_admin" {
+					usuarioRol = "Administrador"
+				} else if u.Rol == "tenant_operator" {
+					usuarioRol = "Operador"
+				} else if u.Rol == "super_admin" {
+					usuarioRol = "Súper Admin"
+				}
+			}
+		}
+
 		tmpl, err := template.ParseFiles("ui/templates/layouts/tenant_index.html", "ui/templates/layouts/iconos_sprite.html")
 		if err != nil {
 			http.Error(w, "Error cargando la vista principal del inquilino", http.StatusInternalServerError)
 			return
 		}
-		tmpl.Execute(w, nil)
+
+		data := map[string]interface{}{
+			"TenantNombre":  tenantNombre,
+			"UsuarioNombre": usuarioNombre,
+			"UsuarioRol":    usuarioRol,
+		}
+		tmpl.Execute(w, data)
 	}))
+
 
 	// Rutas de Inquilino
 	tenantRepo := repository.NewTenantRepository(db)
