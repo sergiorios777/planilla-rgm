@@ -1,39 +1,38 @@
 <article>
-    <header>
-        <h3 style="margin-bottom: 0;">
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="margin: 0;">
             <svg class="icono-menu">
                 <use href="#icono-usuarios"></use>
             </svg>
             Gestión de Usuarios (Operadores)
         </h3>
+        <button class="primary" style="margin-bottom: 0; width: auto;" onclick="document.getElementById('modal-crear-usuario').setAttribute('open', 'true')">
+            ➕ Registrar Nuevo Usuario
+        </button>
     </header>
-    <div class="grid">
-        <div id="contenedor-formulario">
-            {{template "formulario_crear" .}}
-        </div>
 
-        <div id="contenedor-lista">
-            <div class="card">
-                <div style="display:flex; justify-content: end;">
-                    <!-- El input de búsqueda debe estar aqui-->
-                    <input class="form-control" type="search" name="buscar" placeholder="Buscar por nombre o correo..."
-                        hx-get="/admin/usuarios/lista" hx-trigger="keyup changed delay:500ms, search"
-                        hx-target="#lista-usuarios">
-                </div>
-            </div>
-            <div id="lista-usuarios" hx-get="/admin/usuarios/lista" hx-trigger="load">
-                <p aria-busy="true">Cargando usuarios...</p>
-            </div>
-        </div>
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: flex-end;">
+        <input class="form-control" type="search" name="buscar" placeholder="Buscar por nombre o correo..."
+            hx-get="/admin/usuarios/lista" hx-trigger="keyup changed delay:500ms, search"
+            hx-target="#lista-usuarios" style="margin-bottom: 0; max-width: 400px; width: 100%;">
+    </div>
+
+    <div id="lista-usuarios" hx-get="/admin/usuarios/lista" hx-trigger="load">
+        <p aria-busy="true" style="text-align: center;">Cargando usuarios...</p>
     </div>
 </article>
 
-{{define "formulario_crear"}}
-<details close>
-    <summary role="button" class="secondary outline">➕ Registrar Nuevo Usuario</summary>
-    <div style="padding-top: 1rem;">
-        <form hx-post="/admin/usuarios/crear" hx-target="#lista-usuarios" hx-swap="innerHTML">
+<!-- Placeholder para el Modal de Edición (cargado dinámicamente) -->
+<div id="contenedor-modal-editar"></div>
 
+<!-- Modal de Creación (Pre-renderizado en la página) -->
+<dialog id="modal-crear-usuario">
+    <article style="max-width: 600px; width: 100%;">
+        <header>
+            <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-crear-usuario').removeAttribute('open')"></button>
+            <h3 style="margin: 0;">➕ Registrar Nuevo Usuario</h3>
+        </header>
+        <form hx-post="/admin/usuarios/crear" hx-target="#lista-usuarios" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('modal-crear-usuario').removeAttribute('open'); }">
             <label for="tenant_id">Asignar a Municipalidad</label>
             <select name="tenant_id">
                 <option value="">-- Súper Administrador del Sistema --</option>
@@ -63,21 +62,27 @@
                         <option value="super_admin">Súper Admin (SaaS)</option>
                     </select>
                 </label>
-                <label>
-                    <input type="checkbox" name="activo" checked> Usuario Activo
-                </label>
             </div>
 
-            <button type="submit">Guardar Usuario</button>
+            <label style="margin-bottom: 1.5rem;">
+                <input type="checkbox" name="activo" checked> Usuario Activo
+            </label>
+
+            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" class="secondary outline" onclick="document.getElementById('modal-crear-usuario').removeAttribute('open')" style="margin-bottom: 0; width: auto;">Cancelar</button>
+                <button type="submit" style="margin-bottom: 0; width: auto;">Guardar Usuario</button>
+            </footer>
         </form>
-    </div>
-</details>
-{{end}}
+    </article>
+</dialog>
 
 {{define "formulario_editar"}}
-<details open>
-    <summary role="button" class="contrast outline">✏️ Editando: {{.Usuario.Nombre}}</summary>
-    <div style="padding-top: 1rem;">
+<dialog id="modal-editar-usuario" open>
+    <article style="max-width: 600px; width: 100%;">
+        <header>
+            <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-editar-usuario').removeAttribute('open'); document.getElementById('contenedor-modal-editar').innerHTML = '';"></button>
+            <h3 style="margin: 0;">✏️ Editando: {{.Usuario.Nombre}}</h3>
+        </header>
         <form hx-post="/admin/usuarios/actualizar" hx-target="#contenido-principal" hx-swap="innerHTML">
             <input type="hidden" name="id" value="{{.Usuario.ID}}">
 
@@ -106,27 +111,24 @@
                 </label>
                 <label>Rol
                     <select name="rol" required>
-                        <option value="admin_municipal" {{if eq .Usuario.Rol "admin_municipal" }}selected{{end}}>Admin
-                            Municipal</option>
-                        <option value="operador" {{if eq .Usuario.Rol "operador" }}selected{{end}}>Operador de Planilla
-                        </option>
-                        <option value="super_admin" {{if eq .Usuario.Rol "super_admin" }}selected{{end}}>Súper Admin
-                            (SaaS)</option>
+                        <option value="admin_municipal" {{if eq .Usuario.Rol "admin_municipal" }}selected{{end}}>Admin Municipal</option>
+                        <option value="operador" {{if eq .Usuario.Rol "operador" }}selected{{end}}>Operador de Planilla</option>
+                        <option value="super_admin" {{if eq .Usuario.Rol "super_admin" }}selected{{end}}>Súper Admin (SaaS)</option>
                     </select>
-                </label>
-                <label>
-                    <input type="checkbox" name="activo" {{if .Usuario.Activo}}checked{{end}}> Usuario Activo
                 </label>
             </div>
 
-            <div class="grid">
-                <button type="submit">Actualizar</button>
-                <button type="button" class="secondary outline" hx-get="/admin/ui/usuarios"
-                    hx-target="#contenido-principal">Cancelar</button>
-            </div>
+            <label style="margin-bottom: 1.5rem;">
+                <input type="checkbox" name="activo" {{if .Usuario.Activo}}checked{{end}}> Usuario Activo
+            </label>
+
+            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-usuario').removeAttribute('open'); document.getElementById('contenedor-modal-editar').innerHTML = '';" style="margin-bottom: 0; width: auto;">Cancelar</button>
+                <button type="submit" style="margin-bottom: 0; width: auto;">Actualizar</button>
+            </footer>
         </form>
-    </div>
-</details>
+    </article>
+</dialog>
 {{end}}
 
 {{define "tabla_usuarios"}}
@@ -152,8 +154,7 @@
 <tr>
     <td>
         {{if eq .TenantNombre "Súper Admin (SaaS)"}}
-        <mark style="background-color: #e1bee7; color: #4a148c; padding: 2px 6px; border-radius: 4px;">SaaS
-            Admin</mark>
+        <mark style="background-color: #e1bee7; color: #4a148c; padding: 2px 6px; border-radius: 4px;">SaaS Admin</mark>
         {{else}}
         <small><strong>{{.TenantNombre}}</strong></small>
         {{end}}
@@ -169,8 +170,8 @@
         {{end}}
     </td>
     <td>
-        <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
-            hx-get="/admin/usuarios/editar_ui?id={{.ID}}" hx-target="#contenedor-formulario" hx-swap="innerHTML">
+        <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0;"
+            hx-get="/admin/usuarios/editar_ui?id={{.ID}}" hx-target="#contenedor-modal-editar" hx-swap="innerHTML">
             Editar
         </button>
     </td>

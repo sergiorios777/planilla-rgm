@@ -76,7 +76,11 @@ func (h *UsuarioHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		Activo:   activo,
 	}
 
-	h.UserRepo.Crear(&nuevoUsuario)
+	err = h.UserRepo.Crear(&nuevoUsuario)
+	if err != nil {
+		http.Error(w, "Error al guardar el usuario en la base de datos: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// Devolvemos la tabla actualizada
 	h.Listar(w, r)
@@ -138,11 +142,19 @@ func (h *UsuarioHandler) ActualizarUsuario(w http.ResponseWriter, r *http.Reques
 	// Si escribió algo en la contraseña, la encriptamos. Si no, la dejamos vacía.
 	passwordForm := r.FormValue("password")
 	if passwordForm != "" {
-		hash, _ := service.HashPassword(passwordForm)
+		hash, err := service.HashPassword(passwordForm)
+		if err != nil {
+			http.Error(w, "Error al encriptar contraseña", http.StatusInternalServerError)
+			return
+		}
 		usuarioEditado.Password = hash
 	}
 
-	h.UserRepo.Actualizar(&usuarioEditado)
+	err := h.UserRepo.Actualizar(&usuarioEditado)
+	if err != nil {
+		http.Error(w, "Error al actualizar el usuario en la base de datos: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// Devolvemos la vista principal para recargar la tabla y resetear el formulario
 	h.VistaUI(w, r)

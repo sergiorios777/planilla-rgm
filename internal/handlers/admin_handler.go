@@ -131,7 +131,11 @@ func (h *AdminHandler) ActualizarInquilino(w http.ResponseWriter, r *http.Reques
 		Activo: r.FormValue("activo") == "on",
 	}
 
-	h.Repo.Actualizar(&inquilino)
+	err := h.Repo.Actualizar(&inquilino)
+	if err != nil {
+		http.Error(w, "Error al actualizar el inquilino en la base de datos: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// Después de actualizar, recargamos toda la UI de inquilinos
 	// para que la tabla se actualice y el formulario vuelva a ser el de "Crear"
