@@ -78,6 +78,7 @@ type ConceptoTenant struct {
 	EsRemunerativa           bool   `json:"es_remunerativa"`
 	EsBaseCts                bool   `json:"es_base_cts"`
 	EsBaseBeneficiosSociales bool   `json:"es_base_beneficios_sociales"`
+	EsOcasional              bool   `json:"es_ocasional"`
 
 	// Campos Auxiliares (JOINs desde la tabla conceptos_maestros)
 	RegimenesIDs       []int  `json:"regimenes_ids"` // Para los checkboxes (POST/PUT)
@@ -380,6 +381,7 @@ type ConceptoModelo struct {
 	EsRemunerativa           bool       `json:"es_remunerativa"`
 	EsBaseCts                bool       `json:"es_base_cts"`
 	EsBaseBeneficiosSociales bool       `json:"es_base_beneficios_sociales"`
+	EsOcasional              bool       `json:"es_ocasional"`
 	CreatedAt                string     `json:"created_at"`
 	UpdatedAt                *time.Time `json:"updated_at,omitempty"`
 

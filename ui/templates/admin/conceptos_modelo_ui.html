@@ -3,6 +3,11 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3 style="margin: 0;">🛠️ Catálogo de Conceptos Modelo (SaaS)</h3>
             <div style="display: flex; gap: 10px;">
+                <button class="outline secondary" onclick="document.getElementById('modal-importar-csv').showModal()">
+                    <svg class="icono-menu">
+                        <use href="#icono-importar"></use>
+                    </svg> Importar desde CSV
+                </button>
                 <button class="outline" onclick="document.getElementById('modal-sincronizar').showModal()">
                     <svg class="icono-menu">
                         <use href="#icono-sincronizar-punto"></use>
@@ -103,6 +108,9 @@
                         {{end}}
                         {{if .EsBaseBeneficiosSociales}}
                         <mark style="background-color: #f3e5f5; color: #6a1b9a; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #e1bee7;">BEN_SOC</mark>
+                        {{end}}
+                        {{if .EsOcasional}}
+                        <mark style="background-color: #eceff1; color: #37474f; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #cfd8dc;">OCAS</mark>
                         {{end}}
                     </div>
                 </td>
@@ -218,6 +226,7 @@
             <div class="grid">
                 <label><input type="checkbox" role="switch" name="es_base_cts" value="true"> ¿Base CTS?</label>
                 <label><input type="checkbox" role="switch" name="es_base_beneficios_sociales" value="true"> ¿Base Beneficios Sociales?</label>
+                <label><input type="checkbox" role="switch" name="es_ocasional" value="true" onchange="actualizarBasesOcasional(this)"> ¿Es Ocasional?</label>
             </div>
             <footer><button type="submit">Guardar en Plantilla</button></footer>
         </form>
@@ -296,6 +305,8 @@
                     .Concepto.EsBaseCts}}checked{{end}}> Base CTS</label>
             <label><input type="checkbox" role="switch" name="es_base_beneficios_sociales" value="true" {{if
                     .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> Base Beneficios Sociales</label>
+            <label><input type="checkbox" role="switch" name="es_ocasional" value="true" {{if
+                    .Concepto.EsOcasional}}checked{{end}} onchange="actualizarBasesOcasional(this)"> ¿Es Ocasional?</label>
         </div>
 
         <footer><button type="submit">Actualizar Catálogo</button></footer>
@@ -346,11 +357,64 @@
     </article>
 </dialog>
 
+<!-- Modal para importar desde CSV -->
+<dialog id="modal-importar-csv">
+    <article style="max-width: 600px; width: 95%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-csv').close()"></a>
+            <h3>📥 Importar Catálogo de Conceptos Modelo</h3>
+        </header>
+
+        <form hx-post="/admin/conceptos-modelo/importar" 
+              hx-encoding="multipart/form-data" 
+              hx-target="#feedback-importacion"
+              hx-swap="innerHTML">
+
+            <label for="archivo_csv">Seleccione el archivo CSV estructurado:
+                <input type="file" id="archivo_csv" name="archivo_csv" accept=".csv" required>
+            </label>
+
+            <div style="margin-bottom: 1rem;">
+                <a href="/admin/conceptos-modelo/plantilla-csv" class="outline secondary" style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; padding: 0.35rem 0.6rem; text-decoration: none; border-radius: var(--pico-border-radius);" download>
+                    <svg class="icono-menu" style="width: 14px; height: 14px;">
+                        <use href="#icono-importar"></use>
+                    </svg> Descargar Plantilla CSV de Ejemplo
+                </a>
+            </div>
+
+            <div style="background: var(--pico-muted-background); padding: 0.75rem; border-radius: var(--pico-border-radius); margin-bottom: 1rem;">
+                <small style="display: block; color: var(--pico-muted-color); font-size: 0.8rem;">
+                    💡 <strong>Estructura del archivo (15 columnas):</strong> Debe contener encabezados obligatorios. Utilice el código maestro SUNAT para la columna <strong>codigo_sunat</strong>, el nombre personalizado en <strong>nombre_personalizado_unico_</strong>, el código limpio del clasificador MEF en <strong>clasificador_codigo</strong> (ej: 2.1.1.1.1.1), configure la columna 11 <strong>es_ocasional</strong> ('1' para conceptos ocasionales, '0' para regulares), y marque con '1' o 'true' las columnas de afectación de los regímenes (DL 276, DL 728, DL 1057, y la columna 15 <strong>ley_30057</strong>).
+                </small>
+            </div>
+
+            <div id="feedback-importacion"></div>
+
+            <footer>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-csv').close()" style="margin-bottom: 0;">Cancelar</button>
+                    <button type="submit" style="margin-bottom: 0;">Procesar Archivo Masivo</button>
+                </div>
+            </footer>
+        </form>
+    </article>
+</dialog>
+
 <script>
     function toggleRangoFechas(value) {
         const divFechas = document.getElementById('rango-fechas-sincronizar');
         if (divFechas) {
             divFechas.style.display = value === 'FECHAS' ? 'grid' : 'none';
+        }
+    }
+
+    function actualizarBasesOcasional(el) {
+        if (el.checked) {
+            const form = el.closest('form');
+            const baseCts = form.querySelector('input[name="es_base_cts"]');
+            const baseBen = form.querySelector('input[name="es_base_beneficios_sociales"]');
+            if (baseCts) baseCts.checked = false;
+            if (baseBen) baseBen.checked = false;
         }
     }
 
@@ -361,5 +425,14 @@
         if (m1 && m1.open) m1.close();
         if (m2 && m2.open) m2.close();
         if (m3 && m3.open) m3.close();
+    });
+
+    document.body.addEventListener("cerrarModalImportar", function () {
+        const m = document.getElementById('modal-importar-csv');
+        if (m && m.open) m.close();
+        const input = document.getElementById('archivo_csv');
+        if (input) input.value = '';
+        const feedback = document.getElementById('feedback-importacion');
+        if (feedback) feedback.innerHTML = '';
     });
 </script>

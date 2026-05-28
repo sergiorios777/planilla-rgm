@@ -113,6 +113,9 @@
                     <mark
                         style="background-color: #bbdefb; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">APORTE</mark>
                     {{end}}
+                    {{if .EsOcasional}}
+                    <mark style="background-color: #eceff1; color: #37474f; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #cfd8dc;">OCAS</mark>
+                    {{end}}
                 </td>
                 <td>
                     <small>Meses: {{.FrecuenciaMeses}}</small><br>
@@ -345,6 +348,9 @@
         </label>
         <label>
             <input type="checkbox" role="switch" name="es_base_beneficios_sociales" {{if .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> Base Beneficios Sociales
+        </label>
+        <label>
+            <input type="checkbox" role="switch" name="es_ocasional" {{if .Concepto.EsOcasional}}checked{{end}} disabled> ¿Es Ocasional? (Configuración Centralizada)
         </label>
     </div>
 

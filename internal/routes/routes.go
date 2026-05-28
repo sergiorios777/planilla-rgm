@@ -136,11 +136,15 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	conceptosModeloRepo := repository.NewConceptoModeloRepository(db)
 	puestoRepo := repository.NewPuestoRepository(db)
 	conceptosTenantRepo := repository.NewConceptoTenantRepository(db)
+	conceptoModeloService := services.NewConceptoModeloService(conceptosModeloRepo, db)
+	notifRepoForConcepts := repository.NewNotificacionRepository(db)
 	cm := handlers.ConceptoModeloHandler{
 		Repo:               conceptosModeloRepo,
 		PuestoRepo:         puestoRepo,
 		ConceptoTenantRepo: conceptosTenantRepo,
 		TenantRepo:         tenantRepo,
+		Service:            conceptoModeloService,
+		NotificacionRepo:   notifRepoForConcepts,
 	}
 	mux.HandleFunc("/admin/ui/conceptos-modelo", middleware.RequireRole("super_admin", cm.VistaUI))
 	mux.HandleFunc("/admin/conceptos-modelo/lista", middleware.RequireRole("super_admin", cm.Listar))
@@ -149,6 +153,8 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/admin/conceptos-modelo/actualizar", middleware.RequireRole("super_admin", cm.Actualizar))
 	mux.HandleFunc("/admin/conceptos-modelo/eliminar", middleware.RequireRole("super_admin", cm.Eliminar))
 	mux.HandleFunc("/admin/conceptos-modelo/sincronizar", middleware.RequireRole("super_admin", cm.Sincronizar))
+	mux.HandleFunc("/admin/conceptos-modelo/importar", middleware.RequireRole("super_admin", cm.ImportarCSV))
+	mux.HandleFunc("/admin/conceptos-modelo/plantilla-csv", middleware.RequireRole("super_admin", cm.PlantillaCSV))
 
 	// Rutas de AFPs y Tasas Mensuales
 	afpRepo := repository.NewAFPRepository(db)

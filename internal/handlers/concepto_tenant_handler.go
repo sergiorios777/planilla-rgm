@@ -112,6 +112,7 @@ func (h *ConceptoTenantHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		EsRemunerativa:           r.FormValue("es_remunerativa") == "on",
 		EsBaseCts:                r.FormValue("es_base_cts") == "on",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "on",
+		EsOcasional:              r.FormValue("es_ocasional") == "on",
 		RegimenesIDs:             regimenesIDs,
 	}
 
@@ -221,6 +222,14 @@ func (h *ConceptoTenantHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
+	// 1. Obtener el concepto actual de la BD para preservar el campo central es_ocasional
+	existente, err := h.Repo.ObtenerPorID(id, tenantID)
+	if err != nil {
+		log.Println("Error al obtener concepto existente tenant:", err)
+		http.Error(w, "Error al recuperar concepto para actualizar", http.StatusInternalServerError)
+		return
+	}
+
 	editado := models.ConceptoTenant{
 		ID:                       id,
 		TenantID:                 tenantID,
@@ -234,11 +243,12 @@ func (h *ConceptoTenantHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		EsRemunerativa:           r.FormValue("es_remunerativa") == "on",
 		EsBaseCts:                r.FormValue("es_base_cts") == "on",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "on",
+		EsOcasional:              existente.EsOcasional, // Se mantiene el valor centralizado del catálogo
 		RegimenesIDs:             regimenesIDs,
 	}
 
-	// 1. Actualizar en BD
-	err := h.Repo.Actualizar(&editado)
+	// 2. Actualizar en BD
+	err = h.Repo.Actualizar(&editado)
 	if err != nil {
 		log.Println("Error actualizando concepto tenant:", err)
 		http.Error(w, "Error al actualizar concepto en base de datos", http.StatusInternalServerError)
@@ -287,6 +297,11 @@ func (h *ConceptoTenantHandler) FilaUI(w http.ResponseWriter, r *http.Request) {
 		badgeTipo = `<mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">RETENCIÓN</mark>`
 	}
 
+	badgeOcasional := ""
+	if c.EsOcasional {
+		badgeOcasional = ` <mark style="background-color: #eceff1; color: #37474f; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #cfd8dc;">OCAS</mark>`
+	}
+
 	textoEstado := `<span style="color: #b71c1c; font-size: 0.8rem; font-weight: bold;">Inactivo</span>`
 	if c.Activo {
 		textoEstado = `<span style="color: #1b5e20; font-size: 0.8rem; font-weight: bold;">Activo</span>`
@@ -301,7 +316,7 @@ func (h *ConceptoTenantHandler) FilaUI(w http.ResponseWriter, r *http.Request) {
 	<tr id="concepto-` + strconv.Itoa(c.ID) + `">
 		<td>
 			<strong>` + c.NombrePersonalizado + `</strong><br>
-			` + badgeTipo + `
+			` + badgeTipo + badgeOcasional + `
 		</td>
 		<td><small>Cód: ` + c.ConceptoCodigo + `</small></td>
 		<td>

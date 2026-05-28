@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
+	"planilla-rgm/internal/services"
 	"strconv"
 	"strings"
 )
@@ -16,6 +17,8 @@ type ConceptoModeloHandler struct {
 	PuestoRepo         *repository.PuestoRepository         // Lo necesitaremos para el select
 	ConceptoTenantRepo *repository.ConceptoTenantRepository // Conceptos Maestros y clasificadores
 	TenantRepo         *repository.TenantRepository         // Para la sincronización masiva
+	Service            *services.ConceptoModeloService
+	NotificacionRepo   *repository.NotificacionRepository
 }
 
 // VistaUI carga la página principal del módulo
@@ -115,6 +118,7 @@ func (h *ConceptoModeloHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		EsRemunerativa:           r.FormValue("es_remunerativa") == "true",
 		EsBaseCts:                r.FormValue("es_base_cts") == "true",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "true",
+		EsOcasional:              r.FormValue("es_ocasional") == "true",
 		RegimenesIDs:             ids,
 	}
 	nuevo.ConceptoID, _ = strconv.Atoi(r.FormValue("concepto_id"))
@@ -195,6 +199,7 @@ func (h *ConceptoModeloHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		EsRemunerativa:           r.FormValue("es_remunerativa") == "true",
 		EsBaseCts:                r.FormValue("es_base_cts") == "true",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "true",
+		EsOcasional:              r.FormValue("es_ocasional") == "true",
 		RegimenesIDs:             idsRegimen,
 	}
 
@@ -310,5 +315,88 @@ func (h *ConceptoModeloHandler) Sincronizar(w http.ResponseWriter, r *http.Reque
 
 	w.Write([]byte(htmlResponse))
 	h.Listar(w, r)
+}
+
+// ImportarCSV recibe el archivo subido por el Super Admin y realiza la carga masiva transaccional
+func (h *ConceptoModeloHandler) ImportarCSV(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Limitar tamaño del multipart form a 10MB
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		log.Println("❌ Error al parsear multipart form:", err)
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(`
+			<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #ef9a9a;">
+				❌ Error: El archivo subido excede el límite permitido de tamaño o no es válido.
+			</article>
+		`))
+		return
+	}
+
+	file, _, err := r.FormFile("archivo_csv")
+	if err != nil {
+		log.Println("❌ Error al recuperar archivo_csv:", err)
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(`
+			<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #ef9a9a;">
+				❌ Error: No se ha proporcionado un archivo válido en el campo "archivo_csv".
+			</article>
+		`))
+		return
+	}
+	defer file.Close()
+
+	exitosos, err := h.Service.ImportarDesdeCSV(file)
+	if err != nil {
+		log.Printf("❌ Error al importar conceptos modelo desde CSV: %v\n", err)
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(fmt.Sprintf(`
+			<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #ef9a9a;">
+				❌ Error de Validación/Importación: %s
+			</article>
+		`, err.Error())))
+		return
+	}
+
+	log.Printf("✅ Carga masiva completada: %d conceptos modelo importados.\n", exitosos)
+
+	// Registrar la notificación en la base de datos
+	tID, uID := obtenerUsuarioTenantID(r)
+	notif := models.Notificacion{
+		TenantID:  tID,
+		UsuarioID: uID,
+		Titulo:    "Carga Masiva de Conceptos Modelo",
+		Mensaje:   fmt.Sprintf("Se han importado/actualizado correctamente %d conceptos modelo.", exitosos),
+		Tipo:      "PROCESO_EXITOSO",
+		Leido:     false,
+	}
+	if errNotif := h.NotificacionRepo.Crear(&notif); errNotif != nil {
+		log.Printf("⚠️ No se pudo registrar la notificación en la BD: %v\n", errNotif)
+	}
+
+	// Responder con HTMX Headers para cerrar el modal y refrescar la grilla principal
+	w.Header().Set("HX-Trigger", "cerrarModalImportar, recargarTablaModelos")
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(fmt.Sprintf(`
+		<article style="background-color: #e8f5e9; color: #2e7d32; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #c8e6c9;">
+			✅ Carga masiva exitosa: se importaron/actualizaron %d conceptos modelo correctamente.
+		</article>
+	`, exitosos)))
+}
+
+// PlantillaCSV sirve un archivo CSV de ejemplo con la estructura requerida
+func (h *ConceptoModeloHandler) PlantillaCSV(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", "attachment; filename=plantilla_conceptos_modelo.csv")
+	
+	// Escribir cabecera y una fila de ejemplo (15 columnas)
+	cabecera := "codigo_sunat,nombre_personalizado_unico_,frecuencia_meses,clasificador_codigo,es_extraordinario,requiere_monto,es_pensionable,es_remunerativa,es_base_cts,es_base_beneficios_sociales,es_ocasional,dl_276,dl_728,dl_1057,ley_30057\n"
+	ejemplo := "0121,Remuneración Principal Básica,\"1,2,3,4,5,6,7,8,9,10,11,12\",2.1.1.1.1.1,0,0,1,1,1,1,0,1,1,0,1\n"
+	
+	w.Write([]byte(cabecera + ejemplo))
 }
 

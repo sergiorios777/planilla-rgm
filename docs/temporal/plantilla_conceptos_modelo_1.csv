@@ -1,0 +1,8 @@
+codigo_sunat,nombre_personalizado_unico_,frecuencia_meses,clasificador_codigo,es_extraordinario,requiere_monto,es_pensionable,es_remunerativa,es_base_cts,es_base_beneficios_sociales,dl_276,dl_728,dl_1057,ley_30057
+2009,"Bonificación por Escolaridad (A009)",1,2.1.1.9.1.3,0,1,0,0,0,0,1,0,0,0
+2009,"Escolaridad (P066)",1,2.1.1.9.1.3,0,1,0,0,0,0,0,1,0,0
+2010,"CTS - DL 728 (P061)",5,11,2.1.4.1.1.1,0,0,0,0,0,1,0,1,0,0
+2010,"CTS - Ley 30057 (L007)",5,11,2.1.4.1.1.1,0,1,0,0,0,0,0,0,0,1
+2006,"Aguinaldo por Fiestas Patrias - Ley 30057 (L005)",7,2.1.1 9.1 2,0,1,0,0,0,0,0,0,0,1
+2006,"Aguinaldo por Navidad - Ley 30057 (L006)",12,2.1.1 9.1 2,0,1,0,0,0,0,0,0,0,1
+2007,"Vacaciones Truncas (C004)",,2.1.4 1.1 7,0,0,0,0,0,1,0,0,1,0

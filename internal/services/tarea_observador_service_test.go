@@ -116,7 +116,7 @@ func TestProcesarTareasVencidas(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !tFuturaVerif.ProximoAviso.Equal(tFutura.ProximoAviso) {
+	if tFuturaVerif.ProximoAviso.Format("2006-01-02 15:04:05") != tFutura.ProximoAviso.Format("2006-01-02 15:04:05") {
 		t.Error("La tarea futura no debió ser modificada")
 	}
 

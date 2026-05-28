@@ -306,7 +306,7 @@ func (r *PuestoRepository) ObtenerConceptoRemunerativoPorClasificador(tenantID i
 
 // ObtenerConceptosModeloPorRegimen lee la tabla intermedia y trae los conceptos
 // que corresponden al régimen, excluyendo automáticamente los previsionales (ONP/AFP)
-// y los específicos de algún tipo de contrato (según su clasificador).
+// y los específicos de algún tipo de contrato (según su clasificador) y conceptos ocasionales.
 func (r *PuestoRepository) ObtenerConceptosModeloPorRegimen(tenantID int, regimenID int, excluidosMEF []string) ([]int, error) {
 	var query string
 	var rows *sql.Rows
@@ -322,6 +322,7 @@ func (r *PuestoRepository) ObtenerConceptosModeloPorRegimen(tenantID int, regime
 			WHERE rct.tenant_id = $1 
 			  AND rct.regimen_id = $2 
 			  AND ct.activo = true
+			  AND ct.es_ocasional = false
 			  AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
 			  AND (mef.codigo_limpio IS NULL OR NOT (mef.codigo_limpio = ANY($3)))
 		`
@@ -335,6 +336,7 @@ func (r *PuestoRepository) ObtenerConceptosModeloPorRegimen(tenantID int, regime
 			WHERE rct.tenant_id = $1 
 			  AND rct.regimen_id = $2 
 			  AND ct.activo = true
+			  AND ct.es_ocasional = false
 			  AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
 		`
 		rows, err = r.db.Query(query, tenantID, regimenID)
@@ -355,7 +357,7 @@ func (r *PuestoRepository) ObtenerConceptosModeloPorRegimen(tenantID int, regime
 	return ids, nil
 }
 
-// RestaurarPlantillaBase reescrito para usar el nuevo catálogo SaaS
+// RestaurarPlantillaBase reescrito para usar el nuevo catálogo SaaS y excluir conceptos ocasionales
 func (r *PuestoRepository) RestaurarPlantillaBase(puestoID int, tenantID int, regimenID int) error {
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -377,7 +379,7 @@ func (r *PuestoRepository) RestaurarPlantillaBase(puestoID int, tenantID int, re
 		return err
 	}
 
-	// 2. Traemos la lista base desde el modelo (ya excluye pensiones)
+	// 2. Traemos la lista base desde el modelo (ya excluye pensiones y ocasionales)
 	query := `
 		SELECT ct.id 
 		FROM conceptos_tenant ct
@@ -386,6 +388,7 @@ func (r *PuestoRepository) RestaurarPlantillaBase(puestoID int, tenantID int, re
 		WHERE rct.tenant_id = $1 
 		  AND rct.regimen_id = $2
 		  AND ct.activo = true
+		  AND ct.es_ocasional = false
 		  AND cma.codigo NOT IN ('0601', '0606', '0607', '0608')
 	`
 	rows, err := tx.Query(query, tenantID, regimenID)

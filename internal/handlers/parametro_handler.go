@@ -53,6 +53,7 @@ func (h *ParametroHandler) Guardar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Repo.Guardar(&param)
+	w.Header().Set("HX-Trigger", "cerrarModalParametro")
 	h.Listar(w, r)
 }
 
@@ -104,7 +105,6 @@ func (h *ParametroHandler) ActualizarParametro(w http.ResponseWriter, r *http.Re
 	}
 
 	h.Repo.Actualizar(&param)
-
-	// Recargamos la vista completa para mostrar el valor actualizado
-	h.VistaUI(w, r)
+	w.Header().Set("HX-Trigger", "cerrarModalParametro")
+	h.Listar(w, r)
 }
