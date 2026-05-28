@@ -1,0 +1,324 @@
+<article x-data="{ activeTab: 'tasas' }">
+    <header>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <h3 style="margin: 0;">
+                <svg class="icono-menu">
+                    <use href="#icono-hand-coins"></use>
+                </svg>
+                Gestión de Comisiones y Administradoras de AFP
+            </h3>
+            
+            <nav style="margin-bottom: 0;">
+                <ul style="margin-bottom: 0; display: flex; gap: 0.5rem; list-style: none; padding: 0;">
+                    <li>
+                        <button :class="activeTab === 'tasas' ? 'primary' : 'outline secondary'" 
+                                @click="activeTab = 'tasas'" 
+                                type="button"
+                                style="margin-bottom: 0; padding: 0.4rem 0.8rem; font-size: 0.9rem;">
+                            📅 Comisiones Mensuales
+                        </button>
+                    </li>
+                    <li>
+                        <button :class="activeTab === 'afps' ? 'primary' : 'outline secondary'" 
+                                @click="activeTab = 'afps'" 
+                                type="button"
+                                style="margin-bottom: 0; padding: 0.4rem 0.8rem; font-size: 0.9rem;">
+                            🏢 Administradoras (AFPs)
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Pestaña 1: Comisiones Mensuales -->
+    <div x-show="activeTab === 'tasas'">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <form id="form-filtros-tasas" class="grid" style="margin-bottom: 0; flex-grow: 1; max-width: 500px;">
+                <label style="margin-bottom: 0;">
+                    Año
+                    <select name="anio" hx-get="/admin/afps/tasas" hx-target="#lista-tasas" hx-include="#form-filtros-tasas">
+                        <option value="2025">2025</option>
+                        <option value="2026" selected>2026</option>
+                        <option value="2027">2027</option>
+                    </select>
+                </label>
+                <label style="margin-bottom: 0;">
+                    Mes
+                    <select name="mes" hx-get="/admin/afps/tasas" hx-target="#lista-tasas" hx-include="#form-filtros-tasas">
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5" selected>Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                </label>
+            </form>
+            
+            <button class="outline secondary" onclick="document.getElementById('modal-importar-tasas').setAttribute('open', 'true')" style="margin-bottom: 0; width: auto;" type="button">
+                <svg class="icono-menu">
+                    <use href="#icono-importar"></use>
+                </svg>
+                Importar Tasas del Mes (CSV)
+            </button>
+        </div>
+
+        <div id="lista-tasas" hx-get="/admin/afps/tasas" hx-trigger="load, tasasActualizadas from:body" hx-include="#form-filtros-tasas">
+            <p aria-busy="true" style="text-align: center;">Cargando tasas de AFP...</p>
+        </div>
+    </div>
+
+    <!-- Pestaña 2: Administradoras (AFPs) -->
+    <div x-show="activeTab === 'afps'">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <input class="form-control" type="search" name="buscar" placeholder="Buscar AFP por nombre..."
+                hx-get="/admin/afps" hx-trigger="keyup changed delay:500ms, search"
+                hx-target="#lista-afps-cuerpo" style="margin-bottom: 0; max-width: 400px; width: 100%;">
+                
+            <button class="primary" onclick="document.getElementById('modal-crear-afp').setAttribute('open', 'true')" style="margin-bottom: 0; width: auto;" type="button">
+                ➕ Registrar Nueva AFP
+            </button>
+        </div>
+
+        <div id="lista-afps" hx-get="/admin/afps" hx-trigger="load">
+            <p aria-busy="true" style="text-align: center;">Cargando administradoras...</p>
+        </div>
+    </div>
+</article>
+
+<!-- Placeholder para Modales Dinámicos -->
+<div id="contenedor-modal-editar-afp"></div>
+
+<!-- Modal de Carga de CSV -->
+<dialog id="modal-importar-tasas">
+    <article style="max-width: 600px; width: 100%;">
+        <header>
+            <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-importar-tasas').removeAttribute('open')"></button>
+            <h3 style="margin: 0;">
+                <svg class="icono-menu">
+                    <use href="#icono-importar"></use>
+                </svg>
+                Importar Tasas Mensuales (CSV)
+            </h3>
+        </header>
+        
+        <form hx-post="/admin/afps/importar" hx-encoding="multipart/form-data" hx-target="#mensaje-importacion" hx-swap="innerHTML"
+              hx-on::after-request="if(event.detail.successful) { document.getElementById('archivo_csv_input').value = ''; }">
+            <p><small>Seleccione el periodo e importe el archivo de tasas. Las AFPs se relacionan automáticamente por nombre.</small></p>
+            
+            <div class="grid">
+                <label>Año
+                    <input type="number" name="anio" value="2026" required>
+                </label>
+                <label>Mes
+                    <select name="mes" required>
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5" selected>Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                </label>
+            </div>
+            
+            <label>Archivo CSV de la SBS
+                <input type="file" id="archivo_csv_input" name="archivo_csv" accept=".csv" required>
+            </label>
+            
+            <div style="margin: 1rem 0; padding: 0.75rem; font-size: 0.85rem; border: 1px solid var(--pico-muted-border-color); border-radius: 4px; background-color: var(--pico-form-element-background-color);">
+                <strong>Estructura esperada del CSV (con cabecera):</strong><br>
+                <code>AFP, Comisión Flujo, Comisión Saldo, Prima Seguro, Aporte Obligatorio</code><br>
+                <span>Ejemplo: <code>HABITAT, 1.47%, 1.25%, 1.37%, 10.00%</code></span><br>
+                <small style="color: var(--pico-muted-color);">Nota: También se acepta formato decimal (ej: <code>0.0147, 0.0125</code>).</small>
+            </div>
+            
+            <div id="mensaje-importacion" style="margin-bottom: 1rem; font-size: 0.95rem;"></div>
+            
+            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-tasas').removeAttribute('open')" style="margin-bottom: 0; width: auto;">Cancelar</button>
+                <button type="submit" style="margin-bottom: 0; width: auto;">Iniciar Importación</button>
+            </footer>
+        </form>
+    </article>
+</dialog>
+
+<!-- Modal de Creación de AFP -->
+<dialog id="modal-crear-afp">
+    <article style="max-width: 600px; width: 100%;">
+        <header>
+            <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-crear-afp').removeAttribute('open')"></button>
+            <h3 style="margin: 0;">➕ Registrar Nueva AFP</h3>
+        </header>
+        <form hx-post="/admin/afps/crear" hx-target="#lista-afps-cuerpo" hx-swap="innerHTML" 
+              hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('modal-crear-afp').removeAttribute('open'); }">
+            
+            <label for="nombre">Nombre Comercial de la AFP</label>
+            <input type="text" id="nombre" name="nombre" placeholder="Ej: HABITAT" required>
+
+            <label for="codigo_sbs">Código SBS</label>
+            <input type="text" id="codigo_sbs" name="codigo_sbs" placeholder="Ej: 21" maxlength="10">
+
+            <label style="margin-bottom: 1.5rem;">
+                <input type="checkbox" name="activo" checked> Administradora Activa
+            </label>
+            
+            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" class="secondary outline" onclick="document.getElementById('modal-crear-afp').removeAttribute('open')" style="margin-bottom: 0; width: auto;">Cancelar</button>
+                <button type="submit" style="margin-bottom: 0; width: auto;">Guardar AFP</button>
+            </footer>
+        </form>
+    </article>
+</dialog>
+
+<!-- BLOQUE: Formulario de Edición de AFP (Cargado dinámicamente) -->
+{{define "formulario_editar_afp"}}
+<dialog id="modal-editar-afp" open>
+    <article style="max-width: 600px; width: 100%;">
+        <header>
+            <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-editar-afp').removeAttribute('open'); document.getElementById('contenedor-modal-editar-afp').innerHTML = '';"></button>
+            <h3 style="margin: 0;">✏️ Editando: {{.Nombre}}</h3>
+        </header>
+        <form hx-post="/admin/afps/actualizar" hx-target="#contenido-principal" hx-swap="innerHTML">
+            <input type="hidden" name="id" value="{{.ID}}">
+
+            <label for="edit-nombre">Nombre Comercial de la AFP</label>
+            <input type="text" id="edit-nombre" name="nombre" value="{{.Nombre}}" required>
+
+            <label for="edit-codigo_sbs">Código SBS</label>
+            <input type="text" id="edit-codigo_sbs" name="codigo_sbs" value="{{.CodigoSBS}}" maxlength="10">
+
+            <label style="margin-bottom: 1.5rem;">
+                <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Administradora Activa
+            </label>
+
+            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-afp').removeAttribute('open'); document.getElementById('contenedor-modal-editar-afp').innerHTML = '';" style="margin-bottom: 0; width: auto;">Cancelar</button>
+                <button type="submit" style="margin-bottom: 0; width: auto;">Actualizar AFP</button>
+            </footer>
+        </form>
+    </article>
+</dialog>
+{{end}}
+
+<!-- BLOQUE: Tabla de AFPs -->
+{{define "tabla_afps"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nombre Administradora</th>
+            <th>Código SBS</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="lista-afps-cuerpo">
+        {{template "filas_afps" .}}
+    </tbody>
+</table>
+{{end}}
+
+<!-- BLOQUE: Filas de la Tabla de AFPs -->
+{{define "filas_afps"}}
+{{range .}}
+<tr>
+    <td>{{.ID}}</td>
+    <td><strong>{{.Nombre}}</strong></td>
+    <td><code>{{if .CodigoSBS}}{{.CodigoSBS}}{{else}}-{{end}}</code></td>
+    <td>
+        {{if .Activo}}
+        <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">Activo</mark>
+        {{else}}
+        <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">Inactivo</mark>
+        {{end}}
+    </td>
+    <td>
+        <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0; width: auto;"
+            hx-get="/admin/afps/editar_ui?id={{.ID}}" hx-target="#contenedor-modal-editar-afp" hx-swap="innerHTML" type="button">
+            Editar
+        </button>
+    </td>
+</tr>
+{{else}}
+<tr>
+    <td colspan="5" style="text-align: center;">No hay administradoras registradas.</td>
+</tr>
+{{end}}
+{{end}}
+
+<!-- BLOQUE: Tabla de Tasas Mensuales -->
+{{define "tabla_tasas"}}
+<div class="overflow-auto">
+    <table class="striped">
+        <thead>
+            <tr>
+                <th>AFP</th>
+                <th>Código SBS</th>
+                <th style="text-align: right;">Aporte Obligatorio</th>
+                <th style="text-align: right;">Comisión Flujo</th>
+                <th style="text-align: right;">Comisión Mixta Flujo</th>
+                <th style="text-align: right;">Comisión Saldo (Anual)</th>
+                <th style="text-align: right;">Prima Seguro</th>
+                <th style="text-align: center;">Estado Registro</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .}}
+            <tr>
+                <td><strong>{{.AfpNombre}}</strong></td>
+                <td><code>{{if .AfpCodigoSBS}}{{.AfpCodigoSBS}}{{else}}-{{end}}</code></td>
+                <td style="text-align: right;">{{printf "%.2f" .AportePct}}%</td>
+                <td style="text-align: right;">{{printf "%.2f" .FlujoPct}}%</td>
+                <td style="text-align: right;">{{printf "%.2f" .MixtaPct}}%</td>
+                <td style="text-align: right;">{{printf "%.2f" .SaldoPct}}%</td>
+                <td style="text-align: right;">{{printf "%.2f" .PrimaPct}}%</td>
+                <td style="text-align: center;">
+                    {{if .Registrado}}
+                    <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Cargado</mark>
+                    {{else}}
+                    <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Pendiente</mark>
+                    {{end}}
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="8" style="text-align: center;">No hay administradoras activas registradas en el sistema.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+
+<script>
+    document.body.addEventListener("tasasActualizadas", function() {
+        setTimeout(function() {
+            const modal = document.getElementById('modal-importar-tasas');
+            if (modal && modal.open) {
+                modal.removeAttribute('open');
+                document.getElementById('mensaje-importacion').innerHTML = '';
+            }
+        }, 1500);
+    });
+
+    document.body.addEventListener("afpCreada", function() {
+        const modal = document.getElementById('modal-crear-afp');
+        if (modal && modal.open) {
+            modal.removeAttribute('open');
+        }
+    });
+</script>

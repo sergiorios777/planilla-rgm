@@ -143,6 +143,18 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/admin/conceptos-modelo/actualizar", middleware.RequireRole("super_admin", cm.Actualizar))
 	mux.HandleFunc("/admin/conceptos-modelo/eliminar", middleware.RequireRole("super_admin", cm.Eliminar))
 	mux.HandleFunc("/admin/conceptos-modelo/sincronizar", middleware.RequireRole("super_admin", cm.Sincronizar))
+
+	// Rutas de AFPs y Tasas Mensuales
+	afpRepo := repository.NewAFPRepository(db)
+	afpService := services.NewAFPService(afpRepo)
+	afph := handlers.AFPHandler{Repo: afpRepo, Service: afpService}
+	mux.HandleFunc("/admin/ui/afps", middleware.RequireRole("super_admin", afph.VistaUI))
+	mux.HandleFunc("/admin/afps", middleware.RequireRole("super_admin", afph.ListarAFPs))
+	mux.HandleFunc("/admin/afps/crear", middleware.RequireRole("super_admin", afph.CrearAFP))
+	mux.HandleFunc("/admin/afps/editar_ui", middleware.RequireRole("super_admin", afph.EditarAFPUI))
+	mux.HandleFunc("/admin/afps/actualizar", middleware.RequireRole("super_admin", afph.ActualizarAFP))
+	mux.HandleFunc("/admin/afps/tasas", middleware.RequireRole("super_admin", afph.ListarTasas))
+	mux.HandleFunc("/admin/afps/importar", middleware.RequireRole("super_admin", afph.ImportarCSV))
 }
 
 // --- SECCIÓN TENANT (MUNICIPALIDADES) ---
