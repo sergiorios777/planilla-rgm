@@ -1,0 +1,192 @@
+<article>
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="margin: 0;">
+            <svg class="icono-menu">
+                <use href="#icono-list-todo"></use>
+            </svg>
+            Tareas Programadas y Recordatorios (SaaS Admin)
+        </h3>
+        <button class="primary" style="margin-bottom: 0; width: auto;" onclick="document.getElementById('modal-crear-tarea').setAttribute('open', 'true')">
+            ➕ Programar Nueva Tarea
+        </button>
+    </header>
+
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: flex-end;">
+        <input class="form-control" type="search" name="buscar" placeholder="Buscar por título o descripción..."
+            hx-get="/admin/tareas" hx-trigger="keyup changed delay:500ms, search"
+            hx-target="#lista-tareas-cuerpo" style="margin-bottom: 0; max-width: 400px; width: 100%;">
+    </div>
+
+    <div id="lista-tareas" hx-get="/admin/tareas" hx-trigger="load">
+        <p aria-busy="true" style="text-align: center;">Cargando tareas programadas...</p>
+    </div>
+</article>
+
+<!-- Placeholder para Modal de Edición Dinámico -->
+<div id="contenedor-modal-editar-tarea"></div>
+
+<!-- Modal de Creación -->
+<dialog id="modal-crear-tarea">
+    <article style="max-width: 600px; width: 100%;">
+        <header>
+            <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-crear-tarea').removeAttribute('open')"></button>
+            <h3 style="margin: 0;">➕ Programar Nueva Tarea</h3>
+        </header>
+        <form hx-post="/admin/tareas/crear" hx-target="#lista-tareas-cuerpo" hx-swap="innerHTML" 
+              hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('modal-crear-tarea').removeAttribute('open'); }">
+            
+            <label for="titulo">Título de la Tarea</label>
+            <input type="text" id="titulo" name="titulo" placeholder="Ej: Reporte tributario mensual SUNAT" required>
+
+            <label for="descripcion">Descripción / Detalle</label>
+            <textarea id="descripcion" name="descripcion" placeholder="Escriba aquí los detalles del recordatorio..." rows="3"></textarea>
+
+            <div class="grid">
+                <label for="recurrencia">Recurrencia
+                    <select id="recurrencia" name="recurrencia" required>
+                        <option value="UNICO" selected>Único aviso</option>
+                        <option value="MENSUAL">Mensual</option>
+                        <option value="TRIMESTRAL">Trimestral</option>
+                    </select>
+                </label>
+                
+                <label style="display: flex; align-items: center; height: 100%;">
+                    <input type="checkbox" name="activo" checked style="margin-right: 0.5rem;"> Tarea Activa
+                </label>
+            </div>
+
+            <div class="grid">
+                <label for="fecha_vencimiento">Fecha de Vencimiento
+                    <input type="datetime-local" id="fecha_vencimiento" name="fecha_vencimiento" required>
+                </label>
+                
+                <label for="proximo_aviso">Fecha Próximo Aviso
+                    <input type="datetime-local" id="proximo_aviso" name="proximo_aviso" required>
+                </label>
+            </div>
+
+            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="secondary outline" onclick="document.getElementById('modal-crear-tarea').removeAttribute('open')" style="margin-bottom: 0; width: auto;">Cancelar</button>
+                <button type="submit" style="margin-bottom: 0; width: auto;">Programar Tarea</button>
+            </footer>
+        </form>
+    </dialog>
+</dialog>
+
+<!-- BLOQUE: Formulario de Edición de Tarea (Carga Dinámica) -->
+{{define "formulario_editar_tarea"}}
+<dialog id="modal-editar-tarea" open>
+    <article style="max-width: 600px; width: 100%;">
+        <header>
+            <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-editar-tarea').removeAttribute('open'); document.getElementById('contenedor-modal-editar-tarea').innerHTML = '';"></button>
+            <h3 style="margin: 0;">✏️ Editando Tarea: {{.Titulo}}</h3>
+        </header>
+        <form hx-post="/admin/tareas/actualizar" hx-target="#contenido-principal" hx-swap="innerHTML">
+            <input type="hidden" name="id" value="{{.ID}}">
+
+            <label for="edit-titulo">Título de la Tarea</label>
+            <input type="text" id="edit-titulo" name="titulo" value="{{.Titulo}}" required>
+
+            <label for="edit-descripcion">Descripción / Detalle</label>
+            <textarea id="edit-descripcion" name="descripcion" rows="3">{{.Descripcion}}</textarea>
+
+            <div class="grid">
+                <label for="edit-recurrencia">Recurrencia
+                    <select id="edit-recurrencia" name="recurrencia" required>
+                        <option value="UNICO" {{if eq .Recurrencia "UNICO"}}selected{{end}}>Único aviso</option>
+                        <option value="MENSUAL" {{if eq .Recurrencia "MENSUAL"}}selected{{end}}>Mensual</option>
+                        <option value="TRIMESTRAL" {{if eq .Recurrencia "TRIMESTRAL"}}selected{{end}}>Trimestral</option>
+                    </select>
+                </label>
+                
+                <label style="display: flex; align-items: center; height: 100%;">
+                    <input type="checkbox" name="activo" {{if .Activo}}checked{{end}} style="margin-right: 0.5rem;"> Tarea Activa
+                </label>
+            </div>
+
+            <div class="grid">
+                <label for="edit-fecha_vencimiento">Fecha de Vencimiento
+                    <input type="datetime-local" id="edit-fecha_vencimiento" name="fecha_vencimiento" value="{{.FechaVencimientoFormatoInput}}" required>
+                </label>
+                
+                <label for="edit-proximo_aviso">Fecha Próximo Aviso
+                    <input type="datetime-local" id="edit-proximo_aviso" name="proximo_aviso" value="{{.ProximoAvisoFormatoInput}}" required>
+                </label>
+            </div>
+
+            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-tarea').removeAttribute('open'); document.getElementById('contenedor-modal-editar-tarea').innerHTML = '';" style="margin-bottom: 0; width: auto;">Cancelar</button>
+                <button type="submit" style="margin-bottom: 0; width: auto;">Guardar Cambios</button>
+            </footer>
+        </form>
+    </article>
+</dialog>
+{{end}}
+
+<!-- BLOQUE: Tabla de Tareas -->
+{{define "tabla_tareas"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Título</th>
+            <th>Recurrencia</th>
+            <th>Fecha Vencimiento</th>
+            <th>Próximo Aviso</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="lista-tareas-cuerpo">
+        {{template "filas_tareas" .}}
+    </tbody>
+</table>
+{{end}}
+
+<!-- BLOQUE: Filas de la Tabla de Tareas -->
+{{define "filas_tareas"}}
+{{range .}}
+<tr>
+    <td>{{.ID}}</td>
+    <td>
+        <strong>{{.Titulo}}</strong>
+        {{if .Descripcion}}
+        <br><small style="color: var(--pico-muted-color);">{{.Descripcion}}</small>
+        {{end}}
+    </td>
+    <td>
+        <span class="badge" style="font-size: 0.8rem; background-color: var(--pico-form-element-background-color); border: 1px solid var(--pico-muted-border-color); padding: 2px 6px; border-radius: 4px;">
+            {{.Recurrencia}}
+        </span>
+    </td>
+    <td>{{.FechaVencimientoLegible}}</td>
+    <td>{{.ProximoAvisoLegible}}</td>
+    <td>
+        {{if .Activo}}
+        <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">Activo</mark>
+        {{else}}
+        <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">Inactivo</mark>
+        {{end}}
+    </td>
+    <td>
+        <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0; width: auto;"
+            hx-get="/admin/tareas/editar_ui?id={{.ID}}" hx-target="#contenedor-modal-editar-tarea" hx-swap="innerHTML" type="button">
+            Editar
+        </button>
+    </td>
+</tr>
+{{else}}
+<tr>
+    <td colspan="7" style="text-align: center;">No hay tareas programadas registradas.</td>
+</tr>
+{{end}}
+{{end}}
+
+<script>
+    document.body.addEventListener("tareaCreada", function() {
+        const modal = document.getElementById('modal-crear-tarea');
+        if (modal && modal.open) {
+            modal.removeAttribute('open');
+        }
+    });
+</script>

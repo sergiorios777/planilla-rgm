@@ -54,6 +54,12 @@ func ConfigurarRutas(db *sql.DB) *http.ServeMux {
 	})
 	mux.HandleFunc("/logout", authHandler.CerrarSesion)
 
+	// Rutas de Notificaciones (para ambos entornos)
+	notifRepo := repository.NewNotificacionRepository(db)
+	nh := handlers.NewNotificacionHandler(notifRepo)
+	mux.HandleFunc("/notificaciones/campana", middleware.RequireAuth(nh.CampanaContadorUI))
+	mux.HandleFunc("/notificaciones/lista", middleware.RequireAuth(nh.ListaNotificacionesUI))
+
 	// 3. REGISTRO POR ENTORNOS (Para facilitar la revisión)
 	registrarRutasAdmin(mux, db)
 	registrarRutasTenant(mux, db)
@@ -155,6 +161,15 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/admin/afps/actualizar", middleware.RequireRole("super_admin", afph.ActualizarAFP))
 	mux.HandleFunc("/admin/afps/tasas", middleware.RequireRole("super_admin", afph.ListarTasas))
 	mux.HandleFunc("/admin/afps/importar", middleware.RequireRole("super_admin", afph.ImportarCSV))
+
+	// Rutas de Tareas Programadas (Super Admin)
+	tareaRepo := repository.NewAdminTareaRepository(db)
+	tareah := handlers.NewAdminTareaHandler(tareaRepo)
+	mux.HandleFunc("/admin/ui/tareas", middleware.RequireRole("super_admin", tareah.VistaUI))
+	mux.HandleFunc("/admin/tareas", middleware.RequireRole("super_admin", tareah.Listar))
+	mux.HandleFunc("/admin/tareas/crear", middleware.RequireRole("super_admin", tareah.Crear))
+	mux.HandleFunc("/admin/tareas/editar_ui", middleware.RequireRole("super_admin", tareah.EditarUI))
+	mux.HandleFunc("/admin/tareas/actualizar", middleware.RequireRole("super_admin", tareah.Actualizar))
 }
 
 // --- SECCIÓN TENANT (MUNICIPALIDADES) ---

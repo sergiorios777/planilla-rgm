@@ -3,9 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"planilla-rgm/internal/config"
+	"planilla-rgm/internal/repository"
 	"planilla-rgm/internal/routes"
+	"planilla-rgm/internal/services"
 )
 
 func main() {
@@ -15,6 +18,13 @@ func main() {
 		log.Fatalf("No se pudo iniciar la base de datos: %v", err)
 	}
 	defer db.Close()
+
+	// Iniciar Daemon de Tareas en segundo plano (Frecuencia: 5 minutos)
+	mailService := services.NewMailService()
+	tareaRepo := repository.NewAdminTareaRepository(db)
+	notifRepo := repository.NewNotificacionRepository(db)
+	observador := services.NewTareaObservadorService(tareaRepo, notifRepo, mailService)
+	observador.Iniciar(5 * time.Minute)
 
 	// 2. Configurar el Enrutador Central (inyectando la DB)
 	mux := routes.ConfigurarRutas(db)
