@@ -17,6 +17,12 @@
                     <use href="#icono-importar"></use>
                 </svg> Importación Masiva (Excel)
             </button>
+            <button class="outline" 
+                hx-post="/tenant/puestos-conceptos/restaurar-todos" 
+                hx-confirm="🚨 ¡ATENCIÓN! Esta acción restablecerá los costos de fábrica para TODOS los puestos de la entidad, eliminando cualquier modificación manual de conceptos. ¿Desea continuar?"
+                style="border-color: #d32f2f; color: #d32f2f; width: auto; margin-bottom: 0;">
+                🔄 Restaurar Todos los Puestos
+            </button>
         </div>
     </header>
     <div>

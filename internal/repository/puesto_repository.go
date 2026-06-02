@@ -576,3 +576,9 @@ func (r *PuestoRepository) ImportarPuestos(tenantID int, puestos []models.Puesto
 
 	return tx.Commit()
 }
+
+// LimpiarConceptosPuesto elimina todas las asignaciones de conceptos para un puesto específico
+func (r *PuestoRepository) LimpiarConceptosPuesto(puestoID int) error {
+	_, err := r.db.Exec(`DELETE FROM puesto_conceptos WHERE puesto_id = $1`, puestoID)
+	return err
+}

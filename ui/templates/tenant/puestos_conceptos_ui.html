@@ -50,7 +50,7 @@
                 <input type="hidden" name="puesto_id" value="{{.PuestoID}}">
 
                 <label>Seleccionar Concepto
-                    <select name="concepto_tenant_id" required>
+                    <select name="concepto_tenant_id" required class="select-con-buscador">
                         <option value="">-- Conceptos Disponibles --</option>
                         {{range .Disponibles}}
                         <option value="{{.ID}}">[{{.ConceptoTipo}}] {{.NombrePersonalizado}}</option>
@@ -135,3 +135,9 @@
     </tbody>
 </table>
 {{end}}
+
+<script>
+    document.body.addEventListener("refreshCostosBaseWarning", function() {
+        alert("⚠️ El puesto está VACANTE. Se han restaurado únicamente los conceptos del régimen laboral base, excluyendo pensiones.");
+    });
+</script>

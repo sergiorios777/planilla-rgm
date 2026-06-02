@@ -216,3 +216,29 @@ func (r *ContratoRepository) ObtenerContratosVencimiento(tenantID int, dias int)
 	return lista, nil
 }
 
+// ObtenerActivoPorPuesto busca el contrato activo vigente para un puesto específico
+func (r *ContratoRepository) ObtenerActivoPorPuesto(puestoID int, tenantID int) (*models.Contrato, error) {
+	var c models.Contrato
+	var fFin sql.NullString
+	var tipoContrato sql.NullString
+	var nivel sql.NullString
+	query := `
+		SELECT id, trabajador_id, puesto_id, TO_CHAR(fecha_inicio, 'YYYY-MM-DD'), TO_CHAR(fecha_fin, 'YYYY-MM-DD'), activo, COALESCE(tipo_contrato, ''), COALESCE(nivel, '')
+		FROM contratos 
+		WHERE puesto_id = $1 AND tenant_id = $2 AND activo = true 
+		LIMIT 1`
+	err := r.db.QueryRow(query, puestoID, tenantID).Scan(&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fFin, &c.Activo, &tipoContrato, &nivel)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // No hay contrato activo
+		}
+		return nil, err
+	}
+	if fFin.Valid {
+		c.FechaFin = &fFin.String
+	}
+	c.TipoContrato = tipoContrato.String
+	c.Nivel = nivel.String
+	return &c, nil
+}
+

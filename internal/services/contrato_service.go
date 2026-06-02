@@ -21,13 +21,37 @@ func (s *ContratoService) CrearContrato(c *models.Contrato) error {
 		return err
 	}
 
-	// 2. Obtener los detalles del puesto ocupado
-	puesto, err := s.RepoPuesto.ObtenerPorID(c.PuestoID, c.TenantID)
+	// 2. Sincronizar conceptos del puesto
+	_, err = s.SincronizarConceptosPuesto(c.TenantID, c.PuestoID)
+	return err
+}
+
+// SincronizarConceptosPuesto unifica las reglas para poblar la estructura de costos de un puesto.
+// Retorna true si el puesto tiene contrato activo (ocupado), false si está vacante, y el error si ocurre alguno.
+func (s *ContratoService) SincronizarConceptosPuesto(tenantID, puestoID int) (bool, error) {
+	// 1. Obtener detalles del puesto
+	puesto, err := s.RepoPuesto.ObtenerPorID(puestoID, tenantID)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	// 3. Obtener la plantilla de conceptos base según el régimen (excluyendo pensiones y clasificadores de contratos específicos)
+	// 2. Verificar si existe un contrato activo para este puesto
+	contrato, err := s.Repo.ObtenerActivoPorPuesto(puestoID, tenantID)
+	if err != nil {
+		return false, err
+	}
+
+	// Estrategia 2: Vacante (Sin contrato activo)
+	if contrato == nil {
+		err = s.RepoPuesto.RestaurarPlantillaBase(puestoID, tenantID, puesto.RegimenID)
+		if err != nil {
+			return false, err
+		}
+		return false, nil
+	}
+
+	// Estrategia 1: Ocupado (Con contrato activo)
+	// A. Obtener la plantilla de conceptos base según el régimen (excluyendo pensiones y clasificadores de contratos específicos)
 	var excluidos []string
 	for _, mappings := range config.ClasificadorMefPorContrato {
 		for _, codigoMef := range mappings {
@@ -35,45 +59,54 @@ func (s *ContratoService) CrearContrato(c *models.Contrato) error {
 		}
 	}
 
-	idsLocales, err := s.RepoPuesto.ObtenerConceptosModeloPorRegimen(c.TenantID, puesto.RegimenID, excluidos)
-	log.Println("idsLocales:", idsLocales)
+	idsLocales, err := s.RepoPuesto.ObtenerConceptosModeloPorRegimen(tenantID, puesto.RegimenID, excluidos)
 	if err != nil {
-		return err
+		return true, err
 	}
 
-	// 4. Mapear régimen a la clave del mapa y buscar clasificador MEF
+	// B. Mapear régimen a la clave del mapa y buscar clasificador MEF
 	key := config.MapRegimenToKey(puesto.RegimenCodigo)
 	if key != "" {
 		if options, ok := config.ClasificadorMefPorContrato[key]; ok {
-			if codigoMef, ok := options[c.TipoContrato]; ok {
+			if codigoMef, ok := options[contrato.TipoContrato]; ok {
 				// Buscar el ID del concepto local correspondiente a este clasificador MEF
-				conceptoID, err := s.RepoPuesto.ObtenerConceptoRemunerativoPorClasificador(c.TenantID, puesto.RegimenID, codigoMef)
+				conceptoID, err := s.RepoPuesto.ObtenerConceptoRemunerativoPorClasificador(tenantID, puesto.RegimenID, codigoMef)
 				if err != nil {
 					log.Printf("Advertencia: no se encontró el concepto local para el clasificador %s bajo régimen %d: %v", codigoMef, puesto.RegimenID, err)
 				} else {
-					log.Println("conceptoID:", conceptoID)
 					idsLocales = append(idsLocales, conceptoID)
 				}
 			}
 		}
 	}
 
-	// 5. Obtener pensiones del trabajador
-	trabajador, err := s.RepoTrabajador.ObtenerPorID(c.TrabajadorID, c.TenantID)
+	// C. Obtener pensiones del trabajador
+	trabajador, err := s.RepoTrabajador.ObtenerPorID(contrato.TrabajadorID, tenantID)
 	if err != nil {
-		return err
+		return true, err
 	}
 
 	codigosPension, existe := config.PensionesBase[trabajador.RegimenPensionario]
 	if existe {
-		idsPensiones, err := s.RepoPuesto.ObtenerConceptosTenantPorCodigosSUNAT(c.TenantID, codigosPension)
+		idsPensiones, err := s.RepoPuesto.ObtenerConceptosTenantPorCodigosSUNAT(tenantID, codigosPension)
 		if err == nil && len(idsPensiones) > 0 {
 			idsLocales = append(idsLocales, idsPensiones...)
 		}
 	}
 
-	// 6. Asignar todos los conceptos calculados al puesto
-	return s.RepoPuesto.AsignarConceptosAPuesto(c.PuestoID, idsLocales, puesto.SueldoPresupuestado)
+	// D. Limpiar todos los conceptos actuales del puesto
+	err = s.RepoPuesto.LimpiarConceptosPuesto(puestoID)
+	if err != nil {
+		return true, err
+	}
+
+	// E. Asignar todos los conceptos calculados al puesto
+	err = s.RepoPuesto.AsignarConceptosAPuesto(puestoID, idsLocales, puesto.SueldoPresupuestado)
+	if err != nil {
+		return true, err
+	}
+
+	return true, nil
 }
 
 // AsignarPensionesAutomaticas inyecta los conceptos de pensión a la plaza ocupada

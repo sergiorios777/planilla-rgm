@@ -329,12 +329,24 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 
 	// Rutas protegidas (Agrega esto junto a las de Puestos)
 	puestoConceptoRepo := repository.NewPuestoConceptoRepository(db)
-	puestoConceptoHandler := handlers.PuestoConceptoHandler{Repo: puestoConceptoRepo, PuestoRepo: puestoRepo}
+	contratoService := &services.ContratoService{
+		Repo:           contratoRepo,
+		RepoTrabajador: trabajadorRepo,
+		RepoPuesto:     puestoRepo,
+	}
+	notifRepo := repository.NewNotificacionRepository(db)
+	puestoConceptoHandler := handlers.PuestoConceptoHandler{
+		Repo:             puestoConceptoRepo,
+		PuestoRepo:       puestoRepo,
+		ContratoService:  contratoService,
+		NotificacionRepo: notifRepo,
+	}
 	mux.HandleFunc("/tenant/puestos-conceptos/ui", middleware.RequireAuth(puestoConceptoHandler.VistaUI))
 	mux.HandleFunc("/tenant/puestos-conceptos/lista", middleware.RequireAuth(puestoConceptoHandler.Listar))
 	mux.HandleFunc("/tenant/puestos-conceptos/crear", middleware.RequireAuth(puestoConceptoHandler.Crear))
 	mux.HandleFunc("/tenant/puestos-conceptos/eliminar", middleware.RequireAuth(puestoConceptoHandler.Eliminar))
 	mux.HandleFunc("/tenant/puestos-conceptos/restaurar", middleware.RequireAuth(puestoConceptoHandler.RestaurarCostosBase))
+	mux.HandleFunc("/tenant/puestos-conceptos/restaurar-todos", middleware.RequireAuth(puestoConceptoHandler.RestaurarTodosCostosBase))
 	mux.HandleFunc("/tenant/puestos-conceptos/editar-monto-ui", middleware.RequireAuth(puestoConceptoHandler.EditarMontoUI))
 	mux.HandleFunc("/tenant/puestos-conceptos/actualizar-monto", middleware.RequireAuth(puestoConceptoHandler.ActualizarMonto))
 

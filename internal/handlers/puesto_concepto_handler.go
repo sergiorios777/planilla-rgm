@@ -2,17 +2,21 @@ package handlers
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 	"planilla-rgm/internal/config"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
+	"planilla-rgm/internal/services"
 	"strconv"
 	"strings"
 )
 
 type PuestoConceptoHandler struct {
-	Repo       *repository.PuestoConceptoRepository
-	PuestoRepo *repository.PuestoRepository // Para traer el nombre del puesto
+	Repo             *repository.PuestoConceptoRepository
+	PuestoRepo       *repository.PuestoRepository // Para traer el nombre del puesto
+	ContratoService  *services.ContratoService
+	NotificacionRepo *repository.NotificacionRepository
 }
 
 // VistaUI carga la pantalla completa de configuración para un puesto específico
@@ -131,26 +135,63 @@ func (h *PuestoConceptoHandler) RestaurarCostosBase(w http.ResponseWriter, r *ht
 	puestoID, _ := strconv.Atoi(pID)
 	tenantID := obtenerTenantID(r)
 
-	// 1. Necesitamos el régimen del puesto para saber qué plantilla aplicar
-	puesto, err := h.PuestoRepo.ObtenerPorID(puestoID, tenantID)
+	// Ejecutar restauración unificada usando el servicio
+	tieneContrato, err := h.ContratoService.SincronizarConceptosPuesto(tenantID, puestoID)
 	if err != nil {
-		http.Error(w, "Error al obtener puesto: "+err.Error(), 500)
+		http.Error(w, "Error al restaurar conceptos: "+err.Error(), 500)
 		return
 	}
 
-	// 2. Ejecutar restauración (usando el régimen directo)
-	err = h.PuestoRepo.RestaurarPlantillaBase(puestoID, tenantID, puesto.RegimenID)
-	if err != nil {
-		http.Error(w, "Error al restaurar: "+err.Error(), 500)
-		return
+	// Forzamos un refresco de HTMX disparando un evento custom
+	if tieneContrato {
+		w.Header().Set("HX-Trigger", "refreshCostosBase")
+	} else {
+		w.Header().Set("HX-Trigger", "refreshCostosBaseWarning")
 	}
 
-	// 3.5 forzamos un refresco de HTMX disparando un evento custom.
-	w.Header().Set("HX-trigger", "refreshCostosBase")
-
-	// 4. Enviamos de vuelta a la función VistaUI para que recargue todo.
+	// Enviamos de vuelta a la función VistaUI para que recargue todo.
 	r.URL.RawQuery = "puesto_id=" + strconv.Itoa(puestoID)
 	h.VistaUI(w, r)
+}
+
+// RestaurarTodosCostosBase restablece los conceptos de todos los puestos del tenant de forma asíncrona
+func (h *PuestoConceptoHandler) RestaurarTodosCostosBase(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+
+	// Lanzamos Goroutine en segundo plano
+	go func(tID int) {
+		puestos, err := h.PuestoRepo.ObtenerTodos(tID)
+		if err != nil {
+			log.Printf("Error al obtener puestos para restauración masiva: %v", err)
+			return
+		}
+
+		for _, p := range puestos {
+			_, err := h.ContratoService.SincronizarConceptosPuesto(tID, p.ID)
+			if err != nil {
+				log.Printf("Error al restaurar conceptos para puesto %d: %v", p.ID, err)
+			}
+		}
+
+		// Al terminar, registrar una notificación en la base de datos
+		titulo := "🧹 Restauración Masiva Terminada"
+		mensaje := "Se han restablecido los costos de todas las plazas operativas de la entidad."
+		tipo := "PROCESO_EXITOSO"
+		n := &models.Notificacion{
+			TenantID: &tID,
+			Titulo:   titulo,
+			Mensaje:  mensaje,
+			Tipo:     tipo,
+			Leido:    false,
+		}
+		err = h.NotificacionRepo.Crear(n)
+		if err != nil {
+			log.Printf("Error al crear notificación de restauración masiva: %v", err)
+		}
+	}(tenantID)
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`<p style="color: green; font-weight: bold; margin-bottom: 0;">🔄 El proceso de restauración masiva ha iniciado en segundo plano. Se te notificará al finalizar.</p>`))
 }
 
 // EditarMontoUI devuelve un pequeño input para el monto
