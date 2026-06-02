@@ -109,6 +109,7 @@
                                 <th>E: FECHA_INICIO</th>
                                 <th>F: FECHA_FIN</th>
                                 <th>G: ACTIVO</th>
+                                <th>H: NIVEL (Opcional)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -120,6 +121,7 @@
                                 <td>2026-01-01</td>
                                 <td></td>
                                 <td>SI</td>
+                                <td>STA</td>
                             </tr>
                             <tr>
                                 <td>83920184</td>
@@ -129,6 +131,7 @@
                                 <td>2026-02-15</td>
                                 <td>2026-12-31</td>
                                 <td>SI</td>
+                                <td>Auxiliar</td>
                             </tr>
                         </tbody>
                     </table>
@@ -205,6 +208,10 @@
             </select>
         </label>
 
+        <label>Nivel / Escala Remunerativa
+            <input type="text" name="nivel" value="{{.Nivel}}" placeholder="Ej. F-1, Auxiliar, STA...">
+        </label>
+
         <div class="grid">
             <label>Fecha de Inicio de Labores
                 <input type="date" name="fecha_inicio" value="{{.FechaInicio}}" required>
@@ -251,6 +258,10 @@
             </label>
         </div>
 
+        <label>Nivel / Escala Remunerativa
+            <input type="text" name="nivel" value="{{.Nivel}}" placeholder="Ej. F-1, Auxiliar, STA...">
+        </label>
+
         <label>
             <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Contrato Activo
         </label>
@@ -276,7 +287,11 @@
     <tbody>
         {{range .Contratos}}
         <tr>
-            <td><strong>{{.TrabajadorNombre}}</strong><br><small>Doc: {{.TrabajadorDoc}}</small></td>
+            <td>
+                <strong>{{.TrabajadorNombre}}</strong><br>
+                <small>Doc: {{.TrabajadorDoc}}</small>
+                {{if .Nivel}}<br><small>Nivel: <strong>{{.Nivel}}</strong></small>{{end}}
+            </td>
             <td><mark>{{.RegimenDesc}}</mark><br><small><strong>{{.PuestoNombre}}</strong> (S/
                     {{.SueldoPresupuestado}})</small></td>
             <td><small>Desde: {{.FechaInicio}}<br>Hasta: {{if

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"planilla-rgm/internal/models"
+	"strconv"
 	"strings"
 )
 
@@ -15,8 +16,29 @@ func NewConceptoRepository(db *sql.DB) *ConceptoRepository {
 	return &ConceptoRepository{db: db}
 }
 
-// ObtenerTodos trae la lista para la pantalla
-func (r *ConceptoRepository) ObtenerTodos(busqueda string, tipo string, limite int, offset int) ([]models.ConceptoMaestro, int, error) {
+// ObtenerPadres obtiene todos los conceptos maestros padre (parent_id IS NULL)
+func (r *ConceptoRepository) ObtenerPadres() ([]models.ConceptoMaestro, error) {
+	query := `SELECT id, parent_id, codigo, descripcion, tipo, activo FROM conceptos_maestros WHERE parent_id IS NULL ORDER BY codigo ASC`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.ConceptoMaestro
+	for rows.Next() {
+		var c models.ConceptoMaestro
+		err := rows.Scan(&c.ID, &c.ParentID, &c.Codigo, &c.Descripcion, &c.Tipo, &c.Activo)
+		if err != nil {
+			return nil, err
+		}
+		lista = append(lista, c)
+	}
+	return lista, nil
+}
+
+// ObtenerTodos trae la lista para la pantalla con filtros
+func (r *ConceptoRepository) ObtenerTodos(busqueda string, tipo string, parentIDStr string, limite int, offset int) ([]models.ConceptoMaestro, int, error) {
 	whereClause := "WHERE 1=1"
 	
 	var args []interface{}
@@ -32,6 +54,14 @@ func (r *ConceptoRepository) ObtenerTodos(busqueda string, tipo string, limite i
 		whereClause += fmt.Sprintf(` AND tipo = $%d`, contadorArgs)
 		args = append(args, tipo)
 		contadorArgs++
+	}
+
+	if parentIDStr != "" {
+		if parentID, err := strconv.Atoi(parentIDStr); err == nil {
+			whereClause += fmt.Sprintf(` AND parent_id = $%d`, contadorArgs)
+			args = append(args, parentID)
+			contadorArgs++
+		}
 	}
 
 	var totalRegistros int
@@ -148,11 +178,12 @@ func (r *ContratoRepository) ObtenerPorID(id int, tenantID int) (models.Contrato
 	var c models.Contrato
 	var fFin sql.NullString
 	var tipoContrato sql.NullString
+	var nivel sql.NullString
 	query := `
 		SELECT c.id, c.trabajador_id, c.puesto_id, 
 		       TO_CHAR(c.fecha_inicio, 'YYYY-MM-DD'), TO_CHAR(c.fecha_fin, 'YYYY-MM-DD'), c.activo,
 		       t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
-		       p.nombre AS puesto_nombre, COALESCE(c.tipo_contrato, '') AS tipo_contrato
+		       p.nombre AS puesto_nombre, COALESCE(c.tipo_contrato, '') AS tipo_contrato, COALESCE(c.nivel, '') AS nivel
 		FROM contratos c
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
 		INNER JOIN puestos p ON c.puesto_id = p.id
@@ -160,7 +191,7 @@ func (r *ContratoRepository) ObtenerPorID(id int, tenantID int) (models.Contrato
 	`
 	err := r.db.QueryRow(query, id, tenantID).Scan(
 		&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fFin, &c.Activo,
-		&c.TrabajadorNombre, &c.PuestoNombre, &tipoContrato,
+		&c.TrabajadorNombre, &c.PuestoNombre, &tipoContrato, &nivel,
 	)
 	if fFin.Valid {
 		c.FechaFin = &fFin.String
@@ -168,18 +199,21 @@ func (r *ContratoRepository) ObtenerPorID(id int, tenantID int) (models.Contrato
 	if tipoContrato.Valid {
 		c.TipoContrato = tipoContrato.String
 	}
+	if nivel.Valid {
+		c.Nivel = nivel.String
+	}
 	return c, err
 }
 
 func (r *ContratoRepository) Actualizar(c *models.Contrato) error {
-	// Solo actualizamos fechas y estado. Si el contrato pasa a inactivo, la plaza se libera.
+	// Solo actualizamos fechas, estado y nivel. Si el contrato pasa a inactivo, la plaza se libera.
 	tx, err := r.db.Begin()
 	if err != nil {
 		return err
 	}
 
-	query := `UPDATE contratos SET fecha_inicio = $1, fecha_fin = NULLIF($2, '')::DATE, activo = $3 WHERE id = $4 AND tenant_id = $5`
-	_, err = tx.Exec(query, c.FechaInicio, c.FechaFin, c.Activo, c.ID, c.TenantID)
+	query := `UPDATE contratos SET fecha_inicio = $1, fecha_fin = NULLIF($2, '')::DATE, activo = $3, nivel = $4 WHERE id = $5 AND tenant_id = $6`
+	_, err = tx.Exec(query, c.FechaInicio, c.FechaFin, c.Activo, c.Nivel, c.ID, c.TenantID)
 	if err != nil {
 		tx.Rollback()
 		return err

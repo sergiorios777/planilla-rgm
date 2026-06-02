@@ -16,13 +16,30 @@ type ConceptoHandler struct {
 }
 
 func (h *ConceptoHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
-	tmpl, _ := template.ParseFiles("ui/templates/admin/conceptos_ui.html")
-	tmpl.Execute(w, nil)
+	padres, err := h.Repo.ObtenerPadres()
+	if err != nil {
+		http.Error(w, "Error al obtener conceptos padres", http.StatusInternalServerError)
+		return
+	}
+
+	datos := struct {
+		Padres []models.ConceptoMaestro
+	}{
+		Padres: padres,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/admin/conceptos_ui.html")
+	if err != nil {
+		http.Error(w, "Error al parsear plantilla", http.StatusInternalServerError)
+		return
+	}
+	tmpl.Execute(w, datos)
 }
 
 func (h *ConceptoHandler) ListarConceptos(w http.ResponseWriter, r *http.Request) {
 	busqueda := r.URL.Query().Get("buscar")
 	tipo := r.URL.Query().Get("tipo")
+	parentIDStr := r.URL.Query().Get("parent_id")
 	limiteStr := r.URL.Query().Get("limite")
 	paginaStr := r.URL.Query().Get("pagina")
 
@@ -37,7 +54,7 @@ func (h *ConceptoHandler) ListarConceptos(w http.ResponseWriter, r *http.Request
 	}
 	offset := (pagina - 1) * limite
 
-	conceptos, totalRegistros, err := h.Repo.ObtenerTodos(busqueda, tipo, limite, offset)
+	conceptos, totalRegistros, err := h.Repo.ObtenerTodos(busqueda, tipo, parentIDStr, limite, offset)
 	if err != nil {
 		http.Error(w, "Error al listar conceptos", http.StatusInternalServerError)
 		return

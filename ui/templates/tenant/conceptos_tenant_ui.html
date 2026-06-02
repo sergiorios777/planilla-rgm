@@ -116,6 +116,9 @@
                     {{if .EsOcasional}}
                     <mark style="background-color: #eceff1; color: #37474f; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #cfd8dc;">OCAS</mark>
                     {{end}}
+                    {{if .EsAfectoCargasSociales}}
+                    <mark style="background-color: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #ffcdd2;">CARG_SOC</mark>
+                    {{end}}
                 </td>
                 <td>
                     <small>Meses: {{.FrecuenciaMeses}}</small><br>
@@ -259,6 +262,9 @@
         <label>
             <input type="checkbox" name="es_base_beneficios_sociales" role="switch"> ¿Base Beneficios Sociales?
         </label>
+        <label>
+            <input type="checkbox" name="es_afecto_cargas_sociales" role="switch"> ¿Afecto Cargas Soc.?
+        </label>
     </div>
 
     <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
@@ -348,6 +354,9 @@
         </label>
         <label>
             <input type="checkbox" role="switch" name="es_base_beneficios_sociales" {{if .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> Base Beneficios Sociales
+        </label>
+        <label>
+            <input type="checkbox" role="switch" name="es_afecto_cargas_sociales" {{if .Concepto.EsAfectoCargasSociales}}checked{{end}}> Afecto Cargas Soc.
         </label>
         <label>
             <input type="checkbox" role="switch" name="es_ocasional" {{if .Concepto.EsOcasional}}checked{{end}} disabled> ¿Es Ocasional? (Configuración Centralizada)

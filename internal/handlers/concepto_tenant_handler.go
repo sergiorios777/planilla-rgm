@@ -113,6 +113,7 @@ func (h *ConceptoTenantHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		EsBaseCts:                r.FormValue("es_base_cts") == "on",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "on",
 		EsOcasional:              r.FormValue("es_ocasional") == "on",
+		EsAfectoCargasSociales:   r.FormValue("es_afecto_cargas_sociales") == "on",
 		RegimenesIDs:             regimenesIDs,
 	}
 
@@ -244,6 +245,7 @@ func (h *ConceptoTenantHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		EsBaseCts:                r.FormValue("es_base_cts") == "on",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "on",
 		EsOcasional:              existente.EsOcasional, // Se mantiene el valor centralizado del catálogo
+		EsAfectoCargasSociales:   r.FormValue("es_afecto_cargas_sociales") == "on",
 		RegimenesIDs:             regimenesIDs,
 	}
 

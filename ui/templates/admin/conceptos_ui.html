@@ -113,6 +113,17 @@
     </label>
 
     <label>
+        Concepto Padre
+        <select name="parent_id" hx-get="/admin/conceptos/lista" hx-include="#form-filtros-conceptos"
+            hx-target="#lista-conceptos">
+            <option value="">Todos</option>
+            {{range .Padres}}
+            <option value="{{.ID}}">{{.Codigo}} - {{.Descripcion}}</option>
+            {{end}}
+        </select>
+    </label>
+
+    <label>
         Tipo
         <select name="tipo" hx-get="/admin/conceptos/lista" hx-include="#form-filtros-conceptos"
             hx-target="#lista-conceptos">

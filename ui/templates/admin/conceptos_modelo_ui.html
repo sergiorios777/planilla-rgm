@@ -112,6 +112,9 @@
                         {{if .EsOcasional}}
                         <mark style="background-color: #eceff1; color: #37474f; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #cfd8dc;">OCAS</mark>
                         {{end}}
+                        {{if .EsAfectoCargasSociales}}
+                        <mark style="background-color: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #ffcdd2;">CARG_SOC</mark>
+                        {{end}}
                     </div>
                 </td>
                 <td><mark>{{if .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}}</mark></td>
@@ -227,6 +230,7 @@
                 <label><input type="checkbox" role="switch" name="es_base_cts" value="true"> ¿Base CTS?</label>
                 <label><input type="checkbox" role="switch" name="es_base_beneficios_sociales" value="true"> ¿Base Beneficios Sociales?</label>
                 <label><input type="checkbox" role="switch" name="es_ocasional" value="true" onchange="actualizarBasesOcasional(this)"> ¿Es Ocasional?</label>
+                <label><input type="checkbox" role="switch" name="es_afecto_cargas_sociales" value="true"> ¿Afecto Cargas Soc.?</label>
             </div>
             <footer><button type="submit">Guardar en Plantilla</button></footer>
         </form>
@@ -307,6 +311,8 @@
                     .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> Base Beneficios Sociales</label>
             <label><input type="checkbox" role="switch" name="es_ocasional" value="true" {{if
                     .Concepto.EsOcasional}}checked{{end}} onchange="actualizarBasesOcasional(this)"> ¿Es Ocasional?</label>
+            <label><input type="checkbox" role="switch" name="es_afecto_cargas_sociales" value="true" {{if
+                    .Concepto.EsAfectoCargasSociales}}checked{{end}}> Afecto Cargas Soc.</label>
         </div>
 
         <footer><button type="submit">Actualizar Catálogo</button></footer>
@@ -384,7 +390,7 @@
 
             <div style="background: var(--pico-muted-background); padding: 0.75rem; border-radius: var(--pico-border-radius); margin-bottom: 1rem;">
                 <small style="display: block; color: var(--pico-muted-color); font-size: 0.8rem;">
-                    💡 <strong>Estructura del archivo (15 columnas):</strong> Debe contener encabezados obligatorios. Utilice el código maestro SUNAT para la columna <strong>codigo_sunat</strong>, el nombre personalizado en <strong>nombre_personalizado_unico_</strong>, el código limpio del clasificador MEF en <strong>clasificador_codigo</strong> (ej: 2.1.1.1.1.1), configure la columna 11 <strong>es_ocasional</strong> ('1' para conceptos ocasionales, '0' para regulares), y marque con '1' o 'true' las columnas de afectación de los regímenes (DL 276, DL 728, DL 1057, y la columna 15 <strong>ley_30057</strong>).
+                    💡 <strong>Estructura del archivo (16 columnas):</strong> Debe contener encabezados obligatorios. Utilice el código maestro SUNAT para la columna <strong>codigo_sunat</strong>, el nombre personalizado en <strong>nombre_personalizado_unico_</strong>, el código limpio del clasificador MEF en <strong>clasificador_codigo</strong> (ej: 2.1.1.1.1.1), configure la columna 11 <strong>es_ocasional</strong> ('1' para conceptos ocasionales, '0' para regulares), configure la columna 12 <strong>es_afecto_cargas_sociales</strong> ('1' para afectos, '0' para inafectos) y marque con '1' o 'true' las columnas de afectación de los regímenes (DL 276, DL 728, DL 1057, y la columna 16 <strong>ley_30057</strong>).
                 </small>
             </div>
 

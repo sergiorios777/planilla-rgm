@@ -42,8 +42,8 @@ func TestImportarDesdeCSV(t *testing.T) {
 	service := NewConceptoModeloService(repo, db)
 
 	// A. PRUEBA 1: Carga Masiva Exitosa con UPSERT
-	csvValido := `codigo_sunat,nombre_personalizado_unico_,frecuencia_meses,clasificador_codigo,es_extraordinario,requiere_monto,es_pensionable,es_remunerativa,es_base_cts,es_base_beneficios_sociales,es_ocasional,dl_276,dl_728,dl_1057,ley_30057
-0121,Remuneración Principal Básica Test,"1,2,3,4,5,6,7,8,9,10,11,12",2.1.1.1.1.1,0,0,1,1,1,1,1,1,1,0,1`
+	csvValido := `codigo_sunat,nombre_personalizado_unico_,frecuencia_meses,clasificador_codigo,es_extraordinario,requiere_monto,es_pensionable,es_remunerativa,es_base_cts,es_base_beneficios_sociales,es_ocasional,es_afecto_cargas_sociales,dl_276,dl_728,dl_1057,ley_30057
+0121,Remuneración Principal Básica Test,"1,2,3,4,5,6,7,8,9,10,11,12",2.1.1.1.1.1,0,0,1,1,1,1,1,1,1,1,0,1`
 
 	exitosos, err := service.ImportarDesdeCSV(bytes.NewBufferString(csvValido))
 	if err != nil {
@@ -67,6 +67,13 @@ func TestImportarDesdeCSV(t *testing.T) {
 		t.Errorf("No se guardó es_ocasional como true. err: %v", err)
 	}
 
+	// Verificar que 'es_afecto_cargas_sociales' se haya guardado como true
+	var esAfectoCargasSociales bool
+	err = db.QueryRow("SELECT es_afecto_cargas_sociales FROM conceptos_modelo WHERE nombre_personalizado = 'Remuneración Principal Básica Test'").Scan(&esAfectoCargasSociales)
+	if err != nil || !esAfectoCargasSociales {
+		t.Errorf("No se guardó es_afecto_cargas_sociales como true. err: %v", err)
+	}
+
 	// Verificar inserción en la tabla pivot (debe tener 3 relaciones: 276, 728 y 30057)
 	var pivotCount int
 	err = db.QueryRow(`
@@ -77,9 +84,9 @@ func TestImportarDesdeCSV(t *testing.T) {
 		t.Errorf("Se esperaban 3 relaciones en el pivot, se obtuvieron: %d, err: %v", pivotCount, err)
 	}
 
-	// PRUEBA DE UPSERT: Importar el mismo CSV cambiando atributos y regímenes (DL 1057 activado, DL 728 desactivado, y es_ocasional desactivado)
-	csvUpsert := `codigo_sunat,nombre_personalizado_unico_,frecuencia_meses,clasificador_codigo,es_extraordinario,requiere_monto,es_pensionable,es_remunerativa,es_base_cts,es_base_beneficios_sociales,es_ocasional,dl_276,dl_728,dl_1057,ley_30057
-0121,Remuneración Principal Básica Test,"1,2,3,4,5,6,7,8,9,10,11,12",2.1.1.1.1.1,1,0,1,1,1,1,0,1,0,1,1`
+	// PRUEBA DE UPSERT: Importar el mismo CSV cambiando atributos y regímenes (DL 1057 activado, DL 728 desactivado, es_ocasional desactivado y es_afecto_cargas_sociales desactivado)
+	csvUpsert := `codigo_sunat,nombre_personalizado_unico_,frecuencia_meses,clasificador_codigo,es_extraordinario,requiere_monto,es_pensionable,es_remunerativa,es_base_cts,es_base_beneficios_sociales,es_ocasional,es_afecto_cargas_sociales,dl_276,dl_728,dl_1057,ley_30057
+0121,Remuneración Principal Básica Test,"1,2,3,4,5,6,7,8,9,10,11,12",2.1.1.1.1.1,1,0,1,1,1,1,0,0,1,0,1,1`
 
 	exitosos, err = service.ImportarDesdeCSV(bytes.NewBufferString(csvUpsert))
 	if err != nil {
@@ -100,6 +107,12 @@ func TestImportarDesdeCSV(t *testing.T) {
 	err = db.QueryRow("SELECT es_ocasional FROM conceptos_modelo WHERE nombre_personalizado = 'Remuneración Principal Básica Test'").Scan(&esOcasional)
 	if err != nil || esOcasional {
 		t.Errorf("El UPSERT no actualizó es_ocasional a false, err: %v", err)
+	}
+
+	// Verificar que 'es_afecto_cargas_sociales' se haya actualizado a false en el UPSERT
+	err = db.QueryRow("SELECT es_afecto_cargas_sociales FROM conceptos_modelo WHERE nombre_personalizado = 'Remuneración Principal Básica Test'").Scan(&esAfectoCargasSociales)
+	if err != nil || esAfectoCargasSociales {
+		t.Errorf("El UPSERT no actualizó es_afecto_cargas_sociales a false, err: %v", err)
 	}
 
 	// Verificar las nuevas relaciones en el pivot (siguen siendo 3, pero ahora DL 1057 está y DL 728 no)
@@ -133,9 +146,9 @@ func TestImportarDesdeCSV(t *testing.T) {
 	}
 
 	// B. PRUEBA 2: Transaccionalidad / Rollback en caso de clasificador inválido
-	csvInvalido := `codigo_sunat,nombre_personalizado_unico_,frecuencia_meses,clasificador_codigo,es_extraordinario,requiere_monto,es_pensionable,es_remunerativa,es_base_cts,es_base_beneficios_sociales,es_ocasional,dl_276,dl_728,dl_1057,ley_30057
-0121,Concepto Valido Test,"1,2,3,4,5,6,7,8,9,10,11,12",2.1.1.1.1.1,0,0,1,1,1,1,0,1,1,0,1
-0121,Concepto Invalido Test,"1,2,3,4,5,6,7,8,9,10,11,12",9.9.9.9.9.9,0,0,1,1,1,1,0,1,1,0,1` // Clasificador inexistente
+	csvInvalido := `codigo_sunat,nombre_personalizado_unico_,frecuencia_meses,clasificador_codigo,es_extraordinario,requiere_monto,es_pensionable,es_remunerativa,es_base_cts,es_base_beneficios_sociales,es_ocasional,es_afecto_cargas_sociales,dl_276,dl_728,dl_1057,ley_30057
+0121,Concepto Valido Test,"1,2,3,4,5,6,7,8,9,10,11,12",2.1.1.1.1.1,0,0,1,1,1,1,0,0,1,1,0,1
+0121,Concepto Invalido Test,"1,2,3,4,5,6,7,8,9,10,11,12",9.9.9.9.9.9,0,0,1,1,1,1,0,0,1,1,0,1` // Clasificador inexistente
 
 	_, err = service.ImportarDesdeCSV(bytes.NewBufferString(csvInvalido))
 	if err == nil {
@@ -150,8 +163,8 @@ func TestImportarDesdeCSV(t *testing.T) {
 
 	// C. PRUEBA 3: Importación exitosa con codificación Latin-1/ISO-8859-1 (Excel en español)
 	// 'ó' es 0xF3 en Latin-1
-	csvLatin1 := []byte("codigo_sunat,nombre_personalizado_unico_,frecuencia_meses,clasificador_codigo,es_extraordinario,requiere_monto,es_pensionable,es_remunerativa,es_base_cts,es_base_beneficios_sociales,es_ocasional,dl_276,dl_728,dl_1057,ley_30057\n" +
-		"0121,Remuneraci\xf3n de Integraci\xf3n Test,\"1,2,3,4,5,6,7,8,9,10,11,12\",2.1.1.1.1.1,0,0,1,1,1,1,0,1,1,0,1")
+	csvLatin1 := []byte("codigo_sunat,nombre_personalizado_unico_,frecuencia_meses,clasificador_codigo,es_extraordinario,requiere_monto,es_pensionable,es_remunerativa,es_base_cts,es_base_beneficios_sociales,es_ocasional,es_afecto_cargas_sociales,dl_276,dl_728,dl_1057,ley_30057\n" +
+		"0121,Remuneraci\xf3n de Integraci\xf3n Test,\"1,2,3,4,5,6,7,8,9,10,11,12\",2.1.1.1.1.1,0,0,1,1,1,1,0,0,1,1,0,1")
 
 	exitosos, err = service.ImportarDesdeCSV(bytes.NewReader(csvLatin1))
 	if err != nil {

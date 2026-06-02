@@ -78,14 +78,14 @@ func (s *ConceptoModeloService) ImportarDesdeCSV(file io.Reader) (exitosos int, 
 	// D. Iterar por cada fila del CSV
 	for i, fila := range filas {
 		if i == 0 {
-			// Validar que la cabecera tenga al menos 15 columnas
-			if len(fila) < 15 {
-				return 0, fmt.Errorf("cabecera incorrecta: se requieren al menos 15 columnas, se obtuvieron %d", len(fila))
+			// Validar que la cabecera tenga al menos 16 columnas
+			if len(fila) < 16 {
+				return 0, fmt.Errorf("cabecera incorrecta: se requieren al menos 16 columnas, se obtuvieron %d", len(fila))
 			}
 			// Validar nombres específicos de columnas clave
 			col0 := strings.ToLower(strings.TrimSpace(fila[0]))
 			col1 := strings.ToLower(strings.TrimSpace(fila[1]))
-			col14 := strings.ToLower(strings.TrimSpace(fila[14]))
+			col15 := strings.ToLower(strings.TrimSpace(fila[15]))
 
 			if col0 != "codigo_sunat" {
 				return 0, fmt.Errorf("cabecera incorrecta: la primera columna debe ser 'codigo_sunat', se obtuvo '%s'", fila[0])
@@ -93,15 +93,15 @@ func (s *ConceptoModeloService) ImportarDesdeCSV(file io.Reader) (exitosos int, 
 			if col1 != "nombre_personalizado_unico_" {
 				return 0, fmt.Errorf("cabecera incorrecta: la segunda columna debe ser 'nombre_personalizado_unico_', se obtuvo '%s'", fila[1])
 			}
-			if col14 != "ley_30057" {
-				return 0, fmt.Errorf("cabecera incorrecta: la columna 15 debe ser 'ley_30057', se obtuvo '%s'", fila[14])
+			if col15 != "ley_30057" {
+				return 0, fmt.Errorf("cabecera incorrecta: la columna 16 debe ser 'ley_30057', se obtuvo '%s'", fila[15])
 			}
 			continue // Saltar cabecera
 		}
 
-		// Validar que la fila de datos tenga al menos 15 columnas
-		if len(fila) < 15 {
-			return 0, fmt.Errorf("fila %d: formato incorrecto, se requieren 15 columnas (codigo_sunat, nombre_personalizado_unico_, frecuencia_meses, clasificador_codigo, es_extraordinario, requiere_monto, es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, dl_276, dl_728, dl_1057, ley_30057)", i+1)
+		// Validar que la fila de datos tenga al menos 16 columnas
+		if len(fila) < 16 {
+			return 0, fmt.Errorf("fila %d: formato incorrecto, se requieren 16 columnas (codigo_sunat, nombre_personalizado_unico_, frecuencia_meses, clasificador_codigo, es_extraordinario, requiere_monto, es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, dl_276, dl_728, dl_1057, ley_30057)", i+1)
 		}
 
 		conceptoCodigo := strings.TrimSpace(fila[0])
@@ -149,6 +149,7 @@ func (s *ConceptoModeloService) ImportarDesdeCSV(file io.Reader) (exitosos int, 
 			EsBaseCts:                parseBoolHelper(fila[8]),
 			EsBaseBeneficiosSociales: parseBoolHelper(fila[9]),
 			EsOcasional:              parseBoolHelper(fila[10]),
+			EsAfectoCargasSociales:   parseBoolHelper(fila[11]),
 		}
 
 		// Mapeo de regímenes
@@ -157,10 +158,10 @@ func (s *ConceptoModeloService) ImportarDesdeCSV(file io.Reader) (exitosos int, 
 			colName string
 			val     string
 		}{
-			{"DL 276", fila[11]},
-			{"DL 728", fila[12]},
-			{"DL 1057", fila[13]},
-			{"LEY SERVIR", fila[14]},
+			{"DL 276", fila[12]},
+			{"DL 728", fila[13]},
+			{"DL 1057", fila[14]},
+			{"LEY SERVIR", fila[15]},
 		}
 
 		for _, rv := range regimenesValores {

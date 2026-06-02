@@ -119,6 +119,7 @@ func (h *ConceptoModeloHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		EsBaseCts:                r.FormValue("es_base_cts") == "true",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "true",
 		EsOcasional:              r.FormValue("es_ocasional") == "true",
+		EsAfectoCargasSociales:   r.FormValue("es_afecto_cargas_sociales") == "true",
 		RegimenesIDs:             ids,
 	}
 	nuevo.ConceptoID, _ = strconv.Atoi(r.FormValue("concepto_id"))
@@ -200,6 +201,7 @@ func (h *ConceptoModeloHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		EsBaseCts:                r.FormValue("es_base_cts") == "true",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "true",
 		EsOcasional:              r.FormValue("es_ocasional") == "true",
+		EsAfectoCargasSociales:   r.FormValue("es_afecto_cargas_sociales") == "true",
 		RegimenesIDs:             idsRegimen,
 	}
 
@@ -393,9 +395,9 @@ func (h *ConceptoModeloHandler) PlantillaCSV(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	w.Header().Set("Content-Disposition", "attachment; filename=plantilla_conceptos_modelo.csv")
 	
-	// Escribir cabecera y una fila de ejemplo (15 columnas)
-	cabecera := "codigo_sunat,nombre_personalizado_unico_,frecuencia_meses,clasificador_codigo,es_extraordinario,requiere_monto,es_pensionable,es_remunerativa,es_base_cts,es_base_beneficios_sociales,es_ocasional,dl_276,dl_728,dl_1057,ley_30057\n"
-	ejemplo := "0121,Remuneración Principal Básica,\"1,2,3,4,5,6,7,8,9,10,11,12\",2.1.1.1.1.1,0,0,1,1,1,1,0,1,1,0,1\n"
+	// Escribir cabecera y una fila de ejemplo (16 columnas)
+	cabecera := "codigo_sunat,nombre_personalizado_unico_,frecuencia_meses,clasificador_codigo,es_extraordinario,requiere_monto,es_pensionable,es_remunerativa,es_base_cts,es_base_beneficios_sociales,es_ocasional,es_afecto_cargas_sociales,dl_276,dl_728,dl_1057,ley_30057\n"
+	ejemplo := "0121,Remuneración Principal Básica,\"1,2,3,4,5,6,7,8,9,10,11,12\",2.1.1.1.1.1,0,0,1,1,1,1,0,1,1,1,0,1\n"
 	
 	w.Write([]byte(cabecera + ejemplo))
 }

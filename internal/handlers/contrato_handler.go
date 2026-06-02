@@ -136,6 +136,7 @@ func (h *ContratoHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		FechaFin:     fFin,
 		Activo:       r.FormValue("activo") == "on",
 		TipoContrato: r.FormValue("tipo_contrato"),
+		Nivel:        r.FormValue("nivel"),
 	}
 
 	// Instanciamos el contrato service para llamar a la funcion CrearContrato
@@ -220,6 +221,7 @@ func (h *ContratoHandler) FormularioDinamicoUI(w http.ResponseWriter, r *http.Re
 		"FechaInicio":              fechaInicio,
 		"FechaFin":                 fechaFin,
 		"Activo":                   activo,
+		"Nivel":                    r.URL.Query().Get("nivel"),
 	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/contratos_ui.html")
@@ -256,6 +258,7 @@ func (h *ContratoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 		FechaInicio: r.FormValue("fecha_inicio"),
 		FechaFin:    fFin,
 		Activo:      r.FormValue("activo") == "on",
+		Nivel:        r.FormValue("nivel"),
 	}
 
 	h.Repo.Actualizar(&cActualizado)
@@ -278,7 +281,7 @@ func (h *ContratoHandler) DescargarPlantilla(w http.ResponseWriter, r *http.Requ
 	// Cabeceras
 	cabeceras := []string{
 		"DOCUMENTO_TRABAJADOR", "CODIGO_AIRHSP", "NOMBRE_PUESTO", "TIPO_CONTRATO",
-		"FECHA_INICIO", "FECHA_FIN", "ACTIVO",
+		"FECHA_INICIO", "FECHA_FIN", "ACTIVO", "NIVEL",
 	}
 	for i, cabecera := range cabeceras {
 		col := fmt.Sprintf("%c1", 'A'+i)
@@ -287,8 +290,8 @@ func (h *ContratoHandler) DescargarPlantilla(w http.ResponseWriter, r *http.Requ
 
 	// Datos de ejemplo
 	ejemplos := [][]interface{}{
-		{"74839201", "000456", "Especialista en Logística II", "Nombrado", "2026-01-01", "", "SI"},
-		{"83920184", "000789", "Especialista en Sistemas I", "Transitorio", "2026-02-15", "2026-12-31", "SI"},
+		{"74839201", "000456", "Especialista en Logística II", "Nombrado", "2026-01-01", "", "SI", "STA"},
+		{"83920184", "000789", "Especialista en Sistemas I", "Transitorio", "2026-02-15", "2026-12-31", "SI", "Auxiliar"},
 	}
 	for rIdx, fila := range ejemplos {
 		for cIdx, valor := range fila {
@@ -579,6 +582,12 @@ func (h *ContratoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) 
 					}
 				}
 
+				// Nivel
+				nivel := ""
+				if len(fila) >= 8 {
+					nivel = strings.TrimSpace(fila[7])
+				}
+
 				c := models.Contrato{
 					TenantID:     tenantID,
 					TrabajadorID: tID,
@@ -587,6 +596,7 @@ func (h *ContratoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) 
 					FechaFin:     fechaFin,
 					Activo:       activo,
 					TipoContrato: tipoContrato,
+					Nivel:        nivel,
 				}
 
 				results <- RowResult{

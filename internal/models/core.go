@@ -79,6 +79,7 @@ type ConceptoTenant struct {
 	EsBaseCts                bool   `json:"es_base_cts"`
 	EsBaseBeneficiosSociales bool   `json:"es_base_beneficios_sociales"`
 	EsOcasional              bool   `json:"es_ocasional"`
+	EsAfectoCargasSociales   bool   `json:"es_afecto_cargas_sociales"`
 
 	// Campos Auxiliares (JOINs desde la tabla conceptos_maestros)
 	RegimenesIDs       []int  `json:"regimenes_ids"` // Para los checkboxes (POST/PUT)
@@ -139,6 +140,7 @@ type Contrato struct {
 	FechaFin     *string `json:"fecha_fin"` // Puntero para permitir nulos
 	Activo       bool    `json:"activo"`
 	TipoContrato string  `json:"tipo_contrato"`
+	Nivel        string  `json:"nivel"`
 
 	// Campos auxiliares para la interfaz web (JOINs)
 	TrabajadorNombre    string  `json:"trabajador_nombre,omitempty"`
@@ -150,14 +152,14 @@ type Contrato struct {
 
 // ContratoPlanilla representa los datos básicos de un trabajador para el cálculo
 type ContratoPlanilla struct {
-	ID                 int
-	PuestoID           int
-	Regimen            string
-	RegimenPensionario string
-	AfpID              int
-	AfpTipoComision    string
-	FechaInicio        time.Time
-	FechaFin           *time.Time
+	ID                             int
+	PuestoID                       int
+	Regimen                        string
+	RegimenPensionario             string
+	AfpID                          int
+	AfpTipoComision                string
+	FechaInicio                    time.Time
+	FechaFin                       *time.Time
 	TrabajadorNombreCompleto       string
 	TrabajadorNumeroDocumento      string
 	PuestoNombre                   string
@@ -382,6 +384,7 @@ type ConceptoModelo struct {
 	EsBaseCts                bool       `json:"es_base_cts"`
 	EsBaseBeneficiosSociales bool       `json:"es_base_beneficios_sociales"`
 	EsOcasional              bool       `json:"es_ocasional"`
+	EsAfectoCargasSociales   bool       `json:"es_afecto_cargas_sociales"`
 	CreatedAt                string     `json:"created_at"`
 	UpdatedAt                *time.Time `json:"updated_at,omitempty"`
 

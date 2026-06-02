@@ -411,8 +411,8 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 
 		pdf.SetFillColor(230, 230, 240)
 		pdf.SetFont("Arial", "B", 8)
-		anchos := []float64{10, 15, 80, 20, 17, 17, 17, 30, 45, 19}
-		headers := []string{"N°", "Código", "Concepto Local", "Tipo", "Remun.", "Pens.", "Extra.", "Clasificador MEF", "Frec.", "Estado"}
+		anchos := []float64{10, 15, 65, 20, 17, 17, 17, 17, 26, 45, 21}
+		headers := []string{"N°", "Código", "Concepto Local", "Tipo", "Remun.", "Pens.", "Carg. S.", "Extra.", "Clasificador MEF", "Frec.", "Estado"}
 		for i, h := range headers {
 			pdf.CellFormat(anchos[i], 6, tr(h), "1", 0, "C", true, 0, "")
 		}
@@ -432,6 +432,10 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 			esPen := "NO"
 			if c.EsPensionable {
 				esPen = "SI"
+			}
+			esCarg := "NO"
+			if c.EsAfectoCargasSociales {
+				esCarg = "SI"
 			}
 			esExt := "NO"
 			if c.EsExtraordinario {
@@ -453,8 +457,8 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 
 			// Calcular líneas por columna
 			lineasNombre := pdf.SplitLines([]byte(nombre), anchos[2])
-			lineasClasif := pdf.SplitLines([]byte(clasif), anchos[7])
-			lineasFrec := pdf.SplitLines([]byte(frec), anchos[8])
+			lineasClasif := pdf.SplitLines([]byte(clasif), anchos[8])
+			lineasFrec := pdf.SplitLines([]byte(frec), anchos[9])
 
 			// Encontrar el número máximo de líneas
 			maxLineas := 1
@@ -534,28 +538,33 @@ func (s *ReporteService) GenerarPDF(tenantID int, id string, params map[string]s
 			pdf.CellFormat(anchos[5], 4.5, tr(esPen), "", 0, "C", false, 0, "")
 			xIni += anchos[5]
 
-			// Col 6: Extra.
+			// Col 6: Carg. S.
 			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
-			pdf.CellFormat(anchos[6], 4.5, tr(esExt), "", 0, "C", false, 0, "")
+			pdf.CellFormat(anchos[6], 4.5, tr(esCarg), "", 0, "C", false, 0, "")
 			xIni += anchos[6]
 
-			// Col 7: Clasificador MEF
+			// Col 7: Extra.
+			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
+			pdf.CellFormat(anchos[7], 4.5, tr(esExt), "", 0, "C", false, 0, "")
+			xIni += anchos[7]
+
+			// Col 8: Clasificador MEF
 			numLineasClasif := len(lineasClasif)
 			alturaClasif := float64(numLineasClasif) * lineSpacing
 			pdf.SetXY(xIni, yIni+(alturaFila-alturaClasif)/2)
-			pdf.MultiCell(anchos[7], lineSpacing, clasif, "", "C", false)
-			xIni += anchos[7]
+			pdf.MultiCell(anchos[8], lineSpacing, clasif, "", "C", false)
+			xIni += anchos[8]
 
-			// Col 8: Frec.
+			// Col 9: Frec.
 			numLineasFrec := len(lineasFrec)
 			alturaFrec := float64(numLineasFrec) * lineSpacing
 			pdf.SetXY(xIni, yIni+(alturaFila-alturaFrec)/2)
-			pdf.MultiCell(anchos[8], lineSpacing, frec, "", "C", false)
-			xIni += anchos[8]
+			pdf.MultiCell(anchos[9], lineSpacing, frec, "", "C", false)
+			xIni += anchos[9]
 
-			// Col 9: Estado
+			// Col 10: Estado
 			pdf.SetXY(xIni, yIni+(alturaFila-4.5)/2)
-			pdf.CellFormat(anchos[9], 4.5, estado, "", 0, "C", false, 0, "")
+			pdf.CellFormat(anchos[10], 4.5, estado, "", 0, "C", false, 0, "")
 
 			// Volvemos a colocar la posición para la siguiente fila
 			pdf.SetXY(10, yIni+alturaFila)
@@ -881,7 +890,7 @@ func (s *ReporteService) GenerarExcel(tenantID int, id string, params map[string
 			return nil, "", fmt.Errorf("error cargando conceptos: %w", err)
 		}
 
-		cabeceras := []string{"N°", "Código", "Concepto Local", "Tipo", "Remunerativo", "Pensionable", "Extraordinario", "Clasificador MEF", "Frecuencia", "Estado"}
+		cabeceras := []string{"N°", "Código", "Concepto Local", "Tipo", "Remunerativo", "Pensionable", "Afecto Cargas Soc.", "Extraordinario", "Clasificador MEF", "Frecuencia", "Estado"}
 		for i, h := range cabeceras {
 			colName, _ := excelize.ColumnNumberToName(i + 1)
 			f.SetCellValue(hoja, colName+"1", h)
@@ -904,6 +913,10 @@ func (s *ReporteService) GenerarExcel(tenantID int, id string, params map[string
 			if c.EsPensionable {
 				esPen = "SI"
 			}
+			esCarg := "NO"
+			if c.EsAfectoCargasSociales {
+				esCarg = "SI"
+			}
 			esExt := "NO"
 			if c.EsExtraordinario {
 				esExt = "SI"
@@ -915,15 +928,16 @@ func (s *ReporteService) GenerarExcel(tenantID int, id string, params map[string
 			f.SetCellValue(hoja, fmt.Sprintf("D%d", rowNum), c.ConceptoTipo)
 			f.SetCellValue(hoja, fmt.Sprintf("E%d", rowNum), esRem)
 			f.SetCellValue(hoja, fmt.Sprintf("F%d", rowNum), esPen)
-			f.SetCellValue(hoja, fmt.Sprintf("G%d", rowNum), esExt)
-			f.SetCellValue(hoja, fmt.Sprintf("H%d", rowNum), c.ClasificadorCodigo)
-			f.SetCellValue(hoja, fmt.Sprintf("I%d", rowNum), fmt.Sprintf("Cada %s Meses", c.FrecuenciaMeses))
-			f.SetCellValue(hoja, fmt.Sprintf("J%d", rowNum), activo)
+			f.SetCellValue(hoja, fmt.Sprintf("G%d", rowNum), esCarg)
+			f.SetCellValue(hoja, fmt.Sprintf("H%d", rowNum), esExt)
+			f.SetCellValue(hoja, fmt.Sprintf("I%d", rowNum), c.ClasificadorCodigo)
+			f.SetCellValue(hoja, fmt.Sprintf("J%d", rowNum), fmt.Sprintf("Cada %s Meses", c.FrecuenciaMeses))
+			f.SetCellValue(hoja, fmt.Sprintf("K%d", rowNum), activo)
 
 			f.SetCellStyle(hoja, fmt.Sprintf("A%d", rowNum), fmt.Sprintf("B%d", rowNum), styleCentrado)
 			f.SetCellStyle(hoja, fmt.Sprintf("C%d", rowNum), fmt.Sprintf("C%d", rowNum), styleDatos)
-			f.SetCellStyle(hoja, fmt.Sprintf("D%d", rowNum), fmt.Sprintf("G%d", rowNum), styleCentrado)
-			f.SetCellStyle(hoja, fmt.Sprintf("H%d", rowNum), fmt.Sprintf("J%d", rowNum), styleCentrado)
+			f.SetCellStyle(hoja, fmt.Sprintf("D%d", rowNum), fmt.Sprintf("H%d", rowNum), styleCentrado)
+			f.SetCellStyle(hoja, fmt.Sprintf("I%d", rowNum), fmt.Sprintf("K%d", rowNum), styleCentrado)
 		}
 
 		s.ajustarAnchosColumnas(f, hoja, len(cabeceras))
