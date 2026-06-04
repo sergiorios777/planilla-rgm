@@ -45,13 +45,13 @@ func TestCrearContratoExcluyeOcasionales(t *testing.T) {
 
 	// C. Conceptos Maestros
 	var maestroRegularID int
-	err = db.QueryRow("INSERT INTO conceptos_maestros (codigo, descripcion, tipo, activo) VALUES ('9991', 'Maestro Regular', 'Ingreso', true) RETURNING id").Scan(&maestroRegularID)
+	err = db.QueryRow("INSERT INTO conceptos_maestros (codigo, codigo_interno, descripcion, tipo, activo) VALUES ('9991', '9991', 'Maestro Regular', 'Ingreso', true) RETURNING id").Scan(&maestroRegularID)
 	if err != nil {
 		t.Fatalf("Error creando concepto maestro regular: %v", err)
 	}
 
 	var maestroOcasionalID int
-	err = db.QueryRow("INSERT INTO conceptos_maestros (codigo, descripcion, tipo, activo) VALUES ('9992', 'Maestro Ocasional', 'Ingreso', true) RETURNING id").Scan(&maestroOcasionalID)
+	err = db.QueryRow("INSERT INTO conceptos_maestros (codigo, codigo_interno, descripcion, tipo, activo) VALUES ('9992', '9992', 'Maestro Ocasional', 'Ingreso', true) RETURNING id").Scan(&maestroOcasionalID)
 	if err != nil {
 		t.Fatalf("Error creando concepto maestro ocasional: %v", err)
 	}

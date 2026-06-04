@@ -47,12 +47,14 @@ type ClasificadorMEF struct {
 
 // ConceptoMaestro representa el catálogo global de ingresos, retenciones y aportes.
 type ConceptoMaestro struct {
-	ID          int    `json:"id"`
-	ParentID    *int   `json:"parent_id"`   // Vinculación a un nivel superior (ej. 0100)
-	Codigo      string `json:"codigo"`      // Ej: "0121" (Puede ser el código PDT/SUNAT si aplica)
-	Descripcion string `json:"descripcion"` // Ej: "Sueldo Básico", "AFP Integra - Aporte", "EsSalud"
-	Tipo        string `json:"tipo"`        // Ej: "Ingreso", "Retencion", "Aporte"
-	Activo      bool   `json:"activo"`
+	ID            int    `json:"id"`
+	ParentID      *int   `json:"parent_id"`   // Vinculación a un nivel superior (ej. 0100)
+	Codigo        string `json:"codigo"`      // Ej: "0121" (Puede ser el código PDT/SUNAT si aplica)
+	CodigoInterno string `json:"codigo_interno"` // Código de uso interno del motor de cálculos
+	Descripcion   string `json:"descripcion"` // Ej: "Sueldo Básico", "AFP Integra - Aporte", "EsSalud"
+	Tipo          string `json:"tipo"`        // Ej: "Ingreso", "Retencion", "Aporte"
+	Activo        bool   `json:"activo"`
+	Origen        string `json:"origen"`      // 'sunat' o 'interno'
 }
 
 // ConceptoAfectacion representa la tabla intermedia de relaciones.
@@ -175,7 +177,8 @@ type ConceptoPlanilla struct {
 	ID               int
 	TenantID         int
 	MaestroID        int
-	MaestroCodigo    string
+	CodigoInterno    string // Código de uso interno del motor de cálculos
+	CodigoSunat      string // Código original SUNAT PLAME
 	Tipo             string
 	Monto            float64
 	Frecuencia       string
@@ -418,4 +421,63 @@ type ConceptoAsignacion struct {
 	RequiereMonto    bool    `json:"requiere_monto"`
 	Asignado         bool    `json:"asignado"` // Define si el switch estará encendido
 	Monto            float64 `json:"monto"`    // El valor actual (si aplica)
+}
+
+// PlanillaCts representa la cabecera semestral de CTS (DL 728)
+type PlanillaCts struct {
+	ID           int       `json:"id"`
+	TenantID     int       `json:"tenant_id"`
+	Anio         int       `json:"anio"`
+	Periodo      string    `json:"periodo"` // 'MAYO' o 'NOVIEMBRE'
+	Estado       string    `json:"estado"`  // 'BORRADOR', 'PROCESADA'
+	FechaCalculo time.Time `json:"fecha_calculo"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+// PlanillaCtsDetalle representa el cálculo de CTS individual
+type PlanillaCtsDetalle struct {
+	ID                     int       `json:"id"`
+	PlanillaCtsID          int       `json:"planilla_cts_id"`
+	ContratoID             int       `json:"contrato_id"`
+	SueldoBasico           float64   `json:"sueldo_basico"`
+	AsignacionFamilia      float64   `json:"asignacion_familiar"`
+	SextoGratificacion     float64   `json:"sexto_gratificacion"`
+	PromedioVariables      float64   `json:"promedio_variables"`
+	RemuneracionComputable float64   `json:"remuneracion_computable"`
+	MesesComputables       int       `json:"meses_computables"`
+	DiasFaltas             int       `json:"dias_faltas"`
+	MontoDescuentoFaltas   float64   `json:"monto_descuento_faltas"`
+	MontoCts               float64   `json:"monto_cts"`
+	CreatedAt              time.Time `json:"created_at"`
+
+	// Campos auxiliares para UI
+	TrabajadorNombre    string `json:"trabajador_nombre,omitempty"`
+	TrabajadorDocumento string `json:"trabajador_documento,omitempty"`
+}
+
+// LiquidacionCese representa el cálculo definitivo de CTS al cese
+type LiquidacionCese struct {
+	ID                     int       `json:"id"`
+	TenantID               int       `json:"tenant_id"`
+	ContratoID             int       `json:"contrato_id"`
+	FechaInicioComputable  time.Time `json:"fecha_inicio_computable"`
+	FechaCese              time.Time `json:"fecha_cese"`
+	Motivo                 string    `json:"motivo"`
+	AnosServicios          int       `json:"anos_servicios"`
+	MesesServicios         int       `json:"meses_servicios"`
+	RemuneracionComputable float64   `json:"remuneracion_computable"`
+	MontoCts               float64   `json:"monto_cts"`
+	MontoVacacionesTruncas float64   `json:"monto_vacaciones_truncas"`
+	MontoGratiTrunca       float64   `json:"monto_gratificacion_trunca"`
+	TotalLiquidacion       float64   `json:"total_liquidacion"`
+	Estado                 string    `json:"estado"`
+	CreatedAt              time.Time `json:"created_at"`
+	UpdatedAt              time.Time `json:"updated_at"`
+
+	// Campos auxiliares para UI
+	TrabajadorNombre    string `json:"trabajador_nombre,omitempty"`
+	TrabajadorDocumento string `json:"trabajador_documento,omitempty"`
+	PuestoNombre        string `json:"puesto_nombre,omitempty"`
+	Regimen             string `json:"regimen,omitempty"`
 }

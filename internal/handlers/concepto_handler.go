@@ -116,10 +116,12 @@ func (h *ConceptoHandler) ImportarCSV(w http.ResponseWriter, r *http.Request) {
 		tipo := strings.TrimSpace(row[2])
 
 		lista = append(lista, models.ConceptoMaestro{
-			Codigo:      codigo,
-			Descripcion: descripcion,
-			Tipo:        tipo,
-			Activo:      true,
+			Codigo:        codigo,
+			CodigoInterno: codigo,
+			Descripcion:   descripcion,
+			Tipo:          tipo,
+			Activo:        true,
+			Origen:        "sunat",
 		})
 
 		// Si existe la 4ta columna y tiene datos, la procesamos

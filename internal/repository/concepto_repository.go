@@ -18,7 +18,7 @@ func NewConceptoRepository(db *sql.DB) *ConceptoRepository {
 
 // ObtenerPadres obtiene todos los conceptos maestros padre (parent_id IS NULL)
 func (r *ConceptoRepository) ObtenerPadres() ([]models.ConceptoMaestro, error) {
-	query := `SELECT id, parent_id, codigo, descripcion, tipo, activo FROM conceptos_maestros WHERE parent_id IS NULL ORDER BY codigo ASC`
+	query := `SELECT id, parent_id, codigo, codigo_interno, descripcion, tipo, activo, origen FROM conceptos_maestros WHERE parent_id IS NULL ORDER BY codigo ASC`
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (r *ConceptoRepository) ObtenerPadres() ([]models.ConceptoMaestro, error) {
 	var lista []models.ConceptoMaestro
 	for rows.Next() {
 		var c models.ConceptoMaestro
-		err := rows.Scan(&c.ID, &c.ParentID, &c.Codigo, &c.Descripcion, &c.Tipo, &c.Activo)
+		err := rows.Scan(&c.ID, &c.ParentID, &c.Codigo, &c.CodigoInterno, &c.Descripcion, &c.Tipo, &c.Activo, &c.Origen)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func (r *ConceptoRepository) ObtenerTodos(busqueda string, tipo string, parentID
 		return nil, 0, err
 	}
 
-	query := `SELECT id, parent_id, codigo, descripcion, tipo, activo FROM conceptos_maestros ` + whereClause
+	query := `SELECT id, parent_id, codigo, codigo_interno, descripcion, tipo, activo, origen FROM conceptos_maestros ` + whereClause
 	query += fmt.Sprintf(` ORDER BY codigo ASC LIMIT $%d OFFSET $%d`, contadorArgs, contadorArgs+1)
 	args = append(args, limite, offset)
 
@@ -84,7 +84,7 @@ func (r *ConceptoRepository) ObtenerTodos(busqueda string, tipo string, parentID
 	var lista []models.ConceptoMaestro
 	for rows.Next() {
 		var c models.ConceptoMaestro
-		err := rows.Scan(&c.ID, &c.ParentID, &c.Codigo, &c.Descripcion, &c.Tipo, &c.Activo)
+		err := rows.Scan(&c.ID, &c.ParentID, &c.Codigo, &c.CodigoInterno, &c.Descripcion, &c.Tipo, &c.Activo, &c.Origen)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -103,15 +103,15 @@ func (r *ConceptoRepository) ProcesarImportacion(conceptos []models.ConceptoMaes
 
 	// --- PASADA 1: Insertar Conceptos ---
 	stmtInsert, err := tx.Prepare(`
-		INSERT INTO conceptos_maestros (codigo, descripcion, tipo, activo) 
-		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (codigo) DO UPDATE SET descripcion = EXCLUDED.descripcion, tipo = EXCLUDED.tipo
+		INSERT INTO conceptos_maestros (codigo, codigo_interno, descripcion, tipo, activo, origen) 
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (codigo_interno) DO UPDATE SET codigo = EXCLUDED.codigo, descripcion = EXCLUDED.descripcion, tipo = EXCLUDED.tipo, origen = EXCLUDED.origen
 	`)
 	if err != nil {
 		return err
 	}
 	for _, c := range conceptos {
-		if _, err := stmtInsert.Exec(c.Codigo, c.Descripcion, c.Tipo, c.Activo); err != nil {
+		if _, err := stmtInsert.Exec(c.Codigo, c.CodigoInterno, c.Descripcion, c.Tipo, c.Activo, c.Origen); err != nil {
 			return err
 		}
 	}
@@ -119,7 +119,7 @@ func (r *ConceptoRepository) ProcesarImportacion(conceptos []models.ConceptoMaes
 
 	// --- Cargamos el diccionario de IDs recién creados en memoria ---
 	mapaIds := make(map[string]int)
-	rows, err := tx.Query(`SELECT id, codigo FROM conceptos_maestros`)
+	rows, err := tx.Query(`SELECT id, codigo_interno FROM conceptos_maestros`)
 	if err != nil {
 		return err
 	}

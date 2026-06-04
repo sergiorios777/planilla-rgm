@@ -1,0 +1,90 @@
+<article hx-get="/tenant/cts/detalle?id={{.Planilla.ID}}" hx-trigger="refrescarDetalleCts from:body" hx-target="#contenido-tenant">
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="outline secondary" style="width: auto; margin-bottom: 0; padding: 0.3rem 0.6rem;"
+                hx-get="/tenant/ui/cts" hx-target="#contenido-tenant">
+                ⬅️ Volver
+            </button>
+            <h3 style="margin-bottom: 0;">Detalle de Planilla CTS Semestral: {{.Planilla.Anio}} - {{.Planilla.Periodo}}</h3>
+        </div>
+        <div>
+            {{if eq .Planilla.Estado "BORRADOR"}}
+            <mark style="background-color: #fff9c4; color: #f57f17; padding: 6px 12px; border-radius: 4px; font-weight: bold;">Borrador</mark>
+            <button class="primary" style="width: auto; margin-bottom: 0; padding: 0.4rem 1rem; margin-left: 1rem;"
+                hx-post="/tenant/cts/cerrar?id={{.Planilla.ID}}" hx-target="#contenido-tenant"
+                hx-confirm="¿Está seguro de cerrar esta planilla de CTS? Una vez cerrada no se podrán realizar modificaciones ni subir planillas de gratificación.">
+                🔒 Cerrar Planilla
+            </button>
+            {{else if eq .Planilla.Estado "CERRADO"}}
+            <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 6px 12px; border-radius: 4px; font-weight: bold;">Cerrado</mark>
+            {{end}}
+        </div>
+    </header>
+
+    {{if eq .Planilla.Estado "BORRADOR"}}
+    <!-- Sección de carga del Excel de Gratificación del Periodo Anterior -->
+    <div style="margin-bottom: 2rem; padding: 1.5rem; background-color: #f7f9fa; border-radius: 8px; border: 1px solid #e1e4e6;">
+        <h4 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
+            📊 Cargar Gratificaciones del Periodo Anterior
+        </h4>
+        <p><small>Si iniciaste el uso del sistema en medio de un periodo y no posees registros históricos del pago de la gratificación correspondiente a Diciembre o Julio, puedes subir un archivo Excel (.xlsx) con los montos para computar el <strong>1/6 de la Gratificación</strong>.</small></p>
+        
+        <div id="alerta-detalle-cts"></div>
+
+        <form hx-post="/tenant/cts/subir-excel" hx-encoding="multipart/form-data" hx-swap="none" style="margin-bottom: 0;">
+            <input type="hidden" name="planilla_cts_id" value="{{.Planilla.ID}}">
+            <div style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap;">
+                <label style="margin-bottom: 0; flex: 1; min-width: 250px;">Selecciona el Excel
+                    <input type="file" name="excel_file" accept=".xlsx" required style="margin-bottom: 0;">
+                </label>
+                <button type="submit" class="outline" style="width: auto; margin-bottom: 0;">
+                    📥 Importar y Recalcular
+                </button>
+            </div>
+            <small style="color: #666; display: block; margin-top: 0.5rem;">El formato del Excel debe tener 2 columnas sin cabeceras o con DNI en columna 1 y Monto de Gratificación en columna 2. Ejemplo: (99991111, 1500.00)</small>
+        </form>
+    </div>
+    {{end}}
+
+    <h4>Detalle de Colaboradores</h4>
+    <div style="overflow-x: auto;">
+        <table class="striped table-detalle-cts" style="font-size: 0.85rem;">
+            <thead>
+                <tr>
+                    <th>Colaborador</th>
+                    <th>DNI</th>
+                    <th>Sueldo Básico</th>
+                    <th>Asig. Familiar</th>
+                    <th>1/6 Gratificación</th>
+                    <th>Prom. Variables</th>
+                    <th>Rem. Computable</th>
+                    <th>Meses</th>
+                    <th>Faltas</th>
+                    <th>Desc. Faltas</th>
+                    <th>Monto CTS Neto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Detalles}}
+                <tr>
+                    <td><strong>{{.TrabajadorNombre}}</strong></td>
+                    <td>{{.TrabajadorDocumento}}</td>
+                    <td>S/ {{printf "%.2f" .SueldoBasico}}</td>
+                    <td>S/ {{printf "%.2f" .AsignacionFamilia}}</td>
+                    <td>S/ {{printf "%.2f" .SextoGratificacion}}</td>
+                    <td>S/ {{printf "%.2f" .PromedioVariables}}</td>
+                    <td><strong style="color: #1565c0;">S/ {{printf "%.2f" .RemuneracionComputable}}</strong></td>
+                    <td style="text-align: center;">{{.MesesComputables}}</td>
+                    <td style="text-align: center;">{{.DiasFaltas}}</td>
+                    <td style="color: #c62828;">S/ {{printf "%.2f" .MontoDescuentoFaltas}}</td>
+                    <td><strong style="color: #2e7d32; font-size: 0.95rem;">S/ {{printf "%.2f" .MontoCts}}</strong></td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="11" style="text-align: center;">No hay trabajadores incluidos en este cálculo de CTS.</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</article>

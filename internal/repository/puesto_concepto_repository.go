@@ -18,7 +18,7 @@ func (r *PuestoConceptoRepository) ObtenerAsignados(puestoID int, tenantID int) 
 	query := `
 		SELECT pc.id, pc.puesto_id, pc.concepto_tenant_id, pc.monto, pc.activo,
 		       ct.nombre_personalizado, mef.codigo AS clasificador, cm.tipo, 
-		       cm.codigo -- 💡 NUEVO: Traemos el código SUNAT
+		       cm.codigo_interno -- 💡 NUEVO: Traemos el código interno para la lógica inteligente de la UI
 		FROM puesto_conceptos pc
 		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
 		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
@@ -104,7 +104,7 @@ func (r *PuestoConceptoRepository) ActualizarMonto(id int, monto float64) error 
 // para ser inyectados directamente en el Motor de Cálculo (Simulador).
 func (r *PuestoConceptoRepository) ObtenerParaCalculo(puestoID int) ([]models.ConceptoPlanilla, error) {
 	query := `
-		SELECT ct.id, cm.id, cm.codigo, ct.nombre_personalizado, cm.tipo, pc.monto, ct.frecuencia_meses, ct.es_extraordinario
+		SELECT ct.id, cm.id, cm.codigo_interno, cm.codigo, ct.nombre_personalizado, cm.tipo, pc.monto, ct.frecuencia_meses, ct.es_extraordinario
 		FROM puesto_conceptos pc
 		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
 		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
@@ -122,7 +122,8 @@ func (r *PuestoConceptoRepository) ObtenerParaCalculo(puestoID int) ([]models.Co
 		err := rows.Scan(
 			&cp.TenantID,
 			&cp.MaestroID,
-			&cp.MaestroCodigo,
+			&cp.CodigoInterno,
+			&cp.CodigoSunat,
 			&cp.Nombre,
 			&cp.Tipo,
 			&cp.Monto,

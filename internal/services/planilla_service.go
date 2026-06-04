@@ -250,7 +250,7 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 			TipoConcepto:     "INGRESO",
 			Monto:            montoProporcional,
 			MaestroID:        cp.MaestroID,
-			CodigoSunat:      cp.MaestroCodigo,
+			CodigoSunat:      cp.CodigoSunat,
 			NombreEnBoleta:   cp.Nombre,
 		})
 	}
@@ -282,7 +282,7 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 		}
 
 		// Filtro con excepción de asistencia
-		esAsis := (cp.MaestroCodigo == "0704" || cp.MaestroCodigo == "0705")
+		esAsis := (cp.CodigoInterno == "0704" || cp.CodigoInterno == "0705")
 		aplica := esAsis
 		if !esAsis {
 			for _, mStr := range strings.Split(cp.Frecuencia, ",") {
@@ -303,7 +303,7 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 		}
 
 		montoFinal := cp.Monto
-		switch cp.MaestroCodigo {
+		switch cp.CodigoInterno {
 		case "0704":
 			montoFinal = descTardanzas
 		case "0705":
@@ -350,7 +350,7 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 			TipoConcepto:     tipo,
 			Monto:            montoFinal,
 			MaestroID:        cp.MaestroID,
-			CodigoSunat:      cp.MaestroCodigo,
+			CodigoSunat:      cp.CodigoSunat,
 			NombreEnBoleta:   cp.Nombre,
 		})
 	}

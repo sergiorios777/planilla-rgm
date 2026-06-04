@@ -1,0 +1,190 @@
+<article>
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+            🚪 Liquidaciones de Cese (Beneficios Sociales)
+        </h3>
+        <button class="primary" style="width: auto; margin-bottom: 0;"
+            hx-get="/tenant/liquidaciones/formulario-crear" hx-target="#contenido-modal-nueva-liq"
+            onclick="document.getElementById('modal-nueva-liq').showModal()">
+            ➕ Nueva Liquidación de Cese
+        </button>
+    </header>
+    <p><small>Calcula y registra los beneficios sociales (CTS, gratificaciones y vacaciones truncas) del personal al momento de cese o desvinculación laboral.</small></p>
+
+    <div id="lista-liquidaciones" hx-get="/tenant/liquidaciones/lista" hx-trigger="load">
+        <p aria-busy="true">Cargando historial de liquidaciones de cese...</p>
+    </div>
+</article>
+
+<!-- Modal de Nueva Liquidación -->
+<dialog id="modal-nueva-liq">
+    <article style="max-width: 700px; width: 95%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nueva-liq').close()"></a>
+            <h4 style="margin-bottom: 0;">➕ Nueva Liquidación de Cese</h4>
+        </header>
+        <div id="contenido-modal-nueva-liq">
+            <p aria-busy="true">Cargando formulario y listado de contratos...</p>
+        </div>
+    </article>
+</dialog>
+
+{{define "formulario_crear_liq"}}
+<div style="padding-top: 1rem;">
+    <div id="alerta-liq"></div>
+    <form id="form-liquidacion" hx-post="/tenant/liquidaciones/guardar" hx-target="#lista-liquidaciones" hx-swap="innerHTML"
+        hx-on::after-request="if (event.detail.successful && !event.detail.xhr.responseText.includes('<div id=\'alerta-liq\'')) { document.getElementById('modal-nueva-liq').close(); this.reset(); }">
+        
+        <label>Colaborador / Contrato
+            <select name="contrato_id" required>
+                <option value="" disabled selected>Seleccione un colaborador...</option>
+                {{range .}}
+                <option value="{{.ID}}">{{.TrabajadorNombre}} - {{.PuestoNombre}} ({{.RegimenDesc}})</option>
+                {{end}}
+            </select>
+        </label>
+
+        <div class="grid">
+            <label>Fecha de Inicio Computable (Manual)
+                <input type="date" name="fecha_inicio" required>
+            </label>
+            <label>Fecha de Cese / Fin (Manual)
+                <input type="date" name="fecha_cese" required>
+            </label>
+        </div>
+
+        <div class="grid">
+            <label>Motivo de Cese
+                <select name="motivo" required>
+                    <option value="RENUNCIA">Renuncia Voluntaria</option>
+                    <option value="DESPIDO">Despido Intempestivo</option>
+                    <option value="MUTUO_ACUERDO">Mutuo Acuerdo</option>
+                    <option value="JUBILACION">Cese por Límite de Edad (Jubilación)</option>
+                    <option value="VENCIMIENTO_CONTRATO">Vencimiento de Contrato</option>
+                </select>
+            </label>
+            <label>Vacaciones Truncas (S/.)
+                <input type="number" step="0.01" name="vacaciones_truncas" value="0.00" min="0">
+            </label>
+            <label>Gratificación Trunca (S/.)
+                <input type="number" step="0.01" name="gratificacion_trunca" value="0.00" min="0">
+            </label>
+        </div>
+
+        <div style="text-align: center; margin: 1.5rem 0;">
+            <button type="button" class="outline" 
+                hx-post="/tenant/liquidaciones/calcular" 
+                hx-target="#resultado-previa-liq"
+                hx-include="#form-liquidacion">
+                ⚙️ Calcular Vista Previa
+            </button>
+        </div>
+
+        <!-- Resultados de Cálculo en tiempo real -->
+        <div id="resultado-previa-liq">
+            <p style="color: #666; text-align: center; font-style: italic;"><small>Ingresa los campos y haz clic en 'Calcular Vista Previa' para visualizar el detalle.</small></p>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end; border-top: 1px solid #eee; padding-top: 1rem;">
+            <button type="button" class="secondary outline" onclick="document.getElementById('modal-nueva-liq').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
+            <button type="submit" id="btn-guardar-liq" style="margin-bottom: 0; width: auto;" disabled>Confirmar y Registrar Liquidación</button>
+        </div>
+    </form>
+</div>
+{{end}}
+
+{{define "vista_previa_liquidacion"}}
+<div style="padding: 1.2rem; background-color: #f1f8e9; border: 1px solid #c5e1a5; border-radius: 8px; margin-bottom: 1rem;">
+    <h5 style="margin-top: 0; color: #33691e; display: flex; align-items: center; gap: 0.5rem;">
+        📝 Vista Previa de Liquidación
+    </h5>
+    
+    <div class="grid" style="font-size: 0.9rem; margin-bottom: 1rem;">
+        <div>
+            <strong>Trabajador:</strong> {{.TrabajadorNombre}}<br>
+            <strong>Documento:</strong> {{.TrabajadorDocumento}}<br>
+            <strong>Puesto/Plaza:</strong> {{.PuestoNombre}}
+        </div>
+        <div>
+            <strong>Régimen Laboral:</strong> DL {{.Regimen}}<br>
+            <strong>Tiempo de Servicio:</strong> {{.AnosServicios}} años, {{.MesesServicios}} meses<br>
+            <strong>Remun. Computable:</strong> S/ {{printf "%.2f" .RemuneracionComputable}}
+        </div>
+    </div>
+
+    <table style="margin-bottom: 0; background-color: white; border-radius: 6px; overflow: hidden; font-size: 0.9rem;">
+        <tbody>
+            <tr>
+                <td><strong>Monto CTS Calculado (Ley/Decreto):</strong></td>
+                <td style="text-align: right; width: 150px;">S/ {{printf "%.2f" .MontoCts}}</td>
+            </tr>
+            <tr>
+                <td><strong>Monto Vacaciones Truncas (Manual):</strong></td>
+                <td style="text-align: right;">S/ {{printf "%.2f" .MontoVacacionesTruncas}}</td>
+            </tr>
+            <tr>
+                <td><strong>Monto Gratificación Trunca (Manual):</strong></td>
+                <td style="text-align: right;">S/ {{printf "%.2f" .MontoGratiTrunca}}</td>
+            </tr>
+            <tr style="border-top: 2px solid #ccc; background-color: #f9f9f9; font-size: 1rem;">
+                <td><strong>Total Beneficios Sociales a Liquidar:</strong></td>
+                <td style="text-align: right; color: #2e7d32;"><strong>S/ {{printf "%.2f" .TotalLiquidacion}}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        // Habilitamos el botón de guardar una vez calculado
+        document.getElementById('btn-guardar-liq').disabled = false;
+    </script>
+</div>
+{{end}}
+
+{{define "tabla_liquidaciones"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Colaborador</th>
+            <th>Régimen</th>
+            <th>Tiempo Serv.</th>
+            <th>Rem. Computable</th>
+            <th>Total Liquidado</th>
+            <th>Fecha Cese</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td>
+                <strong>{{.TrabajadorNombre}}</strong><br>
+                <small class="text-muted">{{.PuestoNombre}} (DNI {{.TrabajadorDocumento}})</small>
+            </td>
+            <td>DL {{.Regimen}}</td>
+            <td>{{.AnosServicios}}a, {{.MesesServicios}}m</td>
+            <td>S/ {{printf "%.2f" .RemuneracionComputable}}</td>
+            <td><strong style="color: #2e7d32;">S/ {{printf "%.2f" .TotalLiquidacion}}</strong></td>
+            <td>{{.FechaCese.Format "02/01/2006"}}</td>
+            <td>
+                <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0;"
+                    hx-delete="/tenant/liquidaciones/eliminar?id={{.ID}}" hx-target="#lista-liquidaciones"
+                    hx-confirm="¿Está seguro de eliminar esta liquidación de cese?">
+                    🗑️ Eliminar
+                </button>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="7" style="text-align: center;">No hay liquidaciones de cese registradas.</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}
+
+<script>
+    document.body.addEventListener("cerrarModalLiq", function () {
+        const modal = document.getElementById('modal-nueva-liq');
+        if (modal && modal.open) modal.close();
+    });
+</script>

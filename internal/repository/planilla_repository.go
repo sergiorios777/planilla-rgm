@@ -141,7 +141,7 @@ func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio 
 // ObtenerConceptosPuesto trae la estructura de costos de una plaza específica
 func (r *PlanillaRepository) ObtenerConceptosPuesto(puestoID int) ([]models.ConceptoPlanilla, error) {
 	query := `
-		SELECT pc.concepto_tenant_id, cm.id, cm.codigo, cm.tipo, pc.monto, ct.frecuencia_meses, ct.es_extraordinario
+		SELECT pc.concepto_tenant_id, cm.id, cm.codigo_interno, cm.codigo, cm.tipo, pc.monto, ct.frecuencia_meses, ct.es_extraordinario
 		FROM puesto_conceptos pc
 		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
 		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
@@ -157,7 +157,7 @@ func (r *PlanillaRepository) ObtenerConceptosPuesto(puestoID int) ([]models.Conc
 	for rows.Next() {
 		var cp models.ConceptoPlanilla
 		var m sql.NullFloat64
-		rows.Scan(&cp.TenantID, &cp.MaestroID, &cp.MaestroCodigo, &cp.Tipo, &m, &cp.Frecuencia, &cp.EsExtraordinario)
+		rows.Scan(&cp.TenantID, &cp.MaestroID, &cp.CodigoInterno, &cp.CodigoSunat, &cp.Tipo, &m, &cp.Frecuencia, &cp.EsExtraordinario)
 		if m.Valid {
 			cp.Monto = m.Float64
 		}
@@ -428,7 +428,7 @@ func (r *PlanillaRepository) ObtenerTasasAFPMes(anio int, mes int) (map[int]mode
 
 // ObtenerMapaCodigosID crea un diccionario para traducir Códigos SUNAT a IDs internos
 func (r *PlanillaRepository) ObtenerMapaCodigosID() (map[string]int, error) {
-	query := `SELECT codigo, id FROM conceptos_maestros WHERE activo = true`
+	query := `SELECT codigo_interno, id FROM conceptos_maestros WHERE activo = true`
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, err
@@ -454,7 +454,7 @@ func (r *PlanillaRepository) ObtenerConceptosPorPuestoMasivo(puestoIDs []int) (m
 	}
 
 	query := `
-		SELECT pc.puesto_id, pc.concepto_tenant_id, cm.id, cm.codigo, cm.tipo, pc.monto,
+		SELECT pc.puesto_id, pc.concepto_tenant_id, cm.id, cm.codigo_interno, cm.codigo, cm.tipo, pc.monto,
 		       ct.frecuencia_meses, ct.es_extraordinario, COALESCE(cm.parent_id, 0), ct.nombre_personalizado
 		FROM puesto_conceptos pc
 		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
@@ -474,7 +474,7 @@ func (r *PlanillaRepository) ObtenerConceptosPorPuestoMasivo(puestoIDs []int) (m
 		var cp models.ConceptoPlanilla
 		var m sql.NullFloat64 // Usamos esto por si el monto está vacío en la BD
 
-		err := rows.Scan(&pID, &cp.TenantID, &cp.MaestroID, &cp.MaestroCodigo, &cp.Tipo, &m,
+		err := rows.Scan(&pID, &cp.TenantID, &cp.MaestroID, &cp.CodigoInterno, &cp.CodigoSunat, &cp.Tipo, &m,
 			&cp.Frecuencia, &cp.EsExtraordinario, &cp.ParentID, &cp.Nombre)
 		if err != nil {
 			log.Println("Error Scan ObtenerConceptosPorPuestoMasivo:", err)

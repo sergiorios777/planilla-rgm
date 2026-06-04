@@ -29,9 +29,9 @@ func TestImportarDesdeCSV(t *testing.T) {
 	defer limpiarTest()
 
 	// Asegurar datos maestros mínimos
-	_, _ = db.Exec(`INSERT INTO conceptos_maestros (codigo, descripcion, tipo, activo) 
-		VALUES ('0121', 'Remuneración Principal', 'Ingreso', true)
-		ON CONFLICT (codigo) DO UPDATE SET activo = true`)
+	_, _ = db.Exec(`INSERT INTO conceptos_maestros (codigo, codigo_interno, descripcion, tipo, activo) 
+		VALUES ('0121', '0121', 'Remuneración Principal', 'Ingreso', true)
+		ON CONFLICT (codigo_interno) DO UPDATE SET activo = true`)
 		
 	_, _ = db.Exec(`INSERT INTO clasificadores_mef (codigo, codigo_limpio, descripcion, nivel, tipo_transaccion, activo)
 		VALUES ('2.1.1 1.1 1', '2.1.1.1.1.1', 'Personal Administrativo Nombrado', 6, 'Gasto', true)

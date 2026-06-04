@@ -403,5 +403,31 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/reportes/filtrar", middleware.RequireAuth(reporteHandler.FiltrarUI))
 	mux.HandleFunc("/tenant/reportes/ver-pdf", middleware.RequireAuth(reporteHandler.ExportarPDF))
 	mux.HandleFunc("/tenant/reportes/descargar-excel", middleware.RequireAuth(reporteHandler.ExportarExcel))
+
+	// Módulo de CTS y Liquidaciones de Cese
+	ctsRepo := repository.NewCtsRepository(db)
+	ctsService := services.NewCtsService(ctsRepo, db)
+	ctsHandler := handlers.CtsHandler{
+		CtsRepo:      ctsRepo,
+		CtsService:   ctsService,
+		ContratoRepo: contratoRepo,
+	}
+
+	// Rutas de CTS Semestral
+	mux.HandleFunc("/tenant/ui/cts", middleware.RequireAuth(ctsHandler.CtsVistaUI))
+	mux.HandleFunc("/tenant/cts/lista", middleware.RequireAuth(ctsHandler.ListarPlanillasCts))
+	mux.HandleFunc("/tenant/cts/crear", middleware.RequireAuth(ctsHandler.CrearPlanillaCts))
+	mux.HandleFunc("/tenant/cts/detalle", middleware.RequireAuth(ctsHandler.VerDetalleCts))
+	mux.HandleFunc("/tenant/cts/subir-excel", middleware.RequireAuth(ctsHandler.SubirExcelGratificaciones))
+	mux.HandleFunc("/tenant/cts/cerrar", middleware.RequireAuth(ctsHandler.CerrarPlanillaCts))
+	mux.HandleFunc("/tenant/cts/eliminar", middleware.RequireAuth(ctsHandler.EliminarPlanillaCts))
+
+	// Rutas de Liquidaciones de Cese
+	mux.HandleFunc("/tenant/ui/liquidaciones", middleware.RequireAuth(ctsHandler.LiquidacionesVistaUI))
+	mux.HandleFunc("/tenant/liquidaciones/lista", middleware.RequireAuth(ctsHandler.ListarLiquidacionesCese))
+	mux.HandleFunc("/tenant/liquidaciones/formulario-crear", middleware.RequireAuth(ctsHandler.FormularioCrearUI))
+	mux.HandleFunc("/tenant/liquidaciones/calcular", middleware.RequireAuth(ctsHandler.CalcularLiquidacionCese))
+	mux.HandleFunc("/tenant/liquidaciones/guardar", middleware.RequireAuth(ctsHandler.GuardarLiquidacionCese))
+	mux.HandleFunc("/tenant/liquidaciones/eliminar", middleware.RequireAuth(ctsHandler.EliminarLiquidacionCese))
 }
 

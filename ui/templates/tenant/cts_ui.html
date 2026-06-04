@@ -1,0 +1,106 @@
+<article>
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+            💼 Compensación por Tiempo de Servicios (CTS Semestral)
+        </h3>
+        <button class="primary" style="width: auto; margin-bottom: 0;"
+            onclick="document.getElementById('modal-nueva-cts').showModal()">
+            ➕ Procesar Nueva CTS Semestral
+        </button>
+    </header>
+    <p><small>Genera o consulta los depósitos semestrales de CTS correspondientes al personal bajo el régimen laboral DL 728.</small></p>
+
+    <div id="lista-cts" hx-get="/tenant/cts/lista" hx-trigger="load">
+        <p aria-busy="true">Cargando historial de planillas CTS...</p>
+    </div>
+</article>
+
+<!-- Modal de Cálculo de CTS -->
+<dialog id="modal-nueva-cts">
+    <article style="max-width: 600px; width: 95%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nueva-cts').close()"></a>
+            <h4 style="margin-bottom: 0;">➕ Procesar CTS Semestral</h4>
+        </header>
+        <div id="contenido-modal-nueva-cts">
+            {{template "formulario_crear_cts" .}}
+        </div>
+    </article>
+</dialog>
+
+{{define "formulario_crear_cts"}}
+<div style="padding-top: 1rem;">
+    <div id="alerta-cts"></div>
+    <form hx-post="/tenant/cts/crear" hx-target="#lista-cts" hx-swap="innerHTML"
+        hx-on::after-request="if (event.detail.successful && !event.detail.xhr.responseText.includes('<div id=\'alerta-cts\'')) { document.getElementById('modal-nueva-cts').close(); this.reset(); }">
+        <div class="grid">
+            <label>Año de Cálculo
+                <input type="number" name="anio" value="2026" required min="2000" max="2100">
+            </label>
+            <label>Periodo Semestral
+                <select name="periodo" required>
+                    <option value="MAYO">Noviembre - Abril (Depósito Mayo)</option>
+                    <option value="NOVIEMBRE">Mayo - Octubre (Depósito Noviembre)</option>
+                </select>
+            </label>
+        </div>
+        <p><small style="color: #555;">El sistema identificará automáticamente a los trabajadores activos del régimen DL 728 con derecho a percibir este beneficio.</small></p>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
+            <button type="button" class="secondary outline" onclick="document.getElementById('modal-nueva-cts').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
+            <button type="submit" style="margin-bottom: 0; width: auto;">Procesar Cálculo</button>
+        </div>
+    </form>
+</div>
+{{end}}
+
+{{define "tabla_cts_planillas"}}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Periodo</th>
+            <th>Fecha de Cálculo</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td><strong>{{.Anio}} - {{.Periodo}}</strong></td>
+            <td>{{.FechaCalculo.Format "02/01/2006 15:04"}}</td>
+            <td>
+                {{if eq .Estado "BORRADOR"}}
+                <mark style="background-color: #fff9c4; color: #f57f17; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Borrador</mark>
+                {{else if eq .Estado "CERRADO"}}
+                <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Cerrado</mark>
+                {{end}}
+            </td>
+            <td>
+                <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0;"
+                    hx-get="/tenant/cts/detalle?id={{.ID}}" hx-target="#contenido-tenant">
+                    👁️ Ver Detalle
+                </button>
+                {{if eq .Estado "BORRADOR"}}
+                <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0;"
+                    hx-delete="/tenant/cts/eliminar?id={{.ID}}" hx-target="#lista-cts"
+                    hx-confirm="¿Está seguro de que desea eliminar este cálculo de CTS?">
+                    🗑️ Eliminar
+                </button>
+                {{end}}
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="4" style="text-align: center;">No hay periodos de CTS procesados.</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}
+
+<script>
+    document.body.addEventListener("cerrarModalCts", function () {
+        const modal = document.getElementById('modal-nueva-cts');
+        if (modal && modal.open) modal.close();
+    });
+</script>
