@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"math"
 	"time"
 	"planilla-rgm/internal/models"
 
@@ -313,21 +314,40 @@ func (r *CtsRepository) ObtenerContratosCtsEligibles(tenantID int, desde time.Ti
 	return lista, nil
 }
 
-// ObtenerRemuneracionFamiliarActiva consulta si la asignación familiar está activa en la Plaza
+// ObtenerRemuneracionFamiliarActiva consulta si la asignación familiar está activa en la Plaza y calcula su valor dinámico (10% de la RMV)
 func (r *CtsRepository) ObtenerRemuneracionFamiliarActiva(puestoID int) (float64, error) {
-	query := `
-		SELECT COALESCE(pc.monto, 0)
+	// 1. Verificar si está activo para el puesto
+	queryActivo := `
+		SELECT pc.id
 		FROM puesto_conceptos pc
 		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
 		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
 		WHERE pc.puesto_id = $1 AND pc.activo = true AND ct.activo = true AND cm.codigo_interno = 'ASIG_FAM_DL728'
 	`
-	var monto float64
-	err := r.db.QueryRow(query, puestoID).Scan(&monto)
+	var id int
+	err := r.db.QueryRow(queryActivo, puestoID).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0.0, nil
 	}
-	return monto, err
+	if err != nil {
+		return 0.0, err
+	}
+
+	// 2. Si está activo, obtener el RMV vigente (el último valor parametrizado)
+	queryRMV := `
+		SELECT valor 
+		FROM parametros_globales 
+		WHERE clave = 'RMV' 
+		ORDER BY fecha_desde DESC 
+		LIMIT 1
+	`
+	var rmv float64
+	err = r.db.QueryRow(queryRMV).Scan(&rmv)
+	if err != nil {
+		rmv = 1025.00 // Fallback
+	}
+
+	return math.Round((rmv * 0.10) * 100) / 100, nil
 }
 
 // ObtenerGratificacionHistorica obtiene la gratificación pagada en un año/mes específico

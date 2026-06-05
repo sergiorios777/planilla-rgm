@@ -213,6 +213,41 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 	diasLaborados := s.calcularDiasLaborados(job.Contrato.FechaInicio, job.Contrato.FechaFin, job.Anio, job.MesActual)
 	factorProrrateo := diasLaborados / 30.0
 
+	// Calcular gratificación y bonificación extraordinaria si corresponde (DL 728 en Julio/Diciembre)
+	var calculadaGrati, calculadaBonExt float64
+	var calculadoGratiDone bool
+	if (job.MesActual == 7 || job.MesActual == 12) && job.Contrato.Regimen == "728" {
+		var semDesde, semHasta time.Time
+		if job.MesActual == 7 {
+			semDesde = time.Date(job.Anio, time.January, 1, 0, 0, 0, 0, time.UTC)
+			semHasta = time.Date(job.Anio, time.June, 30, 23, 59, 59, 0, time.UTC)
+		} else {
+			semDesde = time.Date(job.Anio, time.July, 1, 0, 0, 0, 0, time.UTC)
+			semHasta = time.Date(job.Anio, time.December, 31, 23, 59, 59, 0, time.UTC)
+		}
+
+		mesesCalculados := calculadoras.CalcularMesesSemestreGratificacion(job.Contrato.FechaInicio, job.Contrato.FechaFin, semDesde, semHasta)
+
+		sueldoBase := job.Contrato.SueldoBasicoHistorico
+		if sueldoBase <= 0 {
+			sueldoBase = 1025.00
+		}
+		var asignacionFamiliar float64
+		for _, cp := range job.ConceptosPlaza {
+			if cp.CodigoInterno == "ASIG_FAM_DL728" {
+				rmv, existe := job.ParametrosGlobales["RMV"]
+				if !existe {
+					rmv = 1025.00
+				}
+				asignacionFamiliar = calculadoras.CalcularAsignacionFamiliar(rmv)
+			}
+		}
+
+		remComputable := sueldoBase + asignacionFamiliar
+		calculadaGrati, calculadaBonExt = calculadoras.CalcularGratificacionDL728(remComputable, mesesCalculados)
+		calculadoGratiDone = true
+	}
+
 	// --- PASADA 1: PROCESAR INGRESOS ---
 	for _, cp := range job.ConceptosPlaza {
 		if strings.ToUpper(cp.Tipo) != "INGRESO" {
@@ -233,7 +268,27 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 
 		// Aplica prorrateo solo si NO es extraordinario
 		montoProporcional := cp.Monto
-		if !cp.EsExtraordinario {
+		isGratificationConcept := false
+		if calculadoGratiDone {
+			if cp.CodigoInterno == "GRATI_JUL_DL_728" || cp.CodigoInterno == "GRATI_DIC_DL_728" || cp.CodigoSunat == "0406" {
+				montoProporcional = calculadaGrati
+				isGratificationConcept = true
+			} else if cp.CodigoInterno == "BON_EXTR_JUL_DL_728" || cp.CodigoInterno == "BON_EXTR_DIC_DL_728" || cp.CodigoSunat == "0312" {
+				montoProporcional = calculadaBonExt
+				isGratificationConcept = true
+			}
+		}
+
+		isAsigFam := cp.CodigoInterno == "ASIG_FAM_DL728"
+		if isAsigFam {
+			rmv, existe := job.ParametrosGlobales["RMV"]
+			if !existe {
+				rmv = 1025.00
+			}
+			montoProporcional = calculadoras.CalcularAsignacionFamiliar(rmv)
+		}
+
+		if !cp.EsExtraordinario && !isGratificationConcept && !isAsigFam {
 			montoProporcional = cp.Monto * factorProrrateo
 		}
 

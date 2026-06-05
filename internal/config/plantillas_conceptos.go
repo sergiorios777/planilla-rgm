@@ -3,12 +3,22 @@ package config
 // ConceptosMestrosCTS define los códigos internos de la tabla codigos_maestros para conceptos relacionados a CTS por régimen laboral
 var ConceptosMestrosCTS = map[string]map[string][]string{
 	"DL 728": {
-		"remuneracion":        {"2001"},                                         // Remuneración Principal
-		"gratificacion":       {"0406", "GRATI_DIC_DL_728", "GRATI_JUL_DL_728"}, // Aguinaldo
+		"remuneracion":        {"2002"},                                         // Remuneración Principal
+		"gratificacion":       {"0406", "GRATI_DIC_DL_728", "GRATI_JUL_DL_728"}, // Gratificación
 		"asignacion_familiar": {"ASIG_FAM_DL728"},
 	},
 	"LEY 30057": {
 		"compensacion_economica": {"2001"}, // Remuneración Principal
+	},
+}
+
+// ConceptosBaseGratificaciones define los códigos internos de la tabla codigos_maestros para conceptos relacionados a Gratificaciones por régimen laboral
+var ConceptosBaseGratificaciones = map[string]map[string][]string{
+	"DL 728": {
+		"remuneracion":                {"2002"},
+		"asignacion_familiar":         {"ASIG_FAM_DL728"},
+		"gratificacion":               {"0406", "GRATI_DIC_DL_728", "GRATI_JUL_DL_728"},
+		"bonificacion_extraordinaria": {"0312", "BON_EXTR_DIC_DL_728", "BON_EXTR_JUL_DL_728"},
 	},
 }
 
