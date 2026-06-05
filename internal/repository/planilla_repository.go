@@ -700,3 +700,83 @@ func (r *PlanillaRepository) ObtenerEstado(planillaID int, tenantID int) (string
 	err := r.db.QueryRow(query, planillaID, tenantID).Scan(&estado)
 	return estado, err
 }
+
+// ObtenerPorID obtiene una planilla por su ID y TenantID
+func (r *PlanillaRepository) ObtenerPorID(planillaID int, tenantID int) (*models.Planilla, error) {
+	var p models.Planilla
+	query := `SELECT id, tenant_id, anio, mes, descripcion, estado FROM planillas WHERE id = $1 AND tenant_id = $2`
+	err := r.db.QueryRow(query, planillaID, tenantID).Scan(&p.ID, &p.TenantID, &p.Anio, &p.Mes, &p.Descripcion, &p.Estado)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// ObtenerRucTenant obtiene el RUC de un tenant
+func (r *PlanillaRepository) ObtenerRucTenant(tenantID int) (string, error) {
+	var ruc string
+	query := `SELECT ruc FROM tenants WHERE id = $1`
+	err := r.db.QueryRow(query, tenantID).Scan(&ruc)
+	return ruc, err
+}
+
+// ObtenerDatosPlameJornada obtiene los datos de jornada laboral para exportar a PLAME (.jor)
+func (r *PlanillaRepository) ObtenerDatosPlameJornada(planillaID int, tenantID int) ([]models.PlameJornada, error) {
+	query := `
+		SELECT t.tipo_documento, t.numero_documento, COALESCE(SUM(CASE WHEN oa.tipo = 'INASISTENCIA' THEN oa.cantidad ELSE 0 END), 0) AS dias_inasistencia
+		FROM planilla_detalles pd
+		INNER JOIN contratos c ON pd.contrato_id = c.id
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		LEFT JOIN ocurrencias_asistencia oa ON oa.contrato_id = c.id AND oa.planilla_id_descuento = pd.planilla_id
+		INNER JOIN planillas pl ON pd.planilla_id = pl.id
+		WHERE pd.planilla_id = $1 AND pl.tenant_id = $2
+		GROUP BY t.tipo_documento, t.numero_documento
+		ORDER BY t.numero_documento
+	`
+	rows, err := r.db.Query(query, planillaID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.PlameJornada
+	for rows.Next() {
+		var j models.PlameJornada
+		if err := rows.Scan(&j.TipoDocumento, &j.NumeroDocumento, &j.DiasInasistencia); err != nil {
+			return nil, err
+		}
+		lista = append(lista, j)
+	}
+	return lista, nil
+}
+
+// ObtenerDatosPlameRemuneraciones obtiene los datos de remuneraciones para exportar a PLAME (.rem)
+func (r *PlanillaRepository) ObtenerDatosPlameRemuneraciones(planillaID int, tenantID int) ([]models.PlameRemuneracion, error) {
+	query := `
+		SELECT t.tipo_documento, t.numero_documento, cm.codigo, pc.monto
+		FROM planilla_conceptos pc
+		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
+		INNER JOIN contratos c ON pd.contrato_id = c.id
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		INNER JOIN conceptos_maestros cm ON pc.maestro_id = cm.id
+		INNER JOIN planillas pl ON pd.planilla_id = pl.id
+		WHERE pd.planilla_id = $1 AND pl.tenant_id = $2 AND cm.origen = 'sunat' AND pc.monto > 0
+		ORDER BY t.numero_documento, cm.codigo
+	`
+	rows, err := r.db.Query(query, planillaID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.PlameRemuneracion
+	for rows.Next() {
+		var rem models.PlameRemuneracion
+		if err := rows.Scan(&rem.TipoDocumento, &rem.NumeroDocumento, &rem.CodigoConcepto, &rem.Monto); err != nil {
+			return nil, err
+		}
+		lista = append(lista, rem)
+	}
+	return lista, nil
+}
+

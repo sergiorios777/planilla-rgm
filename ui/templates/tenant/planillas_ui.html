@@ -107,6 +107,10 @@
                     class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">
                     🖨️ Boletas PDF
                 </a>
+                <button class="outline primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0; display: inline-block; width: auto;"
+                    hx-get="/tenant/planillas/exportar-plame-modal?id={{.ID}}" hx-target="#contenido-modal-exportar" hx-swap="innerHTML">
+                    📦 PDT/PLAME
+                </button>
             </td>
         </tr>
         {{else}}
@@ -116,6 +120,61 @@
         {{end}}
     </tbody>
 </table>
+{{end}}
+
+<!-- Modal de Exportación PDT/PLAME -->
+<dialog id="modal-exportar-plame" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-exportar') this.showModal()">
+    <article style="max-width: 550px; width: 95%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-exportar-plame').close()"></a>
+            <h4 style="margin-bottom: 0;">📦 Exportar a PDT / PLAME</h4>
+        </header>
+        <div id="contenido-modal-exportar">
+            <!-- Se carga vía HTMX -->
+        </div>
+    </article>
+</dialog>
+
+{{define "modal_plame_content"}}
+<div style="padding: 0.5rem 0;">
+    <p style="margin-bottom: 1.5rem;">Descarga los archivos planos listos para importar al PDT/PLAME para el periodo <strong>{{.Planilla.Anio}} - {{printf "%02d" .Planilla.Mes}}</strong>:</p>
+    
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); padding: 0.75rem 1rem; border-radius: 6px;">
+            <div>
+                <strong style="display: block; font-size: 0.95rem;">📅 Archivo de Jornada Laboral (.jor)</strong>
+                <small style="color: var(--muted-color); font-size: 0.8rem; font-family: monospace;">{{.JorFilename}}</small>
+            </div>
+            <a href="/tenant/planillas/descargar-plame?id={{.Planilla.ID}}&tipo=jor" target="_blank" role="button" class="outline primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; margin-bottom: 0; width: auto;">
+                📥 Descargar
+            </a>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); padding: 0.75rem 1rem; border-radius: 6px;">
+            <div>
+                <strong style="display: block; font-size: 0.95rem;">💰 Archivo de Remuneraciones (.rem)</strong>
+                <small style="color: var(--muted-color); font-size: 0.8rem; font-family: monospace;">{{.RemFilename}}</small>
+            </div>
+            <a href="/tenant/planillas/descargar-plame?id={{.Planilla.ID}}&tipo=rem" target="_blank" role="button" class="outline primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; margin-bottom: 0; width: auto;">
+                📥 Descargar
+            </a>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border-color); padding: 0.75rem 1rem; border-radius: 6px; opacity: 0.6;">
+            <div>
+                <strong style="display: block; font-size: 0.95rem; color: var(--muted-color);">🏥 Días No Laborados / Subsidiados (.snl)</strong>
+                <small style="color: var(--muted-color); font-size: 0.8rem; font-family: monospace;">{{.SnlFilename}}</small>
+            </div>
+            <span style="font-size: 0.75rem; background: var(--border-color); padding: 3px 8px; border-radius: 4px; font-weight: bold; color: var(--muted-color);">Siguiente Versión</span>
+        </div>
+        
+        <div style="margin-top: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <a href="/tenant/planillas/descargar-plame?id={{.Planilla.ID}}&tipo=zip" target="_blank" role="button" class="primary" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; margin-bottom: 0;">
+                📦 Descargar todo en ZIP (.zip)
+            </a>
+        </div>
+    </div>
+</div>
 {{end}}
 
 <script>

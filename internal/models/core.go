@@ -481,3 +481,18 @@ type LiquidacionCese struct {
 	PuestoNombre        string `json:"puesto_nombre,omitempty"`
 	Regimen             string `json:"regimen,omitempty"`
 }
+
+// PlameJornada representa la jornada laboral calculada para exportación al PLAME
+type PlameJornada struct {
+	TipoDocumento    string
+	NumeroDocumento  string
+	DiasInasistencia float64
+}
+
+// PlameRemuneracion representa el concepto de remuneración calculado para exportación al PLAME
+type PlameRemuneracion struct {
+	TipoDocumento   string
+	NumeroDocumento string
+	CodigoConcepto  string
+	Monto           float64
+}

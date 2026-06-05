@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"planilla-rgm/internal/models"
@@ -185,3 +186,115 @@ func (h *PlanillaHandler) CerrarPlanilla(w http.ResponseWriter, r *http.Request)
 	r.URL.RawQuery = "id=" + strconv.Itoa(planillaID)
 	h.VistaDetalle(w, r)
 }
+
+// ExportarPlameModal renders the modal content for downloading PLAME files
+func (h *PlanillaHandler) ExportarPlameModal(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+
+	planilla, err := h.Repo.ObtenerPorID(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Planilla no encontrada", http.StatusNotFound)
+		return
+	}
+
+	ruc, err := h.Repo.ObtenerRucTenant(tenantID)
+	if err != nil {
+		http.Error(w, "RUC no encontrado", http.StatusInternalServerError)
+		return
+	}
+
+	mesStr := fmt.Sprintf("%02d", planilla.Mes)
+	jorFilename := fmt.Sprintf("0601%d%s%s.jor", planilla.Anio, mesStr, ruc)
+	remFilename := fmt.Sprintf("0601%d%s%s.rem", planilla.Anio, mesStr, ruc)
+	snlFilename := fmt.Sprintf("0601%d%s%s.snl", planilla.Anio, mesStr, ruc)
+
+	datos := map[string]interface{}{
+		"Planilla":    planilla,
+		"JorFilename": jorFilename,
+		"RemFilename": remFilename,
+		"SnlFilename": snlFilename,
+	}
+
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/planillas_ui.html")
+	tmpl.ExecuteTemplate(w, "modal_plame_content", datos)
+}
+
+// DescargarPlame streams the .jor, .rem or .zip files for PLAME import
+func (h *PlanillaHandler) DescargarPlame(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tipo := r.URL.Query().Get("tipo")
+
+	planilla, err := h.Repo.ObtenerPorID(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Planilla no encontrada", http.StatusNotFound)
+		return
+	}
+
+	ruc, err := h.Repo.ObtenerRucTenant(tenantID)
+	if err != nil {
+		http.Error(w, "RUC no encontrado", http.StatusInternalServerError)
+		return
+	}
+
+	mesStr := fmt.Sprintf("%02d", planilla.Mes)
+	filenameBase := fmt.Sprintf("0601%d%s%s", planilla.Anio, mesStr, ruc)
+
+	plameService := services.NewPlameService(h.Repo)
+
+	switch tipo {
+	case "jor":
+		datos, err := h.Repo.ObtenerDatosPlameJornada(planillaID, tenantID)
+		if err != nil {
+			http.Error(w, "Error al obtener datos: "+err.Error(), 500)
+			return
+		}
+		texto := plameService.GenerarJornadaTexto(datos)
+
+		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.jor"`, filenameBase))
+		w.Write([]byte(texto))
+
+	case "rem":
+		datos, err := h.Repo.ObtenerDatosPlameRemuneraciones(planillaID, tenantID)
+		if err != nil {
+			http.Error(w, "Error al obtener datos: "+err.Error(), 500)
+			return
+		}
+		texto := plameService.GenerarRemuneracionesTexto(datos)
+
+		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.rem"`, filenameBase))
+		w.Write([]byte(texto))
+
+	case "zip":
+		datosJor, err := h.Repo.ObtenerDatosPlameJornada(planillaID, tenantID)
+		if err != nil {
+			http.Error(w, "Error al obtener datos: "+err.Error(), 500)
+			return
+		}
+		textoJor := plameService.GenerarJornadaTexto(datosJor)
+
+		datosRem, err := h.Repo.ObtenerDatosPlameRemuneraciones(planillaID, tenantID)
+		if err != nil {
+			http.Error(w, "Error al obtener datos: "+err.Error(), 500)
+			return
+		}
+		textoRem := plameService.GenerarRemuneracionesTexto(datosRem)
+
+		zipBytes, err := plameService.GenerarZip(textoJor, textoRem, filenameBase+".jor", filenameBase+".rem")
+		if err != nil {
+			http.Error(w, "Error al generar ZIP: "+err.Error(), 500)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/zip")
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.zip"`, filenameBase))
+		w.Write(zipBytes)
+
+	default:
+		http.Error(w, "Tipo no soportado", http.StatusBadRequest)
+	}
+}
+

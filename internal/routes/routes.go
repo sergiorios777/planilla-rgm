@@ -386,6 +386,8 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	// Ruta para descargar el PDF de planilla y boeltas
 	mux.HandleFunc("/tenant/planillas/descargar-reporte", middleware.RequireAuth(planillaHandler.DescargarReportePDF))
 	mux.HandleFunc("/tenant/planillas/descargar-boletas", middleware.RequireAuth(planillaHandler.DescargarBoletasPDF))
+	mux.HandleFunc("/tenant/planillas/exportar-plame-modal", middleware.RequireAuth(planillaHandler.ExportarPlameModal))
+	mux.HandleFunc("/tenant/planillas/descargar-plame", middleware.RequireAuth(planillaHandler.DescargarPlame))
 
 	// Módulo de Reportes Generales
 	reporteService := services.NewReporteService(
