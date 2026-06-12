@@ -440,6 +440,52 @@
 </dialog>
 
 <script>
+    // Preservar estado de filtros y paginación en sessionStorage
+    document.body.addEventListener('htmx:configRequest', function(evt) {
+        if (evt.detail.path === '/tenant/puestos/lista') {
+            const type = evt.detail.triggeringEvent ? evt.detail.triggeringEvent.type : 'load';
+            const isInteractive = type === 'keyup' || type === 'change' || type === 'click' || type === 'search';
+
+            if (isInteractive) {
+                // Guardamos el estado actual si la petición proviene de una interacción del usuario
+                const state = {
+                    buscar: evt.detail.parameters['buscar'] || '',
+                    meta_id: evt.detail.parameters['meta_id'] || '',
+                    regimen_id: evt.detail.parameters['regimen_id'] || '',
+                    unidad_organica_id: evt.detail.parameters['unidad_organica_id'] || '',
+                    estado: evt.detail.parameters['estado'] || '',
+                    limite: evt.detail.parameters['limite'] || '10',
+                    pagina: evt.detail.parameters['pagina'] || '1'
+                };
+                sessionStorage.setItem('puestos_filter_state', JSON.stringify(state));
+            } else {
+                // Restauramos el estado guardado para la carga inicial o refrescos automáticos
+                const saved = sessionStorage.getItem('puestos_filter_state');
+                if (saved) {
+                    const state = JSON.parse(saved);
+                    const form = document.getElementById('form-filtros-puestos');
+                    if (form) {
+                        const setVal = (name, val) => {
+                            const el = form.querySelector(`[name="${name}"]`);
+                            if (el && val !== undefined) {
+                                el.value = val;
+                                if (el.tomselect) el.tomselect.setValue(val, true);
+                            }
+                        };
+                        setVal('buscar', state.buscar);
+                        setVal('meta_id', state.meta_id);
+                        setVal('regimen_id', state.regimen_id);
+                        setVal('unidad_organica_id', state.unidad_organica_id);
+                        setVal('estado', state.estado);
+                        setVal('limite', state.limite);
+                    }
+                    // Inyectamos los parámetros guardados en la petición HTMX
+                    Object.assign(evt.detail.parameters, state);
+                }
+            }
+        }
+    });
+
     document.body.addEventListener("cerrarModalAsignacion", function () {
         document.getElementById('modal-asignacion-puesto').close();
     });

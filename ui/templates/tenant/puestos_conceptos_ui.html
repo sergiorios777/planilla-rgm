@@ -4,7 +4,7 @@
             <svg class="icono-menu">
                 <use href="#icono-cajas"></use>
             </svg>
-            Estructura de Costos de la Plaza
+            Estructura de Costos de la Plaza{{if .PuestoNombre}}: <span style="color: var(--primary);">{{.PuestoNombre}}</span>{{end}}
         </h3>
         <p><small>Asigna los ingresos, retenciones y aportes que le corresponden a este puesto.</small></p>
     </header>

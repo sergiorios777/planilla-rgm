@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"strconv"
 	"strings"
 	"time"
 
 	"planilla-rgm/internal/calculadoras"
+	"planilla-rgm/internal/config"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
 
@@ -37,7 +39,8 @@ func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string
 	var meses1, meses2 []int
 
 	periodoUpper := strings.ToUpper(periodo)
-	if periodoUpper == "MAYO" {
+	switch periodoUpper {
+	case "MAYO":
 		// Periodo: Noviembre (anio-1) a Abril (anio)
 		desde = time.Date(anio-1, time.November, 1, 0, 0, 0, 0, time.UTC)
 		hasta = time.Date(anio, time.April, 30, 23, 59, 59, 0, time.UTC)
@@ -45,7 +48,7 @@ func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string
 		meses1 = []int{11, 12}
 		anio2 = anio
 		meses2 = []int{1, 2, 3, 4}
-	} else if periodoUpper == "NOVIEMBRE" {
+	case "NOVIEMBRE":
 		// Periodo: Mayo (anio) a Octubre (anio)
 		desde = time.Date(anio, time.May, 1, 0, 0, 0, 0, time.UTC)
 		hasta = time.Date(anio, time.October, 31, 23, 59, 59, 0, time.UTC)
@@ -53,7 +56,7 @@ func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string
 		meses1 = []int{5, 6, 7, 8, 9, 10}
 		anio2 = anio // Se busca en el mismo año
 		meses2 = []int{}
-	} else {
+	default:
 		return 0, errors.New("periodo no válido, debe ser MAYO o NOVIEMBRE")
 	}
 
@@ -77,28 +80,42 @@ func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string
 
 	var detalles []models.PlanillaCtsDetalle
 
+	// Cargar llaves y conceptos del catálogo
+	codigosSueldo := config.ConceptosMestrosCTS["DL 728"]["remuneracion"]
+	codigosAsigFam := config.ConceptosMestrosCTS["DL 728"]["asignacion_familiar"]
+	codigosGrati := config.ConceptosMestrosCTS["DL 728"]["gratificacion"]
+
+	// Preparar exclusión para variables
+	var codigosExcluidos []string
+	codigosExcluidos = append(codigosExcluidos, codigosSueldo...)
+	codigosExcluidos = append(codigosExcluidos, codigosAsigFam...)
+
 	// 4. Calcular para cada trabajador
 	for _, c := range contratos {
-		sueldo := c.SueldoBasicoHistorico
+		// Obtener sueldo básico oficial de puesto_conceptos o fallback al presupuestado
+		sueldo, err := s.Repo.ObtenerSueldoBasicoActivo(c.PuestoID, codigosSueldo)
+		if err != nil || sueldo <= 0 {
+			sueldo = c.SueldoBasicoHistorico
+		}
 		if sueldo <= 0 {
 			sueldo = 1025.00 // Sueldo mínimo referencial
 		}
 
-		// Asignación familiar
-		familiar, _ := s.Repo.ObtenerRemuneracionFamiliarActiva(c.PuestoID)
+		// Asignación familiar dinámica basada en config
+		familiar, _ := s.Repo.ObtenerRemuneracionFamiliarActiva(c.PuestoID, codigosAsigFam)
 
-		// 1/6 de Gratificación anterior
+		// 1/6 de Gratificación anterior basada en config
 		var grati float64
 		if periodoUpper == "MAYO" {
-			grati, _ = s.Repo.ObtenerGratificacionHistorica(c.ID, anio-1, 12) // Diciembre
+			grati, _ = s.Repo.ObtenerGratificacionHistorica(c.ID, anio-1, 12, codigosGrati) // Diciembre
 		} else {
-			grati, _ = s.Repo.ObtenerGratificacionHistorica(c.ID, anio, 7) // Julio
+			grati, _ = s.Repo.ObtenerGratificacionHistorica(c.ID, anio, 7, codigosGrati) // Julio
 		}
 		sextoGrati := grati / 6.0
 
-		// Promedio de variables
+		// Promedio de variables excluyendo sueldo y asignación familiar
 		promVariables := 0.0
-		vars, err := s.Repo.ObtenerVariablesSemestre(c.ID, anio1, meses1, anio2, meses2)
+		vars, err := s.Repo.ObtenerVariablesSemestre(c.ID, anio1, meses1, anio2, meses2, codigosExcluidos)
 		if err == nil && len(vars) > 0 {
 			conceptosSum := make(map[int]float64)
 			conceptosCount := make(map[int]int)
@@ -187,6 +204,7 @@ func (s *CtsService) ProcesarExcelGratificaciones(planillaCtsID int, file io.Rea
 
 		doc := strings.TrimSpace(fila[0])
 		montoStr := strings.TrimSpace(fila[1])
+		log.Printf("Procesando fila %d: doc=%s, monto=%s", idx+1, doc, montoStr)
 
 		det, existe := mapaDetalles[doc]
 		if !existe {

@@ -1,11 +1,17 @@
 <article>
     <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
-            💼 Compensación por Tiempo de Servicios (CTS Semestral)
+            <svg class="icono-menu">
+                <use href="#icono-maletin"></use>
+            </svg>
+            Compensación por Tiempo de Servicios (CTS Semestral)
         </h3>
         <button class="primary" style="width: auto; margin-bottom: 0;"
             onclick="document.getElementById('modal-nueva-cts').showModal()">
-            ➕ Procesar Nueva CTS Semestral
+            <svg class="icono-menu">
+                <use href="#icono-plus"></use>
+            </svg>
+            Procesar Nueva CTS Semestral
         </button>
     </header>
     <p><small>Genera o consulta los depósitos semestrales de CTS correspondientes al personal bajo el régimen laboral DL 728.</small></p>
@@ -20,7 +26,12 @@
     <article style="max-width: 600px; width: 95%;">
         <header>
             <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nueva-cts').close()"></a>
-            <h4 style="margin-bottom: 0;">➕ Procesar CTS Semestral</h4>
+            <h4 style="margin-bottom: 0;">
+                <svg class="icono-menu">
+                    <use href="#icono-plus"></use>
+                </svg>
+                Procesar CTS Semestral
+            </h4>
         </header>
         <div id="contenido-modal-nueva-cts">
             {{template "formulario_crear_cts" .}}
@@ -78,13 +89,19 @@
             <td>
                 <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0;"
                     hx-get="/tenant/cts/detalle?id={{.ID}}" hx-target="#contenido-tenant">
-                    👁️ Ver Detalle
+                    <svg class="icono-menu">
+                        <use href="#icono-eye"></use>
+                    </svg>
+                    Ver Detalle
                 </button>
                 {{if eq .Estado "BORRADOR"}}
                 <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0;"
                     hx-delete="/tenant/cts/eliminar?id={{.ID}}" hx-target="#lista-cts"
                     hx-confirm="¿Está seguro de que desea eliminar este cálculo de CTS?">
-                    🗑️ Eliminar
+                    <svg class="icono-menu">
+                        <use href="#icono-trash"></use>
+                    </svg>
+                    Eliminar
                 </button>
                 {{end}}
             </td>

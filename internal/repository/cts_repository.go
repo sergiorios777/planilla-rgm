@@ -3,8 +3,8 @@ package repository
 import (
 	"database/sql"
 	"math"
-	"time"
 	"planilla-rgm/internal/models"
+	"time"
 
 	"github.com/lib/pq"
 )
@@ -314,18 +314,41 @@ func (r *CtsRepository) ObtenerContratosCtsEligibles(tenantID int, desde time.Ti
 	return lista, nil
 }
 
+// ObtenerSueldoBasicoActivo obtiene el sueldo básico oficial configurado para el puesto en puesto_conceptos
+func (r *CtsRepository) ObtenerSueldoBasicoActivo(puestoID int, codigosSueldo []string) (float64, error) {
+	query := `
+		SELECT COALESCE(pc.monto, 0)
+		FROM puesto_conceptos pc
+		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+		WHERE pc.puesto_id = $1 
+		  AND pc.activo = true 
+		  AND ct.activo = true 
+		  AND (cm.codigo_interno = ANY($2) OR cm.codigo = ANY($2))
+	`
+	var monto float64
+	err := r.db.QueryRow(query, puestoID, pq.Array(codigosSueldo)).Scan(&monto)
+	if err == sql.ErrNoRows {
+		return 0.0, nil
+	}
+	return monto, err
+}
+
 // ObtenerRemuneracionFamiliarActiva consulta si la asignación familiar está activa en la Plaza y calcula su valor dinámico (10% de la RMV)
-func (r *CtsRepository) ObtenerRemuneracionFamiliarActiva(puestoID int) (float64, error) {
+func (r *CtsRepository) ObtenerRemuneracionFamiliarActiva(puestoID int, codigosAsigFam []string) (float64, error) {
 	// 1. Verificar si está activo para el puesto
 	queryActivo := `
 		SELECT pc.id
 		FROM puesto_conceptos pc
 		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
 		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
-		WHERE pc.puesto_id = $1 AND pc.activo = true AND ct.activo = true AND cm.codigo_interno = 'ASIG_FAM_DL728'
+		WHERE pc.puesto_id = $1 
+		  AND pc.activo = true 
+		  AND ct.activo = true 
+		  AND (cm.codigo_interno = ANY($2) OR cm.codigo = ANY($2))
 	`
 	var id int
-	err := r.db.QueryRow(queryActivo, puestoID).Scan(&id)
+	err := r.db.QueryRow(queryActivo, puestoID, pq.Array(codigosAsigFam)).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0.0, nil
 	}
@@ -347,23 +370,25 @@ func (r *CtsRepository) ObtenerRemuneracionFamiliarActiva(puestoID int) (float64
 		rmv = 1025.00 // Fallback
 	}
 
-	return math.Round((rmv * 0.10) * 100) / 100, nil
+	return math.Round((rmv*0.10)*100) / 100, nil
 }
 
 // ObtenerGratificacionHistorica obtiene la gratificación pagada en un año/mes específico
-func (r *CtsRepository) ObtenerGratificacionHistorica(contratoID int, anio int, mes int) (float64, error) {
+func (r *CtsRepository) ObtenerGratificacionHistorica(contratoID int, anio int, mes int, codigosGrati []string) (float64, error) {
 	query := `
 		SELECT COALESCE(SUM(pc.monto), 0)
 		FROM planilla_conceptos pc
 		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
 		INNER JOIN planillas p ON pd.planilla_id = p.id
+		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
 		WHERE pd.contrato_id = $1
 		  AND p.anio = $2
 		  AND p.mes = $3
-		  AND (pc.codigo_sunat = '0406' OR pc.codigo_sunat = 'GRATI_DIC_DL_728' OR pc.codigo_sunat = 'GRATI_JUL_DL_728')
+		  AND (cm.codigo_interno = ANY($4) OR pc.codigo_sunat = ANY($4))
 	`
 	var suma float64
-	err := r.db.QueryRow(query, contratoID, anio, mes).Scan(&suma)
+	err := r.db.QueryRow(query, contratoID, anio, mes, pq.Array(codigosGrati)).Scan(&suma)
 	return suma, err
 }
 
@@ -374,22 +399,24 @@ type ConceptoVariable struct {
 }
 
 // ObtenerVariablesSemestre recupera los montos de variables para el cálculo de CTS
-func (r *CtsRepository) ObtenerVariablesSemestre(contratoID int, anio1 int, meses1 []int, anio2 int, meses2 []int) ([]ConceptoVariable, error) {
+func (r *CtsRepository) ObtenerVariablesSemestre(contratoID int, anio1 int, meses1 []int, anio2 int, meses2 []int, codigosExcluidos []string) ([]ConceptoVariable, error) {
 	query := `
 		SELECT pc.maestro_id, pc.monto, p.mes
 		FROM planilla_conceptos pc
 		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
 		INNER JOIN planillas p ON pd.planilla_id = p.id
 		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
 		WHERE pd.contrato_id = $1
 		  AND ct.es_base_cts = true
 		  AND pc.tipo_concepto = 'INGRESO'
+		  AND NOT (cm.codigo_interno = ANY($6) OR cm.codigo = ANY($6) OR pc.codigo_sunat = ANY($6))
 		  AND (
 		      (p.anio = $2 AND p.mes = ANY($3))
 		   OR (p.anio = $4 AND p.mes = ANY($5))
 		  )
 	`
-	rows, err := r.db.Query(query, contratoID, anio1, pq.Array(meses1), anio2, pq.Array(meses2))
+	rows, err := r.db.Query(query, contratoID, anio1, pq.Array(meses1), anio2, pq.Array(meses2), pq.Array(codigosExcluidos))
 	if err != nil {
 		return nil, err
 	}

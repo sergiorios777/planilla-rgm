@@ -4,7 +4,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"planilla-rgm/internal/config"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
 	"planilla-rgm/internal/services"
@@ -35,21 +34,23 @@ func (h *PuestoConceptoHandler) VistaUI(w http.ResponseWriter, r *http.Request) 
 		if cp.Monto != nil && *cp.Monto > 0 {
 			asignados[i].MontoIngresado = true
 		}
-
-		// B. Evaluamos si es un concepto que obliga intervención humana
-		if config.ConceptosQueRequierenMonto[cp.MaestroCodigo] {
-			asignados[i].RequiereMontoManual = true
-		}
 	}
 	// log.Println("asignados con RequiereMontoManual:", asignados)
 
 	disponibles, _ := h.Repo.ObtenerDisponibles(puestoID, tenantID)
 	// log.Println("disponibles:", disponibles)
 
+	// Obtener datos del puesto para mostrar el nombre
+	puestoNombre := ""
+	if puesto, err := h.PuestoRepo.ObtenerPorID(puestoID, tenantID); err == nil {
+		puestoNombre = puesto.Nombre
+	}
+
 	datos := map[string]interface{}{
-		"PuestoID":    puestoID,
-		"Asignados":   asignados, // 💡 Mandamos la lista procesada a la vista
-		"Disponibles": disponibles,
+		"PuestoID":     puestoID,
+		"PuestoNombre": puestoNombre,
+		"Asignados":    asignados, // 💡 Mandamos la lista procesada a la vista
+		"Disponibles":  disponibles,
 	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/puestos_conceptos_ui.html")
@@ -70,11 +71,6 @@ func (h *PuestoConceptoHandler) Listar(w http.ResponseWriter, r *http.Request) {
 		// A. Evaluamos el puntero: Si no es nulo y es mayor a 0
 		if cp.Monto != nil && *cp.Monto > 0 {
 			asignados[i].MontoIngresado = true
-		}
-
-		// B. Evaluamos si es un concepto que obliga intervención humana
-		if config.ConceptosQueRequierenMonto[cp.MaestroCodigo] {
-			asignados[i].RequiereMontoManual = true
 		}
 	}
 

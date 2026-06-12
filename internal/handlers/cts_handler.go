@@ -95,59 +95,54 @@ func (h *CtsHandler) VerDetalleCts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CtsHandler) SubirExcelGratificaciones(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
 	planillaCtsID, _ := strconv.Atoi(r.FormValue("planilla_cts_id"))
+
+	renderDetalle := func(exitoMsg, errorMsg string) {
+		planilla, err := h.CtsRepo.ObtenerPlanillaCtsPorID(planillaCtsID, tenantID)
+		if err != nil {
+			http.Error(w, "Planilla no encontrada", http.StatusNotFound)
+			return
+		}
+		detalles, err := h.CtsRepo.ObtenerDetallesCts(planillaCtsID)
+		if err != nil {
+			http.Error(w, "Detalles no encontrados", http.StatusInternalServerError)
+			return
+		}
+		tmpl, err := template.ParseFiles("ui/templates/tenant/cts_detalle_ui.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		tmpl.Execute(w, map[string]interface{}{
+			"Planilla":    planilla,
+			"Detalles":    detalles,
+			"AlertaExito": exitoMsg,
+			"AlertaError": errorMsg,
+		})
+	}
 
 	// Recibir archivo multipart
 	err := r.ParseMultipartForm(10 << 20) // Máximo 10MB
 	if err != nil {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`
-			<div id="alerta-detalle-cts" hx-swap-oob="true">
-				<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
-					❌ Error de subida: ` + err.Error() + `
-				</article>
-			</div>
-		`))
+		renderDetalle("", "Error de subida: "+err.Error())
 		return
 	}
 
 	file, _, err := r.FormFile("excel_file")
 	if err != nil {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`
-			<div id="alerta-detalle-cts" hx-swap-oob="true">
-				<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
-					❌ Error: Archivo de Excel requerido.
-				</article>
-			</div>
-		`))
+		renderDetalle("", "Error: Archivo de Excel requerido.")
 		return
 	}
 	defer file.Close()
 
 	procesados, err := h.CtsService.ProcesarExcelGratificaciones(planillaCtsID, file)
 	if err != nil {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`
-			<div id="alerta-detalle-cts" hx-swap-oob="true">
-				<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
-					❌ Error procesando Excel: ` + err.Error() + `
-				</article>
-			</div>
-		`))
+		renderDetalle("", "Error procesando Excel: "+err.Error())
 		return
 	}
 
-	// Forzamos actualización enviando hx-trigger para refrescar el detalle
-	w.Header().Set("HX-Trigger", "refrescarDetalleCts")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`
-		<div id="alerta-detalle-cts" hx-swap-oob="true">
-			<article style="background-color: #c8e6c9; color: #1b5e20; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
-				✅ Se actualizaron ` + strconv.Itoa(procesados) + ` trabajadores con la gratificación del periodo anterior.
-			</article>
-		</div>
-	`))
+	renderDetalle("Se actualizaron "+strconv.Itoa(procesados)+" trabajadores con la gratificación del periodo anterior.", "")
 }
 
 func (h *CtsHandler) CerrarPlanillaCts(w http.ResponseWriter, r *http.Request) {

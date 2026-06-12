@@ -76,12 +76,80 @@
         .ts-dropdown .option {
             padding: 0.5rem 0.75rem !important;
         }
+
+        /* Responsividad del Layout del Menú */
+        @media (max-width: 992px) {
+            /* Sobrescribimos el grid rígido a una sola columna */
+            .grid-responsive {
+                grid-template-columns: 1fr !important;
+                gap: 1rem !important;
+            }
+
+            /* Transformamos el aside en un drawer lateral */
+            aside {
+                position: fixed;
+                top: 0;
+                left: -280px; /* Oculto por defecto */
+                width: 270px;
+                height: 100vh;
+                background-color: var(--pico-background-color);
+                border-right: 1px solid var(--pico-muted-border-color);
+                box-shadow: var(--pico-card-box-shadow);
+                z-index: 1000;
+                transition: left 0.3s ease-in-out;
+                padding: 1.5rem;
+                overflow-y: auto;
+                margin: 0;
+            }
+
+            aside.open {
+                left: 0; /* Deslizar hacia adentro */
+            }
+
+            /* Backdrop translúcido detrás del menú */
+            #sidebar-backdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-color: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(2px);
+                z-index: 999;
+            }
+
+            #sidebar-backdrop.open {
+                display: block;
+            }
+
+            /* Mostrar botón de menú hamburguesa solo en pantallas medianas/pequeñas */
+            #btn-toggle-menu {
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        @media (min-width: 993px) {
+            #btn-toggle-menu {
+                display: none !important;
+            }
+            #sidebar-backdrop {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 
 <body>
     <nav class="container-fluid" style="border-bottom: 1px solid #e0e0e0; margin-bottom: 2rem; padding: 1rem;">
         <ul>
+            <li style="margin-right: 0.5rem; display: none;" id="btn-toggle-menu">
+                <button class="outline secondary" style="padding: 0.25rem 0.5rem; margin-bottom: 0;" aria-label="Abrir menú" onclick="toggleMobileMenu()">
+                    ☰
+                </button>
+            </li>
             <li><strong><svg class="icono-menu">
                         <use href="#icono-edificio-2"></use>
                     </svg> {{if .TenantNombre}}{{.TenantNombre}}{{else}}Mi Municipalidad{{end}}</strong>
@@ -105,7 +173,10 @@
     </nav>
 
     <main class="container-fluid">
-        <div class="grid" style="grid-template-columns: 250px 1fr; gap: 2rem;">
+        <!-- Backdrop para móviles -->
+        <div id="sidebar-backdrop" onclick="toggleMobileMenu()"></div>
+
+        <div class="grid grid-responsive" style="grid-template-columns: 250px 1fr; gap: 2rem;">
 
             <aside>
                 <nav>
@@ -229,6 +300,25 @@
     </dialog>
 
     {{template "svg_sprite" .}}
+    <script>
+        function toggleMobileMenu() {
+            const sidebar = document.querySelector('aside');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sidebar.classList.toggle('open');
+            backdrop.classList.toggle('open');
+        }
+
+        // Auto-cerrar el menú en móviles cuando se hace clic en cualquier opción
+        document.querySelector('aside').addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (link && !link.classList.contains('disabled-link')) {
+                const sidebar = document.querySelector('aside');
+                const backdrop = document.getElementById('sidebar-backdrop');
+                sidebar.classList.remove('open');
+                backdrop.classList.remove('open');
+            }
+        });
+    </script>
 </body>
 
 </html>

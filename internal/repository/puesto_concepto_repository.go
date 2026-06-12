@@ -18,7 +18,8 @@ func (r *PuestoConceptoRepository) ObtenerAsignados(puestoID int, tenantID int) 
 	query := `
 		SELECT pc.id, pc.puesto_id, pc.concepto_tenant_id, pc.monto, pc.activo,
 		       ct.nombre_personalizado, mef.codigo AS clasificador, cm.tipo, 
-		       cm.codigo_interno -- 💡 NUEVO: Traemos el código interno para la lógica inteligente de la UI
+		       cm.codigo_interno,
+		       ct.requiere_monto -- 💡 NUEVO: Traemos requiere_monto de conceptos_tenant
 		FROM puesto_conceptos pc
 		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
 		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
@@ -39,7 +40,7 @@ func (r *PuestoConceptoRepository) ObtenerAsignados(puestoID int, tenantID int) 
 		var clasif sql.NullString
 
 		err := rows.Scan(&pc.ID, &pc.PuestoID, &pc.ConceptoTenantID, &monto, &pc.Activo,
-			&pc.NombrePersonalizado, &clasif, &pc.ConceptoTipo, &pc.MaestroCodigo)
+			&pc.NombrePersonalizado, &clasif, &pc.ConceptoTipo, &pc.MaestroCodigo, &pc.RequiereMontoManual)
 		if err == nil {
 			if monto.Valid {
 				pc.Monto = &monto.Float64

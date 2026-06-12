@@ -3,17 +3,30 @@
         <div style="display: flex; align-items: center; gap: 1rem;">
             <button class="outline secondary" style="width: auto; margin-bottom: 0; padding: 0.3rem 0.6rem;"
                 hx-get="/tenant/ui/cts" hx-target="#contenido-tenant">
-                ⬅️ Volver
+                <svg class="icono-menu">
+                    <use href="#icono-previo-cuadrado"></use>
+                </svg>
+                Volver
             </button>
             <h3 style="margin-bottom: 0;">Detalle de Planilla CTS Semestral: {{.Planilla.Anio}} - {{.Planilla.Periodo}}</h3>
         </div>
         <div>
             {{if eq .Planilla.Estado "BORRADOR"}}
             <mark style="background-color: #fff9c4; color: #f57f17; padding: 6px 12px; border-radius: 4px; font-weight: bold;">Borrador</mark>
+            <button class="outline" style="width: auto; margin-bottom: 0; padding: 0.4rem 1rem; margin-left: 1rem;"
+                onclick="document.getElementById('modal-cargar-gratificaciones').showModal()">
+                <svg class="icono-menu">
+                    <use href="#icono-archive-restore"></use>
+                </svg>
+                Cargar Gratificación Anterior
+            </button>
             <button class="primary" style="width: auto; margin-bottom: 0; padding: 0.4rem 1rem; margin-left: 1rem;"
                 hx-post="/tenant/cts/cerrar?id={{.Planilla.ID}}" hx-target="#contenido-tenant"
                 hx-confirm="¿Está seguro de cerrar esta planilla de CTS? Una vez cerrada no se podrán realizar modificaciones ni subir planillas de gratificación.">
-                🔒 Cerrar Planilla
+                <svg class="icono-menu">
+                    <use href="#icono-lock"></use>
+                </svg>
+                Cerrar Planilla
             </button>
             {{else if eq .Planilla.Estado "CERRADO"}}
             <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 6px 12px; border-radius: 4px; font-weight: bold;">Cerrado</mark>
@@ -21,30 +34,18 @@
         </div>
     </header>
 
-    {{if eq .Planilla.Estado "BORRADOR"}}
-    <!-- Sección de carga del Excel de Gratificación del Periodo Anterior -->
-    <div style="margin-bottom: 2rem; padding: 1.5rem; background-color: #f7f9fa; border-radius: 8px; border: 1px solid #e1e4e6;">
-        <h4 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
-            📊 Cargar Gratificaciones del Periodo Anterior
-        </h4>
-        <p><small>Si iniciaste el uso del sistema en medio de un periodo y no posees registros históricos del pago de la gratificación correspondiente a Diciembre o Julio, puedes subir un archivo Excel (.xlsx) con los montos para computar el <strong>1/6 de la Gratificación</strong>.</small></p>
-        
-        <div id="alerta-detalle-cts"></div>
-
-        <form hx-post="/tenant/cts/subir-excel" hx-encoding="multipart/form-data" hx-swap="none" style="margin-bottom: 0;">
-            <input type="hidden" name="planilla_cts_id" value="{{.Planilla.ID}}">
-            <div style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap;">
-                <label style="margin-bottom: 0; flex: 1; min-width: 250px;">Selecciona el Excel
-                    <input type="file" name="excel_file" accept=".xlsx" required style="margin-bottom: 0;">
-                </label>
-                <button type="submit" class="outline" style="width: auto; margin-bottom: 0;">
-                    📥 Importar y Recalcular
-                </button>
-            </div>
-            <small style="color: #666; display: block; margin-top: 0.5rem;">El formato del Excel debe tener 2 columnas sin cabeceras o con DNI en columna 1 y Monto de Gratificación en columna 2. Ejemplo: (99991111, 1500.00)</small>
-        </form>
+    <div id="alerta-detalle-cts" style="margin-top: 1rem;">
+        {{if .AlertaExito}}
+        <article style="background-color: #c8e6c9; color: #1b5e20; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
+            ✅ {{.AlertaExito}}
+        </article>
+        {{end}}
+        {{if .AlertaError}}
+        <article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
+            ❌ {{.AlertaError}}
+        </article>
+        {{end}}
     </div>
-    {{end}}
 
     <h4>Detalle de Colaboradores</h4>
     <div style="overflow-x: auto;">
@@ -87,4 +88,36 @@
             </tbody>
         </table>
     </div>
+
+    {{if eq .Planilla.Estado "BORRADOR"}}
+    <!-- Modal para Cargar Gratificaciones -->
+    <dialog id="modal-cargar-gratificaciones">
+        <article style="max-width: 600px; width: 95%;">
+            <header>
+                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-cargar-gratificaciones').close()"></a>
+                <h4 style="margin-bottom: 0;">📊 Cargar Gratificación Anterior</h4>
+            </header>
+            <div style="padding-top: 1rem;">
+                <p><small>Si iniciaste el uso del sistema en medio de un periodo y no posees registros históricos del pago de la gratificación correspondiente a Diciembre o Julio, puedes subir un archivo Excel (.xlsx) con los montos para computar el <strong>1/6 de la Gratificación</strong>.</small></p>
+                
+                <form hx-post="/tenant/cts/subir-excel" hx-encoding="multipart/form-data" hx-target="#contenido-tenant" style="margin-bottom: 0;"
+                    hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-cargar-gratificaciones').close(); }">
+                    <input type="hidden" name="planilla_cts_id" value="{{.Planilla.ID}}">
+                    
+                    <label>Selecciona el Excel (.xlsx)
+                        <input type="file" name="excel_file" accept=".xlsx" required style="margin-bottom: 1rem;">
+                    </label>
+                    <small style="color: #666; display: block; margin-bottom: 1.5rem;">
+                        El formato del Excel debe tener 2 columnas con las cabeceras: DNI en columna 1 y Monto de Gratificación en columna 2. Ejemplo: (99991111, 1500.00)
+                    </small>
+                    
+                    <div style="display: flex; gap: 1rem; justify-content: end;">
+                        <button type="button" class="secondary outline" onclick="document.getElementById('modal-cargar-gratificaciones').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
+                        <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">📥 Importar y Recalcular</button>
+                    </div>
+                </form>
+            </div>
+        </article>
+    </dialog>
+    {{end}}
 </article>
