@@ -298,3 +298,28 @@ func (h *PlanillaHandler) DescargarPlame(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// Eliminar borra la planilla y recarga la tabla
+func (h *PlanillaHandler) Eliminar(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+
+	servicioPlanilla := services.NewPlanillaService(h.Repo)
+	err := servicioPlanilla.Eliminar(planillaID, tenantID)
+	if err != nil {
+		// Mostramos una alerta sin salir de la página
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`
+			<div id="alerta-planilla" hx-swap-oob="true">
+				<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
+					❌ Error: ` + err.Error() + `
+				</article>
+			</div>
+		`))
+		return
+	}
+
+	// Limpiamos alertas si las hubo y procesamos la vista
+	w.Write([]byte(`<div id="alerta-planilla" hx-swap-oob="true"></div>`))
+	h.Listar(w, r)
+}
+

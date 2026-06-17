@@ -1,12 +1,18 @@
 <article>
     <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
-            🚪 Liquidaciones de Cese (Beneficios Sociales)
+            <svg class="icono-menu">
+                <use href="#icono-source-environment"></use>
+            </svg>
+            Liquidaciones de Cese (Beneficios Sociales)
         </h3>
         <button class="primary" style="width: auto; margin-bottom: 0;"
             hx-get="/tenant/liquidaciones/formulario-crear" hx-target="#contenido-modal-nueva-liq"
             onclick="document.getElementById('modal-nueva-liq').showModal()">
-            ➕ Nueva Liquidación de Cese
+            <svg class="icono-menu">
+                <use href="#icono-plus"></use>
+            </svg>
+            Nueva Liquidación de Cese
         </button>
     </header>
     <p><small>Calcula y registra los beneficios sociales (CTS, gratificaciones y vacaciones truncas) del personal al momento de cese o desvinculación laboral.</small></p>
@@ -21,7 +27,12 @@
     <article style="max-width: 700px; width: 95%;">
         <header>
             <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nueva-liq').close()"></a>
-            <h4 style="margin-bottom: 0;">➕ Nueva Liquidación de Cese</h4>
+            <h4 style="margin-bottom: 0;">
+                <svg class="icono-menu">
+                    <use href="#icono-plus"></use>
+                </svg>
+                Nueva Liquidación de Cese
+            </h4>
         </header>
         <div id="contenido-modal-nueva-liq">
             <p aria-busy="true">Cargando formulario y listado de contratos...</p>
@@ -56,8 +67,9 @@
         <div class="grid">
             <label>Motivo de Cese
                 <select name="motivo" required>
+                    <option value="LIBRE_REMOCION">Libre Remoción</option>
                     <option value="RENUNCIA">Renuncia Voluntaria</option>
-                    <option value="DESPIDO">Despido Intempestivo</option>
+                    <option value="DESTITUCION">Destitución</option>
                     <option value="MUTUO_ACUERDO">Mutuo Acuerdo</option>
                     <option value="JUBILACION">Cese por Límite de Edad (Jubilación)</option>
                     <option value="VENCIMIENTO_CONTRATO">Vencimiento de Contrato</option>
@@ -76,7 +88,10 @@
                 hx-post="/tenant/liquidaciones/calcular" 
                 hx-target="#resultado-previa-liq"
                 hx-include="#form-liquidacion">
-                ⚙️ Calcular Vista Previa
+                <svg class="icono-menu">
+                    <use href="#icono-home-storage-gear"></use>
+                </svg>
+                Calcular Vista Previa
             </button>
         </div>
 
@@ -96,7 +111,10 @@
 {{define "vista_previa_liquidacion"}}
 <div style="padding: 1.2rem; background-color: #f1f8e9; border: 1px solid #c5e1a5; border-radius: 8px; margin-bottom: 1rem;">
     <h5 style="margin-top: 0; color: #33691e; display: flex; align-items: center; gap: 0.5rem;">
-        📝 Vista Previa de Liquidación
+        <svg class="icono-menu">
+            <use href="#icono-mystery"></use>
+        </svg>
+        Vista Previa de Liquidación
     </h5>
     
     <div class="grid" style="font-size: 0.9rem; margin-bottom: 1rem;">

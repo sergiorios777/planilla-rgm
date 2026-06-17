@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	"planilla-rgm/internal/models"
 	"strconv"
@@ -113,10 +114,18 @@ func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio 
 		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
 		LEFT JOIN unidades_organicas uo ON p.unidad_organica_id = uo.id
 		LEFT JOIN organigramas o ON uo.organigrama_id = o.id
-		WHERE c.tenant_id = $1 AND c.activo = true
-		  AND c.fecha_inicio <= (make_date($2, $3, 1) + interval '1 month' - interval '1 day')::date
-		  AND (c.fecha_fin IS NULL OR c.fecha_fin >= make_date($2, $3, 1)::date)
+		WHERE c.tenant_id = $1 
 		  AND p.es_dietario = false
+		  AND c.fecha_inicio <= (make_date($2, $3, 1) + interval '1 month' - interval '1 day')::date
+		  AND (
+		      -- Condición A: El contrato sigue activo (y su fecha fin, si existe, es futura o del mes actual)
+		      (c.activo = true AND (c.fecha_fin IS NULL OR c.fecha_fin >= make_date($2, $3, 1)::date))
+		      OR 
+		      -- Condición B: El contrato está inactivo, pero cesó dentro de este mismo mes
+		      (c.activo = false AND c.fecha_fin IS NOT NULL 
+		       AND c.fecha_fin >= make_date($2, $3, 1)::date 
+		       AND c.fecha_fin <= (make_date($2, $3, 1) + interval '1 month' - interval '1 day')::date)
+		  )
 	`
 	rows, err := r.db.Query(query, tenantID, anio, mes)
 	if err != nil {
@@ -489,6 +498,65 @@ func (r *PlanillaRepository) ObtenerConceptosPorPuestoMasivo(puestoIDs []int) (m
 	return mapa, nil
 }
 
+// ObtenerConceptosPorContratoMasivo trae las estructuras de costos de todos los contratos involucrados,
+// extrayendo de puesto_conceptos para los activos y de contrato_conceptos_snapshot para los cesados/inactivos
+func (r *PlanillaRepository) ObtenerConceptosPorContratoMasivo(contratoIDs []int) (map[int][]models.ConceptoPlanilla, error) {
+	if len(contratoIDs) == 0 {
+		return make(map[int][]models.ConceptoPlanilla), nil
+	}
+
+	query := `
+		-- Conceptos de contratos activos obtenidos de puesto_conceptos
+		SELECT c.id AS contrato_id, pc.concepto_tenant_id, cm.id AS maestro_id, 
+		       cm.codigo_interno, cm.codigo AS codigo_sunat, cm.tipo, pc.monto,
+		       ct.frecuencia_meses, ct.es_extraordinario, COALESCE(cm.parent_id, 0) AS parent_id, 
+		       ct.nombre_personalizado
+		FROM contratos c
+		INNER JOIN puesto_conceptos pc ON c.puesto_id = pc.puesto_id AND pc.activo = true
+		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+		WHERE c.id = ANY($1) AND c.activo = true
+
+		UNION ALL
+
+		-- Conceptos de contratos inactivos obtenidos de contrato_conceptos_snapshot
+		SELECT ccs.contrato_id, ccs.concepto_tenant_id, cm.id AS maestro_id, 
+		       cm.codigo_interno, cm.codigo AS codigo_sunat, cm.tipo, ccs.monto,
+		       ct.frecuencia_meses, ct.es_extraordinario, COALESCE(cm.parent_id, 0) AS parent_id, 
+		       ct.nombre_personalizado
+		FROM contrato_conceptos_snapshot ccs
+		INNER JOIN conceptos_tenant ct ON ccs.concepto_tenant_id = ct.id
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+		WHERE ccs.contrato_id = ANY($1)
+	`
+	rows, err := r.db.Query(query, pq.Array(contratoIDs))
+	if err != nil {
+		log.Println("Error SQL ObtenerConceptosPorContratoMasivo:", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	mapa := make(map[int][]models.ConceptoPlanilla)
+	for rows.Next() {
+		var contratoID int
+		var cp models.ConceptoPlanilla
+		var m sql.NullFloat64
+
+		err := rows.Scan(&contratoID, &cp.TenantID, &cp.MaestroID, &cp.CodigoInterno, &cp.CodigoSunat, &cp.Tipo, &m,
+			&cp.Frecuencia, &cp.EsExtraordinario, &cp.ParentID, &cp.Nombre)
+		if err != nil {
+			log.Println("Error Scan ObtenerConceptosPorContratoMasivo:", err)
+			continue
+		}
+
+		if m.Valid {
+			cp.Monto = m.Float64
+		}
+		mapa[contratoID] = append(mapa[contratoID], cp)
+	}
+	return mapa, nil
+}
+
 // ObtenerRetencionesPreviasMasivo trae el acumulado de Renta de 5ta respetando los cortes de SUNAT
 func (r *PlanillaRepository) ObtenerRetencionesPreviasMasivo(contratoIDs []int, anio int, mesActual int) (map[int]float64, error) {
 	if len(contratoIDs) == 0 {
@@ -778,5 +846,41 @@ func (r *PlanillaRepository) ObtenerDatosPlameRemuneraciones(planillaID int, ten
 		lista = append(lista, rem)
 	}
 	return lista, nil
+}
+
+// Eliminar borra la planilla, revierte las ocurrencias asociadas y limpia detalles y conceptos
+func (r *PlanillaRepository) Eliminar(planillaID int, tenantID int) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	// 1. Validar que la planilla pertenezca al tenant y no esté CERRADA
+	var estado string
+	err = tx.QueryRow(`SELECT estado FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID).Scan(&estado)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	if estado == "CERRADA" {
+		tx.Rollback()
+		return errors.New("operación denegada: la planilla ya está CERRADA y no puede ser eliminada")
+	}
+
+	// 2. Revertir cambios en ocurrencias_asistencia
+	_, err = tx.Exec(`UPDATE ocurrencias_asistencia SET procesado = false, planilla_id_descuento = NULL WHERE planilla_id_descuento = $1`, planillaID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 3. Eliminar la planilla (por cascade de foreign keys, se borran automáticamente planilla_detalles y planilla_conceptos)
+	_, err = tx.Exec(`DELETE FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 

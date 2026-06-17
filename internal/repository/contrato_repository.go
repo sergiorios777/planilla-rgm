@@ -20,7 +20,8 @@ func (r *ContratoRepository) ObtenerTodos(tenantID int) ([]models.Contrato, erro
 		SELECT c.id, c.trabajador_id, c.puesto_id, 
 		       TO_CHAR(c.fecha_inicio, 'YYYY-MM-DD'), TO_CHAR(c.fecha_fin, 'YYYY-MM-DD'), c.activo,
 		       t.numero_documento, t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres,
-		       p.nombre, p.sueldo_presupuestado, rl.descripcion, COALESCE(c.tipo_contrato, ''), COALESCE(c.nivel, '')
+		       p.nombre, p.sueldo_presupuestado, rl.descripcion, COALESCE(c.tipo_contrato, ''), COALESCE(c.nivel, ''),
+		       c.motivo_baja
 		FROM contratos c
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
 		INNER JOIN puestos p ON c.puesto_id = p.id
@@ -38,12 +39,16 @@ func (r *ContratoRepository) ObtenerTodos(tenantID int) ([]models.Contrato, erro
 	for rows.Next() {
 		var c models.Contrato
 		var fFin sql.NullString
+		var motivoBaja sql.NullString
 
 		err := rows.Scan(&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fFin, &c.Activo,
-			&c.TrabajadorDoc, &c.TrabajadorNombre, &c.PuestoNombre, &c.SueldoPresupuestado, &c.RegimenDesc, &c.TipoContrato, &c.Nivel)
+			&c.TrabajadorDoc, &c.TrabajadorNombre, &c.PuestoNombre, &c.SueldoPresupuestado, &c.RegimenDesc, &c.TipoContrato, &c.Nivel, &motivoBaja)
 		if err == nil {
 			if fFin.Valid {
 				c.FechaFin = &fFin.String
+			}
+			if motivoBaja.Valid {
+				c.MotivoBaja = &motivoBaja.String
 			}
 			lista = append(lista, c)
 		}
@@ -97,7 +102,8 @@ func (r *ContratoRepository) ObtenerTodosPaginado(tenantID int, busqueda string,
 		       TO_CHAR(c.fecha_inicio, 'YYYY-MM-DD'), TO_CHAR(c.fecha_fin, 'YYYY-MM-DD'), c.activo,
 		       t.numero_documento, t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
 		       p.nombre AS puesto_nombre, p.sueldo_presupuestado, rl.descripcion AS regimen_descripcion,
-		       COALESCE(c.tipo_contrato, '') AS tipo_contrato, COALESCE(c.nivel, '') AS nivel
+		       COALESCE(c.tipo_contrato, '') AS tipo_contrato, COALESCE(c.nivel, '') AS nivel,
+		       c.motivo_baja
 		FROM contratos c
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
 		INNER JOIN puestos p ON c.puesto_id = p.id
@@ -119,13 +125,17 @@ func (r *ContratoRepository) ObtenerTodosPaginado(tenantID int, busqueda string,
 	for rows.Next() {
 		var c models.Contrato
 		var fechaFin sql.NullString
+		var motivoBaja sql.NullString
 		err := rows.Scan(&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fechaFin, &c.Activo,
-			&c.TrabajadorDoc, &c.TrabajadorNombre, &c.PuestoNombre, &c.SueldoPresupuestado, &c.RegimenDesc, &c.TipoContrato, &c.Nivel)
+			&c.TrabajadorDoc, &c.TrabajadorNombre, &c.PuestoNombre, &c.SueldoPresupuestado, &c.RegimenDesc, &c.TipoContrato, &c.Nivel, &motivoBaja)
 		if err != nil {
 			return nil, 0, err
 		}
 		if fechaFin.Valid {
 			c.FechaFin = &fechaFin.String
+		}
+		if motivoBaja.Valid {
+			c.MotivoBaja = &motivoBaja.String
 		}
 		lista = append(lista, c)
 	}
@@ -240,5 +250,46 @@ func (r *ContratoRepository) ObtenerActivoPorPuesto(puestoID int, tenantID int) 
 	c.TipoContrato = tipoContrato.String
 	c.Nivel = nivel.String
 	return &c, nil
+}
+
+// DarDeBaja desactiva un contrato, registra fecha fin y motivo, y libera la plaza correspondiente de forma transaccional
+func (r *ContratoRepository) DarDeBaja(contratoID int, tenantID int, fechaFin string, motivo string) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	// 1. Crear snapshot de los conceptos del puesto actuales para el contrato
+	querySnapshot := `
+		INSERT INTO contrato_conceptos_snapshot (tenant_id, contrato_id, concepto_tenant_id, monto)
+		SELECT $1, $2, pc.concepto_tenant_id, pc.monto
+		FROM puesto_conceptos pc
+		WHERE pc.puesto_id = (SELECT puesto_id FROM contratos WHERE id = $2 AND tenant_id = $1)
+		  AND pc.activo = true
+		ON CONFLICT (contrato_id, concepto_tenant_id) DO UPDATE SET monto = EXCLUDED.monto
+	`
+	_, err = tx.Exec(querySnapshot, tenantID, contratoID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 2. Inactivar el contrato, poner fecha fin y motivo
+	queryContrato := `UPDATE contratos SET activo = false, fecha_fin = NULLIF($1, '')::DATE, motivo_baja = $2 WHERE id = $3 AND tenant_id = $4`
+	_, err = tx.Exec(queryContrato, fechaFin, motivo, contratoID, tenantID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 3. Liberar el puesto (Pasarlo a VACANTE)
+	queryPuesto := `UPDATE puestos SET estado = 'VACANTE' WHERE id = (SELECT puesto_id FROM contratos WHERE id = $1 AND tenant_id = $2) AND tenant_id = $2`
+	_, err = tx.Exec(queryPuesto, contratoID, tenantID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 

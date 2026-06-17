@@ -125,6 +125,23 @@ func (t *Trabajador) NombreCompleto() string {
 	return t.ApellidoPaterno + " " + t.ApellidoMaterno + ", " + t.Nombres
 }
 
+// Edad calcula la edad del trabajador basándose en su fecha de nacimiento
+func (t *Trabajador) Edad() int {
+	if t.FechaNacimiento == "" {
+		return 0
+	}
+	dob, err := time.Parse("2006-01-02", t.FechaNacimiento)
+	if err != nil {
+		return 0
+	}
+	now := time.Now()
+	years := now.Year() - dob.Year()
+	if now.YearDay() < dob.YearDay() {
+		years--
+	}
+	return years
+}
+
 // RegimenLaboral representa el catálogo nacional de regímenes (276, CAS, etc.)
 type RegimenLaboral struct {
 	ID          int    `json:"id"`
@@ -143,6 +160,7 @@ type Contrato struct {
 	Activo       bool    `json:"activo"`
 	TipoContrato string  `json:"tipo_contrato"`
 	Nivel        string  `json:"nivel"`
+	MotivoBaja   *string `json:"motivo_baja,omitempty"` // Campo para indicar motivo del cese del contrato
 
 	// Campos auxiliares para la interfaz web (JOINs)
 	TrabajadorNombre    string  `json:"trabajador_nombre,omitempty"`

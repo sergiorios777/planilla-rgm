@@ -234,7 +234,6 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 		tmpl.Execute(w, data)
 	}))
 
-
 	// Rutas de Inquilino
 	tenantRepo := repository.NewTenantRepository(db)
 	tenantHandler := handlers.TenantHandler{Repo: tenantRepo}
@@ -298,6 +297,7 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/contratos/formulario-dinamico", middleware.RequireAuth(contratoHandler.FormularioDinamicoUI))
 	mux.HandleFunc("/tenant/contratos/editar-ui", middleware.RequireAuth(contratoHandler.EditarUI))
 	mux.HandleFunc("/tenant/contratos/actualizar", middleware.RequireAuth(contratoHandler.Actualizar))
+	mux.HandleFunc("/tenant/contratos/baja", middleware.RequireAuth(contratoHandler.ProcesarBaja))
 	mux.HandleFunc("/tenant/contratos/plantilla", middleware.RequireAuth(contratoHandler.DescargarPlantilla))
 	mux.HandleFunc("/tenant/contratos/importar", middleware.RequireAuth(contratoHandler.ImportarExcel))
 
@@ -358,7 +358,12 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/planillas/crear", middleware.RequireAuth(planillaHandler.Crear))
 	mux.HandleFunc("/tenant/planillas/procesar", middleware.RequireAuth(planillaHandler.Procesar))
 	mux.HandleFunc("/tenant/planillas/cerrar", middleware.RequireAuth(planillaHandler.CerrarPlanilla))
+	mux.HandleFunc("/tenant/planillas/eliminar", middleware.RequireAuth(planillaHandler.Eliminar))
 	mux.HandleFunc("/tenant/planillas/detalle/ui", middleware.RequireAuth(planillaHandler.VistaDetalle))
+	mux.HandleFunc("/tenant/planillas/descargar-reporte", middleware.RequireAuth(planillaHandler.DescargarReportePDF))
+	mux.HandleFunc("/tenant/planillas/descargar-boletas", middleware.RequireAuth(planillaHandler.DescargarBoletasPDF))
+	mux.HandleFunc("/tenant/planillas/exportar-plame-modal", middleware.RequireAuth(planillaHandler.ExportarPlameModal))
+	mux.HandleFunc("/tenant/planillas/descargar-plame", middleware.RequireAuth(planillaHandler.DescargarPlame))
 
 	// Asistencias
 	asistenciaRepo := repository.NewAsistenciaRepository(db)
@@ -382,12 +387,6 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/presupuesto/exportar/csv", middleware.RequireAuth(presupuestoHandler.ExportarCSV))
 	mux.HandleFunc("/tenant/presupuesto/exportar/excel", middleware.RequireAuth(presupuestoHandler.ExportarExcel))
 	mux.HandleFunc("/tenant/presupuesto/exportar/pdf", middleware.RequireAuth(presupuestoHandler.ExportarPDF))
-
-	// Ruta para descargar el PDF de planilla y boeltas
-	mux.HandleFunc("/tenant/planillas/descargar-reporte", middleware.RequireAuth(planillaHandler.DescargarReportePDF))
-	mux.HandleFunc("/tenant/planillas/descargar-boletas", middleware.RequireAuth(planillaHandler.DescargarBoletasPDF))
-	mux.HandleFunc("/tenant/planillas/exportar-plame-modal", middleware.RequireAuth(planillaHandler.ExportarPlameModal))
-	mux.HandleFunc("/tenant/planillas/descargar-plame", middleware.RequireAuth(planillaHandler.DescargarPlame))
 
 	// Módulo de Reportes Generales
 	reporteService := services.NewReporteService(
@@ -432,4 +431,3 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/liquidaciones/guardar", middleware.RequireAuth(ctsHandler.GuardarLiquidacionCese))
 	mux.HandleFunc("/tenant/liquidaciones/eliminar", middleware.RequireAuth(ctsHandler.EliminarLiquidacionCese))
 }
-

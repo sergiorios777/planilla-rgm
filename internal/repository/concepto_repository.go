@@ -179,11 +179,13 @@ func (r *ContratoRepository) ObtenerPorID(id int, tenantID int) (models.Contrato
 	var fFin sql.NullString
 	var tipoContrato sql.NullString
 	var nivel sql.NullString
+	var motivoBaja sql.NullString
 	query := `
 		SELECT c.id, c.trabajador_id, c.puesto_id, 
 		       TO_CHAR(c.fecha_inicio, 'YYYY-MM-DD'), TO_CHAR(c.fecha_fin, 'YYYY-MM-DD'), c.activo,
 		       t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
-		       p.nombre AS puesto_nombre, COALESCE(c.tipo_contrato, '') AS tipo_contrato, COALESCE(c.nivel, '') AS nivel
+		       p.nombre AS puesto_nombre, COALESCE(c.tipo_contrato, '') AS tipo_contrato, COALESCE(c.nivel, '') AS nivel,
+		       c.motivo_baja
 		FROM contratos c
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
 		INNER JOIN puestos p ON c.puesto_id = p.id
@@ -191,7 +193,7 @@ func (r *ContratoRepository) ObtenerPorID(id int, tenantID int) (models.Contrato
 	`
 	err := r.db.QueryRow(query, id, tenantID).Scan(
 		&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fFin, &c.Activo,
-		&c.TrabajadorNombre, &c.PuestoNombre, &tipoContrato, &nivel,
+		&c.TrabajadorNombre, &c.PuestoNombre, &tipoContrato, &nivel, &motivoBaja,
 	)
 	if fFin.Valid {
 		c.FechaFin = &fFin.String
@@ -201,6 +203,9 @@ func (r *ContratoRepository) ObtenerPorID(id int, tenantID int) (models.Contrato
 	}
 	if nivel.Valid {
 		c.Nivel = nivel.String
+	}
+	if motivoBaja.Valid {
+		c.MotivoBaja = &motivoBaja.String
 	}
 	return c, err
 }

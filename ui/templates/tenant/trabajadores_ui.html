@@ -247,6 +247,7 @@
         <tr>
             <th>DNI/Doc</th>
             <th>Apellidos y Nombres</th>
+            <th>Edad</th>
             <th>Estado</th>
             <th>Acciones</th>
         </tr>
@@ -256,6 +257,7 @@
         <tr>
             <td><small>{{.NumeroDocumento}}</small></td>
             <td><strong>{{.ApellidoPaterno}} {{.ApellidoMaterno}}</strong><br><small>{{.Nombres}}</small></td>
+            <td>{{if gt .Edad 0}}{{.Edad}} años{{else}}-{{end}}</td>
             <td>
                 {{if .Activo}}
                 <mark
@@ -275,7 +277,7 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="4" style="text-align: center;">No hay trabajadores registrados.</td>
+            <td colspan="5" style="text-align: center;">No hay trabajadores registrados.</td>
         </tr>
         {{end}}
     </tbody>

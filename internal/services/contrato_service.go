@@ -133,3 +133,23 @@ func (s *ContratoService) AsignarPensionesAutomaticas(puestoID int, trabajadorID
 	// 4. Asignamos los conceptos al Puesto con monto 0.00
 	return s.RepoPuesto.AsignarConceptosAPuesto(puestoID, idsLocales, 0.00)
 }
+
+// TerminarContrato finaliza un contrato en el repositorio y desencadena la sincronización (limpieza) de los conceptos del puesto
+func (s *ContratoService) TerminarContrato(contratoID int, tenantID int, fechaFin string, motivo string) error {
+	// 1. Obtener el contrato para saber qué puesto debemos limpiar
+	contrato, err := s.Repo.ObtenerPorID(contratoID, tenantID)
+	if err != nil {
+		return err
+	}
+
+	// 2. Dar de baja en la base de datos
+	err = s.Repo.DarDeBaja(contratoID, tenantID, fechaFin, motivo)
+	if err != nil {
+		return err
+	}
+
+	// 3. 🧹 Limpiar los conceptos del puesto inyectando la plantilla base
+	_, err = s.SincronizarConceptosPuesto(tenantID, contrato.PuestoID)
+	
+	return err
+}

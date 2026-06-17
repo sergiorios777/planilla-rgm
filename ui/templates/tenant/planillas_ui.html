@@ -1,11 +1,17 @@
 <article>
     <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
-            📅 Apertura de Planillas Mensuales
+            <svg class="icono-menu">
+                <use href="#icono-calendar-month"></use>
+            </svg>
+            Apertura de Planillas Mensuales
         </h3>
         <button class="primary" style="width: auto; margin-bottom: 0;"
             onclick="document.getElementById('modal-nuevo-planilla').showModal()">
-            ➕ Abrir Nueva Planilla
+            <svg class="icono-menu">
+                <use href="#icono-plus"></use>
+            </svg>
+            Abrir Nueva Planilla
         </button>
     </header>
     <p><small>Abre una nueva planilla para iniciar los cálculos. Solo las planillas en estado BORRADOR pueden ser modificadas.</small></p>
@@ -20,7 +26,12 @@
     <article style="max-width: 600px; width: 95%;">
         <header>
             <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nuevo-planilla').close()"></a>
-            <h4 style="margin-bottom: 0;">➕ Abrir Nueva Planilla</h4>
+            <h4 style="margin-bottom: 0;">
+                <svg class="icono-menu">
+                    <use href="#icono-plus"></use>
+                </svg>
+                Abrir Nueva Planilla
+            </h4>
         </header>
         <div id="contenido-modal-nuevo">
             {{template "formulario_crear" .}}
@@ -35,7 +46,7 @@
         hx-on::after-request="if (event.detail.successful && !event.detail.xhr.responseText.includes('<div id=\'alerta-planilla\'')) { document.getElementById('modal-nuevo-planilla').close(); this.reset(); }">
         <div class="grid">
             <label>Año Fiscal
-                <input type="number" name="anio" value="2026" required>
+                <input type="number" name="anio" required>
             </label>
             <label>Mes
                 <select name="mes" required>
@@ -63,6 +74,25 @@
             <button type="submit" style="margin-bottom: 0; width: auto;">Generar Apertura</button>
         </div>
     </form>
+    <script>
+        (function() {
+            const now = new Date();
+            const anioInput = document.querySelector('form[hx-post="/tenant/planillas/crear"] [name="anio"]');
+            const mesSelect = document.querySelector('form[hx-post="/tenant/planillas/crear"] [name="mes"]');
+            if (anioInput) {
+                const currentYear = now.getFullYear();
+                anioInput.defaultValue = currentYear;
+                anioInput.value = currentYear;
+            }
+            if (mesSelect) {
+                const currentMonth = now.getMonth() + 1;
+                mesSelect.value = currentMonth;
+                Array.from(mesSelect.options).forEach(opt => {
+                    opt.defaultSelected = (parseInt(opt.value) === currentMonth);
+                });
+            }
+        })();
+    </script>
 </div>
 {{end}}
 
@@ -93,24 +123,49 @@
             <td>
                 <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
                     hx-post="/tenant/planillas/procesar?id={{.ID}}" hx-target="#contenido-tenant" hx-indicator="this">
-                    ⚙️ Procesar
+                    <svg class="icono-menu">
+                        <use href="#icono-manufacturing"></use>
+                    </svg>
+                    Procesar
                 </button>
                 <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
                     hx-get="/tenant/planillas/detalle/ui?id={{.ID}}" hx-target="#contenido-tenant">
-                    👁️ Ver
+                    <svg class="icono-menu">
+                        <use href="#icono-eye"></use>
+                    </svg>
+                    Ver
                 </button>
                 <a href="/tenant/planillas/descargar-reporte?id={{.ID}}" target="_blank" role="button"
                     class="outline primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">
-                    🖨️ Planilla PDF
+                    <svg class="icono-menu">
+                        <use href="#icono-folder-supervised"></use>
+                    </svg>
+                    Planilla PDF
                 </a>
                 <a href="/tenant/planillas/descargar-boletas?id={{.ID}}" target="_blank" role="button"
                     class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">
-                    🖨️ Boletas PDF
+                    <svg class="icono-menu">
+                        <use href="#icono-co-present"></use>
+                    </svg>
+                    Boletas PDF
                 </a>
                 <button class="outline primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0; display: inline-block; width: auto;"
                     hx-get="/tenant/planillas/exportar-plame-modal?id={{.ID}}" hx-target="#contenido-modal-exportar" hx-swap="innerHTML">
-                    📦 PDT/PLAME
+                    <svg class="icono-menu">
+                        <use href="#icono-compress"></use>
+                    </svg>
+                    PDT/PLAME
                 </button>
+                {{if eq .Estado "BORRADOR"}}
+                <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; border-color: #d32f2f; color: #d32f2f; margin-bottom: 0; display: inline-block; width: auto;"
+                    hx-delete="/tenant/planillas/eliminar?id={{.ID}}" hx-target="#lista-planillas"
+                    hx-confirm="¿Está seguro de que desea eliminar esta planilla? Se borrarán todos los cálculos asociados y se revertirá el estado de la asistencia.">
+                    <svg class="icono-menu">
+                        <use href="#icono-trash"></use>
+                    </svg>
+                    Eliminar
+                </button>
+                {{end}}
             </td>
         </tr>
         {{else}}
@@ -127,7 +182,12 @@
     <article style="max-width: 550px; width: 95%;">
         <header>
             <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-exportar-plame').close()"></a>
-            <h4 style="margin-bottom: 0;">📦 Exportar a PDT / PLAME</h4>
+            <h4 style="margin-bottom: 0;">
+                <svg class="icono-menu">
+                    <use href="#icono-compress"></use>
+                </svg>
+                Exportar a PDT / PLAME
+            </h4>
         </header>
         <div id="contenido-modal-exportar">
             <!-- Se carga vía HTMX -->
@@ -146,7 +206,10 @@
                 <small style="color: var(--muted-color); font-size: 0.8rem; font-family: monospace;">{{.JorFilename}}</small>
             </div>
             <a href="/tenant/planillas/descargar-plame?id={{.Planilla.ID}}&tipo=jor" target="_blank" role="button" class="outline primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; margin-bottom: 0; width: auto;">
-                📥 Descargar
+                <svg class="icono-menu">
+                    <use href="#icono-move-to-inbox"></use>
+                </svg>
+                Descargar
             </a>
         </div>
 
@@ -156,7 +219,10 @@
                 <small style="color: var(--muted-color); font-size: 0.8rem; font-family: monospace;">{{.RemFilename}}</small>
             </div>
             <a href="/tenant/planillas/descargar-plame?id={{.Planilla.ID}}&tipo=rem" target="_blank" role="button" class="outline primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; margin-bottom: 0; width: auto;">
-                📥 Descargar
+                <svg class="icono-menu">
+                    <use href="#icono-move-to-inbox"></use>
+                </svg>
+                Descargar
             </a>
         </div>
 

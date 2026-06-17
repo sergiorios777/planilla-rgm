@@ -262,9 +262,15 @@
             <input type="text" name="nivel" value="{{.Nivel}}" placeholder="Ej. F-1, Auxiliar, STA...">
         </label>
 
-        <label>
-            <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Contrato Activo
-        </label>
+        <div style="margin-bottom: 1rem;">
+            <span style="font-size: 0.95rem; font-weight: 500;">Estado del Contrato:</span>
+            {{if .Activo}}
+            <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">Vigente</mark>
+            {{else}}
+            <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">Finalizado</mark>
+            {{end}}
+            <br><small style="color: #666;">Para finalizar este contrato, use el botón "Dar de Baja" desde la lista general.</small>
+        </div>
 
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
             <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-contrato').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
@@ -310,6 +316,15 @@
                         hx-get="/tenant/contratos/editar-ui?id={{.ID}}" hx-target="#contenido-modal-editar" hx-swap="innerHTML">
                         Editar
                     </button>
+                    {{if .Activo}}
+                    <button class="outline contrast" 
+                            style="color: #d32f2f; border-color: #d32f2f; padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
+                            data-id="{{.ID}}"
+                            data-nombre="{{.TrabajadorNombre}}"
+                            onclick="abrirModalBaja(this)">
+                        🛑 Dar de Baja
+                    </button>
+                    {{end}}
                 </div>
             </td>
         </tr>
@@ -345,6 +360,41 @@
 </div>
 {{end}}
 
+<!-- Modal de Baja de Contrato -->
+<dialog id="modal-baja">
+    <article style="max-width: 600px; width: 95%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-baja').close()"></a>
+            <h4 style="margin-bottom: 0;">🛑 Finalizar Contrato</h4>
+        </header>
+        <p>Está a punto de dar de baja a <strong id="baja-trabajador-nombre"></strong>. La plaza quedará vacante y se limpiará su estructura de costos.</p>
+
+        <form hx-post="/tenant/contratos/baja" hx-swap="none">
+            <input type="hidden" name="contrato_id" id="baja-contrato-id">
+
+            <label>Motivo de la Baja
+                <select name="motivo" required>
+                    <option value="">-- Seleccione un motivo --</option>
+                    <option value="Término de Contrato">Término de Contrato</option>
+                    <option value="Renuncia Voluntaria">Renuncia Voluntaria</option>
+                    <option value="Libre Remoción">Libre Remoción (Cargo de Confianza)</option>
+                    <option value="Destitución">Destitución / Sanción</option>
+                    <option value="Fallecimiento">Fallecimiento</option>
+                </select>
+            </label>
+
+            <label>Fecha Efectiva de Cese
+                <input type="date" name="fecha_fin" required>
+            </label>
+
+            <footer style="display: flex; gap: 1rem; justify-content: end; margin-top: 1.5rem;">
+                <button type="button" class="secondary outline" onclick="document.getElementById('modal-baja').close()" style="margin-bottom: 0;">Cancelar</button>
+                <button type="submit" style="background-color: #d32f2f; border-color: #d32f2f; color: white; margin-bottom: 0;">Confirmar Baja</button>
+            </footer>
+        </form>
+    </article>
+</dialog>
+
 <script>
     // Función maestra para inicializar TomSelect en un contenedor específico
     function inicializarBuscadores(contenedor) {
@@ -370,5 +420,19 @@
     document.body.addEventListener('htmx:afterSettle', (event) => {
         // Inicializamos únicamente los elementos nuevos que acaban de caer en el target de HTMX
         inicializarBuscadores(event.detail.target);
+    });
+
+    // 3. Funciones para controlar el modal de baja de contrato
+    function abrirModalBaja(btn) {
+        const id = btn.getAttribute('data-id');
+        const nombre = btn.getAttribute('data-nombre');
+        
+        document.getElementById('baja-contrato-id').value = id;
+        document.getElementById('baja-trabajador-nombre').innerText = nombre;
+        document.getElementById('modal-baja').showModal();
+    }
+
+    document.body.addEventListener("cerrarModalBaja", function() {
+        document.getElementById('modal-baja').close();
     });
 </script>

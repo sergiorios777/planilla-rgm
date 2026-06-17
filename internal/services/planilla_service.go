@@ -19,6 +19,10 @@ func NewPlanillaService(repo *repository.PlanillaRepository) *PlanillaService {
 	return &PlanillaService{Repo: repo}
 }
 
+func (s *PlanillaService) Eliminar(planillaID int, tenantID int) error {
+	return s.Repo.Eliminar(planillaID, tenantID)
+}
+
 func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
 	// 0. Validar estado antes de comenzar
 	estado, err := s.Repo.ObtenerEstado(planillaID, tenantID)
@@ -46,12 +50,10 @@ func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
 
 	// Masivos para evitar N+1
 	var contratoIDs []int
-	var puestoIDs []int
 	for _, c := range contratos {
 		contratoIDs = append(contratoIDs, c.ID)
-		puestoIDs = append(puestoIDs, c.PuestoID)
 	}
-	mapaConceptosPuesto, _ := s.Repo.ObtenerConceptosPorPuestoMasivo(puestoIDs)
+	mapaConceptosContrato, _ := s.Repo.ObtenerConceptosPorContratoMasivo(contratoIDs)
 	// log.Println("Mapa Conceptos: ", mapaConceptosPuesto)
 	mapa5taPrevias, _ := s.Repo.ObtenerRetencionesPreviasMasivo(contratoIDs, anio, mes)
 	// log.Println("Mapa 5ta Previas: ", mapa5taPrevias)
@@ -78,7 +80,7 @@ func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
 	for _, contrato := range contratos {
 		jobs <- models.JobPlanilla{
 			Contrato:               contrato,
-			ConceptosPlaza:         mapaConceptosPuesto[contrato.PuestoID],
+			ConceptosPlaza:         mapaConceptosContrato[contrato.ID],
 			Ocurrencias:            mapaOcurrenciasGlobal[contrato.ID],
 			TasasAFP:               mapaTasasAFPMes[contrato.AfpID],
 			Retenciones5taPrevias:  mapa5taPrevias[contrato.ID],

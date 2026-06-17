@@ -244,6 +244,14 @@ func (h *ContratoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	id, _ := strconv.Atoi(r.FormValue("id"))
 	puestoID, _ := strconv.Atoi(r.FormValue("puesto_id"))
+	tenantID := obtenerTenantID(r)
+
+	// Consultar el estado activo actual del contrato en DB para no sobreescribirlo
+	contratoExistente, err := h.Repo.ObtenerPorID(id, tenantID)
+	if err != nil {
+		http.Error(w, "Error al obtener contrato existente", http.StatusInternalServerError)
+		return
+	}
 
 	fFinStr := r.FormValue("fecha_fin")
 	var fFin *string
@@ -253,11 +261,11 @@ func (h *ContratoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 
 	cActualizado := models.Contrato{
 		ID:          id,
-		TenantID:    obtenerTenantID(r),
+		TenantID:    tenantID,
 		PuestoID:    puestoID, // Lo enviamos oculto para poder liberar la plaza si se inactiva
 		FechaInicio: r.FormValue("fecha_inicio"),
 		FechaFin:    fFin,
-		Activo:      r.FormValue("activo") == "on",
+		Activo:      contratoExistente.Activo, // Conservamos el estado activo original
 		Nivel:        r.FormValue("nivel"),
 	}
 
@@ -268,6 +276,32 @@ func (h *ContratoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 
 	// Volvemos al form de creación
 	h.FormularioCrearUI(w, r)
+}
+
+// ProcesarBaja procesa la solicitud de baja de un contrato de trabajo
+func (h *ContratoHandler) ProcesarBaja(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	tenantID := obtenerTenantID(r)
+	contratoID, _ := strconv.Atoi(r.FormValue("contrato_id"))
+	fechaFin := r.FormValue("fecha_fin")
+	motivo := r.FormValue("motivo")
+
+	servicioContrato := services.ContratoService{
+		RepoPuesto:     h.PuestoRepo,
+		Repo:           h.Repo,
+		RepoTrabajador: h.TrabajadorRepo,
+	}
+
+	err := servicioContrato.TerminarContrato(contratoID, tenantID, fechaFin, motivo)
+	if err != nil {
+		log.Println("[ERROR] Al procesar baja de contrato:", err)
+		http.Error(w, "Error al procesar la baja del contrato", http.StatusInternalServerError)
+		return
+	}
+
+	// Cerrar el modal y recargar la tabla usando eventos HTMX
+	w.Header().Set("HX-Trigger", "cerrarModalBaja, recargarTablaContratos")
+	w.WriteHeader(http.StatusOK)
 }
 
 // DescargarPlantilla genera y envía un archivo Excel base para la importación de contratos
