@@ -156,6 +156,20 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/admin/conceptos-modelo/importar", middleware.RequireRole("super_admin", cm.ImportarCSV))
 	mux.HandleFunc("/admin/conceptos-modelo/plantilla-csv", middleware.RequireRole("super_admin", cm.PlantillaCSV))
 
+	// Rutas del Motor de Conceptos Calculados
+	baseRegimenRepo := repository.NewBaseRegimenRepository(db)
+	calculadoHandler := handlers.NewConceptoCalculadoHandler(baseRegimenRepo, puestoRepo, conceptoModeloService, tenantRepo)
+
+	mux.HandleFunc("/admin/ui/conceptos-calculados", middleware.RequireRole("super_admin", calculadoHandler.VistaUI))
+	mux.HandleFunc("/admin/conceptos-calculados/lista", middleware.RequireRole("super_admin", calculadoHandler.Listar))
+	mux.HandleFunc("/admin/conceptos-calculados/crear", middleware.RequireRole("super_admin", calculadoHandler.Crear))
+	mux.HandleFunc("/admin/conceptos-calculados/eliminar", middleware.RequireRole("super_admin", calculadoHandler.Eliminar))
+	mux.HandleFunc("/admin/conceptos-calculados/afectaciones", middleware.RequireRole("super_admin", calculadoHandler.VistaAfectaciones))
+	mux.HandleFunc("/admin/conceptos-calculados/afectaciones/agregar", middleware.RequireRole("super_admin", calculadoHandler.AgregarAfectacion))
+	mux.HandleFunc("/admin/conceptos-calculados/afectaciones/eliminar", middleware.RequireRole("super_admin", calculadoHandler.EliminarAfectacion))
+	mux.HandleFunc("/admin/conceptos-calculados/opciones-modelo", middleware.RequireRole("super_admin", calculadoHandler.OpcionesModelo))
+	mux.HandleFunc("/admin/conceptos-calculados/propagar", middleware.RequireRole("super_admin", calculadoHandler.Propagar))
+
 	// Rutas de AFPs y Tasas Mensuales
 	afpRepo := repository.NewAFPRepository(db)
 	afpService := services.NewAFPService(afpRepo)
@@ -209,13 +223,15 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 			if err == nil && u != nil {
 				usuarioNombre = u.Nombre
 				// Traducir rol de forma amigable
-				usuarioRol = u.Rol
-				if u.Rol == "tenant_admin" {
+				switch u.Rol {
+				case "tenant_admin":
 					usuarioRol = "Administrador"
-				} else if u.Rol == "tenant_operator" {
+				case "tenant_operator":
 					usuarioRol = "Operador"
-				} else if u.Rol == "super_admin" {
+				case "super_admin":
 					usuarioRol = "Súper Admin"
+				default:
+					usuarioRol = u.Rol
 				}
 			}
 		}
@@ -405,7 +421,7 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/reportes/ver-pdf", middleware.RequireAuth(reporteHandler.ExportarPDF))
 	mux.HandleFunc("/tenant/reportes/descargar-excel", middleware.RequireAuth(reporteHandler.ExportarExcel))
 
-	// Módulo de CTS y Liquidaciones de Cese
+	// Módulo de CTS Semestral
 	ctsRepo := repository.NewCtsRepository(db)
 	ctsService := services.NewCtsService(ctsRepo, db)
 	ctsHandler := handlers.CtsHandler{
@@ -413,6 +429,12 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 		CtsService:   ctsService,
 		ContratoRepo: contratoRepo,
 	}
+
+	// Módulo de Liquidaciones de Cese y Vacaciones
+	vacService := services.NewVacacionesService(repository.NewBaseRegimenRepository(db))
+	liquidacionRepo := repository.NewLiquidacionRepository(db)
+	liquidacionService := services.NewLiquidacionService(db, vacService)
+	liquidacionHandler := handlers.NewLiquidacionHandler(liquidacionRepo, liquidacionService, contratoRepo)
 
 	// Rutas de CTS Semestral
 	mux.HandleFunc("/tenant/ui/cts", middleware.RequireAuth(ctsHandler.CtsVistaUI))
@@ -424,10 +446,10 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/cts/eliminar", middleware.RequireAuth(ctsHandler.EliminarPlanillaCts))
 
 	// Rutas de Liquidaciones de Cese
-	mux.HandleFunc("/tenant/ui/liquidaciones", middleware.RequireAuth(ctsHandler.LiquidacionesVistaUI))
-	mux.HandleFunc("/tenant/liquidaciones/lista", middleware.RequireAuth(ctsHandler.ListarLiquidacionesCese))
-	mux.HandleFunc("/tenant/liquidaciones/formulario-crear", middleware.RequireAuth(ctsHandler.FormularioCrearUI))
-	mux.HandleFunc("/tenant/liquidaciones/calcular", middleware.RequireAuth(ctsHandler.CalcularLiquidacionCese))
-	mux.HandleFunc("/tenant/liquidaciones/guardar", middleware.RequireAuth(ctsHandler.GuardarLiquidacionCese))
-	mux.HandleFunc("/tenant/liquidaciones/eliminar", middleware.RequireAuth(ctsHandler.EliminarLiquidacionCese))
+	mux.HandleFunc("/tenant/ui/liquidaciones", middleware.RequireAuth(liquidacionHandler.LiquidacionesVistaUI))
+	mux.HandleFunc("/tenant/liquidaciones/lista", middleware.RequireAuth(liquidacionHandler.ListarLiquidacionesCese))
+	mux.HandleFunc("/tenant/liquidaciones/formulario-crear", middleware.RequireAuth(liquidacionHandler.FormularioCrearUI))
+	mux.HandleFunc("/tenant/liquidaciones/calcular", middleware.RequireAuth(liquidacionHandler.CalcularLiquidacionCese))
+	mux.HandleFunc("/tenant/liquidaciones/guardar", middleware.RequireAuth(liquidacionHandler.GuardarLiquidacionCese))
+	mux.HandleFunc("/tenant/liquidaciones/eliminar", middleware.RequireAuth(liquidacionHandler.EliminarLiquidacionCese))
 }

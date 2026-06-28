@@ -1,0 +1,142 @@
+CONTEXTO:
+Estoy desarrollando una aplicación web (Go en el backend, HTMX y Pico CSS en el frontend) tipo SaaS, orientada a municipalidades, está avanzado en casi todos sus módulos: trabajadores, puestos, organigrama, contratos, regímenes laborales, insistencias, conceptos modelo (ingresos, retenciones y aportes), conceptos tenant (espejo de conceptos modelo pero para los tenants con posibilidad de personalizar), conceptos maestros de sunat (para vincularlos con los conceptos modelo y tenant).
+
+CONCEPTOS CALCULADOS:
+En los conceptos tenant para los tipo retenciones (por ejemplo afp, onp, impuesto renta de cuarta y renta de quinta), aportes (essalud, scrt), ingresos (compensación de vacaciones acumuludas y truncas, CTS, gratificaciones, etc.) se requiere realizar cálculos basados en otros conceptos, por ejemplo, CTS se basa en remuneración principal, gratificaciones anteriores, etc; es decir, los conceptos calculados requieren la identificación de sus variables de cálculo, las variables de cálculo está conformado por conceptos específicos que varían por regimen laboral, y a veces diferentes cálculos dentro del mismo régimen requieren variables de cálculo similares pero que varían por uno o dos conceptos.
+
+ENFOQUE DE CALCULO ACTUAL:
+En la primera parte del desarrollo utilizamos una tabla intermedia que relacionaba los conceptos maestros con ella misma, según las definiciones de la SUNAT a nivel de sus conceptos maestros. Los conceptos modelo y tenant tienen un campo relacionado a la tabla conceptos maestros. Sin embargo, este enfoque no tiene en cuenta los regímenes laborales. Aunque utilizamos el harcodeo para los códigos maestros en estructuras swich case, todavía sirven para algunos cálculos.
+
+En la segunda parte del desarrollo utilizamos mapas que vinculaban los regímenes laborales con claves para las variables de cálculo y valores que se refieren a los códigos maestros SUNAT, es decir, una variante del primer enfoque.
+
+EL PROBLEMA PERCIBIDO:
+Sin embargo, percibo como una limitación que no existe un posibilidad real de que el usuario (tenant/municipalidad) pueda seleccionar los conceptos que pueden ser afectados para los conceptos calculados, como son los beneficios sociales en sus diferentes regímenes, como por ejemplo: CTS, Gratificación, bonificación extraordinaria, compensación vacacional, etc; los impuestos de renta de cuarta y quinta, essalud, etc.
+
+Entiendo que mantener las cosas simples en una máxima que estoy dispuesto a cumplir siempre, pero, la variabilidad de casos y la dinámica de las planillas de las municipalidades es muy amplia y se requieren recursos que permitan personalizar las afectaciones o bases de cálculo, si los modelos proporcionados no se adaptan en algunos casos.
+
+LA PROPUESTA:
+Así, quiero iniciar otro enfoque para los conceptos calculados (empezando con los beneficios sociales):
+- Relacionar los conceptos modelo y del tenant (espejo) con una lista inequívoca de conceptos que son 'base de cálculo' para un beneficio en particular.
+- Esta relación inequívoca debe relacionar el beneficio social (por ejemplo vacaciones) con el régimen laboral y por cada régimen laboral con los conceptos del tenant existentes. Se asume que los conceptos del tenant son heredados de los conceptos modelo globales. Por ejemplo:
+
+conceptos_calculados_por_regimen
+
+| id | concepto | tipo | regimen |
+|---|---|---|---|
+| 1 | Vacaciones No Gozadas | beneficio social | DL 276 |
+| 2 | Vacaciones Truncas | beneficio social | DL 276 |
+
+conceptos_base_por_regimen
+
+| id | concepto_calculado_id | variable_calculo | conceto_tenant_id | concepto_modelo_id |
+|---|---|---|---|---|
+| 1 | 1 | remuneracion_computable | 118 | 119 |
+| 2 | 1 | remuneracion_computable | 117 | 114 |
+| 3 | 2 | remuneracion_computable | 119 | 122 |
+| 4 | 2 | remuneracion_computable | 120 | 123 |
+
+De esta manera no existe ambigüedad ni búsquedas complicadas para identificar cada variable de cálculo.
+
+Por otro lado, entiendo que si la forma de cálculo se modifica se deberán modificar las UI, la calculadora y los nombres internos. Sin embargo, el cambios en los cálculos son muy poco frecuentes y eso podría ser una pequeña ventaja.
+
+Actualmente, la estructura de las tablas de los conceptos modelo y tenant son las siguientes:
+
+planilla_rgm=# \d conceptos_modelo
+                                                    Tabla «public.conceptos_modelo»
+           Columna           |            Tipo             | Ordenamiento | Nulable  |                   Por omisión
+-----------------------------+-----------------------------+--------------+----------+-------------------------------------------------
+ id                          | integer                     |              | not null | nextval('conceptos_modelo_id_seq'::regclass)
+ concepto_id                 | integer                     |              | not null |
+ nombre_personalizado        | character varying(150)      |              | not null |
+ frecuencia_meses            | character varying(50)       |              |          | '1,2,3,4,5,6,7,8,9,10,11,12'::character varying
+ clasificador_id             | integer                     |              |          |
+ es_extraordinario           | boolean                     |              |          | false
+ requiere_monto              | boolean                     |              |          | false
+ created_at                  | timestamp without time zone |              |          | CURRENT_TIMESTAMP
+ updated_at                  | timestamp with time zone    |              |          | CURRENT_TIMESTAMP
+ es_pensionable              | boolean                     |              |          | false
+ es_remunerativa             | boolean                     |              |          | false
+ es_base_cts                 | boolean                     |              |          | false
+ es_base_beneficios_sociales | boolean                     |              |          | false
+ es_ocasional                | boolean                     |              | not null | false
+ es_afecto_cargas_sociales   | boolean                     |              | not null | false
+Índices:
+    "conceptos_modelo_pkey" PRIMARY KEY, btree (id)
+    "unique_nombre_modelo" UNIQUE CONSTRAINT, btree (nombre_personalizado)
+Restricciones de llave foránea:
+    "conceptos_modelo_clasificador_id_fkey" FOREIGN KEY (clasificador_id) REFERENCES clasificadores_mef(id) ON DELETE SET NULL
+    "conceptos_modelo_concepto_id_fkey" FOREIGN KEY (concepto_id) REFERENCES conceptos_maestros(id)
+Referenciada por:
+    TABLE "conceptos_tenant" CONSTRAINT "conceptos_tenant_modelo_id_fkey" FOREIGN KEY (modelo_id) REFERENCES conceptos_modelo(id) ON DELETE CASCADE
+    TABLE "regimen_concepto_modelo" CONSTRAINT "regimen_concepto_modelo_concepto_modelo_id_fkey" FOREIGN KEY (concepto_modelo_id) REFERENCES conceptos_modelo(id) ON DELETE CASCADE
+
+planilla_rgm=# \d conceptos_tenant
+                                                    Tabla «public.conceptos_tenant»
+           Columna           |            Tipo             | Ordenamiento | Nulable  |                   Por omisión
+-----------------------------+-----------------------------+--------------+----------+-------------------------------------------------
+ id                          | integer                     |              | not null | nextval('conceptos_tenant_id_seq'::regclass)
+ tenant_id                   | integer                     |              | not null |
+ concepto_id                 | integer                     |              | not null |
+ nombre_personalizado        | character varying(150)      |              | not null |
+ frecuencia_meses            | character varying(50)       |              |          | '1,2,3,4,5,6,7,8,9,10,11,12'::character varying
+ activo                      | boolean                     |              |          | true
+ clasificador_id             | integer                     |              |          |
+ es_extraordinario           | boolean                     |              |          | false
+ created_at                  | timestamp without time zone |              |          | CURRENT_TIMESTAMP
+ updated_at                  | timestamp without time zone |              |          | CURRENT_TIMESTAMP
+ requiere_monto              | boolean                     |              |          | false
+ modelo_id                   | integer                     |              |          |
+ es_pensionable              | boolean                     |              |          | false
+ es_remunerativa             | boolean                     |              |          | false
+ es_base_cts                 | boolean                     |              |          | false
+ es_base_beneficios_sociales | boolean                     |              |          | false
+ es_ocasional                | boolean                     |              | not null | false
+ es_afecto_cargas_sociales   | boolean                     |              | not null | false
+Índices:
+    "conceptos_tenant_pkey" PRIMARY KEY, btree (id)
+    "idx_conceptos_tenant_tid" btree (tenant_id)
+    "unique_tenant_modelo_id" UNIQUE CONSTRAINT, btree (tenant_id, modelo_id)
+Restricciones de llave foránea:
+    "conceptos_tenant_clasificador_id_fkey" FOREIGN KEY (clasificador_id) REFERENCES clasificadores_mef(id) ON DELETE SET NULL
+    "conceptos_tenant_concepto_id_fkey" FOREIGN KEY (concepto_id) REFERENCES conceptos_maestros(id)
+    "conceptos_tenant_modelo_id_fkey" FOREIGN KEY (modelo_id) REFERENCES conceptos_modelo(id) ON DELETE CASCADE
+    "conceptos_tenant_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+Referenciada por:
+    TABLE "contrato_conceptos_snapshot" CONSTRAINT "contrato_conceptos_snapshot_concepto_tenant_id_fkey" FOREIGN KEY (concepto_tenant_id) REFERENCES conceptos_tenant(id) ON DELETE CASCADE
+    TABLE "planilla_conceptos" CONSTRAINT "planilla_conceptos_concepto_tenant_id_fkey" FOREIGN KEY (concepto_tenant_id) REFERENCES conceptos_tenant(id) ON DELETE SET NULL
+    TABLE "puesto_conceptos" CONSTRAINT "puesto_conceptos_concepto_tenant_id_fkey" FOREIGN KEY (concepto_tenant_id) REFERENCES conceptos_tenant(id) ON DELETE CASCADE
+    TABLE "regimen_concepto_tenant" CONSTRAINT "regimen_concepto_tenant_concepto_tenant_id_fkey" FOREIGN KEY (concepto_tenant_id) REFERENCES conceptos_tenant(id) ON DELETE CASCADE
+
+Donde 'es_extraordinario' se refiere a un ingreso (o reteción) surgida en el ejercicio fiscal no previsto originalmente. y 'es_ocasional' se refiere a conceptos de pago no regulares, como por ejemplo pago de compensación vacacional.
+
+Una propuestas de las tablas auxiliares necesarias son:
+
+´´´sql
+-- 1. Catálogo de Conceptos Calculados / Fórmulas (SaaS Global)
+-- Define qué conceptos de salida calcula el sistema y qué variables internas expone para las fórmulas.
+CREATE TABLE conceptos_calculados (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(150) NOT NULL,              -- Ej: "Vacaciones Truncas", "CTS - DL 728"
+    tipo VARCHAR(50) NOT NULL,                 -- 'BENEFICIO_SOCIAL', 'IMPUESTO', 'APORTE'
+    variable_interna VARCHAR(50) NOT NULL,     -- Ej: "VAC_TRUNCAS", "CTS", "GRATI" (Para mapear en Go)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Matriz de Afectaciones e Inyecciones (Data-Driven Engine)
+-- La tabla maestra que elimina el hardcoding de una vez por todas.
+CREATE TABLE conceptos_base_regimen (
+    id SERIAL PRIMARY KEY,
+    concepto_calculado_id INT REFERENCES conceptos_calculados(id) ON DELETE CASCADE,
+    regimen_id INT REFERENCES regimentes_laborales(id) ON DELETE CASCADE,
+    variable_calculo VARCHAR(50) NOT NULL,     -- Ej: "REMUNERACION_COMPUTABLE", "SEXTO_GRATI"
+    
+    -- El puente de herencia doble del SaaS:
+    concepto_modelo_id INT REFERENCES conceptos_modelo(id) ON DELETE CASCADE, -- Visión Admin Global
+    concepto_tenant_id INT REFERENCES conceptos_tenant(id) ON DELETE CASCADE  -- Visión Local Tenant (Espejo)
+);
+
+-- Índice de rendimiento para el motor de cálculos
+CREATE INDEX idx_base_regimen_calculo ON conceptos_base_regimen(regimen_id, concepto_calculado_id);
+´´´
+
+Por favor, analiza esta propuesta y dime tu opinión sobre su viabilidad y conveniencia.

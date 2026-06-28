@@ -13,6 +13,7 @@ import (
 
 	"planilla-rgm/internal/calculadoras"
 	"planilla-rgm/internal/config"
+	"planilla-rgm/internal/helpers"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
 
@@ -20,14 +21,16 @@ import (
 )
 
 type CtsService struct {
-	Repo *repository.CtsRepository
-	db   *sql.DB
+	Repo            *repository.CtsRepository
+	db              *sql.DB
+	BaseRegimenRepo *repository.BaseRegimenRepository
 }
 
 func NewCtsService(repo *repository.CtsRepository, db *sql.DB) *CtsService {
 	return &CtsService{
-		Repo: repo,
-		db:   db,
+		Repo:            repo,
+		db:              db,
+		BaseRegimenRepo: repository.NewBaseRegimenRepository(db),
 	}
 }
 
@@ -131,7 +134,7 @@ func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string
 		}
 
 		// Calcular meses laborados en el semestre
-		mesesLaborados := calcularMesesInterseccion(c.FechaInicio, c.FechaFin, desde, hasta)
+		mesesLaborados := helpers.CalcularMesesInterseccion(c.FechaInicio, c.FechaFin, desde, hasta)
 
 		// Obtener inasistencias
 		faltas, _ := s.Repo.ObtenerInasistenciasSemestre(c.ID, desde, hasta)
@@ -236,139 +239,4 @@ func (s *CtsService) ProcesarExcelGratificaciones(planillaCtsID int, file io.Rea
 	return procesados, nil
 }
 
-// CalcularLiquidacion realiza el cálculo en memoria de la liquidación de cese (CTS)
-func (s *CtsService) CalcularLiquidacion(contratoID int, fechaInicio, fechaCese time.Time, motivo string) (*models.LiquidacionCese, error) {
-	// 1. Obtener datos del contrato y puesto
-	var l models.LiquidacionCese
-	l.ContratoID = contratoID
-	l.FechaInicioComputable = fechaInicio
-	l.FechaCese = fechaCese
-	l.Motivo = motivo
-	l.Estado = "BORRADOR"
 
-	// Traer información del trabajador y del puesto
-	query := `
-		SELECT c.tenant_id, rl.codigo AS regimen, c.puesto_id,
-		       t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
-		       t.numero_documento, p.nombre AS puesto_nombre, COALESCE(p.sueldo_presupuestado, 0)
-		FROM contratos c
-		INNER JOIN trabajadores t ON c.trabajador_id = t.id
-		INNER JOIN puestos p ON c.puesto_id = p.id
-		INNER JOIN regimenes_laborales rl ON p.regimen_id = rl.id
-		WHERE c.id = $1
-	`
-	var sueldo float64
-	var puestoID int
-	err := s.db.QueryRow(query, contratoID).Scan(
-		&l.TenantID, &l.Regimen, &puestoID,
-		&l.TrabajadorNombre, &l.TrabajadorDocumento, &l.PuestoNombre, &sueldo,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error al obtener datos del contrato para la liquidación: %w", err)
-	}
-
-	// 2. Calcular años y meses de servicios
-	anos, meses := s.calcularMesesYAnosServicio(fechaInicio, fechaCese)
-	l.AnosServicios = anos
-	l.MesesServicios = meses
-	mesesTotales := anos*12 + meses
-
-	// 3. Determinar Remuneración Computable según Régimen
-	switch l.Regimen {
-	case "276":
-		// DL 276: Conceptos que perciba permanentemente 12 meses del año al momento del cese
-		queryConceptos276 := `
-			SELECT COALESCE(SUM(pc.monto), 0)
-			FROM puesto_conceptos pc
-			INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
-			WHERE pc.puesto_id = $1 AND pc.activo = true AND ct.activo = true
-			  AND ct.frecuencia_meses = '1,2,3,4,5,6,7,8,9,10,11,12'
-			  AND ct.es_extraordinario = false
-		`
-		var remTotal float64
-		s.db.QueryRow(queryConceptos276, puestoID).Scan(&remTotal)
-		if remTotal <= 0 {
-			remTotal = sueldo // Salva por si no tiene asignado nada en puesto_conceptos
-		}
-		l.RemuneracionComputable = remTotal
-		l.MontoCts = calculadoras.CalcularCtsDL276(remTotal, mesesTotales)
-
-	case "30057":
-		// Ley SERVIR: Promedio de los últimos 36 meses efectivamente laborados
-		querySERVIR := `
-			SELECT COALESCE(AVG(pd.total_ingresos), 0)
-			FROM planilla_detalles pd
-			INNER JOIN planillas p ON pd.planilla_id = p.id
-			WHERE pd.contrato_id = $1
-		`
-		var prom36 float64
-		s.db.QueryRow(querySERVIR, contratoID).Scan(&prom36)
-		if prom36 <= 0 {
-			prom36 = sueldo // Por defecto
-		}
-		l.RemuneracionComputable = prom36
-		l.MontoCts = calculadoras.CalcularCtsLey30057(prom36, mesesTotales)
-
-	default:
-		// DL 728 / CAS u otros
-		l.RemuneracionComputable = sueldo
-		l.MontoCts = (sueldo / 12.0) * float64(mesesTotales)
-	}
-
-	l.TotalLiquidacion = l.MontoCts + l.MontoVacacionesTruncas + l.MontoGratiTrunca
-	return &l, nil
-}
-
-// Helpers locales
-
-func (s *CtsService) calcularMesesYAnosServicio(start, end time.Time) (int, int) {
-	if start.After(end) {
-		return 0, 0
-	}
-	years := end.Year() - start.Year()
-	months := int(end.Month() - start.Month())
-	days := end.Day() - start.Day()
-
-	if days < 0 {
-		months--
-	}
-	totalMonths := years*12 + months
-	if totalMonths < 0 {
-		totalMonths = 0
-	}
-	return totalMonths / 12, totalMonths % 12
-}
-
-func calcularMesesInterseccion(start time.Time, end *time.Time, desde, hasta time.Time) int {
-	s := start
-	var e time.Time
-	if end == nil {
-		e = hasta
-	} else {
-		e = *end
-	}
-
-	if s.Before(desde) {
-		s = desde
-	}
-	if e.After(hasta) {
-		e = hasta
-	}
-	if s.After(e) {
-		return 0
-	}
-
-	months := 0
-	curr := time.Date(s.Year(), s.Month(), 1, 0, 0, 0, 0, time.UTC)
-	for curr.Before(e) || curr.Equal(e) {
-		mStart := curr
-		mEnd := time.Date(curr.Year(), curr.Month()+1, 1, 0, 0, 0, 0, time.UTC).Add(-time.Second)
-
-		// Si el rango de labores [s, e] cubre todo el mes de calendario, lo consideramos completo
-		if (s.Before(mStart) || s.Equal(mStart)) && (e.After(mEnd) || e.Equal(mEnd)) {
-			months++
-		}
-		curr = curr.AddDate(0, 1, 0)
-	}
-	return months
-}

@@ -6,16 +6,16 @@
             </svg>
             Liquidaciones de Cese (Beneficios Sociales)
         </h3>
-        <button class="primary" style="width: auto; margin-bottom: 0;"
-            hx-get="/tenant/liquidaciones/formulario-crear" hx-target="#contenido-modal-nueva-liq"
-            onclick="document.getElementById('modal-nueva-liq').showModal()">
+        <button class="primary" style="width: auto; margin-bottom: 0;" hx-get="/tenant/liquidaciones/formulario-crear"
+            hx-target="#contenido-modal-nueva-liq" onclick="document.getElementById('modal-nueva-liq').showModal()">
             <svg class="icono-menu">
                 <use href="#icono-plus"></use>
             </svg>
             Nueva Liquidación de Cese
         </button>
     </header>
-    <p><small>Calcula y registra los beneficios sociales (CTS, gratificaciones y vacaciones truncas) del personal al momento de cese o desvinculación laboral.</small></p>
+    <p><small>Calcula y registra los beneficios sociales (CTS, gratificaciones y vacaciones truncas) del personal al
+            momento de cese o desvinculación laboral.</small></p>
 
     <div id="lista-liquidaciones" hx-get="/tenant/liquidaciones/lista" hx-trigger="load">
         <p aria-busy="true">Cargando historial de liquidaciones de cese...</p>
@@ -26,7 +26,8 @@
 <dialog id="modal-nueva-liq">
     <article style="max-width: 700px; width: 95%;">
         <header>
-            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nueva-liq').close()"></a>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-nueva-liq').close()"></a>
             <h4 style="margin-bottom: 0;">
                 <svg class="icono-menu">
                     <use href="#icono-plus"></use>
@@ -43,14 +44,16 @@
 {{define "formulario_crear_liq"}}
 <div style="padding-top: 1rem;">
     <div id="alerta-liq"></div>
-    <form id="form-liquidacion" hx-post="/tenant/liquidaciones/guardar" hx-target="#lista-liquidaciones" hx-swap="innerHTML"
+    <form id="form-liquidacion" hx-post="/tenant/liquidaciones/guardar" hx-target="#lista-liquidaciones"
+        hx-swap="innerHTML"
         hx-on::after-request="if (event.detail.successful && !event.detail.xhr.responseText.includes('<div id=\'alerta-liq\'')) { document.getElementById('modal-nueva-liq').close(); this.reset(); }">
-        
+
         <label>Colaborador / Contrato
-            <select name="contrato_id" required>
+            <select name="contrato_id" class="select-con-buscador" required>
                 <option value="" disabled selected>Seleccione un colaborador...</option>
                 {{range .}}
-                <option value="{{.ID}}">{{.TrabajadorNombre}} - {{.PuestoNombre}} ({{.RegimenDesc}})</option>
+                <option value="{{.ID}}" data-motivo="{{if .MotivoBaja}}{{.MotivoBaja}}{{end}}">{{.TrabajadorNombre}} -
+                    {{.PuestoNombre}} ({{.RegimenDesc}})</option>
                 {{end}}
             </select>
         </label>
@@ -64,30 +67,64 @@
             </label>
         </div>
 
-        <div class="grid">
+        <div class="grid" style="grid-template-columns: 2fr 1fr;">
+            <fieldset>
+                <legend><strong>Cálculos / Conceptos a Calcular</strong></legend>
+                <label>
+                    <input type="checkbox" name="calcular_cts" checked>
+                    Compensación por Tiempo de Servicios (CTS) truncas
+                </label>
+                <label>
+                    <input type="checkbox" name="calcular_grati_trunca" checked>
+                    Gratificación trunca
+                </label>
+                <label>
+                    <input type="checkbox" name="calcular_vacaciones" checked>
+                    Vacaciones (acumuladas y truncas)
+                </label>
+            </fieldset>
+
             <label>Motivo de Cese
-                <select name="motivo" required>
-                    <option value="LIBRE_REMOCION">Libre Remoción</option>
-                    <option value="RENUNCIA">Renuncia Voluntaria</option>
-                    <option value="DESTITUCION">Destitución</option>
-                    <option value="MUTUO_ACUERDO">Mutuo Acuerdo</option>
-                    <option value="JUBILACION">Cese por Límite de Edad (Jubilación)</option>
-                    <option value="VENCIMIENTO_CONTRATO">Vencimiento de Contrato</option>
-                </select>
-            </label>
-            <label>Vacaciones Truncas (S/.)
-                <input type="number" step="0.01" name="vacaciones_truncas" value="0.00" min="0">
-            </label>
-            <label>Gratificación Trunca (S/.)
-                <input type="number" step="0.01" name="gratificacion_trunca" value="0.00" min="0">
+                <input type="text" name="motivo" readonly required
+                    placeholder="Seleccione un colaborador para ver el motivo">
             </label>
         </div>
 
+        <fieldset style="background-color: #fffde7; border: 1px dashed #fbc02d; border-radius: 6px; padding: 1rem; margin-bottom: 1.5rem;">
+            <legend style="color: #f57f17; font-weight: bold; font-size: 0.9rem; padding: 0 0.5rem;">Vacaciones No Gozadas (Periodos Pendientes)</legend>
+            <div class="grid">
+                <label style="font-size: 0.85rem;">Periodos Vencidos (Indemnizables DL 728)
+                    <input type="number" name="periodos_vencidos_vacaciones" value="0" min="0" step="1" style="height: 35px; font-size: 0.85rem;">
+                </label>
+                <label style="font-size: 0.85rem;">Periodos No Vencidos (Pendientes Simples)
+                    <input type="number" name="periodos_no_vencidos_vacaciones" value="0" min="0" step="1" style="height: 35px; font-size: 0.85rem;">
+                </label>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend><strong>Otros Conceptos de Liquidación</strong></legend>
+            <div class="grid" style="grid-template-columns: 2fr 1fr;">
+                <label>Concepto Adicional 1
+                    <input type="text" name="nombre_concepto_liquidacion_1" placeholder="Nombre del concepto">
+                </label>
+                <label>Monto Adicional 1 (S/.)
+                    <input type="number" step="0.01" name="monto_concepto_liquidacion_1" value="0.00" min="0">
+                </label>
+            </div>
+            <div class="grid" style="grid-template-columns: 2fr 1fr;">
+                <label>Concepto Adicional 2
+                    <input type="text" name="nombre_concepto_liquidacion_2" placeholder="Nombre del concepto">
+                </label>
+                <label>Monto Adicional 2 (S/.)
+                    <input type="number" step="0.01" name="monto_concepto_liquidacion_2" value="0.00" min="0">
+                </label>
+            </div>
+        </fieldset>
+
         <div style="text-align: center; margin: 1.5rem 0;">
-            <button type="button" class="outline" 
-                hx-post="/tenant/liquidaciones/calcular" 
-                hx-target="#resultado-previa-liq"
-                hx-include="#form-liquidacion">
+            <button type="button" class="outline" hx-post="/tenant/liquidaciones/calcular"
+                hx-target="#resultado-previa-liq" hx-include="#form-liquidacion">
                 <svg class="icono-menu">
                     <use href="#icono-home-storage-gear"></use>
                 </svg>
@@ -97,26 +134,31 @@
 
         <!-- Resultados de Cálculo en tiempo real -->
         <div id="resultado-previa-liq">
-            <p style="color: #666; text-align: center; font-style: italic;"><small>Ingresa los campos y haz clic en 'Calcular Vista Previa' para visualizar el detalle.</small></p>
+            <p style="color: #666; text-align: center; font-style: italic;"><small>Ingresa los campos y haz clic en
+                    'Calcular Vista Previa' para visualizar el detalle.</small></p>
         </div>
 
-        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end; border-top: 1px solid #eee; padding-top: 1rem;">
-            <button type="button" class="secondary outline" onclick="document.getElementById('modal-nueva-liq').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
-            <button type="submit" id="btn-guardar-liq" style="margin-bottom: 0; width: auto;" disabled>Confirmar y Registrar Liquidación</button>
+        <div
+            style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end; border-top: 1px solid #eee; padding-top: 1rem;">
+            <button type="button" class="secondary outline" onclick="document.getElementById('modal-nueva-liq').close()"
+                style="margin-bottom: 0; width: auto;">Cancelar</button>
+            <button type="submit" id="btn-guardar-liq" style="margin-bottom: 0; width: auto;" disabled>Confirmar y
+                Registrar Liquidación</button>
         </div>
     </form>
 </div>
 {{end}}
 
 {{define "vista_previa_liquidacion"}}
-<div style="padding: 1.2rem; background-color: #f1f8e9; border: 1px solid #c5e1a5; border-radius: 8px; margin-bottom: 1rem;">
+<div
+    style="padding: 1.2rem; background-color: #f1f8e9; border: 1px solid #c5e1a5; border-radius: 8px; margin-bottom: 1rem;">
     <h5 style="margin-top: 0; color: #33691e; display: flex; align-items: center; gap: 0.5rem;">
         <svg class="icono-menu">
             <use href="#icono-mystery"></use>
         </svg>
         Vista Previa de Liquidación
     </h5>
-    
+
     <div class="grid" style="font-size: 0.9rem; margin-bottom: 1rem;">
         <div>
             <strong>Trabajador:</strong> {{.TrabajadorNombre}}<br>
@@ -137,16 +179,25 @@
                 <td style="text-align: right; width: 150px;">S/ {{printf "%.2f" .MontoCts}}</td>
             </tr>
             <tr>
-                <td><strong>Monto Vacaciones Truncas (Manual):</strong></td>
+                <td><strong>Monto Vacaciones Truncas:</strong></td>
                 <td style="text-align: right;">S/ {{printf "%.2f" .MontoVacacionesTruncas}}</td>
             </tr>
             <tr>
-                <td><strong>Monto Gratificación Trunca (Manual):</strong></td>
+                <td><strong>Monto Vacaciones No Gozadas:</strong></td>
+                <td style="text-align: right;">S/ {{printf "%.2f" .MontoVacacionesNoGozadas}}</td>
+            </tr>
+            <tr>
+                <td><strong>Monto Indemnización Vacacional:</strong></td>
+                <td style="text-align: right;">S/ {{printf "%.2f" .MontoIndemnizacionVacacional}}</td>
+            </tr>
+            <tr>
+                <td><strong>Monto Gratificación Trunca:</strong></td>
                 <td style="text-align: right;">S/ {{printf "%.2f" .MontoGratiTrunca}}</td>
             </tr>
             <tr style="border-top: 2px solid #ccc; background-color: #f9f9f9; font-size: 1rem;">
                 <td><strong>Total Beneficios Sociales a Liquidar:</strong></td>
-                <td style="text-align: right; color: #2e7d32;"><strong>S/ {{printf "%.2f" .TotalLiquidacion}}</strong></td>
+                <td style="text-align: right; color: #2e7d32;"><strong>S/ {{printf "%.2f" .TotalLiquidacion}}</strong>
+                </td>
             </tr>
         </tbody>
     </table>
@@ -201,8 +252,49 @@
 {{end}}
 
 <script>
+    // Función maestra para inicializar TomSelect en un contenedor específico
+    function inicializarBuscadores(contenedor) {
+        if (!contenedor) return;
+        contenedor.querySelectorAll('.select-con-buscador').forEach((el) => {
+            // Evitamos duplicar la inicialización si el elemento ya tiene TomSelect activo
+            if (!el.tomselect) {
+                new TomSelect(el, {
+                    create: false,
+                    maxItems: 1,
+                    plugins: ['dropdown_input'] // Asegura una barra de entrada limpia
+                });
+            }
+        });
+    }
+
+    // 1. Ejecutar en la carga inicial de la página
+    document.addEventListener('DOMContentLoaded', () => {
+        inicializarBuscadores(document.body);
+    });
+
+    // 2. ¡MAGIA HTMX!: Ejecutar automáticamente cada vez que HTMX inyecte o reemplace HTML
+    document.body.addEventListener('htmx:afterSettle', (event) => {
+        // Inicializamos únicamente los elementos nuevos que acaban de caer en el target de HTMX
+        inicializarBuscadores(event.detail.target);
+    });
+
     document.body.addEventListener("cerrarModalLiq", function () {
         const modal = document.getElementById('modal-nueva-liq');
         if (modal && modal.open) modal.close();
+    });
+
+    // 3. Auto-llenar Motivo de Cese basado en el contrato seleccionado
+    document.body.addEventListener('change', (event) => {
+        if (event.target && event.target.name === 'contrato_id') {
+            const select = event.target;
+            const selectedOption = select.options[select.selectedIndex];
+            if (selectedOption) {
+                const motivo = selectedOption.getAttribute('data-motivo') || '';
+                const motivoInput = select.closest('form').querySelector('input[name="motivo"]');
+                if (motivoInput) {
+                    motivoInput.value = motivo;
+                }
+            }
+        }
     });
 </script>

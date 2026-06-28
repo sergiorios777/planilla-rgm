@@ -203,3 +203,19 @@ func convertLatin1ToUTF8(latin1 []byte) []byte {
 	}
 	return []byte(string(runes))
 }
+
+// SembrarBaseRegimenTenant copia la configuración global de cálculo hacia el Tenant, resolviendo los IDs espejo.
+// Utiliza ON CONFLICT DO NOTHING para respetar los cambios manuales y el flag 'activo' del tenant.
+func (s *ConceptoModeloService) SembrarBaseRegimenTenant(tenantID int) error {
+	query := `
+		INSERT INTO base_regimen_tenant (tenant_id, concepto_calculado_id, regimen_id, concepto_tenant_id, variable_calculo)
+		SELECT $1, brd.concepto_calculado_id, brd.regimen_id, ct.id, brd.variable_calculo
+		FROM base_regimen_default brd
+		INNER JOIN conceptos_tenant ct ON brd.concepto_modelo_id = ct.modelo_id
+		WHERE ct.tenant_id = $1
+		ON CONFLICT (tenant_id, concepto_calculado_id, regimen_id, concepto_tenant_id, variable_calculo) DO NOTHING;
+	`
+	_, err := s.Db.Exec(query, tenantID)
+	return err
+}
+

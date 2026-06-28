@@ -21,6 +21,10 @@ var ConceptosBaseGratificaciones = map[string]map[string][]string{
 		"gratificacion":               {"0406", "GRATI_DIC_DL_728", "GRATI_JUL_DL_728"},
 		"bonificacion_extraordinaria": {"0312", "BON_EXTR_DIC_DL_728", "BON_EXTR_JUL_DL_728"},
 	},
+	"DL 1057": {
+		"remuneracion":  {"2039"},
+		"gratificacion": {"GRATI_DIC_DL_1057", "GRATI_JUL_DL_1057"},
+	},
 }
 
 // ConceptosBasePorRegimen define la "Plantilla" estándar usando los Códigos SUNAT

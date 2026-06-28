@@ -181,3 +181,77 @@ func TestImportarDesdeCSV(t *testing.T) {
 		t.Errorf("El concepto modelo con caracteres Latin-1 no fue convertido y guardado correctamente en UTF-8. Obtenido: %s, err: %v", nombreGuardado, err)
 	}
 }
+
+func TestSembrarBaseRegimenTenant(t *testing.T) {
+	_ = godotenv.Load("../../.env")
+
+	db, err := config.InitDB()
+	if err != nil {
+		t.Skip("Saltando prueba de integración: Base de datos no disponible o .env faltante")
+		return
+	}
+	defer db.Close()
+
+	// 1. Limpieza de datos
+	limpiar := func() {
+		_, _ = db.Exec("DELETE FROM base_regimen_tenant WHERE tenant_id = 9999")
+		_, _ = db.Exec("DELETE FROM base_regimen_default WHERE variable_calculo = 'TEST_VAR'")
+		_, _ = db.Exec("DELETE FROM conceptos_tenant WHERE tenant_id = 9999")
+		_, _ = db.Exec("DELETE FROM conceptos_modelo WHERE nombre_personalizado = 'Modelo Test Sembrar'")
+		_, _ = db.Exec("DELETE FROM conceptos_calculados WHERE codigo_interno = 'TEST_CALC'")
+		_, _ = db.Exec("DELETE FROM tenants WHERE id = 9999")
+	}
+	limpiar()
+	defer limpiar()
+
+	// 2. Insertar semillas
+	// Inquilino
+	_, err = db.Exec("INSERT INTO tenants (id, nombre, ruc, activo) VALUES (9999, 'Tenant Test', '10999999999', true)")
+	if err != nil {
+		t.Fatalf("Error creando tenant de prueba: %v", err)
+	}
+	// Concepto calculado
+	var calcID int
+	err = db.QueryRow("INSERT INTO conceptos_calculados (nombre, tipo, codigo_interno) VALUES ('Calculado Test', 'BENEFICIO_SOCIAL', 'TEST_CALC') RETURNING id").Scan(&calcID)
+	if err != nil {
+		t.Fatalf("Error creando concepto calculado de prueba: %v", err)
+	}
+	// Concepto modelo
+	var modeloID int
+	err = db.QueryRow("INSERT INTO conceptos_modelo (concepto_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto) VALUES ((SELECT id FROM conceptos_maestros LIMIT 1), 'Modelo Test Sembrar', '1,2,3', null, false, false) RETURNING id").Scan(&modeloID)
+	if err != nil {
+		t.Fatalf("Error creando concepto modelo de prueba: %v", err)
+	}
+	// Concepto tenant (espejo)
+	var tenantConceptoID int
+	err = db.QueryRow("INSERT INTO conceptos_tenant (tenant_id, concepto_id, nombre_personalizado, frecuencia_meses, activo, clasificador_id, es_extraordinario, requiere_monto, modelo_id) VALUES (9999, (SELECT id FROM conceptos_maestros LIMIT 1), 'Tenant Test Sembrar', '1,2,3', true, null, false, false, $1) RETURNING id", modeloID).Scan(&tenantConceptoID)
+	if err != nil {
+		t.Fatalf("Error creando concepto tenant de prueba: %v", err)
+	}
+	// Base default
+	_, err = db.Exec("INSERT INTO base_regimen_default (concepto_calculado_id, regimen_id, concepto_modelo_id, variable_calculo) VALUES ($1, (SELECT id FROM regimenes_laborales LIMIT 1), $2, 'SUELDO_BASICO')", calcID, modeloID)
+	if err != nil {
+		t.Fatalf("Error creando base regimen default de prueba: %v", err)
+	}
+
+	// 3. Ejecutar SembrarBaseRegimenTenant
+	repo := repository.NewConceptoModeloRepository(db)
+	service := NewConceptoModeloService(repo, db)
+
+	err = service.SembrarBaseRegimenTenant(9999)
+	if err != nil {
+		t.Fatalf("Error al sembrar base regimen tenant: %v", err)
+	}
+
+	// 4. Verificar que se haya copiado la regla
+	var count int
+	err = db.QueryRow("SELECT COUNT(*) FROM base_regimen_tenant WHERE tenant_id = 9999 AND concepto_calculado_id = $1 AND concepto_tenant_id = $2 AND variable_calculo = 'SUELDO_BASICO'", calcID, tenantConceptoID).Scan(&count)
+	if err != nil {
+		t.Fatalf("Error consultando base_regimen_tenant: %v", err)
+	}
+
+	if count != 1 {
+		t.Errorf("Se esperaba 1 registro sembrado, se obtuvieron %d", count)
+	}
+}
+

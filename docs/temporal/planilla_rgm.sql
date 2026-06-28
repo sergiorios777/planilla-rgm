@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict nHPCGqj3eWN4q4uglOiQdnBMcHMh8EIDNkveILinvb12TMmFJAfsVwPRrIegXt1
+\restrict gC233QaWemTuV4fDX0zbaNd5yBgRgthPPFxBwjvl6VxUMBRAb8xRPMfDfbQX56y
 
 -- Dumped from database version 18.1
 -- Dumped by pg_dump version 18.1
@@ -357,6 +357,44 @@ ALTER SEQUENCE public.conceptos_tenant_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.conceptos_tenant_id_seq OWNED BY public.conceptos_tenant.id;
+
+
+--
+-- Name: contrato_conceptos_snapshot; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.contrato_conceptos_snapshot (
+    id integer NOT NULL,
+    tenant_id integer NOT NULL,
+    contrato_id integer NOT NULL,
+    concepto_tenant_id integer NOT NULL,
+    monto numeric(12,2) NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.contrato_conceptos_snapshot OWNER TO postgres;
+
+--
+-- Name: contrato_conceptos_snapshot_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.contrato_conceptos_snapshot_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.contrato_conceptos_snapshot_id_seq OWNER TO postgres;
+
+--
+-- Name: contrato_conceptos_snapshot_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.contrato_conceptos_snapshot_id_seq OWNED BY public.contrato_conceptos_snapshot.id;
 
 
 --
@@ -807,42 +845,6 @@ ALTER SEQUENCE public.parametros_globales_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.parametros_globales_id_seq OWNED BY public.parametros_globales.id;
-
-
---
--- Name: contrato_conceptos_snapshot; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.contrato_conceptos_snapshot (
-    id integer NOT NULL,
-    tenant_id integer NOT NULL,
-    contrato_id integer NOT NULL,
-    concepto_tenant_id integer NOT NULL,
-    monto numeric(12,2) NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
-);
-
-ALTER TABLE public.contrato_conceptos_snapshot OWNER TO postgres;
-
---
--- Name: contrato_conceptos_snapshot_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.contrato_conceptos_snapshot_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER TABLE public.contrato_conceptos_snapshot_id_seq OWNER TO postgres;
-
---
--- Name: contrato_conceptos_snapshot_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.contrato_conceptos_snapshot_id_seq OWNED BY public.contrato_conceptos_snapshot.id;
 
 
 --
@@ -1427,17 +1429,17 @@ ALTER TABLE ONLY public.conceptos_tenant ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
--- Name: contratos id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contratos ALTER COLUMN id SET DEFAULT nextval('public.contratos_id_seq'::regclass);
-
-
---
 -- Name: contrato_conceptos_snapshot id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.contrato_conceptos_snapshot ALTER COLUMN id SET DEFAULT nextval('public.contrato_conceptos_snapshot_id_seq'::regclass);
+
+
+--
+-- Name: contratos id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contratos ALTER COLUMN id SET DEFAULT nextval('public.contratos_id_seq'::regclass);
 
 
 --
@@ -1684,6 +1686,14 @@ ALTER TABLE ONLY public.conceptos_tenant
 
 
 --
+-- Name: contrato_conceptos_snapshot contrato_conceptos_snapshot_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrato_conceptos_snapshot
+    ADD CONSTRAINT contrato_conceptos_snapshot_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: contratos contratos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1924,6 +1934,14 @@ ALTER TABLE ONLY public.parametros_globales
 
 
 --
+-- Name: contrato_conceptos_snapshot unique_contrato_concepto_snapshot; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrato_conceptos_snapshot
+    ADD CONSTRAINT unique_contrato_concepto_snapshot UNIQUE (contrato_id, concepto_tenant_id);
+
+
+--
 -- Name: planilla_detalles unique_detalle_contrato; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2031,6 +2049,13 @@ CREATE INDEX idx_admin_tareas_aviso ON public.admin_tareas USING btree (proximo_
 --
 
 CREATE INDEX idx_conceptos_tenant_tid ON public.conceptos_tenant USING btree (tenant_id);
+
+
+--
+-- Name: idx_contrato_conceptos_snapshot_cid; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_contrato_conceptos_snapshot_cid ON public.contrato_conceptos_snapshot USING btree (contrato_id);
 
 
 --
@@ -2210,6 +2235,30 @@ ALTER TABLE ONLY public.conceptos_tenant
 
 ALTER TABLE ONLY public.conceptos_tenant
     ADD CONSTRAINT conceptos_tenant_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
+
+
+--
+-- Name: contrato_conceptos_snapshot contrato_conceptos_snapshot_concepto_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrato_conceptos_snapshot
+    ADD CONSTRAINT contrato_conceptos_snapshot_concepto_tenant_id_fkey FOREIGN KEY (concepto_tenant_id) REFERENCES public.conceptos_tenant(id) ON DELETE CASCADE;
+
+
+--
+-- Name: contrato_conceptos_snapshot contrato_conceptos_snapshot_contrato_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrato_conceptos_snapshot
+    ADD CONSTRAINT contrato_conceptos_snapshot_contrato_id_fkey FOREIGN KEY (contrato_id) REFERENCES public.contratos(id) ON DELETE CASCADE;
+
+
+--
+-- Name: contrato_conceptos_snapshot contrato_conceptos_snapshot_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrato_conceptos_snapshot
+    ADD CONSTRAINT contrato_conceptos_snapshot_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
 
 
 --
@@ -2493,50 +2542,8 @@ ALTER TABLE ONLY public.usuarios
 
 
 --
--- Name: contrato_conceptos_snapshot contrato_conceptos_snapshot_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contrato_conceptos_snapshot
-    ADD CONSTRAINT contrato_conceptos_snapshot_pkey PRIMARY KEY (id);
-
---
--- Name: contrato_conceptos_snapshot unique_contrato_concepto_snapshot; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contrato_conceptos_snapshot
-    ADD CONSTRAINT unique_contrato_concepto_snapshot UNIQUE (contrato_id, concepto_tenant_id);
-
---
--- Name: idx_contrato_conceptos_snapshot_cid; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contrato_conceptos_snapshot_cid ON public.contrato_conceptos_snapshot USING btree (contrato_id);
-
---
--- Name: contrato_conceptos_snapshot contrato_conceptos_snapshot_contrato_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contrato_conceptos_snapshot
-    ADD CONSTRAINT contrato_conceptos_snapshot_contrato_id_fkey FOREIGN KEY (contrato_id) REFERENCES public.contratos(id) ON DELETE CASCADE;
-
---
--- Name: contrato_conceptos_snapshot contrato_conceptos_snapshot_concepto_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contrato_conceptos_snapshot
-    ADD CONSTRAINT contrato_conceptos_snapshot_concepto_tenant_id_fkey FOREIGN KEY (concepto_tenant_id) REFERENCES public.conceptos_tenant(id) ON DELETE CASCADE;
-
---
--- Name: contrato_conceptos_snapshot contrato_conceptos_snapshot_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contrato_conceptos_snapshot
-    ADD CONSTRAINT contrato_conceptos_snapshot_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
-
-
---
 -- PostgreSQL database dump complete
 --
 
-\unrestrict nHPCGqj3eWN4q4uglOiQdnBMcHMh8EIDNkveILinvb12TMmFJAfsVwPRrIegXt1
+\unrestrict gC233QaWemTuV4fDX0zbaNd5yBgRgthPPFxBwjvl6VxUMBRAb8xRPMfDfbQX56y
 

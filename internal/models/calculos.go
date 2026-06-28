@@ -102,3 +102,43 @@ type ResultPlanilla struct {
 	Boleta BoletaResultado
 	Error  error
 }
+
+type ConceptoCalculado struct {
+	ID            int    `json:"id"`
+	Nombre        string `json:"nombre"`
+	Tipo          string `json:"tipo"`
+	CodigoInterno string `json:"codigo_interno"`
+}
+
+type BaseRegimenDefault struct {
+	ID                  int    `json:"id"`
+	ConceptoCalculadoID int    `json:"concepto_calculado_id"`
+	RegimenID           int    `json:"regimen_id"`
+	ConceptoModeloID    int    `json:"concepto_modelo_id"`
+	VariableCalculo     string `json:"variable_calculo"`
+}
+
+type BaseRegimenTenant struct {
+	ID                  int    `json:"id"`
+	TenantID            int    `json:"tenant_id"`
+	ConceptoCalculadoID int    `json:"concepto_calculado_id"`
+	RegimenID           int    `json:"regimen_id"`
+	ConceptoTenantID    int    `json:"concepto_tenant_id"`
+	VariableCalculo     string `json:"variable_calculo"`
+	Activo              bool   `json:"activo"`
+}
+type BaseRegimenDefaultDTO struct {
+	ID                  int    `json:"id"`
+	ConceptoCalculadoID int    `json:"concepto_calculado_id"`
+	RegimenID           int    `json:"regimen_id"`
+	RegimenCodigo       string `json:"regimen_codigo"`
+	RegimenDesc         string `json:"regimen_desc"`
+	ConceptoModeloID    int    `json:"concepto_modelo_id"`
+	ConceptoModeloDesc  string `json:"concepto_modelo_desc"`
+	VariableCalculo     string `json:"variable_calculo"`
+}
+
+type ConceptoModeloDTO struct {
+	ID                  int    `json:"id"`
+	NombrePersonalizado string `json:"nombre_personalizado"`
+}

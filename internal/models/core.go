@@ -476,22 +476,26 @@ type PlanillaCtsDetalle struct {
 
 // LiquidacionCese representa el cálculo definitivo de CTS al cese
 type LiquidacionCese struct {
-	ID                     int       `json:"id"`
-	TenantID               int       `json:"tenant_id"`
-	ContratoID             int       `json:"contrato_id"`
-	FechaInicioComputable  time.Time `json:"fecha_inicio_computable"`
-	FechaCese              time.Time `json:"fecha_cese"`
-	Motivo                 string    `json:"motivo"`
-	AnosServicios          int       `json:"anos_servicios"`
-	MesesServicios         int       `json:"meses_servicios"`
-	RemuneracionComputable float64   `json:"remuneracion_computable"`
-	MontoCts               float64   `json:"monto_cts"`
-	MontoVacacionesTruncas float64   `json:"monto_vacaciones_truncas"`
-	MontoGratiTrunca       float64   `json:"monto_gratificacion_trunca"`
-	TotalLiquidacion       float64   `json:"total_liquidacion"`
-	Estado                 string    `json:"estado"`
-	CreatedAt              time.Time `json:"created_at"`
-	UpdatedAt              time.Time `json:"updated_at"`
+	ID                           int       `json:"id"`
+	TenantID                     int       `json:"tenant_id"`
+	ContratoID                   int       `json:"contrato_id"`
+	FechaInicioComputable        time.Time `json:"fecha_inicio_computable"`
+	FechaCese                    time.Time `json:"fecha_cese"`
+	Motivo                       string    `json:"motivo"`
+	AnosServicios                int       `json:"anos_servicios"`
+	MesesServicios               int       `json:"meses_servicios"`
+	RemuneracionComputable       float64   `json:"remuneracion_computable"`
+	MontoCts                     float64   `json:"monto_cts"`
+	MontoVacacionesTruncas       float64   `json:"monto_vacaciones_truncas"`
+	MontoVacacionesNoGozadas     float64   `json:"monto_vacaciones_no_gozadas"`
+	MontoIndemnizacionVacacional float64   `json:"monto_indemnizacion_vacacional"`
+	PeriodosVencidosVacaciones   int       `json:"periodos_vencidos_vacaciones"`
+	PeriodosNoVencidosVacaciones int       `json:"periodos_no_vencidos_vacaciones"`
+	MontoGratiTrunca             float64   `json:"monto_gratificacion_trunca"`
+	TotalLiquidacion             float64   `json:"total_liquidacion"`
+	Estado                       string    `json:"estado"`
+	CreatedAt                    time.Time `json:"created_at"`
+	UpdatedAt                    time.Time `json:"updated_at"`
 
 	// Campos auxiliares para UI
 	TrabajadorNombre    string `json:"trabajador_nombre,omitempty"`

@@ -93,15 +93,16 @@ func TestGenerarZip(t *testing.T) {
 			t.Fatalf("failed to read file %s: %v", f.Name, err)
 		}
 
-		if f.Name == "file.jor" {
+		switch f.Name {
+		case "file.jor":
 			if string(contentBytes) != jorText {
 				t.Errorf("file.jor expected content %q, got %q", jorText, string(contentBytes))
 			}
-		} else if f.Name == "file.rem" {
+		case "file.rem":
 			if string(contentBytes) != remText {
 				t.Errorf("file.rem expected content %q, got %q", remText, string(contentBytes))
 			}
-		} else {
+		default:
 			t.Errorf("unexpected file in zip: %s", f.Name)
 		}
 	}

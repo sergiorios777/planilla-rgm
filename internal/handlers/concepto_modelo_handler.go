@@ -285,8 +285,12 @@ func (h *ConceptoModeloHandler) Sincronizar(w http.ResponseWriter, r *http.Reque
 			erroresDetalle = append(erroresDetalle, fmt.Sprintf("<li><strong>%s (RUC: %s)</strong>: %s</li>", tenant.Nombre, tenant.Ruc, err.Error()))
 			log.Printf("❌ Error sincronizando tenant %d (%s): %v\n", tenant.ID, tenant.Nombre, err)
 		} else {
+			if errSeed := h.Service.SembrarBaseRegimenTenant(tenant.ID); errSeed != nil {
+				log.Printf("⚠️ Advertencia: No se pudo sembrar base cálculo para tenant %d: %v\n", tenant.ID, errSeed)
+			}
 			exitos++
 		}
+
 	}
 
 	w.Header().Set("HX-Trigger", "cerrarModal")

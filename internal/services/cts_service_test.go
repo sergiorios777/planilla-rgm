@@ -10,6 +10,7 @@ import (
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
 
+	"github.com/joho/godotenv"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -76,48 +77,7 @@ func TestCtsService(t *testing.T) {
 	}
 }
 
-func TestCtsHelpers(t *testing.T) {
-	// Test de Date Math helpers en CtsService
-	repo := repository.NewCtsRepository(nil)
-	svc := NewCtsService(repo, nil)
 
-	t.Run("calcularMesesYAnosServicio", func(t *testing.T) {
-		start := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
-		end := time.Date(2022, time.June, 15, 0, 0, 0, 0, time.UTC)
-
-		anos, meses := svc.calcularMesesYAnosServicio(start, end)
-		if anos != 2 || meses != 5 {
-			t.Errorf("got %d años, %d meses; want 2 años, 5 meses", anos, meses)
-		}
-	})
-
-	t.Run("calcularMesesInterseccion completo", func(t *testing.T) {
-		start := time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
-		end := time.Date(2025, time.December, 31, 0, 0, 0, 0, time.UTC)
-
-		desde := time.Date(2025, time.May, 1, 0, 0, 0, 0, time.UTC)
-		hasta := time.Date(2025, time.October, 31, 23, 59, 59, 0, time.UTC)
-
-		meses := calcularMesesInterseccion(start, &end, desde, hasta)
-		if meses != 6 {
-			t.Errorf("got %d meses; want 6 meses", meses)
-		}
-	})
-
-	t.Run("calcularMesesInterseccion parcial", func(t *testing.T) {
-		start := time.Date(2025, time.June, 15, 0, 0, 0, 0, time.UTC) // Empieza a mitad de junio
-		end := time.Date(2025, time.September, 10, 0, 0, 0, 0, time.UTC)
-
-		desde := time.Date(2025, time.May, 1, 0, 0, 0, 0, time.UTC)
-		hasta := time.Date(2025, time.October, 31, 23, 59, 59, 0, time.UTC)
-
-		// Debe contar sólo Julio y Agosto completos (2 meses)
-		meses := calcularMesesInterseccion(start, &end, desde, hasta)
-		if meses != 2 {
-			t.Errorf("got %d meses; want 2 meses", meses)
-		}
-	})
-}
 
 func TestExcelParsingInMemory(t *testing.T) {
 	// Generar un Excel en memoria para testear el parser
@@ -296,15 +256,15 @@ func TestCalcularLiquidacionLey30057(t *testing.T) {
 		t.Fatalf("error al crear contrato: %v", err)
 	}
 
-	repo := repository.NewCtsRepository(db)
-	svc := NewCtsService(repo, db)
+	vacSvc := NewVacacionesService(repository.NewBaseRegimenRepository(db))
+	liqSvc := NewLiquidacionService(db, vacSvc)
 
 	// Calcular liquidación simulada ingresando manualmente fecha inicio y cese
 	// Trabajado: 3 años y 2 meses (total 38 meses)
 	inicio := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
 	cese := time.Date(2023, time.March, 1, 0, 0, 0, 0, time.UTC)
 
-	l, err := svc.CalcularLiquidacion(contratoID, inicio, cese, "RENUNCIA")
+	l, err := liqSvc.CalcularLiquidacion(contratoID, inicio, cese, "RENUNCIA", 0, 0)
 	if err != nil {
 		t.Fatalf("error al calcular liquidación: %v", err)
 	}
@@ -322,3 +282,106 @@ func TestCalcularLiquidacionLey30057(t *testing.T) {
 		t.Errorf("got CTS = %v; want %v", l.MontoCts, expectedCts)
 	}
 }
+
+func TestCalcularLiquidacionVacacionesTruncasDataDriven(t *testing.T) {
+	_ = godotenv.Load("../../.env")
+	db, err := config.InitDB()
+	if err != nil {
+		t.Skip("Saltando test de base de datos local:", err)
+		return
+	}
+
+	// 1. Limpieza y creación de tenant temporal
+	var tenantID int
+	err = db.QueryRow("INSERT INTO tenants (nombre, ruc, activo) VALUES ('CTS Vac Test Tenant', '20203040509', true) RETURNING id").Scan(&tenantID)
+	if err != nil {
+		t.Fatalf("error al crear tenant: %v", err)
+	}
+	defer func() {
+		db.Exec("DELETE FROM base_regimen_tenant WHERE tenant_id = $1", tenantID)
+		db.Exec("DELETE FROM conceptos_tenant WHERE tenant_id = $1", tenantID)
+		db.Exec("DELETE FROM tenants WHERE id = $1", tenantID)
+	}()
+
+	var trabajadorID int
+	err = db.QueryRow(`
+		INSERT INTO trabajadores (tenant_id, tipo_documento, numero_documento, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, sexo, regimen_pensionario)
+		VALUES ($1, 'DNI', '99991119', 'Ramiro', 'Vaca', 'Test', '1988-06-12', 'M', 'ONP') RETURNING id`, tenantID).Scan(&trabajadorID)
+	if err != nil {
+		t.Fatalf("error al crear trabajador: %v", err)
+	}
+
+	var regimenID int
+	err = db.QueryRow("SELECT id FROM regimenes_laborales WHERE codigo = '728'").Scan(&regimenID)
+	if err != nil {
+		t.Fatalf("error obteniendo regimen DL 728: %v", err)
+	}
+
+	var puestoID int
+	err = db.QueryRow(`
+		INSERT INTO puestos (tenant_id, regimen_id, nombre, estado, sueldo_presupuestado)
+		VALUES ($1, $2, 'Obrero Test', 'VACANTE', 2400.00) RETURNING id`, tenantID, regimenID).Scan(&puestoID)
+	if err != nil {
+		t.Fatalf("error al crear puesto: %v", err)
+	}
+
+	var contratoID int
+	err = db.QueryRow(`
+		INSERT INTO contratos (tenant_id, trabajador_id, puesto_id, fecha_inicio, activo)
+		VALUES ($1, $2, $3, '2025-01-01', true) RETURNING id`, tenantID, trabajadorID, puestoID).Scan(&contratoID)
+	if err != nil {
+		t.Fatalf("error al crear contrato: %v", err)
+	}
+
+	// 2. Sincronizar conceptos espejo para el tenant
+	conceptoModeloRepo := repository.NewConceptoModeloRepository(db)
+	conceptoModeloService := NewConceptoModeloService(conceptoModeloRepo, db)
+	// Clonar los modelos globales al tenant
+	_, _ = db.Exec(`
+		INSERT INTO conceptos_tenant (tenant_id, concepto_id, nombre_personalizado, frecuencia_meses, activo, clasificador_id, es_extraordinario, requiere_monto, modelo_id)
+		SELECT $1, concepto_id, nombre_personalizado, frecuencia_meses, true, clasificador_id, es_extraordinario, requiere_monto, id
+		FROM conceptos_modelo
+		ON CONFLICT (tenant_id, modelo_id) DO NOTHING
+	`, tenantID)
+
+	// Sembrar base regimen tenant
+	err = conceptoModeloService.SembrarBaseRegimenTenant(tenantID)
+	if err != nil {
+		t.Fatalf("error al sembrar base_regimen_tenant: %v", err)
+	}
+
+	// 3. Obtener el ID del concepto tenant para Remuneración Obrero Permanente
+	var conceptoTenantID int
+	err = db.QueryRow("SELECT id FROM conceptos_tenant WHERE tenant_id = $1 AND modelo_id = 127", tenantID).Scan(&conceptoTenantID)
+	if err != nil {
+		t.Fatalf("error obteniendo concepto tenant espejo de MUC/Sueldo: %v", err)
+	}
+
+	// 4. Asignar el concepto al puesto (Sueldo = 2400)
+	_, err = db.Exec("INSERT INTO puesto_conceptos (puesto_id, concepto_tenant_id, monto, activo) VALUES ($1, $2, 2400.00, true)", puestoID, conceptoTenantID)
+	if err != nil {
+		t.Fatalf("error asignando sueldo al puesto: %v", err)
+	}
+
+	// 5. Calcular liquidación simulada
+	// Trabajado: del 2025-01-01 al 2025-04-16 (3 meses completos y 15 días)
+	inicio := time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
+	cese := time.Date(2025, time.April, 16, 0, 0, 0, 0, time.UTC)
+
+	vacSvc := NewVacacionesService(repository.NewBaseRegimenRepository(db))
+	liqSvc := NewLiquidacionService(db, vacSvc)
+
+	l, err := liqSvc.CalcularLiquidacion(contratoID, inicio, cese, "RENUNCIA", 0, 0)
+	if err != nil {
+		t.Fatalf("error al calcular liquidación: %v", err)
+	}
+
+	// Computable: 2400.00
+	// Meses: 3, Dias: 15
+	// Vacaciones = (2400/12)*3 + (2400/360)*15 = 200*3 + 6.6667*15 = 600 + 100 = 700.00
+	expectedVac := 700.00
+	if math.Abs(l.MontoVacacionesTruncas-expectedVac) > 0.001 {
+		t.Errorf("got Vacaciones Truncas = %v; want %v", l.MontoVacacionesTruncas, expectedVac)
+	}
+}
+
