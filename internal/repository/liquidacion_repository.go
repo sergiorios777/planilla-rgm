@@ -109,9 +109,13 @@ func (r *LiquidacionRepository) ListarLiquidacionesCese(tenantID int) ([]models.
 			&l.CreatedAt, &l.UpdatedAt,
 			&l.TrabajadorNombre, &l.TrabajadorDocumento, &l.PuestoNombre, &l.Regimen,
 		)
-		if err == nil {
-			lista = append(lista, l)
+		if err != nil {
+			return nil, err
 		}
+		lista = append(lista, l)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }

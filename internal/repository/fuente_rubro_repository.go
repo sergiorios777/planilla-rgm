@@ -35,5 +35,8 @@ func (r *FuenteRubroRepository) ObtenerPorAnio(anio int, buscar string) ([]model
 			lista = append(lista, fr)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }

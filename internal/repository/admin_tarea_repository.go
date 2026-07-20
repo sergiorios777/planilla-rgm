@@ -43,6 +43,9 @@ func (r *AdminTareaRepository) ObtenerTodos(buscar string) ([]models.AdminTarea,
 		}
 		lista = append(lista, t)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return lista, nil
 }
@@ -117,6 +120,9 @@ func (r *AdminTareaRepository) ObtenerTareasVencidas(ahora time.Time) ([]models.
 			return nil, err
 		}
 		lista = append(lista, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return lista, nil

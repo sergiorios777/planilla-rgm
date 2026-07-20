@@ -462,7 +462,7 @@ func (h *PuestoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
 	regList, err := h.Repo.ObtenerRegimenes()
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de regímenes: %v</p>`, err)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de regímenes: %v</p>`, err))
 		return
 	}
 	mapaRegimenes := make(map[string]int)
@@ -473,7 +473,7 @@ func (h *PuestoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
 	metaList, err := h.MetaRepo.ObtenerTodos(tenantID)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de metas: %v</p>`, err)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de metas: %v</p>`, err))
 		return
 	}
 	mapaMetas := make(map[string]int)
@@ -484,7 +484,7 @@ func (h *PuestoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
 	fuenteList, err := h.FuenteRubroRepo.ObtenerPorAnio(2026, "")
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de fuentes/rubros: %v</p>`, err)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de fuentes/rubros: %v</p>`, err))
 		return
 	}
 	mapaFuentes := make(map[string]int)
@@ -495,7 +495,7 @@ func (h *PuestoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
 	unidadList, err := h.OrganigramaRepo.ObtenerUnidadesDelOrganigramaActivo(tenantID)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de unidades orgánicas: %v</p>`, err)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de unidades orgánicas: %v</p>`, err))
 		return
 	}
 	mapaUnidades := make(map[string]int)
@@ -704,7 +704,7 @@ func (h *PuestoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
 
 	if validationError != nil {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ %v. Se canceló toda la importación.</p>`, validationError)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ %v. Se canceló toda la importación.</p>`, validationError))
 		return
 	}
 
@@ -718,7 +718,7 @@ func (h *PuestoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
 	err = h.Repo.ImportarPuestos(tenantID, puestos)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error de Base de Datos: %v. Se canceló toda la importación.</p>`, err)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error de Base de Datos: %v. Se canceló toda la importación.</p>`, err))
 		return
 	}
 
@@ -741,11 +741,11 @@ func (h *PuestoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
 		`, len(warnings), warningsList)
 	}
 
-	w.Write([]byte(fmt.Sprintf(`
+	w.Write(fmt.Appendf(nil, `
 		<article style="background-color: #e8f5e9; color: #1b5e20; padding: 1rem; border-radius: 5px; margin: 0; text-align: center;">
 			✅ Importación Exitosa.<br>
 			Se registraron <strong>%d</strong> puestos de trabajo (plazas) correctamente y la transacción fue confirmada.
 			%s
 		</article>
-	`, len(puestos), warningsHTML)))
+	`, len(puestos), warningsHTML))
 }

@@ -192,9 +192,8 @@ func (h *AFPHandler) ImportarCSV(w http.ResponseWriter, r *http.Request) {
 	err = h.Service.ProcesarCSV(file, anio, mes)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(
-			fmt.Sprintf(`<span style="color: #b71c1c;">⚠️ Error de importación: %s</span>`, err.Error()),
-		))
+		w.Write(fmt.Appendf(nil, `<span style="color: #b71c1c;">⚠️ Error de importación: %s</span>`, err.Error()),
+		)
 		return
 	}
 

@@ -86,6 +86,9 @@ func (r *NotificacionRepository) ObtenerRecientes(tenantID *int, usuarioID *int,
 		}
 		lista = append(lista, n)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return lista, nil
 }

@@ -62,6 +62,9 @@ func (r *ConceptoModeloRepository) ObtenerTodos() ([]models.ConceptoModelo, erro
 
 		lista = append(lista, c)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -99,6 +102,9 @@ func (r *ConceptoModeloRepository) ObtenerPorID(id int) (*models.ConceptoModelo,
 			var rID int
 			rows.Scan(&rID)
 			c.RegimenesIDs = append(c.RegimenesIDs, rID)
+		}
+		if err := rows.Err(); err != nil {
+			return nil, err
 		}
 	}
 
@@ -304,6 +310,9 @@ func (r *ConceptoModeloRepository) ObtenerTodosPaginacion(busqueda string, atrib
 
 		lista = append(lista, c)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
 
 	return lista, totalRegistros, nil
 }
@@ -325,6 +334,9 @@ func (r *ConceptoModeloRepository) ObtenerMapaMaestros() (map[string]int, error)
 		}
 		mapa[strings.TrimSpace(codigo)] = id
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return mapa, nil
 }
 
@@ -344,6 +356,9 @@ func (r *ConceptoModeloRepository) ObtenerMapaClasificadores() (map[string]int, 
 			return nil, err
 		}
 		mapa[strings.TrimSpace(codigoLimpio)] = id
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return mapa, nil
 }
@@ -374,6 +389,9 @@ func (r *ConceptoModeloRepository) ObtenerMapaRegimenes() (map[string]int, error
 			mapa["LEY SERVIR"] = id
 			mapa["LEY 30057"] = id
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return mapa, nil
 }

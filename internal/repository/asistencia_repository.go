@@ -33,8 +33,13 @@ func (r *AsistenciaRepository) ObtenerContratosParaSelect(tenantID int) ([]model
 	var lista []models.ContratoSelect
 	for rows.Next() {
 		var c models.ContratoSelect
-		rows.Scan(&c.ID, &c.NumeroDocumento, &c.TrabajadorNombre)
+		if err := rows.Scan(&c.ID, &c.NumeroDocumento, &c.TrabajadorNombre); err != nil {
+			return nil, err
+		}
 		lista = append(lista, c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -69,8 +74,13 @@ func (r *AsistenciaRepository) ListarHistorial(tenantID int) ([]models.Ocurrenci
 	var lista []models.OcurrenciaVista
 	for rows.Next() {
 		var o models.OcurrenciaVista
-		rows.Scan(&o.ID, &o.ContratoID, &o.TrabajadorNombre, &o.Tipo, &o.FechaOcurrencia, &o.Cantidad, &o.Procesado)
+		if err := rows.Scan(&o.ID, &o.ContratoID, &o.TrabajadorNombre, &o.Tipo, &o.FechaOcurrencia, &o.Cantidad, &o.Procesado); err != nil {
+			return nil, err
+		}
 		lista = append(lista, o)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -195,6 +205,9 @@ func (r *AsistenciaRepository) ListarPaginado(tenantID int, buscar string, tipo 
 			return nil, 0, err
 		}
 		lista = append(lista, o)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
 	}
 
 	for i := range lista {

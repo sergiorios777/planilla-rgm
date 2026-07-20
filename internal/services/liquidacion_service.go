@@ -54,6 +54,12 @@ func (s *LiquidacionService) CalcularLiquidacion(contratoID int, fechaInicio, fe
 
 	// 2. Calcular años y meses de servicios usando helpers transversales
 	anos, meses := helpers.CalcularMesesYAnosServicio(fechaInicio, fechaCese)
+
+	// Validar consistencia de periodos vacacionales completos ingresados manualmente
+	if anos == 0 && (periodosVencidos > 0 || periodosNoVencidos > 0) {
+		return nil, fmt.Errorf("el trabajador tiene menos de 1 año de servicios (%d meses); no puede poseer periodos de vacaciones completos ganados", meses)
+	}
+
 	l.AnosServicios = anos
 	l.MesesServicios = meses
 	mesesTotales := anos*12 + meses

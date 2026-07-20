@@ -96,6 +96,9 @@ func (r *PresupuestoRepository) ObtenerMatrizPorAnio(tenantID int, anio int) ([]
 			lista = append(lista, d)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 

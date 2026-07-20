@@ -139,9 +139,24 @@ func (h *ConceptoCalculadoHandler) VistaAfectaciones(w http.ResponseWriter, r *h
 		return
 	}
 
+	regimenes, _ := h.PuestoRepo.ObtenerRegimenes()
+
 	data := map[string]interface{}{
 		"CalculadoID":  conceptoCalculadoID,
 		"Afectaciones": agrupadas,
+		"Regimenes":    regimenes,
+		"Variables": []string{
+			"SUELDO_BASICO",
+			"MUC",
+			"BET",
+			"RETRIBUCION_MENSUAL",
+			"VALORIZACION_PRINCIPAL",
+			"VALORIZACION_AJUSTADA",
+			"ASIGNACION_FAMILIAR",
+			"SEXTO_GRATIFICACION",
+			"REMUNERACION_VARIABLE",
+			"REMUNERACION_COMPUTABLE",
+		},
 	}
 
 	tmpl.ExecuteTemplate(w, "seccion_afectaciones", data)
@@ -242,5 +257,5 @@ func (h *ConceptoCalculadoHandler) Propagar(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf(`<span style="color:#2e7d32; font-weight:bold;">✅ Propagación exitosa (%d listos, %d fallas)</span>`, exitos, fallas)))
+	w.Write(fmt.Appendf(nil, `<span style="color:#2e7d32; font-weight:bold;">✅ Propagación exitosa (%d listos, %d fallas)</span>`, exitos, fallas))
 }

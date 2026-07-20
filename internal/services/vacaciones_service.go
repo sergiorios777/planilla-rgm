@@ -25,12 +25,31 @@ func (s *VacacionesService) CalcularVacacionesCese(
 	fechaInicio, fechaCese time.Time,
 	periodosVencidos, periodosNoVencidos int,
 ) (truncas, noGozadas, indemnizacion, baseComputable float64, err error) {
-	// Obtener base computable para vacaciones truncas
-	baseVac, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "SUELDO_BASICO")
-	asigFamVac, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "ASIGNACION_FAMILIAR")
-	promVarVac, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "REMUNERACION_VARIABLE")
+	var totalBaseVac float64
 
-	totalBaseVac := baseVac + asigFamVac + promVarVac
+	// Obtener base computable según el régimen laboral
+	switch regimenCod {
+	case "276":
+		// DL 276: MUC + BET
+		muc, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "MUC")
+		bet, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "BET")
+		totalBaseVac = muc + bet
+	case "30057":
+		// Ley SERVIR: Valorización Principal + Valorización Ajustada
+		vp, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "VALORIZACION_PRINCIPAL")
+		va, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "VALORIZACION_AJUSTADA")
+		totalBaseVac = vp + va
+	case "1057", "CAS":
+		// CAS: Retribución Mensual
+		totalBaseVac = sueldo
+	default:
+		// DL 728 / Genérico: Sueldo Básico + Asignación Familiar + Remuneración Variable
+		baseVac, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "SUELDO_BASICO")
+		asigFamVac, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "ASIGNACION_FAMILIAR")
+		promVarVac, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "REMUNERACION_VARIABLE")
+		totalBaseVac = baseVac + asigFamVac + promVarVac
+	}
+
 	if totalBaseVac <= 0 {
 		totalBaseVac = sueldo // Fallback
 	}

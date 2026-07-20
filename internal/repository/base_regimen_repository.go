@@ -76,6 +76,9 @@ func (r *BaseRegimenRepository) ListarConceptosCalculados() ([]models.ConceptoCa
 			lista = append(lista, c)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -123,6 +126,9 @@ func (r *BaseRegimenRepository) ListarAfectacionesDefault(conceptoCalculadoID in
 			lista = append(lista, d)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -166,6 +172,9 @@ func (r *BaseRegimenRepository) ObtenerConceptosModeloPorRegimen(regimenID int) 
 		if err == nil {
 			lista = append(lista, c)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }

@@ -46,6 +46,9 @@ func (r *OrganigramaRepository) ObtenerOrganigramasPorTenant(tenantID int) ([]mo
 			lista = append(lista, o)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -146,6 +149,9 @@ func (r *OrganigramaRepository) ObtenerUnidades(organigramaID int) ([]models.Uni
 			lista = append(lista, u)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -196,6 +202,9 @@ func (r *OrganigramaRepository) ObtenerArbolNodos(organigramaID int) ([]models.U
 		if err := rows.Scan(&uid, &count); err == nil {
 			conteoPuestos[uid] = count
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	// 3. Crear nodos e indexar
@@ -390,6 +399,9 @@ func (r *OrganigramaRepository) ObtenerUnidadesDelOrganigramaActivo(tenantID int
 			return nil, err
 		}
 		lista = append(lista, u)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }

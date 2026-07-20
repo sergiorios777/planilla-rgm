@@ -41,6 +41,9 @@ func (r *PuestoRepository) ObtenerVacantes(tenantID int) ([]models.Puesto, error
 		rows.Scan(&p.ID, &p.Nombre, &p.SueldoPresupuestado, &p.RegimenDesc, &p.UnidadOrganicaNombre)
 		lista = append(lista, p)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -59,6 +62,9 @@ func (r *PuestoRepository) ObtenerRegimenes() ([]models.RegimenLaboral, error) {
 		var reg models.RegimenLaboral
 		rows.Scan(&reg.ID, &reg.Codigo, &reg.Descripcion)
 		lista = append(lista, reg)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -90,6 +96,9 @@ func (r *PuestoRepository) ObtenerTodos(tenantID int) ([]models.Puesto, error) {
 		if err == nil {
 			lista = append(lista, p)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -174,6 +183,9 @@ func (r *PuestoRepository) ObtenerTodosPaginacion(tenantID int, metaID int, regi
 			lista = append(lista, p)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
 	return lista, totalRegistros, nil
 }
 
@@ -221,6 +233,9 @@ func (r *PuestoRepository) ObtenerConceptosTenantPorCodigosSUNAT(tenantID int, c
 			ids = append(ids, id)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return ids, nil
 }
 
@@ -258,6 +273,9 @@ func (r *PuestoRepository) AsignarConceptosAPuesto(puestoID int, conceptoTenantI
 				conceptosSueldo[id] = true
 			}
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
 	}
 
 	stmt, err := tx.Prepare(`
@@ -354,6 +372,9 @@ func (r *PuestoRepository) ObtenerConceptosModeloPorRegimen(tenantID int, regime
 			ids = append(ids, id)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return ids, nil
 }
 
@@ -402,6 +423,9 @@ func (r *PuestoRepository) RestaurarPlantillaBase(puestoID int, tenantID int, re
 		var id int
 		rows.Scan(&id)
 		idsLocales = append(idsLocales, id)
+	}
+	if err := rows.Err(); err != nil {
+		return err
 	}
 	rows.Close()
 
@@ -469,6 +493,9 @@ func (r *PuestoRepository) ObtenerPuestosParaPAP(tenantID int) ([]models.PuestoP
 			lista = append(lista, p)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -505,6 +532,9 @@ func (r *PuestoRepository) ObtenerConceptosParaAsignacion(puestoID, tenantID int
 			return nil, err
 		}
 		lista = append(lista, c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }

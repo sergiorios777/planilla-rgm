@@ -31,6 +31,9 @@ func (r *TrabajadorRepository) ObtenerAFPsActivas() (map[int]string, error) {
 		rows.Scan(&id, &nombre)
 		afps[id] = nombre
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return afps, nil
 }
 
@@ -55,6 +58,9 @@ func (r *TrabajadorRepository) ObtenerMapaAFPsParaImportar() (map[string]int, er
 		if codigoSBS.Valid && codigoSBS.String != "" {
 			mapa[strings.ToUpper(strings.TrimSpace(codigoSBS.String))] = id
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return mapa, nil
 }
@@ -88,6 +94,9 @@ func (r *TrabajadorRepository) ObtenerTodos(tenantID int) ([]models.Trabajador, 
 			t.FechaNacimiento = fecha.String
 		}
 		lista = append(lista, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -142,6 +151,9 @@ func (r *TrabajadorRepository) ObtenerTodosPaginacion(tenantID int, busqueda str
 			t.FechaNacimiento = fecha.String
 		}
 		lista = append(lista, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
 	}
 	return lista, totalRegistros, nil
 }
@@ -261,6 +273,9 @@ func (r *TrabajadorRepository) ObtenerCumpleaniosMes(tenantID int, mes int) ([]m
 			t.FechaNacimiento = fecha.String
 		}
 		lista = append(lista, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }

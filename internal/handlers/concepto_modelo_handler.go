@@ -360,11 +360,11 @@ func (h *ConceptoModeloHandler) ImportarCSV(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		log.Printf("❌ Error al importar conceptos modelo desde CSV: %v\n", err)
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`
+		w.Write(fmt.Appendf(nil, `
 			<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #ef9a9a;">
 				❌ Error de Validación/Importación: %s
 			</article>
-		`, err.Error())))
+		`, err.Error()))
 		return
 	}
 
@@ -387,11 +387,11 @@ func (h *ConceptoModeloHandler) ImportarCSV(w http.ResponseWriter, r *http.Reque
 	// Responder con HTMX Headers para cerrar el modal y refrescar la grilla principal
 	w.Header().Set("HX-Trigger", "cerrarModalImportar, recargarTablaModelos")
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(fmt.Sprintf(`
+	w.Write(fmt.Appendf(nil, `
 		<article style="background-color: #e8f5e9; color: #2e7d32; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #c8e6c9;">
 			✅ Carga masiva exitosa: se importaron/actualizaron %d conceptos modelo correctamente.
 		</article>
-	`, exitosos)))
+	`, exitosos))
 }
 
 // PlantillaCSV sirve un archivo CSV de ejemplo con la estructura requerida

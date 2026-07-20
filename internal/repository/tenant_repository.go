@@ -42,6 +42,9 @@ func (r *TenantRepository) ObtenerTodos(busqueda string) ([]models.Tenant, error
 		}
 		lista = append(lista, t)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return lista, nil
 }

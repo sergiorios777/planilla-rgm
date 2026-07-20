@@ -51,6 +51,9 @@ func (r *PuestoConceptoRepository) ObtenerAsignados(puestoID int, tenantID int) 
 			lista = append(lista, pc)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -78,6 +81,9 @@ func (r *PuestoConceptoRepository) ObtenerDisponibles(puestoID int, tenantID int
 		var ct models.ConceptoTenant
 		rows.Scan(&ct.ID, &ct.NombrePersonalizado, &ct.ConceptoTipo)
 		lista = append(lista, ct)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -134,6 +140,9 @@ func (r *PuestoConceptoRepository) ObtenerParaCalculo(puestoID int) ([]models.Co
 		if err == nil {
 			lista = append(lista, cp)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }

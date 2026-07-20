@@ -60,6 +60,9 @@ func (r *UsuarioRepository) ObtenerTodos(busqueda string) ([]models.Usuario, err
 		}
 		lista = append(lista, u)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 

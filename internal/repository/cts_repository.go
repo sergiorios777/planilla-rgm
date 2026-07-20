@@ -65,6 +65,9 @@ func (r *CtsRepository) ListarPlanillasCts(tenantID int) ([]models.PlanillaCts, 
 			lista = append(lista, p)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -134,6 +137,9 @@ func (r *CtsRepository) ObtenerDetallesCts(planillaCtsID int) ([]models.Planilla
 		if err == nil {
 			lista = append(lista, d)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -214,6 +220,9 @@ func (r *CtsRepository) ObtenerContratosCtsEligibles(tenantID int, desde time.Ti
 			}
 			lista = append(lista, c)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -333,6 +342,9 @@ func (r *CtsRepository) ObtenerVariablesSemestre(contratoID int, anio1 int, mese
 		if err == nil {
 			lista = append(lista, v)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }

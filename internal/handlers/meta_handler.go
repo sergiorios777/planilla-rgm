@@ -223,7 +223,7 @@ func (h *MetaHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
 		// Necesitamos al menos Año, Código y Descripción
 		if len(fila) < 3 {
 			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Fila %d: Columnas incompletas. Se requieren: Año, Código y Descripción.</p>`, numFila)))
+			w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Fila %d: Columnas incompletas. Se requieren: Año, Código y Descripción.</p>`, numFila))
 			return
 		}
 
@@ -238,37 +238,37 @@ func (h *MetaHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
 		// A. Validar Año
 		if anioRaw == "" {
 			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Fila %d: El campo 'Año' es obligatorio y no puede estar vacío.</p>`, numFila)))
+			w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Fila %d: El campo 'Año' es obligatorio y no puede estar vacío.</p>`, numFila))
 			return
 		}
 		anio, err := strconv.Atoi(anioRaw)
 		if err != nil || anio < 2000 || anio > 2100 {
 			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Fila %d: El Año '%s' debe ser un número entero válido entre el 2000 y el 2100.</p>`, numFila, anioRaw)))
+			w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Fila %d: El Año '%s' debe ser un número entero válido entre el 2000 y el 2100.</p>`, numFila, anioRaw))
 			return
 		}
 
 		// B. Validar Código
 		if codigo == "" {
 			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Fila %d: El campo 'Código' es obligatorio.</p>`, numFila)))
+			w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Fila %d: El campo 'Código' es obligatorio.</p>`, numFila))
 			return
 		}
 		if len(codigo) > 20 {
 			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Fila %d: El Código '%s' es demasiado largo (máximo 20 caracteres).</p>`, numFila, codigo)))
+			w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Fila %d: El Código '%s' es demasiado largo (máximo 20 caracteres).</p>`, numFila, codigo))
 			return
 		}
 
 		// C. Validar Descripción
 		if descripcion == "" {
 			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Fila %d: La 'Descripción' de la meta es obligatoria.</p>`, numFila)))
+			w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Fila %d: La 'Descripción' de la meta es obligatoria.</p>`, numFila))
 			return
 		}
 		if len(descripcion) > 512 {
 			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Fila %d: La Descripción supera el límite permitido de 512 caracteres.</p>`, numFila)))
+			w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Fila %d: La Descripción supera el límite permitido de 512 caracteres.</p>`, numFila))
 			return
 		}
 
@@ -283,7 +283,7 @@ func (h *MetaHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
 				activo = false
 			default:
 				w.Header().Set("Content-Type", "text/html")
-				w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Fila %d: El valor del campo 'Activo' ('%s') es inválido. Use SI, NO, TRUE o FALSE.</p>`, numFila, activoRaw)))
+				w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Fila %d: El valor del campo 'Activo' ('%s') es inválido. Use SI, NO, TRUE o FALSE.</p>`, numFila, activoRaw))
 				return
 			}
 		}
@@ -292,7 +292,7 @@ func (h *MetaHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
 		clave := fmt.Sprintf("%d-%s", anio, codigo)
 		if filaDuplicada, existe := seen[clave]; existe {
 			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Fila %d: La combinación de Año '%d' y Código '%s' está repetida dentro de este mismo archivo Excel (apareció antes en la fila %d).</p>`, numFila, anio, codigo, filaDuplicada)))
+			w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Fila %d: La combinación de Año '%d' y Código '%s' está repetida dentro de este mismo archivo Excel (apareció antes en la fila %d).</p>`, numFila, anio, codigo, filaDuplicada))
 			return
 		}
 		seen[clave] = numFila
@@ -322,16 +322,16 @@ func (h *MetaHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error de Base de Datos: %v. Se canceló toda la importación.</p>`, err)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error de Base de Datos: %v. Se canceló toda la importación.</p>`, err))
 		return
 	}
 
 	// 5. Devolver mensaje de éxito
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(fmt.Sprintf(`
+	w.Write(fmt.Appendf(nil, `
 		<article style="background-color: #e8f5e9; color: #1b5e20; padding: 1rem; border-radius: 5px; margin: 0;">
 			✅ Importación Exitosa.<br>
 			Se registraron <strong>%d</strong> metas presupuestales correctamente y la transacción fue confirmada.
 		</article>
-	`, len(metas))))
+	`, len(metas)))
 }

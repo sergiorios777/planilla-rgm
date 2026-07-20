@@ -266,7 +266,7 @@ func (h *TrabajadorHandler) ImportarExcel(w http.ResponseWriter, r *http.Request
 	mapaAFPs, err := h.Repo.ObtenerMapaAFPsParaImportar()
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de AFPs: %v</p>`, err)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de AFPs: %v</p>`, err))
 		return
 	}
 
@@ -486,7 +486,7 @@ func (h *TrabajadorHandler) ImportarExcel(w http.ResponseWriter, r *http.Request
 
 	if validationError != nil {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ %v. Se canceló toda la importación.</p>`, validationError)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ %v. Se canceló toda la importación.</p>`, validationError))
 		return
 	}
 
@@ -507,18 +507,18 @@ func (h *TrabajadorHandler) ImportarExcel(w http.ResponseWriter, r *http.Request
 		}
 
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error de Base de Datos: %v. Se canceló toda la importación.</p>`, err)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error de Base de Datos: %v. Se canceló toda la importación.</p>`, err))
 		return
 	}
 
 	// 5. Devolver mensaje de éxito
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(fmt.Sprintf(`
+	w.Write(fmt.Appendf(nil, `
 		<article style="background-color: #e8f5e9; color: #1b5e20; padding: 1rem; border-radius: 5px; margin: 0;">
 			✅ Importación Exitosa.<br>
 			Se registraron <strong>%d</strong> trabajadores correctamente en el legajo y la transacción fue confirmada.
 		</article>
-	`, len(trabajadores))))
+	`, len(trabajadores)))
 }
 
 // parseFechaExcel es un helper para normalizar la fecha ingresada en Excel

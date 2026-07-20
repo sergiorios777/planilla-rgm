@@ -43,15 +43,19 @@ func (r *ContratoRepository) ObtenerTodos(tenantID int) ([]models.Contrato, erro
 
 		err := rows.Scan(&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fFin, &c.Activo,
 			&c.TrabajadorDoc, &c.TrabajadorNombre, &c.PuestoNombre, &c.SueldoPresupuestado, &c.RegimenDesc, &c.TipoContrato, &c.Nivel, &motivoBaja)
-		if err == nil {
-			if fFin.Valid {
-				c.FechaFin = &fFin.String
-			}
-			if motivoBaja.Valid {
-				c.MotivoBaja = &motivoBaja.String
-			}
-			lista = append(lista, c)
+		if err != nil {
+			return nil, err
 		}
+		if fFin.Valid {
+			c.FechaFin = &fFin.String
+		}
+		if motivoBaja.Valid {
+			c.MotivoBaja = &motivoBaja.String
+		}
+		lista = append(lista, c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -139,6 +143,9 @@ func (r *ContratoRepository) ObtenerTodosPaginado(tenantID int, busqueda string,
 		}
 		lista = append(lista, c)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
 	return lista, totalRegistros, nil
 }
 
@@ -216,12 +223,16 @@ func (r *ContratoRepository) ObtenerContratosVencimiento(tenantID int, dias int)
 
 		err := rows.Scan(&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fFin, &c.Activo,
 			&c.TrabajadorDoc, &c.TrabajadorNombre, &c.PuestoNombre, &c.SueldoPresupuestado, &c.RegimenDesc, &c.TipoContrato, &c.Nivel)
-		if err == nil {
-			if fFin.Valid {
-				c.FechaFin = &fFin.String
-			}
-			lista = append(lista, c)
+		if err != nil {
+			return nil, err
 		}
+		if fFin.Valid {
+			c.FechaFin = &fFin.String
+		}
+		lista = append(lista, c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }

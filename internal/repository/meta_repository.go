@@ -26,9 +26,13 @@ func (r *MetaRepository) ObtenerTodos(tenantID int) ([]models.MetaPresupuestal, 
 	for rows.Next() {
 		var m models.MetaPresupuestal
 		err := rows.Scan(&m.ID, &m.TenantID, &m.Anio, &m.Codigo, &m.Descripcion, &m.Activo)
-		if err == nil {
-			lista = append(lista, m)
+		if err != nil {
+			return nil, err
 		}
+		lista = append(lista, m)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -98,6 +102,9 @@ func (r *MetaRepository) ObtenerTodosPaginacion(tenantID int, busqueda string, e
 			return nil, 0, err
 		}
 		lista = append(lista, m)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
 	}
 	return lista, totalRegistros, nil
 }

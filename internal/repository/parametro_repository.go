@@ -63,6 +63,9 @@ func (r *ParametroRepository) ObtenerTodos(busqueda string) ([]models.ParametroG
 
 		lista = append(lista, p)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 

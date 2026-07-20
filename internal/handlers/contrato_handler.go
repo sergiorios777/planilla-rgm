@@ -401,7 +401,7 @@ func (h *ContratoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) 
 	trabajadoresList, err := h.TrabajadorRepo.ObtenerTodos(tenantID)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de trabajadores: %v</p>`, err)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de trabajadores: %v</p>`, err))
 		return
 	}
 	mapaTrabajadores := make(map[string]int)
@@ -431,7 +431,7 @@ func (h *ContratoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) 
 	`, tenantID)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de puestos: %v</p>`, err)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de puestos: %v</p>`, err))
 		return
 	}
 	defer rowsPuestos.Close()
@@ -444,6 +444,11 @@ func (h *ContratoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) 
 			mapaPuestos[strings.TrimSpace(airhsp)] = info
 		}
 	}
+	if err := rowsPuestos.Err(); err != nil {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error al cargar catálogo de puestos: %v</p>`, err))
+		return
+	}
 	rowsContratos, err := db.Query(`
 		SELECT trabajador_id 
 		FROM contratos 
@@ -451,7 +456,7 @@ func (h *ContratoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) 
 	`, tenantID)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(fmt.Sprintf(`<p style="color:red; margin:0;">⚠️ Error al validar contratos activos: %v</p>`, err)))
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error al validar contratos activos: %v</p>`, err))
 		return
 	}
 	defer rowsContratos.Close()
@@ -462,6 +467,11 @@ func (h *ContratoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) 
 		if err := rowsContratos.Scan(&tID); err == nil {
 			mapaTrabajadoresConContratoActivo[tID] = true
 		}
+	}
+	if err := rowsContratos.Err(); err != nil {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write(fmt.Appendf(nil, `<p style="color:red; margin:0;">⚠️ Error al validar contratos activos: %v</p>`, err))
+		return
 	}
 
 	// Estructuras para la concurrencia
@@ -736,5 +746,5 @@ func (h *ContratoHandler) ImportarExcel(w http.ResponseWriter, r *http.Request) 
 		`, len(errores), listItems)
 	}
 
-	w.Write([]byte(fmt.Sprintf("%s%s", successHTML, errorsHTML)))
+	w.Write(fmt.Appendf(nil, "%s%s", successHTML, errorsHTML))
 }

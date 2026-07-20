@@ -103,6 +103,9 @@ func (r *MefRepository) ObtenerTodos(busqueda string, anio int, tipo string, lim
 		}
 		lista = append(lista, c)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
 	return lista, totalRegistros, nil
 }
 
@@ -160,6 +163,9 @@ func (r *MefRepository) VincularJerarquia(anio int) error {
 		var codigo string
 		rows.Scan(&id, &codigo)
 		mapaIds[codigo] = id
+	}
+	if err := rows.Err(); err != nil {
+		return err
 	}
 
 	// 3. Preparamos una transacción para actualizar todos los padres de golpe

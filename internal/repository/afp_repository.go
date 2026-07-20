@@ -37,6 +37,9 @@ func (r *AFPRepository) ObtenerTodos(busqueda string) ([]models.AFP, error) {
 		}
 		lista = append(lista, a)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -109,6 +112,9 @@ func (r *AFPRepository) ObtenerTasasPorMes(anio int, mes int) ([]models.AFPTasaV
 			v.TasaID = &val
 		}
 		lista = append(lista, v)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }

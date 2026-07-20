@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict gC233QaWemTuV4fDX0zbaNd5yBgRgthPPFxBwjvl6VxUMBRAb8xRPMfDfbQX56y
+\restrict afJU252YkDRDusNZyMfnFiwLE36ljmxIIY6cAypgAX2cnoG0x0GhbAeDj3YtPlS
 
--- Dumped from database version 18.1
--- Dumped by pg_dump version 18.1
+-- Dumped from database version 18.4
+-- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -142,6 +142,84 @@ ALTER SEQUENCE public.afps_id_seq OWNED BY public.afps.id;
 
 
 --
+-- Name: base_regimen_default; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.base_regimen_default (
+    id integer NOT NULL,
+    concepto_calculado_id integer NOT NULL,
+    regimen_id integer NOT NULL,
+    concepto_modelo_id integer NOT NULL,
+    variable_calculo character varying(50) NOT NULL,
+    CONSTRAINT chk_variable_calculo_default CHECK (((variable_calculo)::text = ANY ((ARRAY['SUELDO_BASICO'::character varying, 'ASIGNACION_FAMILIAR'::character varying, 'SEXTO_GRATIFICACION'::character varying, 'REMUNERACION_VARIABLE'::character varying, 'REMUNERACION_COMPUTABLE'::character varying, 'MUC'::character varying, 'BET'::character varying, 'RETRIBUCION_MENSUAL'::character varying, 'VALORIZACION_PRINCIPAL'::character varying, 'VALORIZACION_AJUSTADA'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.base_regimen_default OWNER TO postgres;
+
+--
+-- Name: base_regimen_default_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.base_regimen_default_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.base_regimen_default_id_seq OWNER TO postgres;
+
+--
+-- Name: base_regimen_default_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.base_regimen_default_id_seq OWNED BY public.base_regimen_default.id;
+
+
+--
+-- Name: base_regimen_tenant; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.base_regimen_tenant (
+    id integer NOT NULL,
+    tenant_id integer NOT NULL,
+    concepto_calculado_id integer NOT NULL,
+    regimen_id integer NOT NULL,
+    concepto_tenant_id integer NOT NULL,
+    variable_calculo character varying(50) NOT NULL,
+    activo boolean DEFAULT true NOT NULL,
+    CONSTRAINT chk_variable_calculo_tenant CHECK (((variable_calculo)::text = ANY ((ARRAY['SUELDO_BASICO'::character varying, 'ASIGNACION_FAMILIAR'::character varying, 'SEXTO_GRATIFICACION'::character varying, 'REMUNERACION_VARIABLE'::character varying, 'REMUNERACION_COMPUTABLE'::character varying, 'MUC'::character varying, 'BET'::character varying, 'RETRIBUCION_MENSUAL'::character varying, 'VALORIZACION_PRINCIPAL'::character varying, 'VALORIZACION_AJUSTADA'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.base_regimen_tenant OWNER TO postgres;
+
+--
+-- Name: base_regimen_tenant_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.base_regimen_tenant_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.base_regimen_tenant_id_seq OWNER TO postgres;
+
+--
+-- Name: base_regimen_tenant_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.base_regimen_tenant_id_seq OWNED BY public.base_regimen_tenant.id;
+
+
+--
 -- Name: clasificadores_mef; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -218,6 +296,43 @@ ALTER SEQUENCE public.conceptos_afectaciones_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.conceptos_afectaciones_id_seq OWNED BY public.conceptos_afectaciones.id;
+
+
+--
+-- Name: conceptos_calculados; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.conceptos_calculados (
+    id integer NOT NULL,
+    nombre character varying(150) NOT NULL,
+    tipo character varying(50) NOT NULL,
+    codigo_interno character varying(50) NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.conceptos_calculados OWNER TO postgres;
+
+--
+-- Name: conceptos_calculados_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.conceptos_calculados_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.conceptos_calculados_id_seq OWNER TO postgres;
+
+--
+-- Name: conceptos_calculados_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.conceptos_calculados_id_seq OWNED BY public.conceptos_calculados.id;
 
 
 --
@@ -1394,6 +1509,20 @@ ALTER TABLE ONLY public.afps ALTER COLUMN id SET DEFAULT nextval('public.afps_id
 
 
 --
+-- Name: base_regimen_default id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_default ALTER COLUMN id SET DEFAULT nextval('public.base_regimen_default_id_seq'::regclass);
+
+
+--
+-- Name: base_regimen_tenant id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_tenant ALTER COLUMN id SET DEFAULT nextval('public.base_regimen_tenant_id_seq'::regclass);
+
+
+--
 -- Name: clasificadores_mef id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -1405,6 +1534,13 @@ ALTER TABLE ONLY public.clasificadores_mef ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.conceptos_afectaciones ALTER COLUMN id SET DEFAULT nextval('public.conceptos_afectaciones_id_seq'::regclass);
+
+
+--
+-- Name: conceptos_calculados id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conceptos_calculados ALTER COLUMN id SET DEFAULT nextval('public.conceptos_calculados_id_seq'::regclass);
 
 
 --
@@ -1630,6 +1766,38 @@ ALTER TABLE ONLY public.afps
 
 
 --
+-- Name: base_regimen_default base_regimen_default_concepto_calculado_id_regimen_id_conce_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_default
+    ADD CONSTRAINT base_regimen_default_concepto_calculado_id_regimen_id_conce_key UNIQUE (concepto_calculado_id, regimen_id, concepto_modelo_id, variable_calculo);
+
+
+--
+-- Name: base_regimen_default base_regimen_default_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_default
+    ADD CONSTRAINT base_regimen_default_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: base_regimen_tenant base_regimen_tenant_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_tenant
+    ADD CONSTRAINT base_regimen_tenant_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: base_regimen_tenant base_regimen_tenant_tenant_id_concepto_calculado_id_regimen_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_tenant
+    ADD CONSTRAINT base_regimen_tenant_tenant_id_concepto_calculado_id_regimen_key UNIQUE (tenant_id, concepto_calculado_id, regimen_id, concepto_tenant_id, variable_calculo);
+
+
+--
 -- Name: clasificadores_mef clasificadores_mef_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1651,6 +1819,22 @@ ALTER TABLE ONLY public.clasificadores_mef
 
 ALTER TABLE ONLY public.conceptos_afectaciones
     ADD CONSTRAINT conceptos_afectaciones_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: conceptos_calculados conceptos_calculados_codigo_interno_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conceptos_calculados
+    ADD CONSTRAINT conceptos_calculados_codigo_interno_key UNIQUE (codigo_interno);
+
+
+--
+-- Name: conceptos_calculados conceptos_calculados_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conceptos_calculados
+    ADD CONSTRAINT conceptos_calculados_pkey PRIMARY KEY (id);
 
 
 --
@@ -2006,6 +2190,14 @@ ALTER TABLE ONLY public.puesto_conceptos
 
 
 --
+-- Name: conceptos_tenant unique_tenant_id_id; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conceptos_tenant
+    ADD CONSTRAINT unique_tenant_id_id UNIQUE (tenant_id, id);
+
+
+--
 -- Name: conceptos_tenant unique_tenant_modelo_id; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2042,6 +2234,13 @@ ALTER TABLE ONLY public.usuarios
 --
 
 CREATE INDEX idx_admin_tareas_aviso ON public.admin_tareas USING btree (proximo_aviso) WHERE (activo = true);
+
+
+--
+-- Name: idx_base_regimen_tenant_calc; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_base_regimen_tenant_calc ON public.base_regimen_tenant USING btree (tenant_id, regimen_id, concepto_calculado_id) WHERE (activo = true);
 
 
 --
@@ -2155,6 +2354,54 @@ CREATE INDEX idx_unidades_organicas_org ON public.unidades_organicas USING btree
 
 ALTER TABLE ONLY public.afp_tasas_mensuales
     ADD CONSTRAINT afp_tasas_mensuales_afp_id_fkey FOREIGN KEY (afp_id) REFERENCES public.afps(id);
+
+
+--
+-- Name: base_regimen_default base_regimen_default_concepto_calculado_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_default
+    ADD CONSTRAINT base_regimen_default_concepto_calculado_id_fkey FOREIGN KEY (concepto_calculado_id) REFERENCES public.conceptos_calculados(id) ON DELETE CASCADE;
+
+
+--
+-- Name: base_regimen_default base_regimen_default_concepto_modelo_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_default
+    ADD CONSTRAINT base_regimen_default_concepto_modelo_id_fkey FOREIGN KEY (concepto_modelo_id) REFERENCES public.conceptos_modelo(id) ON DELETE CASCADE;
+
+
+--
+-- Name: base_regimen_default base_regimen_default_regimen_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_default
+    ADD CONSTRAINT base_regimen_default_regimen_id_fkey FOREIGN KEY (regimen_id) REFERENCES public.regimenes_laborales(id) ON DELETE CASCADE;
+
+
+--
+-- Name: base_regimen_tenant base_regimen_tenant_concepto_calculado_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_tenant
+    ADD CONSTRAINT base_regimen_tenant_concepto_calculado_id_fkey FOREIGN KEY (concepto_calculado_id) REFERENCES public.conceptos_calculados(id) ON DELETE CASCADE;
+
+
+--
+-- Name: base_regimen_tenant base_regimen_tenant_regimen_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_tenant
+    ADD CONSTRAINT base_regimen_tenant_regimen_id_fkey FOREIGN KEY (regimen_id) REFERENCES public.regimenes_laborales(id) ON DELETE CASCADE;
+
+
+--
+-- Name: base_regimen_tenant base_regimen_tenant_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_tenant
+    ADD CONSTRAINT base_regimen_tenant_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
 
 
 --
@@ -2283,6 +2530,14 @@ ALTER TABLE ONLY public.contratos
 
 ALTER TABLE ONLY public.contratos
     ADD CONSTRAINT contratos_trabajador_id_fkey FOREIGN KEY (trabajador_id) REFERENCES public.trabajadores(id) ON DELETE CASCADE;
+
+
+--
+-- Name: base_regimen_tenant fk_base_regimen_tenant_concepto; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.base_regimen_tenant
+    ADD CONSTRAINT fk_base_regimen_tenant_concepto FOREIGN KEY (tenant_id, concepto_tenant_id) REFERENCES public.conceptos_tenant(tenant_id, id) ON DELETE CASCADE;
 
 
 --
@@ -2545,5 +2800,5 @@ ALTER TABLE ONLY public.usuarios
 -- PostgreSQL database dump complete
 --
 
-\unrestrict gC233QaWemTuV4fDX0zbaNd5yBgRgthPPFxBwjvl6VxUMBRAb8xRPMfDfbQX56y
+\unrestrict afJU252YkDRDusNZyMfnFiwLE36ljmxIIY6cAypgAX2cnoG0x0GhbAeDj3YtPlS
 

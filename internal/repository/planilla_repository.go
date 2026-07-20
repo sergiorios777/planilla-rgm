@@ -51,6 +51,9 @@ func (r *PlanillaRepository) ObtenerTodos(tenantID int) ([]models.Planilla, erro
 			lista = append(lista, p)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -90,6 +93,9 @@ func (r *PlanillaRepository) ObtenerParametrosGlobales(anio int, mes int) (map[s
 		var valor float64
 		rows.Scan(&clave, &valor)
 		parametros[clave] = valor
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return parametros, nil
 }
@@ -144,6 +150,9 @@ func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio 
 		}
 		lista = append(lista, c)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -171,6 +180,9 @@ func (r *PlanillaRepository) ObtenerConceptosPuesto(puestoID int) ([]models.Conc
 			cp.Monto = m.Float64
 		}
 		lista = append(lista, cp)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -272,6 +284,9 @@ func (r *PlanillaRepository) ObtenerDetalles(planillaID int, tenantID int) ([]mo
 		if err == nil {
 			lista = append(lista, d)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -385,6 +400,9 @@ func (r *PlanillaRepository) ObtenerAfectacionesGlobales() (map[int][]int, error
 		rows.Scan(&base, &derivado)
 		mapa[base] = append(mapa[base], derivado)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return mapa, nil
 }
 
@@ -410,6 +428,9 @@ func (r *PlanillaRepository) ObtenerOcurrenciasParaProcesar(tenantID int, planil
 		rows.Scan(&oc.ID, &contratoID, &oc.Tipo, &oc.Cantidad)
 		mapa[contratoID] = append(mapa[contratoID], oc)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return mapa, nil
 }
@@ -432,6 +453,9 @@ func (r *PlanillaRepository) ObtenerTasasAFPMes(anio int, mes int) (map[int]mode
 		rows.Scan(&afpID, &t.Aporte, &t.Flujo, &t.Mixta, &t.Prima)
 		mapa[afpID] = t
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return mapa, nil
 }
 
@@ -452,6 +476,9 @@ func (r *PlanillaRepository) ObtenerMapaCodigosID() (map[string]int, error) {
 			return nil, err
 		}
 		mapa[codigo] = id
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return mapa, nil
 }
@@ -494,6 +521,9 @@ func (r *PlanillaRepository) ObtenerConceptosPorPuestoMasivo(puestoIDs []int) (m
 			cp.Monto = m.Float64
 		}
 		mapa[pID] = append(mapa[pID], cp)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return mapa, nil
 }
@@ -554,6 +584,9 @@ func (r *PlanillaRepository) ObtenerConceptosPorContratoMasivo(contratoIDs []int
 		}
 		mapa[contratoID] = append(mapa[contratoID], cp)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return mapa, nil
 }
 
@@ -610,6 +643,9 @@ func (r *PlanillaRepository) ObtenerRetencionesPreviasMasivo(contratoIDs []int, 
 		rows.Scan(&cID, &suma)
 		mapa[cID] = suma
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return mapa, nil
 }
 
@@ -643,6 +679,9 @@ func (r *PlanillaRepository) ObtenerIngresosPreviosMasivo(contratoIDs []int, ani
 		var suma float64
 		rows.Scan(&cID, &suma)
 		mapa[cID] = suma
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return mapa, nil
 }
@@ -705,6 +744,9 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 		mapaBoletas[b.DetalleID] = b
 		reporte.Boletas = append(reporte.Boletas, b) // Mantenemos el orden alfabético
 	}
+	if err := rowsDet.Err(); err != nil {
+		return nil, err
+	}
 
 	// 3. Obtener TODOS los conceptos históricos inmutables
 	queryConceptos := `
@@ -745,6 +787,9 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 				boleta.Aportes = append(boleta.Aportes, concepto)
 			}
 		}
+	}
+	if err := rowsConc.Err(); err != nil {
+		return nil, err
 	}
 
 	return &reporte, nil
@@ -815,6 +860,9 @@ func (r *PlanillaRepository) ObtenerDatosPlameJornada(planillaID int, tenantID i
 		}
 		lista = append(lista, j)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -844,6 +892,9 @@ func (r *PlanillaRepository) ObtenerDatosPlameRemuneraciones(planillaID int, ten
 			return nil, err
 		}
 		lista = append(lista, rem)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }

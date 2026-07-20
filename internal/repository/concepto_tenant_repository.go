@@ -36,6 +36,9 @@ func (r *ConceptoTenantRepository) ObtenerMaestros() ([]map[string]interface{}, 
 			"Tipo":        tipo,
 		})
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -80,6 +83,9 @@ func (r *ConceptoTenantRepository) ObtenerTodos(tenantID int) ([]models.Concepto
 			}
 			lista = append(lista, ct)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return lista, nil
 }
@@ -161,6 +167,9 @@ func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda
 			}
 			lista = append(lista, ct)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
 	}
 
 	return lista, totalRegistros, nil
@@ -271,6 +280,9 @@ func (r *ConceptoTenantRepository) ObtenerClasificadores() ([]models.Clasificado
 		rows.Scan(&c.ID, &c.CodigoLimpio, &c.Descripcion)
 		lista = append(lista, c)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -370,6 +382,9 @@ func (r *ConceptoTenantRepository) ObtenerRegimenesPorConcepto(id int, tenantID 
 		if err := rows.Scan(&rID); err == nil {
 			ids = append(ids, rID)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return ids, nil
 }

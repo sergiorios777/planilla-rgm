@@ -34,6 +34,9 @@ func (r *ConceptoRepository) ObtenerPadres() ([]models.ConceptoMaestro, error) {
 		}
 		lista = append(lista, c)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lista, nil
 }
 
@@ -90,6 +93,9 @@ func (r *ConceptoRepository) ObtenerTodos(busqueda string, tipo string, parentID
 		}
 		lista = append(lista, c)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
 	return lista, totalRegistros, nil
 }
 
@@ -128,6 +134,9 @@ func (r *ConceptoRepository) ProcesarImportacion(conceptos []models.ConceptoMaes
 		var cod string
 		rows.Scan(&id, &cod)
 		mapaIds[cod] = id
+	}
+	if err := rows.Err(); err != nil {
+		return err
 	}
 	rows.Close()
 
