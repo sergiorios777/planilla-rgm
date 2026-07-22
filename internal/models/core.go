@@ -85,6 +85,7 @@ type ConceptoTenant struct {
 
 	// Campos Auxiliares (JOINs desde la tabla conceptos_maestros)
 	RegimenesIDs       []int  `json:"regimenes_ids"` // Para los checkboxes (POST/PUT)
+	RegimenesCodigos   string `json:"regimenes_codigos,omitempty"`
 	ConceptoCodigo     string `json:"concepto_codigo,omitempty"`
 	ConceptoNombre     string `json:"concepto_nombre,omitempty"`
 	ConceptoTipo       string `json:"concepto_tipo,omitempty"`

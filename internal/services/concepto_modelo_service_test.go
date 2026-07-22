@@ -122,13 +122,18 @@ func TestImportarDesdeCSV(t *testing.T) {
 		JOIN conceptos_modelo cm ON rcm.concepto_modelo_id = cm.id
 		JOIN regimenes_laborales rl ON rcm.regimen_id = rl.id
 		WHERE cm.nombre_personalizado = 'Remuneración Principal Básica Test'`)
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			var cod string
-			rows.Scan(&cod)
+	if err != nil {
+		t.Fatalf("Error consultando pivot: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cod string
+		if err := rows.Scan(&cod); err == nil {
 			mappings = append(mappings, cod)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("Error al iterar las filas de regimen_concepto_modelo: %v", err)
 	}
 	// Debe contener 276, 1057, 30057. No debe contener 728.
 	has728 := false
@@ -229,7 +234,7 @@ func TestSembrarBaseRegimenTenant(t *testing.T) {
 		t.Fatalf("Error creando concepto tenant de prueba: %v", err)
 	}
 	// Base default
-	_, err = db.Exec("INSERT INTO base_regimen_default (concepto_calculado_id, regimen_id, concepto_modelo_id, variable_calculo) VALUES ($1, (SELECT id FROM regimenes_laborales LIMIT 1), $2, 'SUELDO_BASICO')", calcID, modeloID)
+	_, err = db.Exec("INSERT INTO base_regimen_default (concepto_calculado_id, regimen_id, concepto_modelo_id, variable_calculo) VALUES ($1, (SELECT id FROM regimenes_laborales LIMIT 1), $2, 'REMUNERACION_BASICA')", calcID, modeloID)
 	if err != nil {
 		t.Fatalf("Error creando base regimen default de prueba: %v", err)
 	}
@@ -245,7 +250,7 @@ func TestSembrarBaseRegimenTenant(t *testing.T) {
 
 	// 4. Verificar que se haya copiado la regla
 	var count int
-	err = db.QueryRow("SELECT COUNT(*) FROM base_regimen_tenant WHERE tenant_id = 9999 AND concepto_calculado_id = $1 AND concepto_tenant_id = $2 AND variable_calculo = 'SUELDO_BASICO'", calcID, tenantConceptoID).Scan(&count)
+	err = db.QueryRow("SELECT COUNT(*) FROM base_regimen_tenant WHERE tenant_id = 9999 AND concepto_calculado_id = $1 AND concepto_tenant_id = $2 AND variable_calculo = 'REMUNERACION_BASICA'", calcID, tenantConceptoID).Scan(&count)
 	if err != nil {
 		t.Fatalf("Error consultando base_regimen_tenant: %v", err)
 	}

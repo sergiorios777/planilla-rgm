@@ -706,16 +706,19 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 		return nil, err
 	}
 
-	// 2. Obtener los Trabajadores (Directo desde la boleta inmutable)
+	// 2. Obtener los Trabajadores (Directo desde la boleta inmutable y JOIN con el régimen laboral)
 	queryDetalles := `
 		SELECT 
 			pd.id, 
 			pd.trabajador_numero_documento, 
 			pd.trabajador_nombre_completo,
 			pd.puesto_nombre,
-			COALESCE(pd.unidad_organica_nombre, 'Sin Unidad'),
+			COALESCE(rl.descripcion, 'Sin Régimen'),
 			pd.total_ingresos, pd.total_retenciones, pd.total_aportes, pd.neto_pagar
 		FROM planilla_detalles pd
+		LEFT JOIN contratos c ON pd.contrato_id = c.id
+		LEFT JOIN puestos p ON c.puesto_id = p.id
+		LEFT JOIN regimenes_laborales rl ON p.regimen_id = rl.id
 		WHERE pd.planilla_id = $1
 		ORDER BY pd.trabajador_nombre_completo ASC
 	`

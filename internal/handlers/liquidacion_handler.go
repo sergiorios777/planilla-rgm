@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
 	"planilla-rgm/internal/services"
 )
@@ -58,12 +59,20 @@ func (h *LiquidacionHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	hoy := time.Now().Format("2006-01-02")
+	var filtrados []models.Contrato
+	for _, c := range contratos {
+		if c.FechaFin != nil && *c.FechaFin != "" && *c.FechaFin <= hoy {
+			filtrados = append(filtrados, c)
+		}
+	}
+
 	tmpl, err := template.ParseFiles("ui/templates/tenant/liquidaciones_ui.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	tmpl.ExecuteTemplate(w, "formulario_crear_liq", contratos)
+	tmpl.ExecuteTemplate(w, "formulario_crear_liq", filtrados)
 }
 
 func (h *LiquidacionHandler) CalcularLiquidacionCese(w http.ResponseWriter, r *http.Request) {

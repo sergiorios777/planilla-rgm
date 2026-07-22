@@ -148,6 +148,9 @@ func TestCrearContratoExcluyeOcasionales(t *testing.T) {
 			}
 		}
 	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("Error iterando filas de puesto_conceptos: %v", err)
+	}
 
 	if !tieneRegular {
 		t.Errorf("El concepto regular ('Test Contrato Regular') debió asignarse al puesto.")

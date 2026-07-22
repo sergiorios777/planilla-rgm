@@ -41,10 +41,11 @@ func (s *VacacionesService) CalcularVacacionesCese(
 		totalBaseVac = vp + va
 	case "1057", "CAS":
 		// CAS: Retribución Mensual
-		totalBaseVac = sueldo
+		retribucionMensual, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "RETRIBUCION_MENSUAL")
+		totalBaseVac = retribucionMensual
 	default:
 		// DL 728 / Genérico: Sueldo Básico + Asignación Familiar + Remuneración Variable
-		baseVac, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "SUELDO_BASICO")
+		baseVac, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "REMUNERACION_BASICA")
 		asigFamVac, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "ASIGNACION_FAMILIAR")
 		promVarVac, _ := s.BaseRegimenRepo.ObtenerMontoVariable(tenantID, puestoID, regimenID, "VAC_TRUNCAS", "REMUNERACION_VARIABLE")
 		totalBaseVac = baseVac + asigFamVac + promVarVac

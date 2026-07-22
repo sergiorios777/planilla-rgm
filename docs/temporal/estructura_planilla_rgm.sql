@@ -151,7 +151,7 @@ CREATE TABLE public.base_regimen_default (
     regimen_id integer NOT NULL,
     concepto_modelo_id integer NOT NULL,
     variable_calculo character varying(50) NOT NULL,
-    CONSTRAINT chk_variable_calculo_default CHECK (((variable_calculo)::text = ANY ((ARRAY['SUELDO_BASICO'::character varying, 'ASIGNACION_FAMILIAR'::character varying, 'SEXTO_GRATIFICACION'::character varying, 'REMUNERACION_VARIABLE'::character varying, 'REMUNERACION_COMPUTABLE'::character varying, 'MUC'::character varying, 'BET'::character varying, 'RETRIBUCION_MENSUAL'::character varying, 'VALORIZACION_PRINCIPAL'::character varying, 'VALORIZACION_AJUSTADA'::character varying])::text[])))
+    CONSTRAINT chk_variable_calculo_default CHECK (((variable_calculo)::text = ANY ((ARRAY['REMUNERACION_BASICA'::character varying, 'ASIGNACION_FAMILIAR'::character varying, 'SEXTO_GRATIFICACION'::character varying, 'REMUNERACION_VARIABLE'::character varying, 'REMUNERACION_COMPUTABLE'::character varying, 'MUC'::character varying, 'BET'::character varying, 'RETRIBUCION_MENSUAL'::character varying, 'VALORIZACION_PRINCIPAL'::character varying, 'VALORIZACION_AJUSTADA'::character varying])::text[])))
 );
 
 
@@ -191,7 +191,7 @@ CREATE TABLE public.base_regimen_tenant (
     concepto_tenant_id integer NOT NULL,
     variable_calculo character varying(50) NOT NULL,
     activo boolean DEFAULT true NOT NULL,
-    CONSTRAINT chk_variable_calculo_tenant CHECK (((variable_calculo)::text = ANY ((ARRAY['SUELDO_BASICO'::character varying, 'ASIGNACION_FAMILIAR'::character varying, 'SEXTO_GRATIFICACION'::character varying, 'REMUNERACION_VARIABLE'::character varying, 'REMUNERACION_COMPUTABLE'::character varying, 'MUC'::character varying, 'BET'::character varying, 'RETRIBUCION_MENSUAL'::character varying, 'VALORIZACION_PRINCIPAL'::character varying, 'VALORIZACION_AJUSTADA'::character varying])::text[])))
+    CONSTRAINT chk_variable_calculo_tenant CHECK (((variable_calculo)::text = ANY ((ARRAY['REMUNERACION_BASICA'::character varying, 'ASIGNACION_FAMILIAR'::character varying, 'SEXTO_GRATIFICACION'::character varying, 'REMUNERACION_VARIABLE'::character varying, 'REMUNERACION_COMPUTABLE'::character varying, 'MUC'::character varying, 'BET'::character varying, 'RETRIBUCION_MENSUAL'::character varying, 'VALORIZACION_PRINCIPAL'::character varying, 'VALORIZACION_AJUSTADA'::character varying])::text[])))
 );
 
 

@@ -70,59 +70,59 @@ func (s *PdfService) GenerarReportePlanilla(datos *models.DatosReportePlanilla) 
 		// Columna 1: INGRESOS
 		pdf.SetXY(10, yInicial)
 		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(75, altEncabezadoCol, "INGRESOS", "1", 2, "C", false, 0, "")
+		pdf.CellFormat(95, altEncabezadoCol, "INGRESOS", "1", 2, "C", false, 0, "")
 		pdf.SetFont("Arial", "", 8)
 		for _, c := range b.Ingresos {
-			pdf.CellFormat(55, altFilaConcepto, tr(c.Nombre), "L", 0, "L", false, 0, "")
+			pdf.CellFormat(75, altFilaConcepto, tr(c.Nombre), "L", 0, "L", false, 0, "")
 			pdf.CellFormat(20, altFilaConcepto, formatearMonto(c.Monto), "R", 2, "R", false, 0, "")
 			pdf.SetX(10)
 		}
 		// Rellenar espacio vacío para mantener el borde uniforme
 		lineasRestantes := maxLineas - len(b.Ingresos)
 		for i := 0; i < lineasRestantes; i++ {
-			pdf.CellFormat(75, altFilaConcepto, "", "LR", 2, "", false, 0, "")
+			pdf.CellFormat(95, altFilaConcepto, "", "LR", 2, "", false, 0, "")
 			pdf.SetX(10)
 		}
 		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(55, altTotalCol, "Total Ingresos:", "LB", 0, "L", false, 0, "")
+		pdf.CellFormat(75, altTotalCol, "Total Ingresos:", "LB", 0, "L", false, 0, "")
 		pdf.CellFormat(20, altTotalCol, formatearMonto(b.TotalIngresos), "RB", 2, "R", false, 0, "")
 
 		// Columna 2: RETENCIONES
-		pdf.SetXY(85, yInicial)
+		pdf.SetXY(105, yInicial)
 		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(75, altEncabezadoCol, "RETENCIONES / DESCUENTOS", "1", 2, "C", false, 0, "")
+		pdf.CellFormat(70, altEncabezadoCol, "RETENCIONES / DESCUENTOS", "1", 2, "C", false, 0, "")
 		pdf.SetFont("Arial", "", 8)
 		for _, c := range b.Retenciones {
-			pdf.CellFormat(55, altFilaConcepto, tr(c.Nombre), "L", 0, "L", false, 0, "")
+			pdf.CellFormat(50, altFilaConcepto, tr(c.Nombre), "L", 0, "L", false, 0, "")
 			pdf.CellFormat(20, altFilaConcepto, formatearMonto(c.Monto), "R", 2, "R", false, 0, "")
-			pdf.SetX(85)
+			pdf.SetX(105)
 		}
 		lineasRestantes = maxLineas - len(b.Retenciones)
 		for i := 0; i < lineasRestantes; i++ {
-			pdf.CellFormat(75, altFilaConcepto, "", "LR", 2, "", false, 0, "")
-			pdf.SetX(85)
+			pdf.CellFormat(70, altFilaConcepto, "", "LR", 2, "", false, 0, "")
+			pdf.SetX(105)
 		}
 		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(55, altTotalCol, "Total Retenciones:", "LB", 0, "L", false, 0, "")
+		pdf.CellFormat(50, altTotalCol, "Total Retenciones:", "LB", 0, "L", false, 0, "")
 		pdf.CellFormat(20, altTotalCol, formatearMonto(b.TotalRetenciones), "RB", 2, "R", false, 0, "")
 
 		// Columna 3: APORTES
-		pdf.SetXY(160, yInicial)
+		pdf.SetXY(175, yInicial)
 		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(75, altEncabezadoCol, "APORTES ENTIDAD", "1", 2, "C", false, 0, "")
+		pdf.CellFormat(60, altEncabezadoCol, "APORTES ENTIDAD", "1", 2, "C", false, 0, "")
 		pdf.SetFont("Arial", "", 8)
 		for _, c := range b.Aportes {
-			pdf.CellFormat(55, altFilaConcepto, tr(c.Nombre), "L", 0, "L", false, 0, "")
+			pdf.CellFormat(40, altFilaConcepto, tr(c.Nombre), "L", 0, "L", false, 0, "")
 			pdf.CellFormat(20, altFilaConcepto, formatearMonto(c.Monto), "R", 2, "R", false, 0, "")
-			pdf.SetX(160)
+			pdf.SetX(175)
 		}
 		lineasRestantes = maxLineas - len(b.Aportes)
 		for i := 0; i < lineasRestantes; i++ {
-			pdf.CellFormat(75, altFilaConcepto, "", "LR", 2, "", false, 0, "")
-			pdf.SetX(160)
+			pdf.CellFormat(60, altFilaConcepto, "", "LR", 2, "", false, 0, "")
+			pdf.SetX(175)
 		}
 		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(55, altTotalCol, "Total Aportes:", "LB", 0, "L", false, 0, "")
+		pdf.CellFormat(40, altTotalCol, "Total Aportes:", "LB", 0, "L", false, 0, "")
 		pdf.CellFormat(20, altTotalCol, formatearMonto(b.TotalAportes), "RB", 2, "R", false, 0, "")
 
 		// --- 4. COLUMNA NETO A PAGAR (ALINEACIÓN VERTICAL) ---
@@ -137,7 +137,7 @@ func (s *PdfService) GenerarReportePlanilla(datos *models.DatosReportePlanilla) 
 		pdf.CellFormat(52, espacioParaMonto, fmt.Sprintf("S/ %s", formatearMonto(b.NetoPagar)), "LBR", 1, "C", false, 0, "")
 
 		// Espacio de separación para el siguiente trabajador
-		pdf.SetXY(10, yInicial+alturaCajaDatos+4)
+		pdf.SetXY(10, yInicial+alturaCajaDatos+2)
 	}
 
 	// Totales Finales del Reporte (Opcional, al final del documento)

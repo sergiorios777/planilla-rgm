@@ -35,7 +35,7 @@ func (h *ConceptoCalculadoHandler) VistaUI(w http.ResponseWriter, r *http.Reques
 	data := map[string]interface{}{
 		"Regimenes": regimenes,
 		"Variables": []string{
-			"SUELDO_BASICO",
+			"REMUNERACION_BASICA",
 			"MUC",
 			"BET",
 			"RETRIBUCION_MENSUAL",
@@ -146,7 +146,7 @@ func (h *ConceptoCalculadoHandler) VistaAfectaciones(w http.ResponseWriter, r *h
 		"Afectaciones": agrupadas,
 		"Regimenes":    regimenes,
 		"Variables": []string{
-			"SUELDO_BASICO",
+			"REMUNERACION_BASICA",
 			"MUC",
 			"BET",
 			"RETRIBUCION_MENSUAL",

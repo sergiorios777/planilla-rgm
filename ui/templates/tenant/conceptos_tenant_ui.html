@@ -24,12 +24,24 @@
     <p><small>Configura cómo se llamarán los conceptos en tus boletas y vincúlalos al SIAF (Clasificadores).</small></p>
 
     <div>
+        <!--Formulario de filtros-->
         <form id="form-filtros-conceptos-tenant" class="grid">
             <label>
                 Buscar
                 <input type="search" name="buscar" placeholder="Código, Clasificador o descripción..."
                     hx-get="/tenant/conceptos-locales/lista" hx-trigger="keyup changed delay:500ms, search"
                     hx-include="#form-filtros-conceptos-tenant" hx-target="#lista-conceptos-tenant">
+            </label>
+
+            <label>
+                Régimen Laboral
+                <select name="regimen_id" hx-get="/tenant/conceptos-locales/lista"
+                    hx-include="#form-filtros-conceptos-tenant" hx-target="#lista-conceptos-tenant">
+                    <option value="">Todos</option>
+                    {{range .Regimenes}}
+                    <option value="{{.ID}}">{{.Descripcion}}</option>
+                    {{end}}
+                </select>
             </label>
 
             <label aria-disabled="true">
@@ -63,7 +75,8 @@
     <dialog id="modal-crear-concepto">
         <article style="max-width: 750px; width: 95%;">
             <header>
-                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-crear-concepto').close()"></a>
+                <a href="#close" aria-label="Close" class="close"
+                    onclick="document.getElementById('modal-crear-concepto').close()"></a>
                 <h4 style="margin-bottom: 0;">➕ Agregar Concepto a la Municipalidad</h4>
             </header>
             <div id="contenedor-formulario">
@@ -73,10 +86,12 @@
     </dialog>
 
     <!-- Modal de Edición -->
-    <dialog id="modal-editar-concepto" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
+    <dialog id="modal-editar-concepto"
+        hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
         <article style="max-width: 750px; width: 95%;">
             <header>
-                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-editar-concepto').close()"></a>
+                <a href="#close" aria-label="Close" class="close"
+                    onclick="document.getElementById('modal-editar-concepto').close()"></a>
                 <h4 style="margin-bottom: 0;">✏️ Editar Concepto Local</h4>
             </header>
             <div id="contenido-modal-editar">
@@ -88,11 +103,13 @@
 
 {{define "tabla_conceptos_tenant"}}
 <div style="overflow-x: auto;">
+    <!--Tabla de conceptos del Tenant-->
     <table class="striped">
         <thead>
             <tr>
                 <th>Concepto (Boleta)</th>
                 <th>Frecuencia y SIAF</th>
+                <th>Régimen laboral</th>
                 <th>Estado</th>
                 <th>Base SUNAT</th>
                 <th>Acción</th>
@@ -114,10 +131,12 @@
                         style="background-color: #bbdefb; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">APORTE</mark>
                     {{end}}
                     {{if .EsOcasional}}
-                    <mark style="background-color: #eceff1; color: #37474f; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #cfd8dc;">OCAS</mark>
+                    <mark
+                        style="background-color: #eceff1; color: #37474f; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #cfd8dc;">OCAS</mark>
                     {{end}}
                     {{if .EsAfectoCargasSociales}}
-                    <mark style="background-color: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #ffcdd2;">CARG_SOC</mark>
+                    <mark
+                        style="background-color: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #ffcdd2;">CARG_SOC</mark>
                     {{end}}
                 </td>
                 <td>
@@ -125,6 +144,7 @@
                     <small>SIAF: <strong>{{if
                             .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}}</strong></small>
                 </td>
+                <td><small>{{if .RegimenesCodigos}}{{.RegimenesCodigos}}{{else}}Sin régimen{{end}}</small></td>
                 <td>
                     {{if .Activo}}
                     <span
@@ -145,7 +165,7 @@
             </tr>
             {{else}}
             <tr>
-                <td colspan="4" style="text-align: center;">Aún no has configurado conceptos locales.</td>
+                <td colspan="6" style="text-align: center;">Aún no has configurado conceptos locales.</td>
             </tr>
             {{end}}
         </tbody>
@@ -219,8 +239,7 @@
     </fieldset>
 
     <label>Nombre Personalizado (Máscara para la Boleta)
-        <input type="text" name="nombre_personalizado" placeholder="Ej. Remuneración CAS, Bono Frontera..."
-            required>
+        <input type="text" name="nombre_personalizado" placeholder="Ej. Remuneración CAS, Bono Frontera..." required>
     </label>
 
     <div class="grid">
@@ -268,7 +287,8 @@
     </div>
 
     <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline" onclick="document.getElementById('modal-crear-concepto').close()" style="margin-bottom: 0; width: auto;">
+        <button type="button" class="secondary outline"
+            onclick="document.getElementById('modal-crear-concepto').close()" style="margin-bottom: 0; width: auto;">
             Cancelar
         </button>
         <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">
@@ -301,7 +321,8 @@
             style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
             {{range .Regimenes}}
             <label>
-                <input type="checkbox" name="regimenes_ids" value="{{.ID}}" {{if index $.RegimenesMarcados .ID}}checked{{end}}>
+                <input type="checkbox" name="regimenes_ids" value="{{.ID}}" {{if index $.RegimenesMarcados
+                    .ID}}checked{{end}}>
                 {{.Descripcion}}
             </label>
             {{end}}
@@ -334,17 +355,18 @@
         <input type="checkbox" role="switch" name="activo" {{if .Concepto.Activo}}checked{{end}}> Concepto Activo
     </label>
     <label>
-        <input type="checkbox" role="switch" name="es_extraordinario" {{if
-            .Concepto.EsExtraordinario}}checked{{end}}>
+        <input type="checkbox" role="switch" name="es_extraordinario" {{if .Concepto.EsExtraordinario}}checked{{end}}>
         Concepto Extraordinario
     </label>
 
     <div class="grid">
         <label>
-            <input type="checkbox" role="switch" name="es_pensionable" {{if .Concepto.EsPensionable}}checked{{end}}> Es Pensionable
+            <input type="checkbox" role="switch" name="es_pensionable" {{if .Concepto.EsPensionable}}checked{{end}}> Es
+            Pensionable
         </label>
         <label>
-            <input type="checkbox" role="switch" name="es_remunerativa" {{if .Concepto.EsRemunerativa}}checked{{end}}> Es Remunerativa
+            <input type="checkbox" role="switch" name="es_remunerativa" {{if .Concepto.EsRemunerativa}}checked{{end}}>
+            Es Remunerativa
         </label>
     </div>
 
@@ -353,18 +375,22 @@
             <input type="checkbox" role="switch" name="es_base_cts" {{if .Concepto.EsBaseCts}}checked{{end}}> Base CTS
         </label>
         <label>
-            <input type="checkbox" role="switch" name="es_base_beneficios_sociales" {{if .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> Base Beneficios Sociales
+            <input type="checkbox" role="switch" name="es_base_beneficios_sociales" {{if
+                .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> Base Beneficios Sociales
         </label>
         <label>
-            <input type="checkbox" role="switch" name="es_afecto_cargas_sociales" {{if .Concepto.EsAfectoCargasSociales}}checked{{end}}> Afecto Cargas Soc.
+            <input type="checkbox" role="switch" name="es_afecto_cargas_sociales" {{if
+                .Concepto.EsAfectoCargasSociales}}checked{{end}}> Afecto Cargas Soc.
         </label>
         <label>
-            <input type="checkbox" role="switch" name="es_ocasional" {{if .Concepto.EsOcasional}}checked{{end}} disabled> ¿Es Ocasional? (Configuración Centralizada)
+            <input type="checkbox" role="switch" name="es_ocasional" {{if .Concepto.EsOcasional}}checked{{end}}
+                disabled> ¿Es Ocasional? (Configuración Centralizada)
         </label>
     </div>
 
     <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-concepto').close()" style="margin-bottom: 0; width: auto;">
+        <button type="button" class="secondary outline"
+            onclick="document.getElementById('modal-editar-concepto').close()" style="margin-bottom: 0; width: auto;">
             Cancelar
         </button>
         <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">

@@ -35,6 +35,9 @@ func (h *ConceptoTenantHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	busqueda := r.URL.Query().Get("buscar")
 	paginaStr := r.URL.Query().Get("pagina")
 	limiteStr := r.URL.Query().Get("limite")
+	regimenIDStr := r.URL.Query().Get("regimen_id")
+
+	regimenID, _ := strconv.Atoi(regimenIDStr)
 
 	limite, err := strconv.Atoi(limiteStr)
 	if err != nil || limite <= 0 {
@@ -48,7 +51,7 @@ func (h *ConceptoTenantHandler) Listar(w http.ResponseWriter, r *http.Request) {
 
 	offset := (pagina - 1) * limite
 
-	conceptos, totalRegistros, err := h.Repo.ObtenerTodosPaginacion(tenantID, busqueda, limite, offset)
+	conceptos, totalRegistros, err := h.Repo.ObtenerTodosPaginacion(tenantID, busqueda, regimenID, limite, offset)
 	if err != nil {
 		http.Error(w, "Error al obtener los conceptos", http.StatusInternalServerError)
 		return

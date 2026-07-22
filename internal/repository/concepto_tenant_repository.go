@@ -48,11 +48,15 @@ func (r *ConceptoTenantRepository) ObtenerTodos(tenantID int) ([]models.Concepto
 		SELECT ct.id, ct.concepto_id, ct.modelo_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
 		       ct.es_extraordinario, ct.es_pensionable, ct.es_remunerativa, ct.es_base_cts, ct.es_base_beneficios_sociales, ct.es_ocasional, ct.es_afecto_cargas_sociales,
 		       cm.codigo, cm.tipo, 
-			   mef.codigo AS clasificador_codigo
+			   mef.codigo AS clasificador_codigo,
+			   COALESCE(STRING_AGG(rl.codigo, ', '), 'Sin régimen') AS regimenes_codigos
 		FROM conceptos_tenant ct
 		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
 		LEFT JOIN clasificadores_mef mef ON ct.clasificador_id = mef.id
+		LEFT JOIN regimen_concepto_tenant rct ON ct.id = rct.concepto_tenant_id AND ct.tenant_id = rct.tenant_id
+		LEFT JOIN regimenes_laborales rl ON rct.regimen_id = rl.id
 		WHERE ct.tenant_id = $1
+		GROUP BY ct.id, cm.codigo, cm.tipo, mef.codigo
 		ORDER BY cm.tipo ASC, ct.nombre_personalizado ASC
 	`
 	rows, err := r.db.Query(query, tenantID)
@@ -67,10 +71,11 @@ func (r *ConceptoTenantRepository) ObtenerTodos(tenantID int) ([]models.Concepto
 		var clasifID sql.NullInt64
 		var clasifCod sql.NullString
 		var modeloID sql.NullInt64
+		var regimenesCodigos sql.NullString
 
 		err := rows.Scan(&ct.ID, &ct.ConceptoID, &modeloID, &ct.NombrePersonalizado, &ct.FrecuenciaMeses, &clasifID, &ct.Activo,
 			&ct.EsExtraordinario, &ct.EsPensionable, &ct.EsRemunerativa, &ct.EsBaseCts, &ct.EsBaseBeneficiosSociales, &ct.EsOcasional, &ct.EsAfectoCargasSociales,
-			&ct.ConceptoCodigo, &ct.ConceptoTipo, &clasifCod)
+			&ct.ConceptoCodigo, &ct.ConceptoTipo, &clasifCod, &regimenesCodigos)
 		if err == nil {
 			if clasifID.Valid {
 				id := int(clasifID.Int64)
@@ -80,6 +85,9 @@ func (r *ConceptoTenantRepository) ObtenerTodos(tenantID int) ([]models.Concepto
 			if modeloID.Valid {
 				mID := int(modeloID.Int64)
 				ct.ModeloID = &mID
+			}
+			if regimenesCodigos.Valid {
+				ct.RegimenesCodigos = regimenesCodigos.String
 			}
 			lista = append(lista, ct)
 		}
@@ -91,7 +99,7 @@ func (r *ConceptoTenantRepository) ObtenerTodos(tenantID int) ([]models.Concepto
 }
 
 // ObtenerTodosPaginacion trae el catálogo configurado por la municipalidad con paginación
-func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda string, limite int, offset int) ([]models.ConceptoTenant, int, error) {
+func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda string, regimenID int, limite int, offset int) ([]models.ConceptoTenant, int, error) {
 	whereClause := "WHERE ct.tenant_id = $1"
 	params := []interface{}{tenantID}
 	paramIndex := 2
@@ -102,12 +110,20 @@ func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda
 		paramIndex += 3
 	}
 
+	if regimenID > 0 {
+		whereClause += fmt.Sprintf(" AND EXISTS (SELECT 1 FROM regimen_concepto_tenant rct_f WHERE rct_f.concepto_tenant_id = ct.id AND rct_f.tenant_id = ct.tenant_id AND rct_f.regimen_id = $%d)", paramIndex)
+		params = append(params, regimenID)
+		paramIndex++
+	}
+
 	var totalRegistros int
 	countQuery := fmt.Sprintf(
 		`
-			SELECT COUNT(*) FROM conceptos_tenant ct 
+			SELECT COUNT(DISTINCT ct.id) FROM conceptos_tenant ct 
 			INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
 			LEFT JOIN clasificadores_mef mef ON ct.clasificador_id = mef.id
+			LEFT JOIN regimen_concepto_tenant rct ON ct.id = rct.concepto_tenant_id AND ct.tenant_id = rct.tenant_id
+			LEFT JOIN regimenes_laborales rl ON rct.regimen_id = rl.id
 			%s
 		`,
 		whereClause,
@@ -123,11 +139,15 @@ func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda
 		SELECT ct.id, ct.concepto_id, ct.modelo_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
 		       ct.es_extraordinario, ct.es_pensionable, ct.es_remunerativa, ct.es_base_cts, ct.es_base_beneficios_sociales, ct.es_ocasional, ct.es_afecto_cargas_sociales,
 		       cm.codigo, cm.tipo, 
-			mef.codigo AS clasificador_codigo
+			   mef.codigo AS clasificador_codigo,
+			   COALESCE(STRING_AGG(rl.codigo, ', '), 'Sin régimen') AS regimenes_codigos
 		FROM conceptos_tenant ct
 		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
 		LEFT JOIN clasificadores_mef mef ON ct.clasificador_id = mef.id
+		LEFT JOIN regimen_concepto_tenant rct ON ct.id = rct.concepto_tenant_id AND ct.tenant_id = rct.tenant_id
+		LEFT JOIN regimenes_laborales rl ON rct.regimen_id = rl.id
 		%s
+		GROUP BY ct.id, cm.codigo, cm.tipo, mef.codigo
 		ORDER BY cm.tipo ASC, ct.nombre_personalizado ASC
 		LIMIT $%d OFFSET $%d
 	`,
@@ -151,10 +171,11 @@ func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda
 		var clasifID sql.NullInt64
 		var clasifCod sql.NullString
 		var modeloID sql.NullInt64
+		var regimenesCodigos sql.NullString
 
 		err := rows.Scan(&ct.ID, &ct.ConceptoID, &modeloID, &ct.NombrePersonalizado, &ct.FrecuenciaMeses, &clasifID, &ct.Activo,
 			&ct.EsExtraordinario, &ct.EsPensionable, &ct.EsRemunerativa, &ct.EsBaseCts, &ct.EsBaseBeneficiosSociales, &ct.EsOcasional, &ct.EsAfectoCargasSociales,
-			&ct.ConceptoCodigo, &ct.ConceptoTipo, &clasifCod)
+			&ct.ConceptoCodigo, &ct.ConceptoTipo, &clasifCod, &regimenesCodigos)
 		if err == nil {
 			if clasifID.Valid {
 				id := int(clasifID.Int64)
@@ -164,6 +185,9 @@ func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda
 			if modeloID.Valid {
 				mID := int(modeloID.Int64)
 				ct.ModeloID = &mID
+			}
+			if regimenesCodigos.Valid {
+				ct.RegimenesCodigos = regimenesCodigos.String
 			}
 			lista = append(lista, ct)
 		}
