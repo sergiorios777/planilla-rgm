@@ -385,3 +385,72 @@ func TestCalcularLiquidacionVacacionesTruncasDataDriven(t *testing.T) {
 	}
 }
 
+func TestCalcularLiquidacionCtsDL1057(t *testing.T) {
+	_ = godotenv.Load("../../.env")
+	db, err := config.InitDB()
+	if err != nil {
+		t.Skip("Saltando test de base de datos local:", err)
+		return
+	}
+
+	// 1. Crear tenant temporal
+	var tenantID int
+	err = db.QueryRow("INSERT INTO tenants (nombre, ruc, activo) VALUES ('CTS CAS Test Tenant', '20203040510', true) RETURNING id").Scan(&tenantID)
+	if err != nil {
+		t.Fatalf("error al crear tenant: %v", err)
+	}
+	defer func() {
+		db.Exec("DELETE FROM base_regimen_tenant WHERE tenant_id = $1", tenantID)
+		db.Exec("DELETE FROM conceptos_tenant WHERE tenant_id = $1", tenantID)
+		db.Exec("DELETE FROM tenants WHERE id = $1", tenantID)
+	}()
+
+	var trabajadorID int
+	err = db.QueryRow(`
+		INSERT INTO trabajadores (tenant_id, tipo_documento, numero_documento, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, sexo, regimen_pensionario)
+		VALUES ($1, 'DNI', '99991120', 'Marcos', 'Cas', 'Test', '1992-03-15', 'M', 'ONP') RETURNING id`, tenantID).Scan(&trabajadorID)
+	if err != nil {
+		t.Fatalf("error al crear trabajador: %v", err)
+	}
+
+	var regimenID int
+	err = db.QueryRow("SELECT id FROM regimenes_laborales WHERE codigo = '1057'").Scan(&regimenID)
+	if err != nil {
+		t.Fatalf("error obteniendo regimen CAS 1057: %v", err)
+	}
+
+	var puestoID int
+	err = db.QueryRow(`
+		INSERT INTO puestos (tenant_id, regimen_id, nombre, estado, sueldo_presupuestado)
+		VALUES ($1, $2, 'Especialista CAS', 'VACANTE', 3000.00) RETURNING id`, tenantID, regimenID).Scan(&puestoID)
+	if err != nil {
+		t.Fatalf("error al crear puesto: %v", err)
+	}
+
+	var contratoID int
+	err = db.QueryRow(`
+		INSERT INTO contratos (tenant_id, trabajador_id, puesto_id, fecha_inicio, activo)
+		VALUES ($1, $2, $3, '2025-01-01', true) RETURNING id`, tenantID, trabajadorID, puestoID).Scan(&contratoID)
+	if err != nil {
+		t.Fatalf("error al crear contrato: %v", err)
+	}
+
+	vacSvc := NewVacacionesService(repository.NewBaseRegimenRepository(db))
+	liqSvc := NewLiquidacionService(db, vacSvc)
+
+	// Caso A: Cese en 2026 con 20 meses (1a 8m -> 2 años computables, 10% en 2026)
+	// Base = 3000. 10% de 3000 = 300. CTS = 300 * 2 = 600.00
+	inicio := time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
+	cese := time.Date(2026, time.August, 31, 0, 0, 0, 0, time.UTC)
+
+	l, err := liqSvc.CalcularLiquidacion(contratoID, inicio, cese, "RENUNCIA", 0, 0)
+	if err != nil {
+		t.Fatalf("error al calcular liquidación CAS: %v", err)
+	}
+
+	expectedCts := 600.00
+	if math.Abs(l.MontoCts-expectedCts) > 0.001 {
+		t.Errorf("got CTS CAS = %v; want %v", l.MontoCts, expectedCts)
+	}
+}
+

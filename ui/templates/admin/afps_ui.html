@@ -50,7 +50,7 @@
                         <option value="2">Febrero</option>
                         <option value="3">Marzo</option>
                         <option value="4">Abril</option>
-                        <option value="5" selected>Mayo</option>
+                        <option value="5">Mayo</option>
                         <option value="6">Junio</option>
                         <option value="7">Julio</option>
                         <option value="8">Agosto</option>
@@ -61,6 +61,40 @@
                     </select>
                 </label>
             </form>
+            <script>
+                (function() {
+                    const now = new Date();
+                    const currentMonth = now.getMonth() + 1;
+                    const currentYear = now.getFullYear();
+
+                    document.querySelectorAll('select[name="mes"]').forEach(mesSelect => {
+                        mesSelect.value = currentMonth;
+                        Array.from(mesSelect.options).forEach(opt => {
+                            opt.defaultSelected = (parseInt(opt.value) === currentMonth);
+                        });
+                    });
+
+                    const formFiltros = document.getElementById('form-filtros-tasas');
+                    if (formFiltros) {
+                        const anioSelect = formFiltros.querySelector('select[name="anio"]');
+                        if (anioSelect && Array.from(anioSelect.options).some(opt => parseInt(opt.value) === currentYear)) {
+                            anioSelect.value = currentYear;
+                            Array.from(anioSelect.options).forEach(opt => {
+                                opt.defaultSelected = (parseInt(opt.value) === currentYear);
+                            });
+                        }
+                    }
+
+                    const modalImport = document.getElementById('modal-importar-tasas');
+                    if (modalImport) {
+                        const anioInput = modalImport.querySelector('input[name="anio"]');
+                        if (anioInput) {
+                            anioInput.defaultValue = currentYear;
+                            anioInput.value = currentYear;
+                        }
+                    }
+                })();
+            </script>
             
             <button class="outline secondary" onclick="document.getElementById('modal-importar-tasas').setAttribute('open', 'true')" style="margin-bottom: 0; width: auto;" type="button">
                 <svg class="icono-menu">
@@ -123,7 +157,7 @@
                         <option value="2">Febrero</option>
                         <option value="3">Marzo</option>
                         <option value="4">Abril</option>
-                        <option value="5" selected>Mayo</option>
+                        <option value="5">Mayo</option>
                         <option value="6">Junio</option>
                         <option value="7">Julio</option>
                         <option value="8">Agosto</option>

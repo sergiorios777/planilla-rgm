@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"planilla-rgm/internal/calculadoras"
+	"planilla-rgm/internal/helpers"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
 	"strconv"
@@ -250,6 +251,39 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 		calculadoGratiDone = true
 	}
 
+	var calculadaGratiCAS, aporteEsSaludGratiCAS float64
+	var calculadoGratiCASDone bool
+	if (job.MesActual == 7 || job.MesActual == 12) && (job.Contrato.Regimen == "1057" || job.Contrato.Regimen == "CAS") {
+		var semDesde, semHasta time.Time
+		if job.MesActual == 7 {
+			semDesde = time.Date(job.Anio, time.January, 1, 0, 0, 0, 0, time.UTC)
+			semHasta = time.Date(job.Anio, time.June, 30, 23, 59, 59, 0, time.UTC)
+		} else {
+			semDesde = time.Date(job.Anio, time.July, 1, 0, 0, 0, 0, time.UTC)
+			semHasta = time.Date(job.Anio, time.December, 31, 23, 59, 59, 0, time.UTC)
+		}
+
+		meses, dias := helpers.CalcularMesesYDiasSemestreGratificacionCAS(job.Contrato.FechaInicio, job.Contrato.FechaFin, semDesde, semHasta)
+
+		remComputable := job.Contrato.SueldoBasicoHistorico
+		if remComputable <= 0 {
+			remComputable = 1025.00
+		}
+
+		if s.Repo != nil && s.Repo.GetDB() != nil {
+			baseRepo := repository.NewBaseRegimenRepository(s.Repo.GetDB())
+			if baseRepo != nil {
+				montoDataDriven, err := baseRepo.ObtenerMontoVariable(job.Contrato.TenantID, job.Contrato.PuestoID, job.Contrato.RegimenID, "GRATIFICACION", "RETRIBUCION_MENSUAL")
+				if err == nil && montoDataDriven > 0 {
+					remComputable = montoDataDriven
+				}
+			}
+		}
+
+		calculadaGratiCAS, aporteEsSaludGratiCAS = calculadoras.CalcularGratificacionDL1057(remComputable, job.MesActual, job.Anio, meses, dias)
+		calculadoGratiCASDone = true
+	}
+
 	// --- PASADA 1: PROCESAR INGRESOS ---
 	for _, cp := range job.ConceptosPlaza {
 		if strings.ToUpper(cp.Tipo) != "INGRESO" {
@@ -277,6 +311,12 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 				isGratificationConcept = true
 			} else if cp.CodigoInterno == "BON_EXTR_JUL_DL_728" || cp.CodigoInterno == "BON_EXTR_DIC_DL_728" || cp.CodigoSunat == "0312" {
 				montoProporcional = calculadaBonExt
+				isGratificationConcept = true
+			}
+		}
+		if calculadoGratiCASDone {
+			if cp.CodigoInterno == "GRATI_JUL_DL_1057" || cp.CodigoInterno == "GRATI_DIC_DL_1057" || cp.CodigoSunat == "2006" {
+				montoProporcional = calculadaGratiCAS
 				isGratificationConcept = true
 			}
 		}
@@ -366,7 +406,7 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 		case "0705":
 			montoFinal = descFaltas
 		case "0804":
-			montoFinal = calculadoras.CalcularEsSalud(base, ctxTrabajador)
+			montoFinal = calculadoras.CalcularEsSalud(base, ctxTrabajador) + aporteEsSaludGratiCAS
 		case "S101":
 			montoFinal = calculadoras.CalcularRenta4ta(base, ctxTrabajador)
 		case "0605":

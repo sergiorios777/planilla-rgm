@@ -361,3 +361,68 @@ func (h *ConceptoTenantHandler) Restaurar(w http.ResponseWriter, r *http.Request
 	// Refrescamos la lista para que el usuario vea los cambios
 	h.Listar(w, r)
 }
+
+func (h *ConceptoTenantHandler) ModalAgregarModeloUI(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	disponibles, err := h.Repo.ObtenerModelosDisponibles(tenantID)
+	if err != nil {
+		log.Println("Error obteniendo modelos disponibles:", err)
+		http.Error(w, "Error al obtener conceptos modelo disponibles", http.StatusInternalServerError)
+		return
+	}
+
+	datos := map[string]interface{}{
+		"ModelosDisponibles": disponibles,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/tenant/conceptos_tenant_ui.html")
+	if err != nil {
+		log.Println("Error parseando plantilla:", err)
+		http.Error(w, "Error al cargar plantilla", http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "modal_agregar_modelo", datos)
+}
+
+func (h *ConceptoTenantHandler) AgregarModelo(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	tenantID := obtenerTenantID(r)
+	modeloID, err := strconv.Atoi(r.FormValue("modelo_id"))
+	if err != nil || modeloID <= 0 {
+		http.Error(w, "Debe seleccionar un concepto modelo válido", http.StatusBadRequest)
+		return
+	}
+
+	err = h.Repo.AgregarDesdeModelo(tenantID, modeloID)
+	if err != nil {
+		log.Println("Error al agregar concepto modelo a tenant:", err)
+		http.Error(w, "No se pudo agregar el concepto modelo", http.StatusInternalServerError)
+		return
+	}
+
+	// Refrescar la tabla principal
+	h.Listar(w, r)
+}
+
+func (h *ConceptoTenantHandler) SincronizarModelo(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	if id <= 0 {
+		id, _ = strconv.Atoi(r.FormValue("id"))
+	}
+	tenantID := obtenerTenantID(r)
+
+	err := h.Repo.SincronizarConceptoModelo(tenantID, id)
+	if err != nil {
+		log.Println("Error al sincronizar concepto tenant desde modelo:", err)
+		http.Error(w, "Error al sincronizar el concepto con el modelo", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("HX-Trigger", "recargarTablaConceptos")
+
+	r.URL.RawQuery = "id=" + strconv.Itoa(id)
+	h.EditarUI(w, r)
+}
+
+

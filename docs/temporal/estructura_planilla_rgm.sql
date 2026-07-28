@@ -1372,6 +1372,7 @@ CREATE TABLE public.trabajadores (
     apellido_paterno character varying(100) NOT NULL,
     apellido_materno character varying(100) NOT NULL,
     fecha_nacimiento date,
+    fecha_ingreso date,
     sexo character varying(1),
     activo boolean DEFAULT true,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,

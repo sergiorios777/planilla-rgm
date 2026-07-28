@@ -99,6 +99,7 @@ func (h *TrabajadorHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		ApellidoPaterno:    r.FormValue("apellido_paterno"),
 		ApellidoMaterno:    r.FormValue("apellido_materno"),
 		FechaNacimiento:    r.FormValue("fecha_nacimiento"),
+		FechaIngreso:       r.FormValue("fecha_ingreso"),
 		Sexo:               r.FormValue("sexo"),
 		Activo:             r.FormValue("activo") == "on",
 		RegimenPensionario: r.FormValue("regimen_pensionario"),
@@ -152,6 +153,7 @@ func (h *TrabajadorHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 		ApellidoPaterno:    r.FormValue("apellido_paterno"),
 		ApellidoMaterno:    r.FormValue("apellido_materno"),
 		FechaNacimiento:    r.FormValue("fecha_nacimiento"),
+		FechaIngreso:       r.FormValue("fecha_ingreso"),
 		Sexo:               r.FormValue("sexo"),
 		Activo:             r.FormValue("activo") == "on",
 		RegimenPensionario: r.FormValue("regimen_pensionario"),
@@ -175,7 +177,7 @@ func (h *TrabajadorHandler) DescargarPlantilla(w http.ResponseWriter, r *http.Re
 	// Cabeceras
 	cabeceras := []string{
 		"TIPO_DOCUMENTO", "NUMERO_DOCUMENTO", "NOMBRES", "APELLIDO_PATERNO", "APELLIDO_MATERNO",
-		"FECHA_NACIMIENTO", "SEXO", "REGIMEN_PENSIONARIO", "AFP", "TIPO_COMISION", "CUSPP", "ACTIVO",
+		"FECHA_NACIMIENTO", "FECHA_INGRESO", "SEXO", "REGIMEN_PENSIONARIO", "AFP", "TIPO_COMISION", "CUSPP", "ACTIVO",
 	}
 	for i, cabecera := range cabeceras {
 		col := fmt.Sprintf("%c1", 'A'+i)
@@ -184,9 +186,9 @@ func (h *TrabajadorHandler) DescargarPlantilla(w http.ResponseWriter, r *http.Re
 
 	// Datos de ejemplo
 	ejemplos := [][]interface{}{
-		{"DNI", "45678912", "Juan Carlos", "Perez", "Gomez", "1990-05-15", "M", "ONP", "", "", "", "SI"},
-		{"DNI", "78912345", "Maria Elena", "Flores", "Ramos", "1988-11-23", "F", "AFP", "INTEGRA", "MIXTA", "123456789012", "SI"},
-		{"CE", "001234567", "John", "Smith", "Doe", "1985-02-10", "M", "AFP", "PRIMA", "FLUJO", "987654321098", "NO"},
+		{"DNI", "45678912", "Juan Carlos", "Perez", "Gomez", "1990-05-15", "2020-01-15", "M", "ONP", "", "", "", "SI"},
+		{"DNI", "78912345", "Maria Elena", "Flores", "Ramos", "1988-11-23", "2021-03-01", "F", "AFP", "INTEGRA", "MIXTA", "123456789012", "SI"},
+		{"CE", "001234567", "John", "Smith", "Doe", "1985-02-10", "2019-07-01", "M", "AFP", "PRIMA", "FLUJO", "987654321098", "NO"},
 	}
 	for rIdx, fila := range ejemplos {
 		for cIdx, valor := range fila {
@@ -205,12 +207,13 @@ func (h *TrabajadorHandler) DescargarPlantilla(w http.ResponseWriter, r *http.Re
 	f.SetCellValue(instruccionesSheet, "A6", "APELLIDO_PATERNO: Obligatorio. Apellido paterno.")
 	f.SetCellValue(instruccionesSheet, "A7", "APELLIDO_MATERNO: Obligatorio. Apellido materno.")
 	f.SetCellValue(instruccionesSheet, "A8", "FECHA_NACIMIENTO: Opcional. Formato YYYY-MM-DD (Ej. 1990-05-15).")
-	f.SetCellValue(instruccionesSheet, "A9", "SEXO: Obligatorio. Debe ser M o F.")
-	f.SetCellValue(instruccionesSheet, "A10", "REGIMEN_PENSIONARIO: Obligatorio. Debe ser ONP o AFP.")
-	f.SetCellValue(instruccionesSheet, "A11", "AFP: Obligatorio si REGIMEN_PENSIONARIO es AFP. Debe ser uno de: HABITAT, INTEGRA, PRIMA, PROFUTURO (o sus siglas: HBT, INT, PRM, PFR).")
-	f.SetCellValue(instruccionesSheet, "A12", "TIPO_COMISION: Obligatorio si REGIMEN_PENSIONARIO es AFP. Debe ser uno de: FLUJO, MIXTA.")
-	f.SetCellValue(instruccionesSheet, "A13", "CUSPP: Recomendado si REGIMEN_PENSIONARIO es AFP. Código Único del Sistema Privado de Pensiones (12 a 20 caracteres).")
-	f.SetCellValue(instruccionesSheet, "A14", "ACTIVO: Opcional. Indica si el personal está laborando. Debe ser SI o NO. Por defecto es SI.")
+	f.SetCellValue(instruccionesSheet, "A9", "FECHA_INGRESO: Opcional. Fecha de ingreso a la entidad. Formato YYYY-MM-DD (Ej. 2020-01-15).")
+	f.SetCellValue(instruccionesSheet, "A10", "SEXO: Obligatorio. Debe ser M o F.")
+	f.SetCellValue(instruccionesSheet, "A11", "REGIMEN_PENSIONARIO: Obligatorio. Debe ser ONP o AFP.")
+	f.SetCellValue(instruccionesSheet, "A12", "AFP: Obligatorio si REGIMEN_PENSIONARIO es AFP. Debe ser uno de: HABITAT, INTEGRA, PRIMA, PROFUTURO (o sus siglas: HBT, INT, PRM, PFR).")
+	f.SetCellValue(instruccionesSheet, "A13", "TIPO_COMISION: Obligatorio si REGIMEN_PENSIONARIO es AFP. Debe ser uno de: FLUJO, MIXTA.")
+	f.SetCellValue(instruccionesSheet, "A14", "CUSPP: Recomendado si REGIMEN_PENSIONARIO es AFP. Código Único del Sistema Privado de Pensiones (12 a 20 caracteres).")
+	f.SetCellValue(instruccionesSheet, "A15", "ACTIVO: Opcional. Indica si el personal está laborando. Debe ser SI o NO. Por defecto es SI.")
 
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	w.Header().Set("Content-Disposition", "attachment; filename=plantilla_trabajadores.xlsx")
@@ -314,8 +317,8 @@ func (h *TrabajadorHandler) ImportarExcel(w http.ResponseWriter, r *http.Request
 				}
 
 				// Validar columnas mínimas
-				if len(fila) < 8 {
-					results <- RowResult{Index: job.Index, Error: fmt.Errorf("Fila %d: Columnas incompletas (mínimo se requieren 8 columnas: Tipo Doc, Nro Doc, Nombres, Paterno, Materno, F. Nacimiento, Sexo, Régimen)", numFila)}
+				if len(fila) < 9 {
+					results <- RowResult{Index: job.Index, Error: fmt.Errorf("Fila %d: Columnas incompletas (mínimo se requieren 9 columnas: Tipo Doc, Nro Doc, Nombres, Paterno, Materno, F. Nacimiento, F. Ingreso, Sexo, Régimen)", numFila)}
 					continue
 				}
 
@@ -325,8 +328,9 @@ func (h *TrabajadorHandler) ImportarExcel(w http.ResponseWriter, r *http.Request
 				paterno := strings.TrimSpace(fila[3])
 				materno := strings.TrimSpace(fila[4])
 				fechaNacRaw := strings.TrimSpace(fila[5])
-				sexo := strings.ToUpper(strings.TrimSpace(fila[6]))
-				regimen := strings.ToUpper(strings.TrimSpace(fila[7]))
+				fechaIngRaw := strings.TrimSpace(fila[6])
+				sexo := strings.ToUpper(strings.TrimSpace(fila[7]))
+				regimen := strings.ToUpper(strings.TrimSpace(fila[8]))
 
 				// Val: Tipo Doc
 				if tipoDoc != "DNI" && tipoDoc != "CE" && tipoDoc != "PASAPORTE" {
@@ -360,7 +364,18 @@ func (h *TrabajadorHandler) ImportarExcel(w http.ResponseWriter, r *http.Request
 					var errFecha error
 					fechaNac, errFecha = parseFechaExcel(fechaNacRaw)
 					if errFecha != nil {
-						results <- RowResult{Index: job.Index, Error: fmt.Errorf("Fila %d: %v", numFila, errFecha)}
+						results <- RowResult{Index: job.Index, Error: fmt.Errorf("Fila %d (Fecha Nacimiento): %v", numFila, errFecha)}
+						continue
+					}
+				}
+
+				// Val: Fecha Ingreso
+				var fechaIng string
+				if fechaIngRaw != "" {
+					var errFecha error
+					fechaIng, errFecha = parseFechaExcel(fechaIngRaw)
+					if errFecha != nil {
+						results <- RowResult{Index: job.Index, Error: fmt.Errorf("Fila %d (Fecha Ingreso): %v", numFila, errFecha)}
 						continue
 					}
 				}
@@ -382,16 +397,16 @@ func (h *TrabajadorHandler) ImportarExcel(w http.ResponseWriter, r *http.Request
 				var cuspp string
 
 				if regimen == "AFP" {
-					if len(fila) < 10 {
+					if len(fila) < 11 {
 						results <- RowResult{Index: job.Index, Error: fmt.Errorf("Fila %d: Faltan las columnas de AFP y Tipo de Comisión para el régimen AFP", numFila)}
 						continue
 					}
 
-					afpRaw := strings.ToUpper(strings.TrimSpace(fila[8]))
-					tipoComRaw := strings.ToUpper(strings.TrimSpace(fila[9]))
+					afpRaw := strings.ToUpper(strings.TrimSpace(fila[9]))
+					tipoComRaw := strings.ToUpper(strings.TrimSpace(fila[10]))
 
-					if len(fila) >= 11 {
-						cuspp = strings.TrimSpace(fila[10])
+					if len(fila) >= 12 {
+						cuspp = strings.TrimSpace(fila[11])
 					}
 
 					// Validar AFP
@@ -417,8 +432,8 @@ func (h *TrabajadorHandler) ImportarExcel(w http.ResponseWriter, r *http.Request
 
 				// Val: Activo
 				activo := true
-				if len(fila) >= 12 {
-					activoRaw := strings.ToUpper(strings.TrimSpace(fila[11]))
+				if len(fila) >= 13 {
+					activoRaw := strings.ToUpper(strings.TrimSpace(fila[12]))
 					if activoRaw != "" {
 						switch activoRaw {
 						case "SI", "TRUE", "1", "ACTIVO":
@@ -440,6 +455,7 @@ func (h *TrabajadorHandler) ImportarExcel(w http.ResponseWriter, r *http.Request
 					ApellidoPaterno:    paterno,
 					ApellidoMaterno:    materno,
 					FechaNacimiento:    fechaNac,
+					FechaIngreso:       fechaIng,
 					Sexo:               sexo,
 					Activo:             activo,
 					RegimenPensionario: regimen,

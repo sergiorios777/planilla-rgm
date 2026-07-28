@@ -54,3 +54,33 @@ func TestCalcularMesesSemestreGratificacion(t *testing.T) {
 		}
 	})
 }
+
+func TestCalcularGratificacionDL1057(t *testing.T) {
+	t.Run("Julio 2026 Semestre completo (6m 0d, 10% de S/3000 = S/300 grati, S/27 EsSalud)", func(t *testing.T) {
+		grati, essalud := CalcularGratificacionDL1057(3000.00, 7, 2026, 6, 0)
+		if grati != 300.00 || essalud != 27.00 {
+			t.Errorf("got (%v, %v); want (300.00, 27.00)", grati, essalud)
+		}
+	})
+
+	t.Run("Julio 2026 Excepción días sueltos (4m 15d -> ignora 15d, 4/6 de S/300 = S/200)", func(t *testing.T) {
+		grati, essalud := CalcularGratificacionDL1057(3000.00, 7, 2026, 4, 15)
+		if grati != 200.00 || essalud != 18.00 {
+			t.Errorf("got (%v, %v); want (200.00, 18.00)", grati, essalud)
+		}
+	})
+
+	t.Run("Julio 2027 Computa meses y días (4m 15d, 20% de S/3000 = S/600 base. 4.5/6 * 600 = S/450)", func(t *testing.T) {
+		grati, essalud := CalcularGratificacionDL1057(3000.00, 7, 2027, 4, 15)
+		if grati != 450.00 || essalud != 40.50 {
+			t.Errorf("got (%v, %v); want (450.00, 40.50)", grati, essalud)
+		}
+	})
+
+	t.Run("Diciembre 2030 (6m 0d, 100% de S/4000 = S/4000 grati, S/360 EsSalud)", func(t *testing.T) {
+		grati, essalud := CalcularGratificacionDL1057(4000.00, 12, 2030, 6, 0)
+		if grati != 4000.00 || essalud != 360.00 {
+			t.Errorf("got (%v, %v); want (4000.00, 360.00)", grati, essalud)
+		}
+	})
+}

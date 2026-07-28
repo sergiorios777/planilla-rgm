@@ -473,3 +473,205 @@ func (r *ConceptoTenantRepository) SincronizarDesdeModeloAvanzado(tenantID int, 
 
 	return nil
 }
+
+// ObtenerModelosDisponibles retorna los conceptos modelo que aún no existen en conceptos_tenant para el tenantID especificado
+func (r *ConceptoTenantRepository) ObtenerModelosDisponibles(tenantID int) ([]models.ConceptoModelo, error) {
+	query := `
+		SELECT 
+			cm.id, cm.concepto_id, cm.nombre_personalizado, cm.frecuencia_meses, cm.clasificador_id,
+			cm.es_extraordinario, cm.requiere_monto, cm.es_pensionable, cm.es_remunerativa, 
+			cm.es_base_cts, cm.es_base_beneficios_sociales, cm.es_ocasional, cm.es_afecto_cargas_sociales,
+			cma.codigo AS concepto_codigo, cma.tipo AS concepto_tipo, cma.descripcion AS concepto_descripcion,
+			mef.codigo AS clasificador_codigo,
+			COALESCE(STRING_AGG(rl.codigo, ', '), 'Sin régimen') AS regimenes_nombres
+		FROM conceptos_modelo cm
+		INNER JOIN conceptos_maestros cma ON cm.concepto_id = cma.id
+		LEFT JOIN clasificadores_mef mef ON cm.clasificador_id = mef.id
+		LEFT JOIN regimen_concepto_modelo rcm ON cm.id = rcm.concepto_modelo_id
+		LEFT JOIN regimenes_laborales rl ON rcm.regimen_id = rl.id
+		WHERE cm.id NOT IN (
+			SELECT ct.modelo_id 
+			FROM conceptos_tenant ct 
+			WHERE ct.tenant_id = $1 AND ct.modelo_id IS NOT NULL
+		)
+		GROUP BY cm.id, cm.concepto_id, cm.nombre_personalizado, cm.frecuencia_meses, cm.clasificador_id,
+		         cm.es_extraordinario, cm.requiere_monto, cm.es_pensionable, cm.es_remunerativa, 
+		         cm.es_base_cts, cm.es_base_beneficios_sociales, cm.es_ocasional, cm.es_afecto_cargas_sociales,
+		         cma.codigo, cma.tipo, cma.descripcion, mef.codigo
+		ORDER BY cma.tipo ASC, cm.nombre_personalizado ASC
+	`
+	rows, err := r.db.Query(query, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.ConceptoModelo
+	for rows.Next() {
+		var cm models.ConceptoModelo
+		var clasifID sql.NullInt64
+		var clasifCod sql.NullString
+		var regimenesNombres sql.NullString
+
+		err := rows.Scan(
+			&cm.ID, &cm.ConceptoID, &cm.NombrePersonalizado, &cm.FrecuenciaMeses, &clasifID,
+			&cm.EsExtraordinario, &cm.RequiereMonto, &cm.EsPensionable, &cm.EsRemunerativa,
+			&cm.EsBaseCts, &cm.EsBaseBeneficiosSociales, &cm.EsOcasional, &cm.EsAfectoCargasSociales,
+			&cm.ConceptoCodigo, &cm.ConceptoTipo, &cm.ConceptoDescripcion,
+			&clasifCod, &regimenesNombres,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if clasifID.Valid {
+			id := int(clasifID.Int64)
+			cm.ClasificadorID = &id
+			cm.ClasificadorCodigo = clasifCod.String
+		}
+		if regimenesNombres.Valid {
+			cm.RegimenesNombres = regimenesNombres.String
+		}
+		lista = append(lista, cm)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return lista, nil
+}
+
+// AgregarDesdeModelo copia un concepto modelo específico al tenant local junto con sus relaciones y reglas
+func (r *ConceptoTenantRepository) AgregarDesdeModelo(tenantID int, modeloID int) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fmt.Errorf("error al iniciar transacción: %w", err)
+	}
+	defer tx.Rollback()
+
+	// 1. Insertar el concepto modelo en conceptos_tenant
+	queryInsertConcepto := `
+		INSERT INTO conceptos_tenant 
+		(tenant_id, concepto_id, modelo_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, activo,
+		 es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales)
+		SELECT 
+			$1, concepto_id, id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, true,
+			es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales
+		FROM conceptos_modelo
+		WHERE id = $2
+		ON CONFLICT (tenant_id, modelo_id) DO NOTHING;
+	`
+	_, err = tx.Exec(queryInsertConcepto, tenantID, modeloID)
+	if err != nil {
+		return fmt.Errorf("error al clonar concepto modelo a tenant: %w", err)
+	}
+
+	// 2. Clonar relaciones con regímenes laborales
+	queryRegimenes := `
+		INSERT INTO regimen_concepto_tenant (tenant_id, regimen_id, concepto_tenant_id)
+		SELECT 
+			ct.tenant_id, 
+			rcm.regimen_id, 
+			ct.id 
+		FROM conceptos_tenant ct
+		INNER JOIN regimen_concepto_modelo rcm ON ct.modelo_id = rcm.concepto_modelo_id
+		WHERE ct.tenant_id = $1 AND ct.modelo_id = $2
+		ON CONFLICT (tenant_id, regimen_id, concepto_tenant_id) DO NOTHING;
+	`
+	_, err = tx.Exec(queryRegimenes, tenantID, modeloID)
+	if err != nil {
+		return fmt.Errorf("error al clonar relaciones de regímenes: %w", err)
+	}
+
+	// 3. Sembrar reglas de cálculo por régimen en base_regimen_tenant
+	queryBaseRegimen := `
+		INSERT INTO base_regimen_tenant (tenant_id, concepto_calculado_id, regimen_id, concepto_tenant_id, variable_calculo)
+		SELECT $1, brd.concepto_calculado_id, brd.regimen_id, ct.id, brd.variable_calculo
+		FROM base_regimen_default brd
+		INNER JOIN conceptos_tenant ct ON brd.concepto_modelo_id = ct.modelo_id
+		WHERE ct.tenant_id = $1 AND ct.modelo_id = $2
+		ON CONFLICT (tenant_id, concepto_calculado_id, regimen_id, concepto_tenant_id, variable_calculo) DO NOTHING;
+	`
+	_, err = tx.Exec(queryBaseRegimen, tenantID, modeloID)
+	if err != nil {
+		return fmt.Errorf("error al sembrar base_regimen_tenant: %w", err)
+	}
+
+	return tx.Commit()
+}
+
+// SincronizarConceptoModelo restablece los valores de un concepto tenant a los de su concepto modelo asociado, excepto nombre_personalizado.
+func (r *ConceptoTenantRepository) SincronizarConceptoModelo(tenantID int, id int) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fmt.Errorf("error al iniciar transacción: %w", err)
+	}
+	defer tx.Rollback()
+
+	// 1. Actualizar campos en conceptos_tenant conservando nombre_personalizado
+	queryUpdate := `
+		UPDATE conceptos_tenant ct
+		SET concepto_id = cm.concepto_id,
+		    frecuencia_meses = cm.frecuencia_meses,
+		    clasificador_id = cm.clasificador_id,
+		    es_extraordinario = cm.es_extraordinario,
+		    requiere_monto = cm.requiere_monto,
+		    es_pensionable = cm.es_pensionable,
+		    es_remunerativa = cm.es_remunerativa,
+		    es_base_cts = cm.es_base_cts,
+		    es_base_beneficios_sociales = cm.es_base_beneficios_sociales,
+		    es_ocasional = cm.es_ocasional,
+		    es_afecto_cargas_sociales = cm.es_afecto_cargas_sociales,
+		    updated_at = CURRENT_TIMESTAMP
+		FROM conceptos_modelo cm
+		WHERE ct.modelo_id = cm.id AND ct.id = $1 AND ct.tenant_id = $2;
+	`
+	res, err := tx.Exec(queryUpdate, id, tenantID)
+	if err != nil {
+		return fmt.Errorf("error al actualizar concepto_tenant desde modelo: %w", err)
+	}
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("no se encontró concepto tenant con modelo asociado para sincronizar")
+	}
+
+	// 2. Re-sincronizar relaciones de regímenes laborales
+	_, err = tx.Exec(`DELETE FROM regimen_concepto_tenant WHERE concepto_tenant_id = $1 AND tenant_id = $2`, id, tenantID)
+	if err != nil {
+		return fmt.Errorf("error al borrar relaciones de regímenes previas: %w", err)
+	}
+
+	queryRegimenes := `
+		INSERT INTO regimen_concepto_tenant (tenant_id, regimen_id, concepto_tenant_id)
+		SELECT $2, rcm.regimen_id, $1
+		FROM regimen_concepto_modelo rcm
+		INNER JOIN conceptos_tenant ct ON rcm.concepto_modelo_id = ct.modelo_id
+		WHERE ct.id = $1 AND ct.tenant_id = $2
+		ON CONFLICT (tenant_id, regimen_id, concepto_tenant_id) DO NOTHING;
+	`
+	_, err = tx.Exec(queryRegimenes, id, tenantID)
+	if err != nil {
+		return fmt.Errorf("error al reinsertar relaciones de regímenes: %w", err)
+	}
+
+	// 3. Re-sincronizar base_regimen_tenant
+	_, err = tx.Exec(`DELETE FROM base_regimen_tenant WHERE concepto_tenant_id = $1 AND tenant_id = $2`, id, tenantID)
+	if err != nil {
+		return fmt.Errorf("error al borrar base_regimen_tenant previo: %w", err)
+	}
+
+	queryBaseRegimen := `
+		INSERT INTO base_regimen_tenant (tenant_id, concepto_calculado_id, regimen_id, concepto_tenant_id, variable_calculo)
+		SELECT $2, brd.concepto_calculado_id, brd.regimen_id, $1, brd.variable_calculo
+		FROM base_regimen_default brd
+		INNER JOIN conceptos_tenant ct ON brd.concepto_modelo_id = ct.modelo_id
+		WHERE ct.id = $1 AND ct.tenant_id = $2
+		ON CONFLICT (tenant_id, concepto_calculado_id, regimen_id, concepto_tenant_id, variable_calculo) DO NOTHING;
+	`
+	_, err = tx.Exec(queryBaseRegimen, id, tenantID)
+	if err != nil {
+		return fmt.Errorf("error al reinsertar base_regimen_tenant: %w", err)
+	}
+
+	return tx.Commit()
+}
+
+

@@ -112,6 +112,7 @@ type Trabajador struct {
 	ApellidoPaterno string `json:"apellido_paterno"`
 	ApellidoMaterno string `json:"apellido_materno"`
 	FechaNacimiento string `json:"fecha_nacimiento"`
+	FechaIngreso    string `json:"fecha_ingreso"`
 	Sexo            string `json:"sexo"`
 	Activo          bool   `json:"activo"`
 	// PENSIONES
@@ -174,7 +175,9 @@ type Contrato struct {
 // ContratoPlanilla representa los datos básicos de un trabajador para el cálculo
 type ContratoPlanilla struct {
 	ID                             int
+	TenantID                       int
 	PuestoID                       int
+	RegimenID                      int
 	Regimen                        string
 	RegimenPensionario             string
 	AfpID                          int
@@ -415,6 +418,7 @@ type ConceptoModelo struct {
 	RegimenesNombres    string `json:"regimenes_nombres,omitempty"`
 	ConceptoCodigo      string `json:"concepto_codigo,omitempty"`
 	ConceptoDescripcion string `json:"concepto_descripcion,omitempty"`
+	ConceptoTipo        string `json:"concepto_tipo,omitempty"`
 	ClasificadorCodigo  string `json:"clasificador_codigo,omitempty"`
 }
 
@@ -485,6 +489,7 @@ type LiquidacionCese struct {
 	Motivo                       string    `json:"motivo"`
 	AnosServicios                int       `json:"anos_servicios"`
 	MesesServicios               int       `json:"meses_servicios"`
+	DiasServicios                int       `json:"dias_servicios"`
 	RemuneracionComputable       float64   `json:"remuneracion_computable"`
 	MontoCts                     float64   `json:"monto_cts"`
 	MontoVacacionesTruncas       float64   `json:"monto_vacaciones_truncas"`

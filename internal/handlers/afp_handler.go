@@ -9,6 +9,7 @@ import (
 	"planilla-rgm/internal/services"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // AFPHandler gestiona el flujo de peticiones web para AFPs y sus Tasas Mensuales
@@ -140,12 +141,12 @@ func (h *AFPHandler) ActualizarAFP(w http.ResponseWriter, r *http.Request) {
 func (h *AFPHandler) ListarTasas(w http.ResponseWriter, r *http.Request) {
 	anio, _ := strconv.Atoi(r.URL.Query().Get("anio"))
 	if anio <= 0 {
-		anio = 2026 // Año por defecto en el sistema
+		anio = time.Now().Year() // Año actual por defecto en el sistema
 	}
 
 	mes, _ := strconv.Atoi(r.URL.Query().Get("mes"))
 	if mes < 1 || mes > 12 {
-		mes = 5 // Mayo por defecto
+		mes = int(time.Now().Month()) // Mes actual por defecto
 	}
 
 	tasas, err := h.Repo.ObtenerTasasPorMes(anio, mes)

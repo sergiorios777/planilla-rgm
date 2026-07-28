@@ -342,6 +342,9 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/conceptos-locales/formulario-crear", middleware.RequireAuth(conceptoTenantHandler.FormularioCrearUI))
 	mux.HandleFunc("/tenant/conceptos-locales/fila", middleware.RequireAuth(conceptoTenantHandler.FilaUI))
 	mux.HandleFunc("/tenant/conceptos-locales/restaurar", middleware.RequireAuth(conceptoTenantHandler.Restaurar))
+	mux.HandleFunc("/tenant/conceptos-locales/modal-agregar-modelo", middleware.RequireAuth(conceptoTenantHandler.ModalAgregarModeloUI))
+	mux.HandleFunc("/tenant/conceptos-locales/agregar-modelo", middleware.RequireAuth(conceptoTenantHandler.AgregarModelo))
+	mux.HandleFunc("/tenant/conceptos-locales/sincronizar-modelo", middleware.RequireAuth(conceptoTenantHandler.SincronizarModelo))
 
 	// Rutas protegidas (Agrega esto junto a las de Puestos)
 	puestoConceptoRepo := repository.NewPuestoConceptoRepository(db)

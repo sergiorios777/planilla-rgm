@@ -46,8 +46,7 @@
     <!--Formulario Crear Liquidación-->
     <div id="alerta-liq"></div>
     <form id="form-liquidacion" hx-post="/tenant/liquidaciones/guardar" hx-target="#lista-liquidaciones"
-        hx-swap="innerHTML"
-        hx-on::after-request="if (event.detail.successful && !event.detail.xhr.responseText.includes('<div id=\'alerta-liq\'')) { document.getElementById('modal-nueva-liq').close(); this.reset(); }">
+        hx-swap="innerHTML">
 
         <label>Colaborador / Contrato
             <select name="contrato_id" id="contrato_id" class="select-con-buscador" required>
@@ -90,54 +89,55 @@
             </fieldset>
 
             <label>Motivo de Cese
-                <input type="text" name="motivo" readonly required
+                <input type="text" name="motivo" readonly
                     placeholder="Seleccione un colaborador para ver el motivo">
             </label>
         </div>
 
-        <fieldset
-            style="background-color: #fffde7; border: 1px dashed #fbc02d; border-radius: 6px; padding: 1rem; margin-bottom: 1.5rem;">
-            <legend style="color: #f57f17; font-weight: bold; font-size: 0.9rem; padding: 0 0.5rem;">Vacaciones
-                Históricas Pendientes (Años Completos Ganados)</legend>
-            <p style="font-size: 0.8rem; margin-top: 0; margin-bottom: 0.8rem; color: #5d4037; line-height: 1.3;">
-                ℹ️ <em>Los meses y días truncos del año vigente se calcularán automáticamente a partir de las fechas. No
-                    los sume en esta sección.</em>
-            </p>
-            <div class="grid">
-                <label style="font-size: 0.85rem;"
-                    data-tooltip="Años completos ganados y no gozados que ya vencieron en su plazo legal. Genera indemnización (doble pago) en el régimen DL 728.">
-                    Periodos Vencidos (Indemnizables DL 728) ❓
-                    <input type="number" name="periodos_vencidos_vacaciones" value="0" min="0" step="1"
-                        style="height: 35px; font-size: 0.85rem;">
-                </label>
-                <label style="font-size: 0.85rem;"
-                    data-tooltip="Años completos ganados que no se gozaron pero que aún están dentro del plazo regular para su descanso (sin indemnización).">
-                    Periodos No Vencidos (Pendientes Simples) ❓
-                    <input type="number" name="periodos_no_vencidos_vacaciones" value="0" min="0" step="1"
-                        style="height: 35px; font-size: 0.85rem;">
-                </label>
+        <details style="margin-bottom: 1rem;">
+            <summary style="font-weight: bold; cursor: pointer; padding: 0.5rem 0;">🏖️ Vacaciones Históricas Pendientes (Años Completos Ganados)</summary>
+            <div style="background-color: #fffde7; border: 1px dashed #fbc02d; border-radius: 6px; padding: 1rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                <p style="font-size: 0.8rem; margin-top: 0; margin-bottom: 0.8rem; color: #5d4037; line-height: 1.3;">
+                    ℹ️ <em>Los meses y días truncos del año vigente se calcularán automáticamente a partir de las fechas. No los sume en esta sección.</em>
+                </p>
+                <div class="grid">
+                    <label style="font-size: 0.85rem;"
+                        data-tooltip="Años completos ganados y no gozados que ya vencieron en su plazo legal. Genera indemnización (doble pago) en el régimen DL 728.">
+                        Periodos Vencidos (Indemnizables DL 728) ❓
+                        <input type="number" name="periodos_vencidos_vacaciones" value="0" min="0" step="1"
+                            style="height: 35px; font-size: 0.85rem;">
+                    </label>
+                    <label style="font-size: 0.85rem;"
+                        data-tooltip="Años completos ganados que no se gozaron pero que aún están dentro del plazo regular para su descanso (sin indemnización).">
+                        Periodos No Vencidos (Pendientes Simples) ❓
+                        <input type="number" name="periodos_no_vencidos_vacaciones" value="0" min="0" step="1"
+                            style="height: 35px; font-size: 0.85rem;">
+                    </label>
+                </div>
             </div>
-        </fieldset>
+        </details>
 
-        <fieldset>
-            <legend><strong>Otros Conceptos de Liquidación</strong></legend>
-            <div class="grid" style="grid-template-columns: 2fr 1fr;">
-                <label>Concepto Adicional 1
-                    <input type="text" name="nombre_concepto_liquidacion_1" placeholder="Nombre del concepto">
-                </label>
-                <label>Monto Adicional 1 (S/.)
-                    <input type="number" step="0.01" name="monto_concepto_liquidacion_1" value="0.00" min="0">
-                </label>
+        <details style="margin-bottom: 1rem;">
+            <summary style="font-weight: bold; cursor: pointer; padding: 0.5rem 0;">➕ Otros Conceptos de Liquidación (Opcional)</summary>
+            <div style="padding-top: 0.5rem;">
+                <div class="grid" style="grid-template-columns: 2fr 1fr;">
+                    <label>Concepto Adicional 1
+                        <input type="text" name="nombre_concepto_liquidacion_1" placeholder="Nombre del concepto">
+                    </label>
+                    <label>Monto Adicional 1 (S/.)
+                        <input type="number" step="0.01" name="monto_concepto_liquidacion_1" value="0.00" min="0">
+                    </label>
+                </div>
+                <div class="grid" style="grid-template-columns: 2fr 1fr;">
+                    <label>Concepto Adicional 2
+                        <input type="text" name="nombre_concepto_liquidacion_2" placeholder="Nombre del concepto">
+                    </label>
+                    <label>Monto Adicional 2 (S/.)
+                        <input type="number" step="0.01" name="monto_concepto_liquidacion_2" value="0.00" min="0">
+                    </label>
+                </div>
             </div>
-            <div class="grid" style="grid-template-columns: 2fr 1fr;">
-                <label>Concepto Adicional 2
-                    <input type="text" name="nombre_concepto_liquidacion_2" placeholder="Nombre del concepto">
-                </label>
-                <label>Monto Adicional 2 (S/.)
-                    <input type="number" step="0.01" name="monto_concepto_liquidacion_2" value="0.00" min="0">
-                </label>
-            </div>
-        </fieldset>
+        </details>
 
         <div style="text-align: center; margin: 1.5rem 0;">
             <button type="button" class="outline" hx-post="/tenant/liquidaciones/calcular"
@@ -184,7 +184,7 @@
         </div>
         <div>
             <strong>Régimen Laboral:</strong> DL {{.Regimen}}<br>
-            <strong>Tiempo de Servicio:</strong> {{.AnosServicios}} años, {{.MesesServicios}} meses<br>
+            <strong>Tiempo de Servicio:</strong> {{.AnosServicios}} años, {{.MesesServicios}} meses, {{.DiasServicios}} días<br>
             <strong>Remun. Computable:</strong> S/ {{printf "%.2f" .RemuneracionComputable}}
         </div>
     </div>
@@ -247,7 +247,7 @@
                 <small class="text-muted">{{.PuestoNombre}} (DNI {{.TrabajadorDocumento}})</small>
             </td>
             <td>DL {{.Regimen}}</td>
-            <td>{{.AnosServicios}}a, {{.MesesServicios}}m</td>
+            <td>{{.AnosServicios}}a, {{.MesesServicios}}m, {{.DiasServicios}}d</td>
             <td>S/ {{printf "%.2f" .RemuneracionComputable}}</td>
             <td><strong style="color: #2e7d32;">S/ {{printf "%.2f" .TotalLiquidacion}}</strong></td>
             <td>{{.FechaCese.Format "02/01/2006"}}</td>

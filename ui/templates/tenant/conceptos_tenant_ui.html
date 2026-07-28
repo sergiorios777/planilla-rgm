@@ -12,6 +12,14 @@
                     <use href="#icono-nuevo-1"></use>
                 </svg> Registrar Nuevo Concepto
             </button>
+            <button class="secondary outline" style="width: auto; margin-bottom: 0;"
+                onclick="document.getElementById('modal-agregar-modelo').showModal()"
+                hx-get="/tenant/conceptos-locales/modal-agregar-modelo"
+                hx-target="#contenido-modal-agregar-modelo">
+                <svg class="icono-menu">
+                    <use href="#icono-cajas"></use>
+                </svg> Agregar Concepto Modelo
+            </button>
             <button class="outline contrast" style="width: auto; margin-bottom: 0;"
                 hx-post="/tenant/conceptos-locales/restaurar" hx-target="#lista-conceptos-tenant"
                 hx-confirm="¿Desea restaurar los conceptos faltantes desde el catálogo maestro? Esto no afectará a los conceptos que ya tiene configurados.">
@@ -81,6 +89,21 @@
             </header>
             <div id="contenedor-formulario">
                 {{template "formulario_crear" .}}
+            </div>
+        </article>
+    </dialog>
+
+    <!-- Modal para Agregar Concepto Modelo -->
+    <dialog id="modal-agregar-modelo"
+        hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-agregar-modelo') this.showModal()">
+        <article style="max-width: 750px; width: 95%;">
+            <header>
+                <a href="#close" aria-label="Close" class="close"
+                    onclick="document.getElementById('modal-agregar-modelo').close()"></a>
+                <h4 style="margin-bottom: 0;">📦 Agregar Concepto Modelo a la Municipalidad</h4>
+            </header>
+            <div id="contenido-modal-agregar-modelo">
+                <!-- Formulario se carga aquí vía HTMX -->
             </div>
         </article>
     </dialog>
@@ -388,16 +411,75 @@
         </label>
     </div>
 
+    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <div>
+            {{if .Concepto.ModeloID}}
+            <button type="button" class="outline contrast" style="margin-bottom: 0; width: auto;"
+                hx-post="/tenant/conceptos-locales/sincronizar-modelo?id={{.Concepto.ID}}"
+                hx-target="#contenido-modal-editar"
+                hx-confirm="⚠️ ATENCIÓN: Se restablecerán todos los valores y configuraciones de este concepto a los predeterminados del modelo central, con excepción del 'Nombre Personalizado' que se conservará. ¿Desea continuar?">
+                <svg class="icono-menu">
+                    <use href="#icono-refrescar-giro-derecha"></use>
+                </svg> Sincronizar con Modelo
+            </button>
+            {{end}}
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <button type="button" class="secondary outline"
+                onclick="document.getElementById('modal-editar-concepto').close()" style="margin-bottom: 0; width: auto;">
+                Cancelar
+            </button>
+            <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">
+                <svg class="icono-menu">
+                    <use href="#icono-guardar"></use>
+                </svg> Guardar Cambios
+            </button>
+        </div>
+    </div>
+</form>
+{{end}}
+
+{{define "modal_agregar_modelo"}}
+<div id="alerta-agregar-modelo"></div>
+
+{{if .ModelosDisponibles}}
+<form hx-post="/tenant/conceptos-locales/agregar-modelo" hx-target="#lista-conceptos-tenant" hx-swap="innerHTML"
+    hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-agregar-modelo').close(); }">
+
+    <label>Concepto Modelo Disponible
+        <select name="modelo_id" required>
+            <option value="">-- Seleccione un concepto modelo --</option>
+            {{range .ModelosDisponibles}}
+            <option value="{{.ID}}">
+                [{{if eq .ConceptoTipo "Ingreso"}}INGRESO{{else if eq .ConceptoTipo "Retencion"}}RETENCIÓN{{else}}APORTE{{end}}] {{.NombrePersonalizado}} — {{.ConceptoCodigo}} ({{if .RegimenesNombres}}{{.RegimenesNombres}}{{else}}Sin régimen{{end}}) {{if .ClasificadorCodigo}}| SIAF: {{.ClasificadorCodigo}}{{end}}
+            </option>
+            {{end}}
+        </select>
+    </label>
+
+    <p><small style="color: var(--secondary);">Al agregar este concepto modelo, se importará la configuración predeterminada de boleta, régimen laboral aplicable y sus clasificadores presupuestales.</small></p>
+
     <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
         <button type="button" class="secondary outline"
-            onclick="document.getElementById('modal-editar-concepto').close()" style="margin-bottom: 0; width: auto;">
+            onclick="document.getElementById('modal-agregar-modelo').close()" style="margin-bottom: 0; width: auto;">
             Cancelar
         </button>
         <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">
             <svg class="icono-menu">
                 <use href="#icono-guardar"></use>
-            </svg> Guardar Cambios
+            </svg> Agregar a Mi Municipalidad
         </button>
     </div>
 </form>
+{{else}}
+<article style="background-color: #e8f5e9; color: #2e7d32; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;">
+    ✅ Todos los conceptos modelo disponibles ya han sido agregados al catálogo de su municipalidad.
+</article>
+<div style="display: flex; justify-content: end; margin-top: 1rem;">
+    <button type="button" class="secondary outline"
+        onclick="document.getElementById('modal-agregar-modelo').close()" style="margin-bottom: 0; width: auto;">
+        Cerrar
+    </button>
+</div>
 {{end}}
+{{end}}

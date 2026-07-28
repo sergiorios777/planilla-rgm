@@ -145,3 +145,58 @@ func TestCalcularCtsDL276(t *testing.T) {
 		})
 	}
 }
+
+func TestCalcularCtsDL1057(t *testing.T) {
+	tests := []struct {
+		name                string
+		remuneracionMensual float64
+		anioCese            int
+		mesesTotales        int
+		want                float64
+	}{
+		{
+			name:                "Caso 1: Año 2026, 17 meses (1a 5m -> 1 año, 10% de S/2500 = S/250)",
+			remuneracionMensual: 2500.00,
+			anioCese:            2026,
+			mesesTotales:        17,
+			want:                250.00,
+		},
+		{
+			name:                "Caso 2: Año 2026, 20 meses (1a 8m -> 2 años por fracción >6m, 10% de S/2500*2 = S/500)",
+			remuneracionMensual: 2500.00,
+			anioCese:            2026,
+			mesesTotales:        20,
+			want:                500.00,
+		},
+		{
+			name:                "Caso 3: Año 2026, 5 meses (<6m -> 0 años)",
+			remuneracionMensual: 3000.00,
+			anioCese:            2026,
+			mesesTotales:        5,
+			want:                0.00,
+		},
+		{
+			name:                "Caso 4: Año 2027, 20 meses (1a 8m -> 2 años, 20% de S/3000*2 = S/1200)",
+			remuneracionMensual: 3000.00,
+			anioCese:            2027,
+			mesesTotales:        20,
+			want:                1200.00,
+		},
+		{
+			name:                "Caso 5: Año 2030, 60 meses (5 años, 100% de S/4000*5 = S/20000)",
+			remuneracionMensual: 4000.00,
+			anioCese:            2030,
+			mesesTotales:        60,
+			want:                20000.00,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := CalcularCtsDL1057(tt.remuneracionMensual, tt.anioCese, tt.mesesTotales)
+			if math.Abs(got-tt.want) > 0.001 {
+				t.Errorf("CalcularCtsDL1057() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

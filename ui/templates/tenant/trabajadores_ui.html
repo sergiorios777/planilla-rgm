@@ -106,6 +106,9 @@
         <label>Fecha de Nacimiento
             <input type="date" name="fecha_nacimiento">
         </label>
+        <label>Fecha de Ingreso
+            <input type="date" name="fecha_ingreso">
+        </label>
         <label>Sexo
             <select name="sexo">
                 <option value="M">Masculino</option>
@@ -192,6 +195,9 @@
         <label>Fecha de Nacimiento
             <input type="date" name="fecha_nacimiento" value="{{.FechaNacimiento}}">
         </label>
+        <label>Fecha de Ingreso
+            <input type="date" name="fecha_ingreso" value="{{.FechaIngreso}}">
+        </label>
         <label>Sexo
             <select name="sexo">
                 <option value="M" {{if eq .Sexo "M" }}selected{{end}}>Masculino</option>
@@ -247,6 +253,7 @@
         <tr>
             <th>DNI/Doc</th>
             <th>Apellidos y Nombres</th>
+            <th>F. Ingreso</th>
             <th>Edad</th>
             <th>Estado</th>
             <th>Acciones</th>
@@ -257,6 +264,7 @@
         <tr>
             <td><small>{{.NumeroDocumento}}</small></td>
             <td><strong>{{.ApellidoPaterno}} {{.ApellidoMaterno}}</strong><br><small>{{.Nombres}}</small></td>
+            <td><small>{{if .FechaIngreso}}{{.FechaIngreso}}{{else}}-{{end}}</small></td>
             <td>{{if gt .Edad 0}}{{.Edad}} años{{else}}-{{end}}</td>
             <td>
                 {{if .Activo}}
@@ -277,7 +285,7 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="5" style="text-align: center;">No hay trabajadores registrados.</td>
+            <td colspan="6" style="text-align: center;">No hay trabajadores registrados.</td>
         </tr>
         {{end}}
     </tbody>
@@ -309,7 +317,7 @@
 
 {{define "formulario_importar_trabajadores"}}
 <div>
-    <p><small>Sube un archivo <b>.xlsx</b> con las 12 columnas en el orden exacto indicado a continuación. La primera fila (cabecera) se omitirá durante el procesamiento.</small></p>
+    <p><small>Sube un archivo <b>.xlsx</b> con las 13 columnas en el orden exacto indicado a continuación. La primera fila (cabecera) se omitirá durante el procesamiento.</small></p>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <strong>Estructura del Archivo Excel:</strong>
@@ -330,12 +338,13 @@
                     <th>D: APELLIDO_PATERNO</th>
                     <th>E: APELLIDO_MATERNO</th>
                     <th>F: FECHA_NACIMIENTO</th>
-                    <th>G: SEXO</th>
-                    <th>H: REGIMEN_PENSIONARIO</th>
-                    <th>I: AFP</th>
-                    <th>J: TIPO_COMISION</th>
-                    <th>K: CUSPP</th>
-                    <th>L: ACTIVO</th>
+                    <th>G: FECHA_INGRESO</th>
+                    <th>H: SEXO</th>
+                    <th>I: REGIMEN_PENSIONARIO</th>
+                    <th>J: AFP</th>
+                    <th>K: TIPO_COMISION</th>
+                    <th>L: CUSPP</th>
+                    <th>M: ACTIVO</th>
                 </tr>
             </thead>
             <tbody>
@@ -346,6 +355,7 @@
                     <td>Perez</td>
                     <td>Gomez</td>
                     <td>1990-05-15</td>
+                    <td>2020-01-15</td>
                     <td>M</td>
                     <td>ONP</td>
                     <td></td>
@@ -360,6 +370,7 @@
                     <td>Flores</td>
                     <td>Ramos</td>
                     <td>1988-11-23</td>
+                    <td>2021-03-01</td>
                     <td>F</td>
                     <td>AFP</td>
                     <td>INTEGRA</td>

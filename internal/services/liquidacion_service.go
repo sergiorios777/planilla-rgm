@@ -52,8 +52,8 @@ func (s *LiquidacionService) CalcularLiquidacion(contratoID int, fechaInicio, fe
 		return nil, fmt.Errorf("error al obtener datos del contrato para la liquidación: %w", err)
 	}
 
-	// 2. Calcular años y meses de servicios usando helpers transversales
-	anos, meses := helpers.CalcularMesesYAnosServicio(fechaInicio, fechaCese)
+	// 2. Calcular años, meses y días de servicios usando helpers transversales
+	anos, meses, dias := helpers.CalcularTiempoServicioCompleto(fechaInicio, fechaCese)
 
 	// Validar consistencia de periodos vacacionales completos ingresados manualmente
 	if anos == 0 && (periodosVencidos > 0 || periodosNoVencidos > 0) {
@@ -62,6 +62,7 @@ func (s *LiquidacionService) CalcularLiquidacion(contratoID int, fechaInicio, fe
 
 	l.AnosServicios = anos
 	l.MesesServicios = meses
+	l.DiasServicios = dias
 	mesesTotales := anos*12 + meses
 
 	// 3. Determinar Remuneración Computable según Régimen
@@ -100,8 +101,38 @@ func (s *LiquidacionService) CalcularLiquidacion(contratoID int, fechaInicio, fe
 		l.RemuneracionComputable = prom36
 		l.MontoCts = calculadoras.CalcularCtsLey30057(prom36, mesesTotales)
 
+	case "1057", "CAS":
+		// CAS (DL 1057): Ley 32563 / DS 142-2026-EF - CTS al cese
+		remTotalCts, _ := s.VacacionesService.BaseRegimenRepo.ObtenerMontoVariable(l.TenantID, puestoID, regimenID, "CTS", "RETRIBUCION_MENSUAL")
+		if remTotalCts <= 0 {
+			remTotalCts = sueldo
+		}
+		l.RemuneracionComputable = remTotalCts
+		l.MontoCts = calculadoras.CalcularCtsDL1057(remTotalCts, fechaCese.Year(), mesesTotales)
+
+		// CAS (DL 1057): Gratificación Trunca
+		var semStart, semEnd time.Time
+		mesPago := 7
+		if fechaCese.Month() <= 6 {
+			semStart = time.Date(fechaCese.Year(), time.January, 1, 0, 0, 0, 0, time.UTC)
+			semEnd = time.Date(fechaCese.Year(), time.June, 30, 23, 59, 59, 0, time.UTC)
+			mesPago = 7
+		} else {
+			semStart = time.Date(fechaCese.Year(), time.July, 1, 0, 0, 0, 0, time.UTC)
+			semEnd = time.Date(fechaCese.Year(), time.December, 31, 23, 59, 59, 0, time.UTC)
+			mesPago = 12
+		}
+
+		mesesGrati, diasGrati := helpers.CalcularMesesYDiasSemestreGratificacionCAS(fechaInicio, &fechaCese, semStart, semEnd)
+		remTotalGrati, _ := s.VacacionesService.BaseRegimenRepo.ObtenerMontoVariable(l.TenantID, puestoID, regimenID, "GRATIFICACION", "RETRIBUCION_MENSUAL")
+		if remTotalGrati <= 0 {
+			remTotalGrati = sueldo
+		}
+		gratiTrunca, _ := calculadoras.CalcularGratificacionDL1057(remTotalGrati, mesPago, fechaCese.Year(), mesesGrati, diasGrati)
+		l.MontoGratiTrunca = gratiTrunca
+
 	default:
-		// DL 728 / CAS u otros
+		// DL 728 u otros
 		l.RemuneracionComputable = sueldo
 		l.MontoCts = (sueldo / 12.0) * float64(mesesTotales)
 	}

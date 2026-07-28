@@ -2,6 +2,7 @@ package calculadoras
 
 import (
 	"math"
+	"planilla-rgm/internal/helpers"
 	"time"
 )
 
@@ -46,4 +47,31 @@ func CalcularMesesSemestreGratificacion(fechaInicio time.Time, fechaFin *time.Ti
 	}
 
 	return mesesCompletos
+}
+
+// CalcularGratificacionDL1057 calcula la gratificación ordinaria o trunca para el régimen CAS (Ley 32563 / DS 142-2026-EF).
+// Computa sextos por meses completos y treintavos de sexto por días laborados.
+// Excepción legal: Para Julio de 2026 no se cuentan días sueltos, solo meses completos.
+// Retorna la gratificación calculada y el aporte patronal a EsSalud (9%).
+func CalcularGratificacionDL1057(remuneracionMensual float64, mesPago int, anioPago int, mesesLaborados int, diasLaborados int) (montoGrati float64, aporteEsSalud float64) {
+	if mesesLaborados <= 0 && diasLaborados <= 0 {
+		return 0.0, 0.0
+	}
+
+	// Regla de Excepción: Para Julio de 2026 no se cuentan días sueltos
+	diasAComputar := diasLaborados
+	if mesPago == 7 && anioPago == 2026 {
+		diasAComputar = 0
+	}
+
+	porcentajeGradual := helpers.ObtenerPorcentajeGradualCAS(anioPago)
+	baseCalculo := remuneracionMensual * porcentajeGradual
+
+	montoMeses := (baseCalculo / 6.0) * float64(mesesLaborados)
+	montoDias := (baseCalculo / 6.0 / 30.0) * float64(diasAComputar)
+
+	montoGrati = round(montoMeses + montoDias)
+	aporteEsSalud = round(montoGrati * 0.09)
+
+	return montoGrati, aporteEsSalud
 }

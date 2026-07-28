@@ -18,16 +18,16 @@ func (r *LiquidacionRepository) CrearLiquidacionCese(l *models.LiquidacionCese) 
 	query := `
 		INSERT INTO liquidaciones_cese (
 			tenant_id, contrato_id, fecha_inicio_computable, fecha_cese, motivo,
-			anos_servicios, meses_servicios, remuneracion_computable, monto_cts,
+			anos_servicios, meses_servicios, dias_servicios, remuneracion_computable, monto_cts,
 			monto_vacaciones_truncas, monto_vacaciones_no_gozadas, monto_indemnizacion_vacacional,
 			periodos_vencidos_vacaciones, periodos_no_vencidos_vacaciones,
 			monto_gratificacion_trunca, total_liquidacion, estado
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 		RETURNING id, created_at, updated_at
 	`
 	return r.db.QueryRow(query,
 		l.TenantID, l.ContratoID, l.FechaInicioComputable, l.FechaCese, l.Motivo,
-		l.AnosServicios, l.MesesServicios, l.RemuneracionComputable, l.MontoCts,
+		l.AnosServicios, l.MesesServicios, l.DiasServicios, l.RemuneracionComputable, l.MontoCts,
 		l.MontoVacacionesTruncas, l.MontoVacacionesNoGozadas, l.MontoIndemnizacionVacacional,
 		l.PeriodosVencidosVacaciones, l.PeriodosNoVencidosVacaciones,
 		l.MontoGratiTrunca, l.TotalLiquidacion, l.Estado,
@@ -38,7 +38,7 @@ func (r *LiquidacionRepository) CrearLiquidacionCese(l *models.LiquidacionCese) 
 func (r *LiquidacionRepository) ObtenerLiquidacionCesePorID(id int, tenantID int) (*models.LiquidacionCese, error) {
 	query := `
 		SELECT l.id, l.tenant_id, l.contrato_id, l.fecha_inicio_computable, l.fecha_cese, l.motivo,
-		       l.anos_servicios, l.meses_servicios, l.remuneracion_computable, l.monto_cts,
+		       l.anos_servicios, l.meses_servicios, COALESCE(l.dias_servicios, 0), l.remuneracion_computable, l.monto_cts,
 		       l.monto_vacaciones_truncas, l.monto_vacaciones_no_gozadas, l.monto_indemnizacion_vacacional,
 		       l.periodos_vencidos_vacaciones, l.periodos_no_vencidos_vacaciones,
 		       l.monto_gratificacion_trunca, l.total_liquidacion, l.estado,
@@ -57,7 +57,7 @@ func (r *LiquidacionRepository) ObtenerLiquidacionCesePorID(id int, tenantID int
 	l := &models.LiquidacionCese{}
 	err := r.db.QueryRow(query, id, tenantID).Scan(
 		&l.ID, &l.TenantID, &l.ContratoID, &l.FechaInicioComputable, &l.FechaCese, &l.Motivo,
-		&l.AnosServicios, &l.MesesServicios, &l.RemuneracionComputable, &l.MontoCts,
+		&l.AnosServicios, &l.MesesServicios, &l.DiasServicios, &l.RemuneracionComputable, &l.MontoCts,
 		&l.MontoVacacionesTruncas, &l.MontoVacacionesNoGozadas, &l.MontoIndemnizacionVacacional,
 		&l.PeriodosVencidosVacaciones, &l.PeriodosNoVencidosVacaciones,
 		&l.MontoGratiTrunca, &l.TotalLiquidacion, &l.Estado,
@@ -74,7 +74,7 @@ func (r *LiquidacionRepository) ObtenerLiquidacionCesePorID(id int, tenantID int
 func (r *LiquidacionRepository) ListarLiquidacionesCese(tenantID int) ([]models.LiquidacionCese, error) {
 	query := `
 		SELECT l.id, l.tenant_id, l.contrato_id, l.fecha_inicio_computable, l.fecha_cese, l.motivo,
-		       l.anos_servicios, l.meses_servicios, l.remuneracion_computable, l.monto_cts,
+		       l.anos_servicios, l.meses_servicios, COALESCE(l.dias_servicios, 0), l.remuneracion_computable, l.monto_cts,
 		       l.monto_vacaciones_truncas, l.monto_vacaciones_no_gozadas, l.monto_indemnizacion_vacacional,
 		       l.periodos_vencidos_vacaciones, l.periodos_no_vencidos_vacaciones,
 		       l.monto_gratificacion_trunca, l.total_liquidacion, l.estado,
@@ -102,7 +102,7 @@ func (r *LiquidacionRepository) ListarLiquidacionesCese(tenantID int) ([]models.
 		var l models.LiquidacionCese
 		err := rows.Scan(
 			&l.ID, &l.TenantID, &l.ContratoID, &l.FechaInicioComputable, &l.FechaCese, &l.Motivo,
-			&l.AnosServicios, &l.MesesServicios, &l.RemuneracionComputable, &l.MontoCts,
+			&l.AnosServicios, &l.MesesServicios, &l.DiasServicios, &l.RemuneracionComputable, &l.MontoCts,
 			&l.MontoVacacionesTruncas, &l.MontoVacacionesNoGozadas, &l.MontoIndemnizacionVacacional,
 			&l.PeriodosVencidosVacaciones, &l.PeriodosNoVencidosVacaciones,
 			&l.MontoGratiTrunca, &l.TotalLiquidacion, &l.Estado,
