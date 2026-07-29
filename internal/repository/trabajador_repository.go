@@ -69,7 +69,8 @@ func (r *TrabajadorRepository) ObtenerMapaAFPsParaImportar() (map[string]int, er
 func (r *TrabajadorRepository) ObtenerTodos(tenantID int) ([]models.Trabajador, error) {
 	query := `
 		SELECT id, tenant_id, tipo_documento, numero_documento, nombres, apellido_paterno, apellido_materno, 
-		       TO_CHAR(fecha_nacimiento, 'YYYY-MM-DD'), TO_CHAR(fecha_ingreso, 'YYYY-MM-DD'), sexo, activo,
+		       TO_CHAR(fecha_nacimiento, 'YYYY-MM-DD'), TO_CHAR(fecha_ingreso, 'YYYY-MM-DD'), TO_CHAR(fecha_cese, 'YYYY-MM-DD'),
+		       COALESCE(direccion, ''), COALESCE(banco, ''), COALESCE(cuenta, ''), COALESCE(cci, ''), sexo, activo,
 		       COALESCE(regimen_pensionario, 'ONP'), COALESCE(afp_id, 0), COALESCE(afp_tipo_comision, ''), COALESCE(cuspp, '')
 		FROM trabajadores 
 		WHERE tenant_id = $1
@@ -85,8 +86,8 @@ func (r *TrabajadorRepository) ObtenerTodos(tenantID int) ([]models.Trabajador, 
 	var lista []models.Trabajador
 	for rows.Next() {
 		var t models.Trabajador
-		var fechaNac, fechaIng sql.NullString
-		err := rows.Scan(&t.ID, &t.TenantID, &t.TipoDocumento, &t.NumeroDocumento, &t.Nombres, &t.ApellidoPaterno, &t.ApellidoMaterno, &fechaNac, &fechaIng, &t.Sexo, &t.Activo, &t.RegimenPensionario, &t.AfpID, &t.AfpTipoComision, &t.Cuspp)
+		var fechaNac, fechaIng, fechaCese sql.NullString
+		err := rows.Scan(&t.ID, &t.TenantID, &t.TipoDocumento, &t.NumeroDocumento, &t.Nombres, &t.ApellidoPaterno, &t.ApellidoMaterno, &fechaNac, &fechaIng, &fechaCese, &t.Direccion, &t.Banco, &t.Cuenta, &t.Cci, &t.Sexo, &t.Activo, &t.RegimenPensionario, &t.AfpID, &t.AfpTipoComision, &t.Cuspp)
 		if err != nil {
 			return nil, err
 		}
@@ -95,6 +96,9 @@ func (r *TrabajadorRepository) ObtenerTodos(tenantID int) ([]models.Trabajador, 
 		}
 		if fechaIng.Valid {
 			t.FechaIngreso = fechaIng.String
+		}
+		if fechaCese.Valid {
+			t.FechaCese = fechaCese.String
 		}
 		lista = append(lista, t)
 	}
@@ -126,7 +130,8 @@ func (r *TrabajadorRepository) ObtenerTodosPaginacion(tenantID int, busqueda str
 
 	query := fmt.Sprintf(`
 		SELECT id, tenant_id, tipo_documento, numero_documento, nombres, apellido_paterno, apellido_materno, 
-		       TO_CHAR(fecha_nacimiento, 'YYYY-MM-DD'), TO_CHAR(fecha_ingreso, 'YYYY-MM-DD'), sexo, activo,
+		       TO_CHAR(fecha_nacimiento, 'YYYY-MM-DD'), TO_CHAR(fecha_ingreso, 'YYYY-MM-DD'), TO_CHAR(fecha_cese, 'YYYY-MM-DD'),
+		       COALESCE(direccion, ''), COALESCE(banco, ''), COALESCE(cuenta, ''), COALESCE(cci, ''), sexo, activo,
 		       COALESCE(regimen_pensionario, 'ONP'), COALESCE(afp_id, 0), COALESCE(afp_tipo_comision, ''), COALESCE(cuspp, '')
 		FROM trabajadores 
 		%s
@@ -145,8 +150,8 @@ func (r *TrabajadorRepository) ObtenerTodosPaginacion(tenantID int, busqueda str
 	var lista []models.Trabajador
 	for rows.Next() {
 		var t models.Trabajador
-		var fechaNac, fechaIng sql.NullString
-		err := rows.Scan(&t.ID, &t.TenantID, &t.TipoDocumento, &t.NumeroDocumento, &t.Nombres, &t.ApellidoPaterno, &t.ApellidoMaterno, &fechaNac, &fechaIng, &t.Sexo, &t.Activo, &t.RegimenPensionario, &t.AfpID, &t.AfpTipoComision, &t.Cuspp)
+		var fechaNac, fechaIng, fechaCese sql.NullString
+		err := rows.Scan(&t.ID, &t.TenantID, &t.TipoDocumento, &t.NumeroDocumento, &t.Nombres, &t.ApellidoPaterno, &t.ApellidoMaterno, &fechaNac, &fechaIng, &fechaCese, &t.Direccion, &t.Banco, &t.Cuenta, &t.Cci, &t.Sexo, &t.Activo, &t.RegimenPensionario, &t.AfpID, &t.AfpTipoComision, &t.Cuspp)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -155,6 +160,9 @@ func (r *TrabajadorRepository) ObtenerTodosPaginacion(tenantID int, busqueda str
 		}
 		if fechaIng.Valid {
 			t.FechaIngreso = fechaIng.String
+		}
+		if fechaCese.Valid {
+			t.FechaCese = fechaCese.String
 		}
 		lista = append(lista, t)
 	}
@@ -167,16 +175,17 @@ func (r *TrabajadorRepository) ObtenerTodosPaginacion(tenantID int, busqueda str
 // Obtener trabajador por ID y tenantID
 func (r *TrabajadorRepository) ObtenerPorID(id int, tenantID int) (*models.Trabajador, error) {
 	var t models.Trabajador
-	var fechaNac, fechaIng sql.NullString
+	var fechaNac, fechaIng, fechaCese sql.NullString
 
 	query := `
 		SELECT id, tenant_id, tipo_documento, numero_documento, nombres, apellido_paterno, apellido_materno, 
-		       TO_CHAR(fecha_nacimiento, 'YYYY-MM-DD'), TO_CHAR(fecha_ingreso, 'YYYY-MM-DD'), sexo, activo,
+		       TO_CHAR(fecha_nacimiento, 'YYYY-MM-DD'), TO_CHAR(fecha_ingreso, 'YYYY-MM-DD'), TO_CHAR(fecha_cese, 'YYYY-MM-DD'),
+		       COALESCE(direccion, ''), COALESCE(banco, ''), COALESCE(cuenta, ''), COALESCE(cci, ''), sexo, activo,
 		       COALESCE(regimen_pensionario, 'ONP'), COALESCE(afp_id, 0), COALESCE(afp_tipo_comision, ''), COALESCE(cuspp, '')
 		FROM trabajadores 
 		WHERE id = $1 AND tenant_id = $2
 	`
-	err := r.db.QueryRow(query, id, tenantID).Scan(&t.ID, &t.TenantID, &t.TipoDocumento, &t.NumeroDocumento, &t.Nombres, &t.ApellidoPaterno, &t.ApellidoMaterno, &fechaNac, &fechaIng, &t.Sexo, &t.Activo, &t.RegimenPensionario, &t.AfpID, &t.AfpTipoComision, &t.Cuspp)
+	err := r.db.QueryRow(query, id, tenantID).Scan(&t.ID, &t.TenantID, &t.TipoDocumento, &t.NumeroDocumento, &t.Nombres, &t.ApellidoPaterno, &t.ApellidoMaterno, &fechaNac, &fechaIng, &fechaCese, &t.Direccion, &t.Banco, &t.Cuenta, &t.Cci, &t.Sexo, &t.Activo, &t.RegimenPensionario, &t.AfpID, &t.AfpTipoComision, &t.Cuspp)
 	if err != nil {
 		return nil, err
 	}
@@ -186,29 +195,39 @@ func (r *TrabajadorRepository) ObtenerPorID(id int, tenantID int) (*models.Traba
 	if fechaIng.Valid {
 		t.FechaIngreso = fechaIng.String
 	}
+	if fechaCese.Valid {
+		t.FechaCese = fechaCese.String
+	}
 	return &t, nil
 }
 
 // Crear inserta un trabajador forzando el tenant_id
 func (r *TrabajadorRepository) Crear(t *models.Trabajador) error {
+	if strings.TrimSpace(t.FechaCese) != "" {
+		t.Activo = false
+	}
 	query := `
-		INSERT INTO trabajadores (tenant_id, tipo_documento, numero_documento, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, fecha_ingreso, sexo, activo, regimen_pensionario, afp_id, afp_tipo_comision, cuspp) 
-		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::DATE, NULLIF($8, '')::DATE, $9, $10, $11, NULLIF($12, 0), $13, $14) RETURNING id
+		INSERT INTO trabajadores (tenant_id, tipo_documento, numero_documento, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, fecha_ingreso, fecha_cese, direccion, banco, cuenta, cci, sexo, activo, regimen_pensionario, afp_id, afp_tipo_comision, cuspp) 
+		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::DATE, NULLIF($8, '')::DATE, NULLIF($9, '')::DATE, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, 0), $18, $19) RETURNING id
 	`
-	return r.db.QueryRow(query, t.TenantID, t.TipoDocumento, t.NumeroDocumento, t.Nombres, t.ApellidoPaterno, t.ApellidoMaterno, t.FechaNacimiento, t.FechaIngreso, t.Sexo, t.Activo, t.RegimenPensionario, t.AfpID, t.AfpTipoComision, t.Cuspp).Scan(&t.ID)
+	return r.db.QueryRow(query, t.TenantID, t.TipoDocumento, t.NumeroDocumento, t.Nombres, t.ApellidoPaterno, t.ApellidoMaterno, t.FechaNacimiento, t.FechaIngreso, t.FechaCese, t.Direccion, t.Banco, t.Cuenta, t.Cci, t.Sexo, t.Activo, t.RegimenPensionario, t.AfpID, t.AfpTipoComision, t.Cuspp).Scan(&t.ID)
 }
 
 // Actualizar guarda los cambios asegurando la propiedad (tenant_id)
 func (r *TrabajadorRepository) Actualizar(t *models.Trabajador) error {
+	if strings.TrimSpace(t.FechaCese) != "" {
+		t.Activo = false
+	}
 	query := `
 		UPDATE trabajadores 
 		SET tipo_documento = $1, numero_documento = $2, nombres = $3, apellido_paterno = $4, 
 		    apellido_materno = $5, fecha_nacimiento = NULLIF($6, '')::DATE, fecha_ingreso = NULLIF($7, '')::DATE, 
-		    sexo = $8, activo = $9, regimen_pensionario = $10, afp_id = NULLIF($11, 0), 
-		    afp_tipo_comision = $12, cuspp = $13, updated_at = CURRENT_TIMESTAMP 
-		WHERE id = $14 AND tenant_id = $15
+		    fecha_cese = NULLIF($8, '')::DATE, direccion = $9, banco = $10, cuenta = $11, cci = $12, 
+		    sexo = $13, activo = $14, regimen_pensionario = $15, afp_id = NULLIF($16, 0), 
+		    afp_tipo_comision = $17, cuspp = $18, updated_at = CURRENT_TIMESTAMP 
+		WHERE id = $19 AND tenant_id = $20
 	`
-	_, err := r.db.Exec(query, t.TipoDocumento, t.NumeroDocumento, t.Nombres, t.ApellidoPaterno, t.ApellidoMaterno, t.FechaNacimiento, t.FechaIngreso, t.Sexo, t.Activo, t.RegimenPensionario, t.AfpID, t.AfpTipoComision, t.Cuspp, t.ID, t.TenantID)
+	_, err := r.db.Exec(query, t.TipoDocumento, t.NumeroDocumento, t.Nombres, t.ApellidoPaterno, t.ApellidoMaterno, t.FechaNacimiento, t.FechaIngreso, t.FechaCese, t.Direccion, t.Banco, t.Cuenta, t.Cci, t.Sexo, t.Activo, t.RegimenPensionario, t.AfpID, t.AfpTipoComision, t.Cuspp, t.ID, t.TenantID)
 	return err
 }
 
@@ -231,9 +250,9 @@ func (r *TrabajadorRepository) ImportarTrabajadores(tenantID int, trabajadores [
 	query := `
 		INSERT INTO trabajadores (
 			tenant_id, tipo_documento, numero_documento, nombres, 
-			apellido_paterno, apellido_materno, fecha_nacimiento, fecha_ingreso, sexo, 
-			activo, regimen_pensionario, afp_id, afp_tipo_comision, cuspp
-		) VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::DATE, NULLIF($8, '')::DATE, $9, $10, $11, NULLIF($12, 0), $13, $14)
+			apellido_paterno, apellido_materno, fecha_nacimiento, fecha_ingreso, fecha_cese, direccion, 
+			banco, cuenta, cci, sexo, activo, regimen_pensionario, afp_id, afp_tipo_comision, cuspp
+		) VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::DATE, NULLIF($8, '')::DATE, NULLIF($9, '')::DATE, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, 0), $18, $19)
 	`
 	stmt, err := tx.Prepare(query)
 	if err != nil {
@@ -242,10 +261,13 @@ func (r *TrabajadorRepository) ImportarTrabajadores(tenantID int, trabajadores [
 	defer stmt.Close()
 
 	for _, t := range trabajadores {
+		if strings.TrimSpace(t.FechaCese) != "" {
+			t.Activo = false
+		}
 		_, err = stmt.Exec(
 			tenantID, t.TipoDocumento, t.NumeroDocumento, t.Nombres,
-			t.ApellidoPaterno, t.ApellidoMaterno, t.FechaNacimiento, t.FechaIngreso, t.Sexo,
-			t.Activo, t.RegimenPensionario, t.AfpID, t.AfpTipoComision, t.Cuspp,
+			t.ApellidoPaterno, t.ApellidoMaterno, t.FechaNacimiento, t.FechaIngreso, t.FechaCese, t.Direccion,
+			t.Banco, t.Cuenta, t.Cci, t.Sexo, t.Activo, t.RegimenPensionario, t.AfpID, t.AfpTipoComision, t.Cuspp,
 		)
 		if err != nil {
 			return err
@@ -259,7 +281,8 @@ func (r *TrabajadorRepository) ImportarTrabajadores(tenantID int, trabajadores [
 func (r *TrabajadorRepository) ObtenerCumpleaniosMes(tenantID int, mes int) ([]models.Trabajador, error) {
 	query := `
 		SELECT id, tenant_id, tipo_documento, numero_documento, nombres, apellido_paterno, apellido_materno, 
-		       TO_CHAR(fecha_nacimiento, 'YYYY-MM-DD'), TO_CHAR(fecha_ingreso, 'YYYY-MM-DD'), sexo, activo,
+		       TO_CHAR(fecha_nacimiento, 'YYYY-MM-DD'), TO_CHAR(fecha_ingreso, 'YYYY-MM-DD'), TO_CHAR(fecha_cese, 'YYYY-MM-DD'),
+		       COALESCE(direccion, ''), COALESCE(banco, ''), COALESCE(cuenta, ''), COALESCE(cci, ''), sexo, activo,
 		       COALESCE(regimen_pensionario, 'ONP'), COALESCE(afp_id, 0), COALESCE(afp_tipo_comision, ''), COALESCE(cuspp, '')
 		FROM trabajadores 
 		WHERE tenant_id = $1 AND EXTRACT(MONTH FROM fecha_nacimiento) = $2 AND activo = true
@@ -274,8 +297,8 @@ func (r *TrabajadorRepository) ObtenerCumpleaniosMes(tenantID int, mes int) ([]m
 	var lista []models.Trabajador
 	for rows.Next() {
 		var t models.Trabajador
-		var fechaNac, fechaIng sql.NullString
-		err := rows.Scan(&t.ID, &t.TenantID, &t.TipoDocumento, &t.NumeroDocumento, &t.Nombres, &t.ApellidoPaterno, &t.ApellidoMaterno, &fechaNac, &fechaIng, &t.Sexo, &t.Activo, &t.RegimenPensionario, &t.AfpID, &t.AfpTipoComision, &t.Cuspp)
+		var fechaNac, fechaIng, fechaCese sql.NullString
+		err := rows.Scan(&t.ID, &t.TenantID, &t.TipoDocumento, &t.NumeroDocumento, &t.Nombres, &t.ApellidoPaterno, &t.ApellidoMaterno, &fechaNac, &fechaIng, &fechaCese, &t.Direccion, &t.Banco, &t.Cuenta, &t.Cci, &t.Sexo, &t.Activo, &t.RegimenPensionario, &t.AfpID, &t.AfpTipoComision, &t.Cuspp)
 		if err != nil {
 			return nil, err
 		}
@@ -284,6 +307,9 @@ func (r *TrabajadorRepository) ObtenerCumpleaniosMes(tenantID int, mes int) ([]m
 		}
 		if fechaIng.Valid {
 			t.FechaIngreso = fechaIng.String
+		}
+		if fechaCese.Valid {
+			t.FechaCese = fechaCese.String
 		}
 		lista = append(lista, t)
 	}

@@ -116,6 +116,29 @@ func (h *PlanillaHandler) VistaDetalle(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, datos)
 }
 
+// VistaAnexos carga la vista con la lista de anexos de la planilla
+func (h *PlanillaHandler) VistaAnexos(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+
+	planilla, err := h.Repo.ObtenerPorID(planillaID, tenantID)
+	if err != nil || planilla == nil {
+		http.Error(w, "Planilla no encontrada", http.StatusNotFound)
+		return
+	}
+
+	datos := map[string]interface{}{
+		"Planilla": planilla,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/tenant/planillas_anexos_ui.html")
+	if err != nil {
+		http.Error(w, "Error al cargar vista de anexos: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tmpl.Execute(w, datos)
+}
+
 // DescargarReportePDF responde a un click del usuario generando y enviando el PDF al vuelo
 func (h *PlanillaHandler) DescargarReportePDF(w http.ResponseWriter, r *http.Request) {
 	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))

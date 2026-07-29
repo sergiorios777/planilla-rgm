@@ -90,6 +90,11 @@ func (h *TrabajadorHandler) Crear(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	afpID, _ := strconv.Atoi(r.FormValue("afp_id"))
+	fechaCese := strings.TrimSpace(r.FormValue("fecha_cese"))
+	activo := r.FormValue("activo") == "on"
+	if fechaCese != "" {
+		activo = false
+	}
 
 	nuevoTrabajador := models.Trabajador{
 		TenantID:           obtenerTenantID(r),
@@ -100,8 +105,13 @@ func (h *TrabajadorHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		ApellidoMaterno:    r.FormValue("apellido_materno"),
 		FechaNacimiento:    r.FormValue("fecha_nacimiento"),
 		FechaIngreso:       r.FormValue("fecha_ingreso"),
+		FechaCese:          fechaCese,
+		Direccion:          strings.TrimSpace(r.FormValue("direccion")),
+		Banco:              strings.TrimSpace(r.FormValue("banco")),
+		Cuenta:             strings.TrimSpace(r.FormValue("cuenta")),
+		Cci:                strings.TrimSpace(r.FormValue("cci")),
 		Sexo:               r.FormValue("sexo"),
-		Activo:             r.FormValue("activo") == "on",
+		Activo:             activo,
 		RegimenPensionario: r.FormValue("regimen_pensionario"),
 		AfpID:              afpID,
 		AfpTipoComision:    r.FormValue("afp_tipo_comision"),
@@ -143,6 +153,11 @@ func (h *TrabajadorHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 
 	id, _ := strconv.Atoi(r.FormValue("id"))
 	afpID, _ := strconv.Atoi(r.FormValue("afp_id"))
+	fechaCese := strings.TrimSpace(r.FormValue("fecha_cese"))
+	activo := r.FormValue("activo") == "on"
+	if fechaCese != "" {
+		activo = false
+	}
 
 	trabajadorEditado := models.Trabajador{
 		ID:                 id,
@@ -154,8 +169,13 @@ func (h *TrabajadorHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 		ApellidoMaterno:    r.FormValue("apellido_materno"),
 		FechaNacimiento:    r.FormValue("fecha_nacimiento"),
 		FechaIngreso:       r.FormValue("fecha_ingreso"),
+		FechaCese:          fechaCese,
+		Direccion:          strings.TrimSpace(r.FormValue("direccion")),
+		Banco:              strings.TrimSpace(r.FormValue("banco")),
+		Cuenta:             strings.TrimSpace(r.FormValue("cuenta")),
+		Cci:                strings.TrimSpace(r.FormValue("cci")),
 		Sexo:               r.FormValue("sexo"),
-		Activo:             r.FormValue("activo") == "on",
+		Activo:             activo,
 		RegimenPensionario: r.FormValue("regimen_pensionario"),
 		AfpID:              afpID,
 		AfpTipoComision:    r.FormValue("afp_tipo_comision"),

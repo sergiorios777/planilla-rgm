@@ -697,20 +697,21 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 
 	// 1. Obtener Cabecera (Datos de la Muni y de la Planilla)
 	queryCabecera := `
-		SELECT t.nombre, t.ruc, p.anio, p.mes, p.descripcion
+		SELECT t.nombre, t.ruc, COALESCE(t.logo_url, ''), p.anio, p.mes, p.descripcion, COALESCE(p.estado, '')
 		FROM planillas p
 		INNER JOIN tenants t ON p.tenant_id = t.id
 		WHERE p.id = $1 AND p.tenant_id = $2
 	`
 	err := r.db.QueryRow(queryCabecera, planillaID, tenantID).Scan(
-		&reporte.TenantNombre, &reporte.TenantRUC,
+		&reporte.TenantNombre, &reporte.TenantRUC, &reporte.TenantLogoURL,
 		&reporte.PlanillaAnio, &reporte.PlanillaMes, &reporte.PlanillaDesc,
+		&reporte.PlanillaEstado,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Obtener los Trabajadores (Directo desde la boleta inmutable y JOIN con el régimen laboral)
+	// 2. Obtener los Trabajadores (Directo desde la boleta inmutable y JOIN con el régimen laboral y trabajador)
 	queryDetalles := `
 		SELECT 
 			pd.id, 
@@ -718,9 +719,19 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 			pd.trabajador_nombre_completo,
 			pd.puesto_nombre,
 			COALESCE(rl.descripcion, 'Sin Régimen'),
-			pd.total_ingresos, pd.total_retenciones, pd.total_aportes, pd.neto_pagar
+			pd.total_ingresos, pd.total_retenciones, pd.total_aportes, pd.neto_pagar,
+			COALESCE(t.sexo, '-'),
+			COALESCE(TO_CHAR(t.fecha_nacimiento, 'DD/MM/YYYY'), '-'),
+			COALESCE(TO_CHAR(t.fecha_ingreso, 'DD/MM/YYYY'), '-'),
+			COALESCE(TO_CHAR(t.fecha_cese, 'DD/MM/YYYY'), '-'),
+			COALESCE(t.direccion, '-'),
+			COALESCE(t.regimen_pensionario, 'ONP'),
+			COALESCE(a.nombre, '-'),
+			COALESCE(t.cuspp, '-')
 		FROM planilla_detalles pd
 		LEFT JOIN contratos c ON pd.contrato_id = c.id
+		LEFT JOIN trabajadores t ON c.trabajador_id = t.id
+		LEFT JOIN afps a ON t.afp_id = a.id
 		LEFT JOIN puestos p ON c.puesto_id = p.id
 		LEFT JOIN regimenes_laborales rl ON p.regimen_id = rl.id
 		WHERE pd.planilla_id = $1
@@ -737,10 +748,15 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 
 	for rowsDet.Next() {
 		b := &models.BoletaReporte{}
-		rowsDet.Scan(
+		err := rowsDet.Scan(
 			&b.DetalleID, &b.TrabajadorDoc, &b.TrabajadorNombre, &b.Cargo, &b.Regimen,
 			&b.TotalIngresos, &b.TotalRetenciones, &b.TotalAportes, &b.NetoPagar,
+			&b.Sexo, &b.FechaNacimiento, &b.FechaIngreso, &b.FechaCese, &b.Direccion,
+			&b.RegimenPensionario, &b.AfpNombre, &b.Cuspp,
 		)
+		if err != nil {
+			return nil, err
+		}
 
 		// Sumamos a los totales generales de la Municipalidad
 		reporte.TotalIngresos += b.TotalIngresos

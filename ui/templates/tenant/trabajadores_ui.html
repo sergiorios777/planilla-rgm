@@ -37,7 +37,8 @@
     <dialog id="modal-nuevo-trabajador">
         <article style="max-width: 750px; width: 95%;">
             <header>
-                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nuevo-trabajador').close()"></a>
+                <a href="#close" aria-label="Close" class="close"
+                    onclick="document.getElementById('modal-nuevo-trabajador').close()"></a>
                 <h4 style="margin-bottom: 0;">➕ Registrar Nuevo Trabajador</h4>
             </header>
             {{template "formulario_crear" .}}
@@ -48,7 +49,8 @@
     <dialog id="modal-importar-trabajador">
         <article style="max-width: 750px; width: 95%;">
             <header>
-                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-trabajador').close()"></a>
+                <a href="#close" aria-label="Close" class="close"
+                    onclick="document.getElementById('modal-importar-trabajador').close()"></a>
                 <h4 style="margin-bottom: 0;">📤 Importación Masiva (Excel)</h4>
             </header>
             <div id="contenedor-formulario-importar-trabajadores">
@@ -58,10 +60,12 @@
     </dialog>
 
     <!-- Modal de Edición de Trabajador -->
-    <dialog id="modal-editar-trabajador" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
+    <dialog id="modal-editar-trabajador"
+        hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
         <article style="max-width: 750px; width: 95%;">
             <header>
-                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-editar-trabajador').close()"></a>
+                <a href="#close" aria-label="Close" class="close"
+                    onclick="document.getElementById('modal-editar-trabajador').close()"></a>
                 <h4 style="margin-bottom: 0;">✏️ Editar Trabajador</h4>
             </header>
             <div id="contenido-modal-editar">
@@ -102,12 +106,32 @@
         </label>
     </div>
 
+    <label>Dirección de Domicilio
+        <input type="text" name="direccion" placeholder="Av. / Calle / Psje. ...">
+    </label>
+
+    <div class="grid">
+        <label>Entidad Bancaria
+            <input type="text" name="banco" placeholder="Ej. BCP, BBVA, Banco de la Nación">
+        </label>
+        <label>N° Cuenta / Cuenta Sueldo
+            <input type="text" name="cuenta" placeholder="Ej. 191-123456789">
+        </label>
+        <label>Código CCI (Interbancario)
+            <input type="text" name="cci" placeholder="Ej. 002-191-00123456789-01">
+        </label>
+    </div>
+
     <div class="grid">
         <label>Fecha de Nacimiento
             <input type="date" name="fecha_nacimiento">
         </label>
         <label>Fecha de Ingreso
             <input type="date" name="fecha_ingreso">
+        </label>
+        <label>Fecha de Cese
+            <input type="date" name="fecha_cese" id="input-fecha-cese-crear"
+                onchange="if(this.value) { document.getElementById('checkbox-activo-crear').checked = false; }">
         </label>
         <label>Sexo
             <select name="sexo">
@@ -148,11 +172,13 @@
     </div>
 
     <label>
-        <input type="checkbox" name="activo" checked> Personal Activo
+        <input type="checkbox" name="activo" id="checkbox-activo-crear" checked> Personal Activo
     </label>
 
     <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline" onclick="document.getElementById('modal-nuevo-trabajador').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
+        <button type="button" class="secondary outline"
+            onclick="document.getElementById('modal-nuevo-trabajador').close()"
+            style="margin-bottom: 0; width: auto;">Cancelar</button>
         <button type="submit" style="margin-bottom: 0; width: auto;">Guardar Trabajador</button>
     </div>
 </form>
@@ -191,12 +217,32 @@
         </label>
     </div>
 
+    <label>Dirección de Domicilio
+        <input type="text" name="direccion" value="{{.Direccion}}" placeholder="Av. / Calle / Psje. ...">
+    </label>
+
+    <div class="grid">
+        <label>Entidad Bancaria
+            <input type="text" name="banco" value="{{.Banco}}" placeholder="Ej. BCP, BBVA, Banco de la Nación">
+        </label>
+        <label>N° Cuenta / Cuenta Sueldo
+            <input type="text" name="cuenta" value="{{.Cuenta}}" placeholder="Ej. 191-123456789">
+        </label>
+        <label>Código CCI (Interbancario)
+            <input type="text" name="cci" value="{{.Cci}}" placeholder="Ej. 002-191-00123456789-01">
+        </label>
+    </div>
+
     <div class="grid">
         <label>Fecha de Nacimiento
             <input type="date" name="fecha_nacimiento" value="{{.FechaNacimiento}}">
         </label>
         <label>Fecha de Ingreso
             <input type="date" name="fecha_ingreso" value="{{.FechaIngreso}}">
+        </label>
+        <label>Fecha de Cese
+            <input type="date" name="fecha_cese" value="{{.FechaCese}}" id="input-fecha-cese-editar"
+                onchange="if(this.value) { document.getElementById('checkbox-activo-editar').checked = false; }">
         </label>
         <label>Sexo
             <select name="sexo">
@@ -237,11 +283,13 @@
     </div>
 
     <label>
-        <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Personal Activo
+        <input type="checkbox" name="activo" id="checkbox-activo-editar" {{if .Activo}}checked{{end}}> Personal Activo
     </label>
 
     <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-trabajador').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
+        <button type="button" class="secondary outline"
+            onclick="document.getElementById('modal-editar-trabajador').close()"
+            style="margin-bottom: 0; width: auto;">Cancelar</button>
         <button type="submit" style="margin-bottom: 0; width: auto;">Actualizar</button>
     </div>
 </form>
@@ -253,7 +301,10 @@
         <tr>
             <th>DNI/Doc</th>
             <th>Apellidos y Nombres</th>
+            <th>Banco</th>
+            <th>Cuenta / CCI</th>
             <th>F. Ingreso</th>
+            <th>F. Cese</th>
             <th>Edad</th>
             <th>Estado</th>
             <th>Acciones</th>
@@ -264,7 +315,20 @@
         <tr>
             <td><small>{{.NumeroDocumento}}</small></td>
             <td><strong>{{.ApellidoPaterno}} {{.ApellidoMaterno}}</strong><br><small>{{.Nombres}}</small></td>
+            <td>
+                {{if .Banco}}<strong>{{.Banco}}</strong>{{else}}<small
+                    style="color: var(--muted-color);">-</small>{{end}}
+            </td>
+            <td>
+                <small>
+                    {{if .Cuenta}}Cta: {{.Cuenta}}{{end}}
+                    {{if and .Cuenta .Cci}} <br> {{end}}
+                    {{if .Cci}}CCI: {{.Cci}}{{end}}
+                    {{if and (not .Cuenta) (not .Cci)}}-{{end}}
+                </small>
+            </td>
             <td><small>{{if .FechaIngreso}}{{.FechaIngreso}}{{else}}-{{end}}</small></td>
+            <td><small>{{if .FechaCese}}{{.FechaCese}}{{else}}-{{end}}</small></td>
             <td>{{if gt .Edad 0}}{{.Edad}} años{{else}}-{{end}}</td>
             <td>
                 {{if .Activo}}
@@ -285,7 +349,7 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="6" style="text-align: center;">No hay trabajadores registrados.</td>
+            <td colspan="8" style="text-align: center;">No hay trabajadores registrados.</td>
         </tr>
         {{end}}
     </tbody>
@@ -317,11 +381,13 @@
 
 {{define "formulario_importar_trabajadores"}}
 <div>
-    <p><small>Sube un archivo <b>.xlsx</b> con las 13 columnas en el orden exacto indicado a continuación. La primera fila (cabecera) se omitirá durante el procesamiento.</small></p>
+    <p><small>Sube un archivo <b>.xlsx</b> con las 13 columnas en el orden exacto indicado a continuación. La primera
+            fila (cabecera) se omitirá durante el procesamiento.</small></p>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <strong>Estructura del Archivo Excel:</strong>
-        <a href="/tenant/trabajadores/plantilla" class="button outline primary" style="padding: 4px 12px; font-size: 0.85rem; margin-bottom: 0;">
+        <a href="/tenant/trabajadores/plantilla" class="button outline primary"
+            style="padding: 4px 12px; font-size: 0.85rem; margin-bottom: 0;">
             <svg class="icono-menu" style="margin-right: 4px;">
                 <use href="#icono-importar"></use>
             </svg> Descargar Plantilla (.xlsx)
@@ -406,7 +472,9 @@
     <div id="resultado-importacion-trabajador" style="margin-top: 1rem;"></div>
 
     <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-trabajador').close()" style="margin-bottom: 0; width: auto;">Cerrar</button>
+        <button type="button" class="secondary outline"
+            onclick="document.getElementById('modal-importar-trabajador').close()"
+            style="margin-bottom: 0; width: auto;">Cerrar</button>
     </div>
 </div>
 {{end}}

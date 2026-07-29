@@ -3,6 +3,8 @@ package services
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"path/filepath"
 	"planilla-rgm/internal/models"
 	"strings"
 
@@ -15,13 +17,63 @@ func NewPdfService() *PdfService {
 	return &PdfService{}
 }
 
+// obtenerRutaLogo busca la existencia física del archivo del logo en el sistema
+func obtenerRutaLogo(logoURL string) string {
+	if logoURL == "" {
+		return ""
+	}
+	candidatos := []string{
+		logoURL,
+		strings.TrimPrefix(logoURL, "/"),
+		filepath.Join("ui", strings.TrimPrefix(logoURL, "/")),
+		filepath.Join("ui", logoURL),
+	}
+	for _, c := range candidatos {
+		if info, err := os.Stat(c); err == nil && !info.IsDir() {
+			return c
+		}
+	}
+	return ""
+}
+
 // GenerarReportePlanilla crea el "Boletón" con alturas uniformes y cabecera de dos filas
 func (s *PdfService) GenerarReportePlanilla(datos *models.DatosReportePlanilla) ([]byte, error) {
 	pdf := gofpdf.New("L", "mm", "A4", "")
 	pdf.SetMargins(10, 10, 10)
+	tr := pdf.UnicodeTranslatorFromDescriptor("")
+
+	// Pie de página: Descripción, periodo, indicador de BORRADOR y número de página
+	pdf.AliasNbPages("{nb}")
+	pdf.SetFooterFunc(func() {
+		pdf.SetY(-12)
+
+		infoPie := fmt.Sprintf("%s | Periodo: %02d/%d", datos.PlanillaDesc, datos.PlanillaMes, datos.PlanillaAnio)
+
+		// Lado izquierdo: indicador BORRADOR (si aplica) y datos de la planilla
+		if strings.EqualFold(strings.TrimSpace(datos.PlanillaEstado), "BORRADOR") {
+			pdf.SetFont("Arial", "B", 8)
+			pdf.SetTextColor(200, 0, 0)
+			pdf.CellFormat(22, 6, "BORRADOR", "", 0, "L", false, 0, "")
+			pdf.SetTextColor(0, 0, 0)
+			pdf.SetFont("Arial", "I", 8)
+			pdf.CellFormat(180, 6, tr(" | "+infoPie), "", 0, "L", false, 0, "")
+		} else {
+			pdf.SetFont("Arial", "I", 8)
+			pdf.CellFormat(200, 6, tr(infoPie), "", 0, "L", false, 0, "")
+		}
+
+		// Lado derecho: Número de página en formato "Página X de Y"
+		pdf.SetFont("Arial", "I", 8)
+		pdf.SetX(10)
+		pdf.CellFormat(277, 6, tr(fmt.Sprintf("Página %d de {nb}", pdf.PageNo())), "", 0, "R", false, 0, "")
+	})
+
 	pdf.AddPage()
 
-	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	// Logo de la Municipalidad en la primera página (esquina superior izquierda)
+	if rutaLogo := obtenerRutaLogo(datos.TenantLogoURL); rutaLogo != "" {
+		pdf.ImageOptions(rutaLogo, 10, 8, 22, 0, false, gofpdf.ImageOptions{ReadDpi: true}, 0, "")
+	}
 
 	// Cabecera del Documento
 	pdf.SetFont("Arial", "B", 14)
@@ -164,25 +216,31 @@ func (s *PdfService) GenerarBoletasPDF(datos *models.DatosReportePlanilla) ([]by
 	pdf.SetMargins(10, 10, 10)
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
-	boletasPorPagina := 0
+	if len(datos.Boletas) == 0 {
+		pdf.AddPage()
+		pdf.SetFont("Arial", "I", 10)
+		pdf.CellFormat(190, 10, tr("No se encontraron boletas de pago para esta planilla."), "", 1, "C", false, 0, "")
+	} else {
+		boletasPorPagina := 0
 
-	for _, b := range datos.Boletas {
-		if boletasPorPagina == 0 {
-			pdf.AddPage()
-			// Dibujamos la primera boleta arriba (Y = 10)
-			s.dibujarBoleta(pdf, tr, b, datos, 10)
-			boletasPorPagina++
-		} else {
-			// Dibujamos la línea de corte punteada a la mitad de la hoja (Y = 148.5)
-			pdf.SetDrawColor(150, 150, 150)
-			pdf.SetDashPattern([]float64{2, 2}, 0)
-			pdf.Line(10, 148.5, 200, 148.5)
-			pdf.SetDashPattern([]float64{}, 0) // Restaurar línea sólida
-			pdf.SetDrawColor(0, 0, 0)
+		for _, b := range datos.Boletas {
+			if boletasPorPagina == 0 {
+				pdf.AddPage()
+				// Dibujamos la primera boleta arriba (Y = 10)
+				s.dibujarBoleta(pdf, tr, b, datos, 10)
+				boletasPorPagina++
+			} else {
+				// Dibujamos la línea de corte punteada a la mitad de la hoja (Y = 148.5)
+				pdf.SetDrawColor(150, 150, 150)
+				pdf.SetDashPattern([]float64{2, 2}, 0)
+				pdf.Line(10, 148.5, 200, 148.5)
+				pdf.SetDashPattern([]float64{}, 0) // Restaurar línea sólida
+				pdf.SetDrawColor(0, 0, 0)
 
-			// Dibujamos la segunda boleta abajo (Y = 155)
-			s.dibujarBoleta(pdf, tr, b, datos, 155)
-			boletasPorPagina = 0 // Reiniciamos para la siguiente página
+				// Dibujamos la segunda boleta abajo (Y = 155)
+				s.dibujarBoleta(pdf, tr, b, datos, 155)
+				boletasPorPagina = 0 // Reiniciamos para la siguiente página
+			}
 		}
 	}
 
@@ -195,20 +253,63 @@ func (s *PdfService) GenerarBoletasPDF(datos *models.DatosReportePlanilla) ([]by
 func (s *PdfService) dibujarBoleta(pdf *gofpdf.Fpdf, tr func(string) string, b *models.BoletaReporte, datos *models.DatosReportePlanilla, startY float64) {
 	pdf.SetXY(10, startY)
 
-	// 1. Cabecera de la Boleta
-	pdf.SetFont("Arial", "B", 12)
-	pdf.CellFormat(190, 6, tr(datos.TenantNombre), "", 1, "C", false, 0, "")
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(190, 5, tr(fmt.Sprintf("BOLETA DE PAGO - %s", datos.PlanillaDesc)), "", 1, "C", false, 0, "")
-	pdf.SetFont("Arial", "", 9)
-	pdf.CellFormat(190, 5, tr(fmt.Sprintf("Periodo: %02d / %d | RUC: %s", datos.PlanillaMes, datos.PlanillaAnio, datos.TenantRUC)), "", 1, "C", false, 0, "")
+	// 1. Cabecera de la Boleta (2 Columnas: 70mm y 120mm)
+	// Ajuste dinámico de fuente para prevenir que un nombre largo de municipalidad desconfigure la columna 1
+	fontSizeMuni := 10.0
+	pdf.SetFont("Arial", "B", fontSizeMuni)
+	for fontSizeMuni > 6.5 && pdf.GetStringWidth(tr(datos.TenantNombre)) > 78.0 {
+		fontSizeMuni -= 0.5
+		pdf.SetFont("Arial", "B", fontSizeMuni)
+	}
+
+	// Fila 1: Nombre de la Municipalidad (70mm) | BOLETA DE PAGO - DESCRIPCIÓN (120mm)
+	pdf.CellFormat(80, 5, tr(datos.TenantNombre), "", 0, "L", false, 0, "")
+	pdf.SetFont("Arial", "B", 9.5)
+	pdf.CellFormat(110, 5, tr(fmt.Sprintf("BOLETA DE PAGO - %s", strings.ToUpper(datos.PlanillaDesc))), "", 1, "R", false, 0, "")
+
+	// Fila 2: RUC (70mm) | Periodo y Año (120mm)
+	pdf.SetFont("Arial", "", 8.5)
+	pdf.CellFormat(80, 4, tr(fmt.Sprintf("RUC: %s", datos.TenantRUC)), "", 0, "L", false, 0, "")
+	pdf.CellFormat(110, 4, tr(fmt.Sprintf("PERIODO: %02d / %d", datos.PlanillaMes, datos.PlanillaAnio)), "", 1, "R", false, 0, "")
 	pdf.Ln(2)
 
-	// 2. Datos del Trabajador
-	pdf.SetFillColor(240, 240, 240)
-	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(190, 5, tr(fmt.Sprintf(" TRABAJADOR: %s (DNI: %s)", b.TrabajadorNombre, b.TrabajadorDoc)), "LTR", 1, "L", true, 0, "")
-	pdf.CellFormat(190, 5, tr(fmt.Sprintf(" CARGO: %s | RÉGIMEN: %s", b.Cargo, b.Regimen)), "LBR", 1, "L", true, 0, "")
+	// 2. Datos del Trabajador (Normas vigentes Perú)
+	pdf.SetFillColor(245, 245, 245)
+	pdf.SetFont("Arial", "B", 7.5)
+
+	// Sistema Previsional
+	sistPrevisional := b.RegimenPensionario
+	if strings.EqualFold(b.RegimenPensionario, "AFP") && b.AfpNombre != "" && b.AfpNombre != "-" {
+		sistPrevisional = fmt.Sprintf("AFP (%s)", b.AfpNombre)
+	}
+
+	// Fila 1: Trabajador, DNI y sistema de pensiones
+	pdf.CellFormat(100, 4.5, tr(fmt.Sprintf(" TRABAJADOR: %s", b.TrabajadorNombre)), "LT", 0, "L", true, 0, "")
+	pdf.CellFormat(35, 4.5, tr(fmt.Sprintf(" DNI: %s ", b.TrabajadorDoc)), "T", 0, "R", true, 0, "")
+	pdf.CellFormat(55, 4.5, tr(fmt.Sprintf(" SIST. PENSIONES: %s", sistPrevisional)), "TR", 1, "L", true, 0, "")
+
+	// Fila 2: Domicilio, sexo y CUSPP
+	dirTxt := b.Direccion
+	if strings.TrimSpace(dirTxt) == "" {
+		dirTxt = "-"
+	}
+	pdf.CellFormat(100, 4.5, tr(fmt.Sprintf(" DOMICILIO: %s", dirTxt)), "L", 0, "L", true, 0, "")
+	pdf.CellFormat(35, 4.5, tr(fmt.Sprintf(" SEXO: %s ", b.Sexo)), "", 0, "R", true, 0, "")
+	pdf.CellFormat(55, 4.5, tr(fmt.Sprintf(" CUSPP: %s", b.Cuspp)), "R", 1, "L", true, 0, "")
+
+	// Fila 3: Cargo, fecha de nacimiento y fecha de ingreso
+	pdf.CellFormat(100, 4.5, tr(fmt.Sprintf(" PUESTO: %s", b.Cargo)), "L", 0, "L", true, 0, "")
+	pdf.CellFormat(35, 4.5, tr(fmt.Sprintf(" F. NAC.: %s ", b.FechaNacimiento)), "", 0, "R", true, 0, "")
+	pdf.CellFormat(55, 4.5, tr(fmt.Sprintf(" F. INGRESO: %s ", b.FechaIngreso)), "R", 1, "L", true, 0, "")
+
+	// Fila 4: Régimen laboral y F. Cese
+	ceseTxt := b.FechaCese
+	if strings.TrimSpace(ceseTxt) == "" {
+		ceseTxt = "-"
+	}
+	pdf.CellFormat(135, 4.5, tr(fmt.Sprintf(" RÉGIMEN LAB.: %s", b.Regimen)), "LB", 0, "L", true, 0, "")
+	pdf.CellFormat(55, 4.5, tr(fmt.Sprintf(" F. CESE: %s", ceseTxt)), "BR", 1, "L", true, 0, "")
+	pdf.Ln(2)
 
 	// 3. Tablas de Conceptos (2 Columnas: Ingresos vs Retenciones)
 	yTablas := pdf.GetY()
@@ -280,7 +381,7 @@ func (s *PdfService) dibujarBoleta(pdf *gofpdf.Fpdf, tr func(string) string, b *
 	pdf.CellFormat(30, 8, fmt.Sprintf("S/ %s", formatearMonto(b.NetoPagar)), "RTB", 0, "R", true, 0, "")
 
 	// Firmas
-	pdf.SetXY(10, yPie+25)
+	pdf.SetXY(10, yPie+30)
 	pdf.SetFont("Arial", "", 8)
 	pdf.CellFormat(95, 4, "_________________________________", "", 0, "C", false, 0, "")
 	pdf.CellFormat(95, 4, "_________________________________", "", 1, "C", false, 0, "")

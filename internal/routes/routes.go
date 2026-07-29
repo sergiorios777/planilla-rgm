@@ -383,6 +383,7 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/planillas/descargar-boletas", middleware.RequireAuth(planillaHandler.DescargarBoletasPDF))
 	mux.HandleFunc("/tenant/planillas/exportar-plame-modal", middleware.RequireAuth(planillaHandler.ExportarPlameModal))
 	mux.HandleFunc("/tenant/planillas/descargar-plame", middleware.RequireAuth(planillaHandler.DescargarPlame))
+	mux.HandleFunc("/tenant/planillas/anexos/ui", middleware.RequireAuth(planillaHandler.VistaAnexos))
 
 	// Asistencias
 	asistenciaRepo := repository.NewAsistenciaRepository(db)

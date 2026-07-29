@@ -104,17 +104,22 @@ type ParametroGlobal struct {
 
 // Trabajador representa a un empleado registrado en una municipalidad (Inquilino)
 type Trabajador struct {
-	ID              int    `json:"id"`
-	TenantID        int    `json:"tenant_id"` // Clave de seguridad
-	TipoDocumento   string `json:"tipo_documento"`
-	NumeroDocumento string `json:"numero_documento"`
-	Nombres         string `json:"nombres"`
-	ApellidoPaterno string `json:"apellido_paterno"`
-	ApellidoMaterno string `json:"apellido_materno"`
-	FechaNacimiento string `json:"fecha_nacimiento"`
-	FechaIngreso    string `json:"fecha_ingreso"`
-	Sexo            string `json:"sexo"`
-	Activo          bool   `json:"activo"`
+	ID                 int    `json:"id"`
+	TenantID           int    `json:"tenant_id"` // Clave de seguridad
+	TipoDocumento      string `json:"tipo_documento"`
+	NumeroDocumento    string `json:"numero_documento"`
+	Nombres            string `json:"nombres"`
+	ApellidoPaterno    string `json:"apellido_paterno"`
+	ApellidoMaterno    string `json:"apellido_materno"`
+	FechaNacimiento    string `json:"fecha_nacimiento"`
+	FechaIngreso       string `json:"fecha_ingreso"`
+	FechaCese          string `json:"fecha_cese"`
+	Direccion          string `json:"direccion"`
+	Banco              string `json:"banco"`
+	Cuenta             string `json:"cuenta"`
+	Cci                string `json:"cci"`
+	Sexo               string `json:"sexo"`
+	Activo             bool   `json:"activo"`
 	// PENSIONES
 	RegimenPensionario string `json:"regimen_pensionario"`
 	AfpID              int    `json:"afp_id"`

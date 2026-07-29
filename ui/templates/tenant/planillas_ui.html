@@ -156,6 +156,13 @@
                     </svg>
                     PDT/PLAME
                 </button>
+                <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0; display: inline-block; width: auto;"
+                    hx-get="/tenant/planillas/anexos/ui?id={{.ID}}" hx-target="#contenido-tenant">
+                    <svg class="icono-menu">
+                        <use href="#icono-clip"></use>
+                    </svg>
+                    Anexos
+                </button>
                 {{if eq .Estado "BORRADOR"}}
                 <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; border-color: #d32f2f; color: #d32f2f; margin-bottom: 0; display: inline-block; width: auto;"
                     hx-delete="/tenant/planillas/eliminar?id={{.ID}}" hx-target="#lista-planillas"

@@ -1,0 +1,134 @@
+<article>
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <svg class="icono-menu">
+                <use href="#icono-clip"></use>
+            </svg>
+            Anexos de Planilla
+        </h3>
+        <button class="secondary outline" style="width: auto; margin-bottom: 0;"
+            hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
+            ⬅️ Volver al Historial
+        </button>
+    </header>
+
+    <div style="background-color: var(--card-sectionning-background-color, #f8f9fa); border-left: 4px solid #1f4e79; padding: 1.2rem; border-radius: 6px; margin: 1.5rem 0;">
+        <h4 style="margin-bottom: 0.4rem; text-transform: uppercase; font-weight: 700; color: #1f4e79; letter-spacing: 0.5px;">{{.Planilla.Descripcion}}</h4>
+        <p style="margin-bottom: 0; font-size: 0.95rem;">
+            <strong>Periodo:</strong> {{printf "%02d" .Planilla.Mes}} / {{.Planilla.Anio}}
+            &nbsp;|&nbsp; 
+            <strong>Estado:</strong> 
+            {{if eq .Planilla.Estado "BORRADOR"}}
+            <mark style="background-color: #fff9c4; color: #f57f17; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85rem;">BORRADOR</mark>
+            {{else}}
+            <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85rem;">CERRADA</mark>
+            {{end}}
+        </p>
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            <svg class="icono-menu">
+                <use href="#icono-folder-supervised"></use>
+            </svg>
+            Lista de Anexos a la Planilla
+        </h4>
+
+        <table class="striped" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th style="width: 65%;">Anexo</th>
+                    <th style="width: 35%; text-align: center;">Descargar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <strong>Anexo 1. Detalle del Compromiso Presupuestal</strong><br>
+                        <small style="color: var(--muted-color);">Desglose por metas, fuentes de financiamiento y clasificadores de gasto MEF</small>
+                    </td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+                            <button class="outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 1 (PDF) estará disponible en la siguiente fase.')">
+                                📄 PDF
+                            </button>
+                            <button class="outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 1 (Excel) estará disponible en la siguiente fase.')">
+                                📊 Excel
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Anexo 2. Resumen AFP</strong><br>
+                        <small style="color: var(--muted-color);">Consolidado de aportes obligatorios, prima de seguro y comisiones por AFP</small>
+                    </td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+                            <button class="outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 2 (PDF) estará disponible en la siguiente fase.')">
+                                📄 PDF
+                            </button>
+                            <button class="outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 2 (Excel) estará disponible en la siguiente fase.')">
+                                📊 Excel
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Anexo 3. Descuento entidades financieras</strong><br>
+                        <small style="color: var(--muted-color);">Detalle de descuentos por préstamos y convenios con cooperativas y bancos</small>
+                    </td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+                            <button class="outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 3 (PDF) estará disponible en la siguiente fase.')">
+                                📄 PDF
+                            </button>
+                            <button class="outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 3 (Excel) estará disponible en la siguiente fase.')">
+                                📊 Excel
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Anexo 4. Otros descuentos al trabajador</strong><br>
+                        <small style="color: var(--muted-color);">Retenciones por mandato judicial, cuota sindical y otros rubros</small>
+                    </td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+                            <button class="outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 4 (PDF) estará disponible en la siguiente fase.')">
+                                📄 PDF
+                            </button>
+                            <button class="outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 4 (Excel) estará disponible en la siguiente fase.')">
+                                📊 Excel
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Anexo 5. Montos netos para abonar</strong><br>
+                        <small style="color: var(--muted-color);">Relación de montos netos finales para depósitos en cuentas de haberes</small>
+                    </td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+                            <button class="outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 5 (PDF) estará disponible en la siguiente fase.')">
+                                📄 PDF
+                            </button>
+                            <button class="outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 5 (Excel) estará disponible en la siguiente fase.')">
+                                📊 Excel
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color, #e0e0e0); text-align: center;">
+        <button class="primary" style="width: auto; padding: 0.6rem 2rem; font-weight: bold; margin-bottom: 0;" onclick="alert('La descarga consolidada en ZIP estará disponible en la siguiente fase.')">
+            📦 Descargar todo Zip
+        </button>
+    </div>
+</article>

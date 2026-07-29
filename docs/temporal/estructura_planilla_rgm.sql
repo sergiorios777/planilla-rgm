@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict afJU252YkDRDusNZyMfnFiwLE36ljmxIIY6cAypgAX2cnoG0x0GhbAeDj3YtPlS
+\restrict DlIhE8ov2sKGqW0fdEPEhxnbXD3P5JnesY0TcXYbn38arWaMjVMaCNtiWJbXNBi
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -643,7 +643,12 @@ CREATE TABLE public.liquidaciones_cese (
     total_liquidacion numeric(10,2) DEFAULT 0,
     estado character varying(20) DEFAULT 'BORRADOR'::character varying,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    monto_vacaciones_no_gozadas numeric(10,2) DEFAULT 0,
+    monto_indemnizacion_vacacional numeric(10,2) DEFAULT 0,
+    periodos_vencidos_vacaciones integer DEFAULT 0,
+    periodos_no_vencidos_vacaciones integer DEFAULT 0,
+    dias_servicios integer DEFAULT 0
 );
 
 
@@ -1372,7 +1377,6 @@ CREATE TABLE public.trabajadores (
     apellido_paterno character varying(100) NOT NULL,
     apellido_materno character varying(100) NOT NULL,
     fecha_nacimiento date,
-    fecha_ingreso date,
     sexo character varying(1),
     activo boolean DEFAULT true,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
@@ -1380,7 +1384,13 @@ CREATE TABLE public.trabajadores (
     regimen_pensionario character varying(20) DEFAULT 'ONP'::character varying,
     afp_id integer,
     afp_tipo_comision character varying(10),
-    cuspp character varying(20)
+    cuspp character varying(20),
+    fecha_ingreso date,
+    fecha_cese date,
+    direccion character varying(255),
+    banco character varying(100),
+    cuenta character varying(50),
+    cci character varying(50)
 );
 
 
@@ -2801,5 +2811,5 @@ ALTER TABLE ONLY public.usuarios
 -- PostgreSQL database dump complete
 --
 
-\unrestrict afJU252YkDRDusNZyMfnFiwLE36ljmxIIY6cAypgAX2cnoG0x0GhbAeDj3YtPlS
+\unrestrict DlIhE8ov2sKGqW0fdEPEhxnbXD3P5JnesY0TcXYbn38arWaMjVMaCNtiWJbXNBi
 
