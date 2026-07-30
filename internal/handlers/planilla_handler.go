@@ -12,7 +12,8 @@ import (
 )
 
 type PlanillaHandler struct {
-	Repo *repository.PlanillaRepository
+	Repo         *repository.PlanillaRepository
+	AnexoService *services.AnexoService
 }
 
 func (h *PlanillaHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
@@ -114,6 +115,62 @@ func (h *PlanillaHandler) VistaDetalle(w http.ResponseWriter, r *http.Request) {
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/planilla_detalle_ui.html")
 	tmpl.Execute(w, datos)
+}
+
+// DescargarAnexo1PDF genera y sirve el archivo PDF para el Anexo 1 (Compromiso Presupuestal)
+func (h *PlanillaHandler) DescargarAnexo1PDF(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	if h.AnexoService == nil {
+		http.Error(w, "Servicio de anexos no inicializado", http.StatusInternalServerError)
+		return
+	}
+
+	datosAnexo, err := h.AnexoService.ObtenerDatosAnexo1(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al extraer datos del Anexo 1: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pdfBytes, err := h.AnexoService.GenerarAnexo1PDF(datosAnexo)
+	if err != nil {
+		http.Error(w, "Error al generar PDF del Anexo 1: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filename := fmt.Sprintf("Anexo_1_Compromiso_Presupuestal_%02d_%d.pdf", datosAnexo.PlanillaMes, datosAnexo.PlanillaAnio)
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Write(pdfBytes)
+}
+
+// DescargarAnexo1Excel genera y sirve el libro de cálculo Excel para el Anexo 1 (Compromiso Presupuestal)
+func (h *PlanillaHandler) DescargarAnexo1Excel(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	if h.AnexoService == nil {
+		http.Error(w, "Servicio de anexos no inicializado", http.StatusInternalServerError)
+		return
+	}
+
+	datosAnexo, err := h.AnexoService.ObtenerDatosAnexo1(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al extraer datos del Anexo 1: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	excelBytes, err := h.AnexoService.GenerarAnexo1Excel(datosAnexo)
+	if err != nil {
+		http.Error(w, "Error al generar Excel del Anexo 1: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filename := fmt.Sprintf("Anexo_1_Compromiso_Presupuestal_%02d_%d.xlsx", datosAnexo.PlanillaMes, datosAnexo.PlanillaAnio)
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Write(excelBytes)
 }
 
 // VistaAnexos carga la vista con la lista de anexos de la planilla

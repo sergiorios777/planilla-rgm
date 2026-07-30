@@ -371,7 +371,14 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 
 	// Rutas protegidas (Bajo una nueva sección de Procesamiento)
 	planillaRepo := repository.NewPlanillaRepository(db)
-	planillaHandler := handlers.PlanillaHandler{Repo: planillaRepo}
+	anexoRepo := repository.NewAnexoRepository(db)
+	tenantRepo = repository.NewTenantRepository(db)
+	anexoService := services.NewAnexoService(anexoRepo, planillaRepo, tenantRepo)
+
+	planillaHandler := handlers.PlanillaHandler{
+		Repo:         planillaRepo,
+		AnexoService: anexoService,
+	}
 	mux.HandleFunc("/tenant/ui/planillas", middleware.RequireAuth(planillaHandler.VistaUI))
 	mux.HandleFunc("/tenant/planillas/lista", middleware.RequireAuth(planillaHandler.Listar))
 	mux.HandleFunc("/tenant/planillas/crear", middleware.RequireAuth(planillaHandler.Crear))
@@ -384,6 +391,8 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/planillas/exportar-plame-modal", middleware.RequireAuth(planillaHandler.ExportarPlameModal))
 	mux.HandleFunc("/tenant/planillas/descargar-plame", middleware.RequireAuth(planillaHandler.DescargarPlame))
 	mux.HandleFunc("/tenant/planillas/anexos/ui", middleware.RequireAuth(planillaHandler.VistaAnexos))
+	mux.HandleFunc("/tenant/planillas/anexos/anexo1/pdf", middleware.RequireAuth(planillaHandler.DescargarAnexo1PDF))
+	mux.HandleFunc("/tenant/planillas/anexos/anexo1/excel", middleware.RequireAuth(planillaHandler.DescargarAnexo1Excel))
 
 	// Asistencias
 	asistenciaRepo := repository.NewAsistenciaRepository(db)

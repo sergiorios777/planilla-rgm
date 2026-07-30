@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"planilla-rgm/internal/models"
@@ -192,17 +193,92 @@ func (s *PdfService) GenerarReportePlanilla(datos *models.DatosReportePlanilla) 
 		pdf.SetXY(10, yInicial+alturaCajaDatos+2)
 	}
 
-	// Totales Finales del Reporte (Opcional, al final del documento)
-	if pdf.GetY() > 170 {
+	// Totales Finales del Reporte
+	if pdf.GetY() > 135 {
 		pdf.AddPage()
 	}
 	pdf.Ln(5)
 	pdf.SetFont("Arial", "B", 10)
 	pdf.SetFillColor(200, 200, 200)
-	pdf.CellFormat(277, 8, fmt.Sprintf("RESUMEN TOTAL PLANILLA:   INGRESOS: S/ %s   |   RETENCIONES: S/ %s   |   NETO TOTAL: S/ %s ",
+	pdf.CellFormat(277, 8, fmt.Sprintf("RESUMEN TOTAL PLANILLA:   INGRESOS: S/ %s   |   RETENCIONES: S/ %s   |   APORTES: S/ %s   |   NETO TOTAL: S/ %s",
 		formatearMonto(datos.TotalIngresos),
 		formatearMonto(datos.TotalRetenciones),
+		formatearMonto(datos.TotalAportes),
 		formatearMonto(datos.TotalNeto)), "1", 1, "C", true, 0, "")
+
+	// 1. Acumuladores para los conceptos de ONP, Renta 4ta y Renta 5ta
+	var totalONP, totalRenta4, totalRenta5 float64
+	for _, b := range datos.Boletas {
+		for _, c := range b.Retenciones {
+			nombreUpper := strings.ToUpper(strings.TrimSpace(c.Nombre))
+			if strings.Contains(nombreUpper, "ONP") || strings.Contains(nombreUpper, "SNP") || strings.Contains(nombreUpper, "19990") {
+				totalONP += c.Monto
+			} else if strings.Contains(nombreUpper, "CUARTA") || strings.Contains(nombreUpper, "4TA") {
+				totalRenta4 += c.Monto
+			} else if strings.Contains(nombreUpper, "QUINTA") || strings.Contains(nombreUpper, "5TA") {
+				totalRenta5 += c.Monto
+			}
+		}
+	}
+
+	// 2. Cálculos según fórmulas del requerimiento
+	costoPlanilla := datos.TotalIngresos + datos.TotalAportes
+
+	ajusteONP := math.Round(totalONP) - totalONP
+	ajusteRenta4 := math.Round(totalRenta4) - totalRenta4
+	ajusteRenta5 := math.Round(totalRenta5) - totalRenta5
+
+	if math.Abs(ajusteONP) < 0.0001 {
+		ajusteONP = 0.0
+	}
+	if math.Abs(ajusteRenta4) < 0.0001 {
+		ajusteRenta4 = 0.0
+	}
+	if math.Abs(ajusteRenta5) < 0.0001 {
+		ajusteRenta5 = 0.0
+	}
+
+	costoTotal := costoPlanilla + ajusteONP + ajusteRenta4 + ajusteRenta5
+
+	// 3. Dibujo de la Tabla Resumen (Cuadro Centrado)
+	pdf.Ln(4)
+	xCuadro := 58.5
+	anchos := []float64{140.0, 40.0}
+
+	pdf.SetX(xCuadro)
+	pdf.SetFont("Arial", "B", 9)
+	pdf.SetFillColor(230, 230, 230)
+	pdf.CellFormat(anchos[0], 6, tr("Detalle"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(anchos[1], 6, tr("Monto S/"), "1", 1, "R", true, 0, "")
+
+	// Fila A
+	pdf.SetX(xCuadro)
+	pdf.SetFont("Arial", "", 8.5)
+	textoA := fmt.Sprintf("A. Costo de la planilla (%02d/%d)", datos.PlanillaMes, datos.PlanillaAnio)
+	pdf.CellFormat(anchos[0], 5.5, tr(textoA), "1", 0, "L", false, 0, "")
+	pdf.CellFormat(anchos[1], 5.5, formatearMonto(costoPlanilla), "1", 1, "R", false, 0, "")
+
+	// Fila B
+	pdf.SetX(xCuadro)
+	pdf.CellFormat(anchos[0], 5.5, tr("B. Ajuste redondeo ONP"), "1", 0, "L", false, 0, "")
+	pdf.CellFormat(anchos[1], 5.5, formatearMonto(ajusteONP), "1", 1, "R", false, 0, "")
+
+	// Fila C
+	pdf.SetX(xCuadro)
+	pdf.CellFormat(anchos[0], 5.5, tr("C. Ajuste redondeo Renta de 4ta Categoría"), "1", 0, "L", false, 0, "")
+	pdf.CellFormat(anchos[1], 5.5, formatearMonto(ajusteRenta4), "1", 1, "R", false, 0, "")
+
+	// Fila D
+	pdf.SetX(xCuadro)
+	pdf.CellFormat(anchos[0], 5.5, tr("D. Ajuste redondeo Renta de 5ta Categoría"), "1", 0, "L", false, 0, "")
+	pdf.CellFormat(anchos[1], 5.5, formatearMonto(ajusteRenta5), "1", 1, "R", false, 0, "")
+
+	// Fila E
+	pdf.SetX(xCuadro)
+	pdf.SetFont("Arial", "B", 9)
+	pdf.SetFillColor(240, 240, 240)
+	pdf.CellFormat(anchos[0], 6, tr("E. Costo total de la planilla (A+B+C+D)"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(anchos[1], 6, formatearMonto(costoTotal), "1", 1, "R", true, 0, "")
 
 	var buf bytes.Buffer
 	err := pdf.Output(&buf)

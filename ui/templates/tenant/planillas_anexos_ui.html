@@ -49,12 +49,12 @@
                     </td>
                     <td style="text-align: center;">
                         <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
-                            <button class="outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 1 (PDF) estará disponible en la siguiente fase.')">
+                            <a href="/tenant/planillas/anexos/anexo1/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
                                 📄 PDF
-                            </button>
-                            <button class="outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 1 (Excel) estará disponible en la siguiente fase.')">
+                            </a>
+                            <a href="/tenant/planillas/anexos/anexo1/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
                                 📊 Excel
-                            </button>
+                            </a>
                         </div>
                     </td>
                 </tr>

@@ -273,7 +273,7 @@ func (r *ContratoRepository) DarDeBaja(contratoID int, tenantID int, fechaFin st
 	// 1. Crear snapshot de los conceptos del puesto actuales para el contrato
 	querySnapshot := `
 		INSERT INTO contrato_conceptos_snapshot (tenant_id, contrato_id, concepto_tenant_id, monto)
-		SELECT $1, $2, pc.concepto_tenant_id, pc.monto
+		SELECT $1, $2, pc.concepto_tenant_id, COALESCE(pc.monto, 0.00)
 		FROM puesto_conceptos pc
 		WHERE pc.puesto_id = (SELECT puesto_id FROM contratos WHERE id = $2 AND tenant_id = $1)
 		  AND pc.activo = true

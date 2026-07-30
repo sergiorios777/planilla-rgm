@@ -483,7 +483,7 @@ CREATE TABLE public.contrato_conceptos_snapshot (
     tenant_id integer NOT NULL,
     contrato_id integer NOT NULL,
     concepto_tenant_id integer NOT NULL,
-    monto numeric(12,2) NOT NULL,
+    monto numeric(12,2) DEFAULT 0.00,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
