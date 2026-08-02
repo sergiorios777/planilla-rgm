@@ -197,12 +197,15 @@ type ContratoPlanilla struct {
 	UnidadOrganicaNombre           string
 	UnidadOrganicaTipo             string
 	SueldoBasicoHistorico          float64
+	MetaID                         *int
+	FuenteRubroID                  *int
 }
 
 // ConceptoPlanilla representa un rubro de la estructura de costos del puesto
 type ConceptoPlanilla struct {
 	ID               int
 	TenantID         int
+	ConceptoTenantID int
 	MaestroID        int
 	CodigoInterno    string // Código de uso interno del motor de cálculos
 	CodigoSunat      string // Código original SUNAT PLAME
@@ -214,6 +217,49 @@ type ConceptoPlanilla struct {
 
 	// Agregado para el PAP
 	Nombre string // Nombre personalizado del concepto
+}
+
+// PlanillaConcepto es el desglose rubro por rubro
+type PlanillaConcepto struct {
+	ID                int     `json:"id"`
+	PlanillaDetalleID int     `json:"planilla_detalle_id"`
+	ConceptoTenantID  *int    `json:"concepto_tenant_id"`
+	MetaID            *int    `json:"meta_id"`
+	FuenteRubroID     *int    `json:"fuente_rubro_id"`
+	TipoConcepto      string  `json:"tipo_concepto"` // INGRESO, RETENCION, APORTE
+	Monto             float64 `json:"monto"`
+	MaestroID         int     `json:"maestro_id"`
+	CodigoSunat       string  `json:"codigo_sunat"`
+	NombreEnBoleta    string  `json:"nombre_en_boleta"`
+
+	// Campos auxiliares
+	NombrePersonalizado    string `json:"nombre_personalizado,omitempty"`
+	MetaCodigo             string `json:"meta_codigo,omitempty"`
+	MetaDescripcion        string `json:"meta_descripcion,omitempty"`
+	FuenteRubroCodigo      string `json:"fuente_rubro_codigo,omitempty"`
+	FuenteRubroDescripcion string `json:"fuente_rubro_descripcion,omitempty"`
+	ClasificadorCodigo     string `json:"clasificador_codigo,omitempty"`
+}
+
+// ReglaFinanciamientoConcepto representa una regla de excepción de financiamiento por concepto
+type ReglaFinanciamientoConcepto struct {
+	ID               int       `json:"id"`
+	TenantID         int       `json:"tenant_id"`
+	ConceptoTenantID int       `json:"concepto_tenant_id"`
+	RegimenID        *int      `json:"regimen_id"`
+	MetaID           *int      `json:"meta_id"`
+	FuenteRubroID    *int      `json:"fuente_rubro_id"`
+	Activo           bool      `json:"activo"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+
+	// Campos auxiliares para JOINs / UI
+	ConceptoNombre         string `json:"concepto_nombre,omitempty"`
+	RegimenNombre          string `json:"regimen_nombre,omitempty"`
+	MetaCodigo             string `json:"meta_codigo,omitempty"`
+	MetaDescripcion        string `json:"meta_descripcion,omitempty"`
+	FuenteRubroCodigo      string `json:"fuente_rubro_codigo,omitempty"`
+	FuenteRubroDescripcion string `json:"fuente_rubro_descripcion,omitempty"`
 }
 
 // FuenteRubro representa el catálogo del MEF de fuentes de financiamiento
@@ -344,24 +390,10 @@ type PlanillaDetalle struct {
 	SueldoBasicoHistorico          float64 `json:"sueldo_basico_historico"`
 
 	// Campos auxiliares para pintar la boleta (JOINs)
-	TrabajadorNombre string `json:"trabajador_nombre,omitempty"`
-	TrabajadorDoc    string `json:"trabajador_doc,omitempty"`
-	RegimenDesc      string `json:"regimen_desc,omitempty"`
-}
-
-// PlanillaConcepto es el desglose rubro por rubro
-type PlanillaConcepto struct {
-	ID                int     `json:"id"`
-	PlanillaDetalleID int     `json:"planilla_detalle_id"`
-	ConceptoTenantID  *int    `json:"concepto_tenant_id"`
-	TipoConcepto      string  `json:"tipo_concepto"` // INGRESO, RETENCION, APORTE
-	Monto             float64 `json:"monto"`
-	MaestroID         int     `json:"maestro_id"`
-	CodigoSunat       string  `json:"codigo_sunat"`
-	NombreEnBoleta    string  `json:"nombre_en_boleta"`
-
-	// Campo auxiliar
-	NombrePersonalizado string `json:"nombre_personalizado,omitempty"`
+	TrabajadorNombre string             `json:"trabajador_nombre,omitempty"`
+	TrabajadorDoc    string             `json:"trabajador_doc,omitempty"`
+	RegimenDesc      string             `json:"regimen_desc,omitempty"`
+	Conceptos        []PlanillaConcepto `json:"conceptos,omitempty"`
 }
 
 // PuestoPAP es un DTO exclusivo para extraer los datos descriptivos del reporte

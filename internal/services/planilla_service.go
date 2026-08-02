@@ -59,6 +59,7 @@ func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
 	mapa5taPrevias, _ := s.Repo.ObtenerRetencionesPreviasMasivo(contratoIDs, anio, mes)
 	// log.Println("Mapa 5ta Previas: ", mapa5taPrevias)
 	mapaIngresosPrevios, _ := s.Repo.ObtenerIngresosPreviosMasivo(contratoIDs, anio, mes)
+	reglasFinanciamiento, _ := s.Repo.ObtenerReglasFinanciamientoPorTenant(tenantID)
 
 	// =========================================================
 	// 2. INICIO DE LA CONCURRENCIA (WORKER POOL)
@@ -91,6 +92,7 @@ func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
 			ParametrosGlobales:     parametros,
 			MapaCodigos:            mapaCodigos,
 			MapaAfectacionesGlobal: mapaAfectacionesGlobal,
+			ReglasFinanciamiento:   reglasFinanciamiento,
 		}
 	}
 	close(jobs) // Cerramos para que los workers sepan que no hay más
@@ -342,8 +344,11 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 			v := cp.TenantID
 			ctIDVal = &v
 		}
+		metaID, rubroID := s.resolverMetaYRubro("INGRESO", cp, job.Contrato, job.Contrato.RegimenID, job.ReglasFinanciamiento)
 		boleta.LineasConceptos = append(boleta.LineasConceptos, models.PlanillaConcepto{
 			ConceptoTenantID: ctIDVal,
+			MetaID:           metaID,
+			FuenteRubroID:    rubroID,
 			TipoConcepto:     "INGRESO",
 			Monto:            montoProporcional,
 			MaestroID:        cp.MaestroID,
@@ -442,8 +447,11 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 			v := cp.TenantID
 			ctIDVal = &v
 		}
+		metaID, rubroID := s.resolverMetaYRubro(tipo, cp, job.Contrato, job.Contrato.RegimenID, job.ReglasFinanciamiento)
 		boleta.LineasConceptos = append(boleta.LineasConceptos, models.PlanillaConcepto{
 			ConceptoTenantID: ctIDVal,
+			MetaID:           metaID,
+			FuenteRubroID:    rubroID,
 			TipoConcepto:     tipo,
 			Monto:            montoFinal,
 			MaestroID:        cp.MaestroID,
@@ -543,4 +551,58 @@ func (s *PlanillaService) SimularCostoMensualPuesto(
 	// 5. Retornar los dos componentes del costo municipal:
 	// Ingresos (Sueldo, Aguinaldos) y Aportes (EsSalud)
 	return boleta.TotalIngresos, boleta.TotalAportes, nil
+}
+
+// resolverMetaYRubro determina la meta_id y fuente_rubro_id para una línea de concepto
+func (s *PlanillaService) resolverMetaYRubro(
+	tipoConcepto string,
+	cp models.ConceptoPlanilla,
+	puesto models.ContratoPlanilla,
+	regimenID int,
+	reglas []models.ReglaFinanciamientoConcepto,
+) (*int, *int) {
+	tipoUpper := strings.ToUpper(strings.TrimSpace(tipoConcepto))
+	if tipoUpper == "RETENCION" {
+		return nil, nil
+	}
+
+	conceptoTenantID := cp.ConceptoTenantID
+	if conceptoTenantID == 0 {
+		conceptoTenantID = cp.TenantID
+	}
+
+	// Buscar regla de excepción activa
+	var reglaEncontrada *models.ReglaFinanciamientoConcepto
+	for i := range reglas {
+		r := &reglas[i]
+		if !r.Activo {
+			continue
+		}
+		if r.ConceptoTenantID != conceptoTenantID {
+			continue
+		}
+
+		if r.RegimenID != nil && *r.RegimenID > 0 {
+			if *r.RegimenID == regimenID {
+				reglaEncontrada = r
+				break
+			}
+		} else if reglaEncontrada == nil {
+			reglaEncontrada = r
+		}
+	}
+
+	var metaID *int = puesto.MetaID
+	var fuenteRubroID *int = puesto.FuenteRubroID
+
+	if reglaEncontrada != nil {
+		if reglaEncontrada.MetaID != nil && *reglaEncontrada.MetaID > 0 {
+			metaID = reglaEncontrada.MetaID
+		}
+		if reglaEncontrada.FuenteRubroID != nil && *reglaEncontrada.FuenteRubroID > 0 {
+			fuenteRubroID = reglaEncontrada.FuenteRubroID
+		}
+	}
+
+	return metaID, fuenteRubroID
 }

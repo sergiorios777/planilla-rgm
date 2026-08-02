@@ -60,33 +60,65 @@
                 </tr>
                 <tr>
                     <td>
-                        <strong>Anexo 2. Resumen AFP</strong><br>
-                        <small style="color: var(--muted-color);">Consolidado de aportes obligatorios, prima de seguro y comisiones por AFP</small>
+                        <strong>Anexo 1A. Resumen por conceptos de planilla</strong><br>
+                        <small style="color: var(--muted-color);">Consolidado organizado por Ingresos, Retenciones y Aportes, con costo total de planilla</small>
                     </td>
                     <td style="text-align: center;">
                         <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
-                            <button class="outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 2 (PDF) estará disponible en la siguiente fase.')">
+                            <a href="/tenant/planillas/anexos/anexo1a/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
                                 📄 PDF
-                            </button>
-                            <button class="outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 2 (Excel) estará disponible en la siguiente fase.')">
+                            </a>
+                            <a href="/tenant/planillas/anexos/anexo1a/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
                                 📊 Excel
-                            </button>
+                            </a>
                         </div>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <strong>Anexo 3. Descuento entidades financieras</strong><br>
-                        <small style="color: var(--muted-color);">Detalle de descuentos por préstamos y convenios con cooperativas y bancos</small>
+                        <strong>Anexo 2. Resumen por AFP</strong><br>
+                        <small style="color: var(--muted-color);">Consolidado de aportes obligatorios, prima de seguro y comisiones por AFP</small>
                     </td>
                     <td style="text-align: center;">
                         <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
-                            <button class="outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 3 (PDF) estará disponible en la siguiente fase.')">
+                            <a href="/tenant/planillas/anexos/anexo2/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
                                 📄 PDF
-                            </button>
-                            <button class="outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 3 (Excel) estará disponible en la siguiente fase.')">
+                            </a>
+                            <a href="/tenant/planillas/anexos/anexo2/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
                                 📊 Excel
-                            </button>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Anexo 2A. Registro Devengado de AFP</strong><br>
+                        <small style="color: var(--muted-color);">Desglose por AFP, metas presupuestales y clasificadores de gasto para devengado SIAF</small>
+                    </td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+                            <a href="/tenant/planillas/anexos/anexo2a/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                                📄 PDF
+                            </a>
+                            <a href="/tenant/planillas/anexos/anexo2a/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                                📊 Excel
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Anexo 3. Retenciones de SUNAT</strong><br>
+                        <small style="color: var(--muted-color);">Consolidado por meta y clasificador de retenciones de ONP (0607), Renta 4ta (S101) y Renta 5ta (0605)</small>
+                    </td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+                            <a href="/tenant/planillas/anexos/anexo3/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                                📄 PDF
+                            </a>
+                            <a href="/tenant/planillas/anexos/anexo3/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                                📊 Excel
+                            </a>
                         </div>
                     </td>
                 </tr>

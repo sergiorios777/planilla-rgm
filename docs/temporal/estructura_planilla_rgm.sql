@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict DlIhE8ov2sKGqW0fdEPEhxnbXD3P5JnesY0TcXYbn38arWaMjVMaCNtiWJbXNBi
+\restrict 3DBwQ5zbdfZvIuBK0Q25CP68aHjXWx1j6ICFqfHIXgUvJMdjN4qpTAckuei1Mxx
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -979,7 +979,9 @@ CREATE TABLE public.planilla_conceptos (
     monto numeric(10,2) NOT NULL,
     maestro_id integer DEFAULT 0 NOT NULL,
     codigo_sunat character varying(10),
-    nombre_en_boleta character varying(150)
+    nombre_en_boleta character varying(150),
+    fuente_rubro_id integer,
+    meta_id integer
 );
 
 
@@ -1320,6 +1322,47 @@ ALTER SEQUENCE public.regimenes_laborales_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.regimenes_laborales_id_seq OWNED BY public.regimenes_laborales.id;
+
+
+--
+-- Name: reglas_financiamiento_concepto; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.reglas_financiamiento_concepto (
+    id integer NOT NULL,
+    tenant_id integer NOT NULL,
+    concepto_tenant_id integer NOT NULL,
+    regimen_id integer,
+    meta_id integer,
+    fuente_rubro_id integer,
+    activo boolean DEFAULT true,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.reglas_financiamiento_concepto OWNER TO postgres;
+
+--
+-- Name: reglas_financiamiento_concepto_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.reglas_financiamiento_concepto_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.reglas_financiamiento_concepto_id_seq OWNER TO postgres;
+
+--
+-- Name: reglas_financiamiento_concepto_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.reglas_financiamiento_concepto_id_seq OWNED BY public.reglas_financiamiento_concepto.id;
 
 
 --
@@ -1709,6 +1752,13 @@ ALTER TABLE ONLY public.regimenes_laborales ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: reglas_financiamiento_concepto id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_concepto ALTER COLUMN id SET DEFAULT nextval('public.reglas_financiamiento_concepto_id_seq'::regclass);
+
+
+--
 -- Name: tenants id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2065,6 +2115,14 @@ ALTER TABLE ONLY public.regimenes_laborales
 
 
 --
+-- Name: reglas_financiamiento_concepto reglas_financiamiento_concepto_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_concepto
+    ADD CONSTRAINT reglas_financiamiento_concepto_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: tenants tenants_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2318,6 +2376,20 @@ CREATE INDEX idx_organigramas_tenant ON public.organigramas USING btree (tenant_
 
 
 --
+-- Name: idx_planilla_conceptos_meta; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_planilla_conceptos_meta ON public.planilla_conceptos USING btree (meta_id);
+
+
+--
+-- Name: idx_planilla_conceptos_rubro; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_planilla_conceptos_rubro ON public.planilla_conceptos USING btree (fuente_rubro_id);
+
+
+--
 -- Name: idx_planillas_tenant; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2343,6 +2415,20 @@ CREATE INDEX idx_puestos_tenant ON public.puestos USING btree (tenant_id);
 --
 
 CREATE INDEX idx_regimen_concepto_tenant_lookup ON public.regimen_concepto_tenant USING btree (tenant_id, regimen_id);
+
+
+--
+-- Name: idx_reglas_financiamiento_concepto; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_reglas_financiamiento_concepto ON public.reglas_financiamiento_concepto USING btree (concepto_tenant_id);
+
+
+--
+-- Name: idx_reglas_financiamiento_tenant; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_reglas_financiamiento_tenant ON public.reglas_financiamiento_concepto USING btree (tenant_id);
 
 
 --
@@ -2616,6 +2702,22 @@ ALTER TABLE ONLY public.planilla_conceptos
 
 
 --
+-- Name: planilla_conceptos planilla_conceptos_fuente_rubro_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_conceptos
+    ADD CONSTRAINT planilla_conceptos_fuente_rubro_id_fkey FOREIGN KEY (fuente_rubro_id) REFERENCES public.fuentes_rubros(id);
+
+
+--
+-- Name: planilla_conceptos planilla_conceptos_meta_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_conceptos
+    ADD CONSTRAINT planilla_conceptos_meta_id_fkey FOREIGN KEY (meta_id) REFERENCES public.metas_presupuestales(id);
+
+
+--
 -- Name: planilla_conceptos planilla_conceptos_planilla_detalle_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2760,6 +2862,46 @@ ALTER TABLE ONLY public.regimen_concepto_tenant
 
 
 --
+-- Name: reglas_financiamiento_concepto reglas_financiamiento_concepto_concepto_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_concepto
+    ADD CONSTRAINT reglas_financiamiento_concepto_concepto_tenant_id_fkey FOREIGN KEY (concepto_tenant_id) REFERENCES public.conceptos_tenant(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reglas_financiamiento_concepto reglas_financiamiento_concepto_fuente_rubro_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_concepto
+    ADD CONSTRAINT reglas_financiamiento_concepto_fuente_rubro_id_fkey FOREIGN KEY (fuente_rubro_id) REFERENCES public.fuentes_rubros(id);
+
+
+--
+-- Name: reglas_financiamiento_concepto reglas_financiamiento_concepto_meta_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_concepto
+    ADD CONSTRAINT reglas_financiamiento_concepto_meta_id_fkey FOREIGN KEY (meta_id) REFERENCES public.metas_presupuestales(id);
+
+
+--
+-- Name: reglas_financiamiento_concepto reglas_financiamiento_concepto_regimen_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_concepto
+    ADD CONSTRAINT reglas_financiamiento_concepto_regimen_id_fkey FOREIGN KEY (regimen_id) REFERENCES public.regimenes_laborales(id);
+
+
+--
+-- Name: reglas_financiamiento_concepto reglas_financiamiento_concepto_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_concepto
+    ADD CONSTRAINT reglas_financiamiento_concepto_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
+
+
+--
 -- Name: trabajadores trabajadores_afp_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2811,5 +2953,5 @@ ALTER TABLE ONLY public.usuarios
 -- PostgreSQL database dump complete
 --
 
-\unrestrict DlIhE8ov2sKGqW0fdEPEhxnbXD3P5JnesY0TcXYbn38arWaMjVMaCNtiWJbXNBi
+\unrestrict 3DBwQ5zbdfZvIuBK0Q25CP68aHjXWx1j6ICFqfHIXgUvJMdjN4qpTAckuei1Mxx
 

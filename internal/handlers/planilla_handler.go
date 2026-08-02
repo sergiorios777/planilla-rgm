@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
@@ -106,15 +108,47 @@ func (h *PlanillaHandler) VistaDetalle(w http.ResponseWriter, r *http.Request) {
 
 	detalles, _ := h.Repo.ObtenerDetalles(planillaID, tenantID)
 	planillaEstado, _ := h.Repo.ObtenerEstado(planillaID, tenantID)
+	metas, _ := h.Repo.ObtenerMetas(tenantID)
+	fuentesRubros, _ := h.Repo.ObtenerFuentesRubros()
 
 	datos := map[string]interface{}{
 		"PlanillaID":     planillaID,
 		"Detalles":       detalles,
 		"PlanillaEstado": planillaEstado,
+		"Metas":          metas,
+		"FuentesRubros":  fuentesRubros,
 	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/planilla_detalle_ui.html")
 	tmpl.Execute(w, datos)
+}
+
+// BoletaModalDetalle sirve el HTML del modal con el desglose de conceptos para un trabajador específico
+func (h *PlanillaHandler) BoletaModalDetalle(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	detalleID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	if detalleID == 0 {
+		http.Error(w, "ID de detalle no válido", http.StatusBadRequest)
+		return
+	}
+
+	detalle, err := h.Repo.ObtenerDetallePorID(detalleID, tenantID)
+	if err != nil {
+		http.Error(w, "No se encontró el detalle de boleta: "+err.Error(), http.StatusNotFound)
+		return
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/tenant/planilla_detalle_ui.html")
+	if err != nil {
+		http.Error(w, "Error al cargar plantilla: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	err = tmpl.ExecuteTemplate(w, "modal_boleta_content", detalle)
+	if err != nil {
+		log.Println("[ERROR BoletaModalDetalle] Error al ejecutar template:", err)
+	}
 }
 
 // DescargarAnexo1PDF genera y sirve el archivo PDF para el Anexo 1 (Compromiso Presupuestal)
@@ -168,6 +202,230 @@ func (h *PlanillaHandler) DescargarAnexo1Excel(w http.ResponseWriter, r *http.Re
 	}
 
 	filename := fmt.Sprintf("Anexo_1_Compromiso_Presupuestal_%02d_%d.xlsx", datosAnexo.PlanillaMes, datosAnexo.PlanillaAnio)
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Write(excelBytes)
+}
+
+// DescargarAnexo1APDF genera y sirve el archivo PDF para el Anexo 1A (Resumen por Conceptos)
+func (h *PlanillaHandler) DescargarAnexo1APDF(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	if h.AnexoService == nil {
+		http.Error(w, "Servicio de anexos no inicializado", http.StatusInternalServerError)
+		return
+	}
+
+	datosAnexo, err := h.AnexoService.ObtenerDatosAnexo1A(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al extraer datos del Anexo 1A: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pdfBytes, err := h.AnexoService.GenerarAnexo1APDF(datosAnexo)
+	if err != nil {
+		http.Error(w, "Error al generar PDF del Anexo 1A: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filename := fmt.Sprintf("Anexo_1A_Resumen_Conceptos_%02d_%d.pdf", datosAnexo.PlanillaMes, datosAnexo.PlanillaAnio)
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Write(pdfBytes)
+}
+
+// DescargarAnexo1AExcel genera y sirve el libro de cálculo Excel para el Anexo 1A (Resumen por Conceptos)
+func (h *PlanillaHandler) DescargarAnexo1AExcel(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	if h.AnexoService == nil {
+		http.Error(w, "Servicio de anexos no inicializado", http.StatusInternalServerError)
+		return
+	}
+
+	datosAnexo, err := h.AnexoService.ObtenerDatosAnexo1A(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al extraer datos del Anexo 1A: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	excelBytes, err := h.AnexoService.GenerarAnexo1AExcel(datosAnexo)
+	if err != nil {
+		http.Error(w, "Error al generar Excel del Anexo 1A: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filename := fmt.Sprintf("Anexo_1A_Resumen_Conceptos_%02d_%d.xlsx", datosAnexo.PlanillaMes, datosAnexo.PlanillaAnio)
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Write(excelBytes)
+}
+
+// DescargarAnexo2PDF genera y sirve el archivo PDF para el Anexo 2 (Resumen por AFP)
+func (h *PlanillaHandler) DescargarAnexo2PDF(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	if h.AnexoService == nil {
+		http.Error(w, "Servicio de anexos no inicializado", http.StatusInternalServerError)
+		return
+	}
+
+	datosAnexo, err := h.AnexoService.ObtenerDatosAnexo2(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al extraer datos del Anexo 2: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pdfBytes, err := h.AnexoService.GenerarAnexo2PDF(datosAnexo)
+	if err != nil {
+		http.Error(w, "Error al generar PDF del Anexo 2: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filename := fmt.Sprintf("Anexo_2_Resumen_AFP_%02d_%d.pdf", datosAnexo.PlanillaMes, datosAnexo.PlanillaAnio)
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Write(pdfBytes)
+}
+
+// DescargarAnexo2Excel genera y sirve el libro de cálculo Excel para el Anexo 2 (Resumen por AFP)
+func (h *PlanillaHandler) DescargarAnexo2Excel(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	if h.AnexoService == nil {
+		http.Error(w, "Servicio de anexos no inicializado", http.StatusInternalServerError)
+		return
+	}
+
+	datosAnexo, err := h.AnexoService.ObtenerDatosAnexo2(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al extraer datos del Anexo 2: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	excelBytes, err := h.AnexoService.GenerarAnexo2Excel(datosAnexo)
+	if err != nil {
+		http.Error(w, "Error al generar Excel del Anexo 2: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filename := fmt.Sprintf("Anexo_2_Resumen_AFP_%02d_%d.xlsx", datosAnexo.PlanillaMes, datosAnexo.PlanillaAnio)
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Write(excelBytes)
+}
+
+// DescargarAnexo2APDF genera y sirve el archivo PDF para el Anexo 2A (Registro Devengado de AFP)
+func (h *PlanillaHandler) DescargarAnexo2APDF(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	if h.AnexoService == nil {
+		http.Error(w, "Servicio de anexos no inicializado", http.StatusInternalServerError)
+		return
+	}
+
+	datosAnexo, err := h.AnexoService.ObtenerDatosAnexo2A(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al extraer datos del Anexo 2A: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pdfBytes, err := h.AnexoService.GenerarAnexo2APDF(datosAnexo)
+	if err != nil {
+		http.Error(w, "Error al generar PDF del Anexo 2A: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filename := fmt.Sprintf("Anexo_2A_Devengado_AFP_%02d_%d.pdf", datosAnexo.PlanillaMes, datosAnexo.PlanillaAnio)
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Write(pdfBytes)
+}
+
+// DescargarAnexo2AExcel genera y sirve el libro de cálculo Excel para el Anexo 2A (Registro Devengado de AFP)
+func (h *PlanillaHandler) DescargarAnexo2AExcel(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	if h.AnexoService == nil {
+		http.Error(w, "Servicio de anexos no inicializado", http.StatusInternalServerError)
+		return
+	}
+
+	datosAnexo, err := h.AnexoService.ObtenerDatosAnexo2A(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al extraer datos del Anexo 2A: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	excelBytes, err := h.AnexoService.GenerarAnexo2AExcel(datosAnexo)
+	if err != nil {
+		http.Error(w, "Error al generar Excel del Anexo 2A: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filename := fmt.Sprintf("Anexo_2A_Devengado_AFP_%02d_%d.xlsx", datosAnexo.PlanillaMes, datosAnexo.PlanillaAnio)
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Write(excelBytes)
+}
+
+// DescargarAnexo3PDF genera y sirve el archivo PDF para el Anexo 3 (Retenciones de SUNAT)
+func (h *PlanillaHandler) DescargarAnexo3PDF(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	if h.AnexoService == nil {
+		http.Error(w, "Servicio de anexos no inicializado", http.StatusInternalServerError)
+		return
+	}
+
+	datosAnexo, err := h.AnexoService.ObtenerDatosAnexo3(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al extraer datos del Anexo 3: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pdfBytes, err := h.AnexoService.GenerarAnexo3PDF(datosAnexo)
+	if err != nil {
+		http.Error(w, "Error al generar PDF del Anexo 3: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filename := fmt.Sprintf("Anexo_3_Retenciones_SUNAT_%02d_%d.pdf", datosAnexo.PlanillaMes, datosAnexo.PlanillaAnio)
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Write(pdfBytes)
+}
+
+// DescargarAnexo3Excel genera y sirve el libro de cálculo Excel para el Anexo 3 (Retenciones de SUNAT)
+func (h *PlanillaHandler) DescargarAnexo3Excel(w http.ResponseWriter, r *http.Request) {
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	tenantID := obtenerTenantID(r)
+
+	if h.AnexoService == nil {
+		http.Error(w, "Servicio de anexos no inicializado", http.StatusInternalServerError)
+		return
+	}
+
+	datosAnexo, err := h.AnexoService.ObtenerDatosAnexo3(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error al extraer datos del Anexo 3: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	excelBytes, err := h.AnexoService.GenerarAnexo3Excel(datosAnexo)
+	if err != nil {
+		http.Error(w, "Error al generar Excel del Anexo 3: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filename := fmt.Sprintf("Anexo_3_Retenciones_SUNAT_%02d_%d.xlsx", datosAnexo.PlanillaMes, datosAnexo.PlanillaAnio)
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	w.Write(excelBytes)
@@ -402,4 +660,161 @@ func (h *PlanillaHandler) Eliminar(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`<div id="alerta-planilla" hx-swap-oob="true"></div>`))
 	h.Listar(w, r)
 }
+
+type ActualizarPresupuestoConceptoRequest struct {
+	MetaID        *int `json:"meta_id"`
+	FuenteRubroID *int `json:"fuente_rubro_id"`
+}
+
+type ActualizarPresupuestoBulkRequest struct {
+	ConceptosIDs  []int `json:"conceptos_ids"`
+	MetaID        *int  `json:"meta_id"`
+	FuenteRubroID *int  `json:"fuente_rubro_id"`
+}
+
+// ActualizarPresupuestoConcepto modifica meta_id y fuente_rubro_id para un concepto de planilla (PUT /api/tenant/planillas/{id}/conceptos/{concepto_id}/presupuesto)
+func (h *PlanillaHandler) ActualizarPresupuestoConcepto(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	conceptoIDStr := r.PathValue("concepto_id")
+	if conceptoIDStr == "" {
+		conceptoIDStr = r.URL.Query().Get("concepto_id")
+	}
+	conceptoID, err := strconv.Atoi(conceptoIDStr)
+	if err != nil || conceptoID <= 0 {
+		http.Error(w, "ID de concepto inválido", http.StatusBadRequest)
+		return
+	}
+
+	var req ActualizarPresupuestoConceptoRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Cuerpo de solicitud inválido: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.Repo.ActualizarPresupuestoConceptos(r.Context(), tenantID, []int{conceptoID}, req.MetaID, req.FuenteRubroID); err != nil {
+		http.Error(w, "Error al actualizar presupuesto del concepto: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "Presupuesto de concepto actualizado correctamente",
+	})
+}
+
+// ActualizarPresupuestoConceptosBulk modifica meta_id y fuente_rubro_id para múltiples conceptos (POST /api/tenant/planillas/{id}/conceptos/bulk-presupuesto)
+func (h *PlanillaHandler) ActualizarPresupuestoConceptosBulk(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	var req ActualizarPresupuestoBulkRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Cuerpo de solicitud inválido: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if len(req.ConceptosIDs) == 0 {
+		http.Error(w, "Debe especificar al menos un ID de concepto", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.Repo.ActualizarPresupuestoConceptos(r.Context(), tenantID, req.ConceptosIDs, req.MetaID, req.FuenteRubroID); err != nil {
+		http.Error(w, "Error al actualizar presupuestos en bloque: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "Presupuestos actualizados correctamente",
+	})
+}
+
+// VistaRubrosMetas renderiza la pantalla dedicada de asignación presupuestal
+func (h *PlanillaHandler) VistaRubrosMetas(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	if planillaID <= 0 {
+		planillaID, _ = strconv.Atoi(r.FormValue("planilla_id"))
+	}
+
+	detalles, _ := h.Repo.ObtenerDetallesConConceptos(planillaID, tenantID)
+	planillaEstado, _ := h.Repo.ObtenerEstado(planillaID, tenantID)
+	metas, _ := h.Repo.ObtenerMetas(tenantID)
+	fuentesRubros, _ := h.Repo.ObtenerFuentesRubros()
+
+	datos := map[string]interface{}{
+		"PlanillaID":     planillaID,
+		"Detalles":       detalles,
+		"PlanillaEstado": planillaEstado,
+		"Metas":          metas,
+		"FuentesRubros":  fuentesRubros,
+	}
+
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/planilla_rubros_metas_ui.html")
+	tmpl.Execute(w, datos)
+}
+
+// ActualizarPresupuestoSingleHTMX procesa el formulario HTMX de asignación individual
+func (h *PlanillaHandler) ActualizarPresupuestoSingleHTMX(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.FormValue("planilla_id"))
+	conceptoID, _ := strconv.Atoi(r.FormValue("concepto_id"))
+
+	var metaID, fuenteRubroID *int
+	if mVal := r.FormValue("meta_id"); mVal != "" {
+		if id, err := strconv.Atoi(mVal); err == nil && id > 0 {
+			metaID = &id
+		}
+	}
+	if rVal := r.FormValue("fuente_rubro_id"); rVal != "" {
+		if id, err := strconv.Atoi(rVal); err == nil && id > 0 {
+			fuenteRubroID = &id
+		}
+	}
+
+	if conceptoID > 0 {
+		_ = h.Repo.ActualizarPresupuestoConceptos(r.Context(), tenantID, []int{conceptoID}, metaID, fuenteRubroID)
+	}
+
+	r.URL.RawQuery = fmt.Sprintf("id=%d", planillaID)
+	h.VistaRubrosMetas(w, r)
+}
+
+// ActualizarPresupuestoBulkHTMX procesa el formulario HTMX de asignación masiva
+func (h *PlanillaHandler) ActualizarPresupuestoBulkHTMX(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.FormValue("planilla_id"))
+	idsStr := r.FormValue("conceptos_ids")
+
+	var conceptosIDs []int
+	for _, s := range strings.Split(idsStr, ",") {
+		s = strings.TrimSpace(s)
+		if id, err := strconv.Atoi(s); err == nil && id > 0 {
+			conceptosIDs = append(conceptosIDs, id)
+		}
+	}
+
+	var metaID, fuenteRubroID *int
+	if mVal := r.FormValue("meta_id"); mVal != "" {
+		if id, err := strconv.Atoi(mVal); err == nil && id > 0 {
+			metaID = &id
+		}
+	}
+	if rVal := r.FormValue("fuente_rubro_id"); rVal != "" {
+		if id, err := strconv.Atoi(rVal); err == nil && id > 0 {
+			fuenteRubroID = &id
+		}
+	}
+
+	if len(conceptosIDs) > 0 {
+		_ = h.Repo.ActualizarPresupuestoConceptos(r.Context(), tenantID, conceptosIDs, metaID, fuenteRubroID)
+	}
+
+	r.URL.RawQuery = fmt.Sprintf("id=%d", planillaID)
+	h.VistaRubrosMetas(w, r)
+}
+
+
 

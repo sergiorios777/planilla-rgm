@@ -386,6 +386,10 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/planillas/cerrar", middleware.RequireAuth(planillaHandler.CerrarPlanilla))
 	mux.HandleFunc("/tenant/planillas/eliminar", middleware.RequireAuth(planillaHandler.Eliminar))
 	mux.HandleFunc("/tenant/planillas/detalle/ui", middleware.RequireAuth(planillaHandler.VistaDetalle))
+	mux.HandleFunc("/tenant/planillas/boleta-modal", middleware.RequireAuth(planillaHandler.BoletaModalDetalle))
+	mux.HandleFunc("/tenant/ui/planillas/rubros-metas", middleware.RequireAuth(planillaHandler.VistaRubrosMetas))
+	mux.HandleFunc("/tenant/planillas/conceptos/actualizar-presupuesto-single", middleware.RequireAuth(planillaHandler.ActualizarPresupuestoSingleHTMX))
+	mux.HandleFunc("/tenant/planillas/conceptos/actualizar-presupuesto-bulk", middleware.RequireAuth(planillaHandler.ActualizarPresupuestoBulkHTMX))
 	mux.HandleFunc("/tenant/planillas/descargar-reporte", middleware.RequireAuth(planillaHandler.DescargarReportePDF))
 	mux.HandleFunc("/tenant/planillas/descargar-boletas", middleware.RequireAuth(planillaHandler.DescargarBoletasPDF))
 	mux.HandleFunc("/tenant/planillas/exportar-plame-modal", middleware.RequireAuth(planillaHandler.ExportarPlameModal))
@@ -393,6 +397,28 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/planillas/anexos/ui", middleware.RequireAuth(planillaHandler.VistaAnexos))
 	mux.HandleFunc("/tenant/planillas/anexos/anexo1/pdf", middleware.RequireAuth(planillaHandler.DescargarAnexo1PDF))
 	mux.HandleFunc("/tenant/planillas/anexos/anexo1/excel", middleware.RequireAuth(planillaHandler.DescargarAnexo1Excel))
+	mux.HandleFunc("/tenant/planillas/anexos/anexo1a/pdf", middleware.RequireAuth(planillaHandler.DescargarAnexo1APDF))
+	mux.HandleFunc("/tenant/planillas/anexos/anexo1a/excel", middleware.RequireAuth(planillaHandler.DescargarAnexo1AExcel))
+	mux.HandleFunc("/tenant/planillas/anexos/anexo2/pdf", middleware.RequireAuth(planillaHandler.DescargarAnexo2PDF))
+	mux.HandleFunc("/tenant/planillas/anexos/anexo2/excel", middleware.RequireAuth(planillaHandler.DescargarAnexo2Excel))
+	mux.HandleFunc("/tenant/planillas/anexos/anexo2a/pdf", middleware.RequireAuth(planillaHandler.DescargarAnexo2APDF))
+	mux.HandleFunc("/tenant/planillas/anexos/anexo2a/excel", middleware.RequireAuth(planillaHandler.DescargarAnexo2AExcel))
+	mux.HandleFunc("/tenant/planillas/anexos/anexo3/pdf", middleware.RequireAuth(planillaHandler.DescargarAnexo3PDF))
+	mux.HandleFunc("/tenant/planillas/anexos/anexo3/excel", middleware.RequireAuth(planillaHandler.DescargarAnexo3Excel))
+
+	// Rutas API para Presupuesto de Conceptos de Planilla
+	mux.HandleFunc("PUT /api/tenant/planillas/{id}/conceptos/{concepto_id}/presupuesto", middleware.RequireAuth(planillaHandler.ActualizarPresupuestoConcepto))
+	mux.HandleFunc("POST /api/tenant/planillas/{id}/conceptos/bulk-presupuesto", middleware.RequireAuth(planillaHandler.ActualizarPresupuestoConceptosBulk))
+
+	// Rutas API CRUD para Reglas de Financiamiento
+	reglaHandler := handlers.ReglaFinanciamientoHandler{Repo: planillaRepo}
+	mux.HandleFunc("GET /api/tenant/reglas-financiamiento", middleware.RequireAuth(reglaHandler.Listar))
+	mux.HandleFunc("POST /api/tenant/reglas-financiamiento", middleware.RequireAuth(reglaHandler.Crear))
+	mux.HandleFunc("GET /api/tenant/reglas-financiamiento/{id}", middleware.RequireAuth(reglaHandler.Obtener))
+	mux.HandleFunc("PUT /api/tenant/reglas-financiamiento/{id}", middleware.RequireAuth(reglaHandler.Actualizar))
+	mux.HandleFunc("DELETE /api/tenant/reglas-financiamiento/{id}", middleware.RequireAuth(reglaHandler.Eliminar))
+	mux.HandleFunc("/api/tenant/reglas-financiamiento", middleware.RequireAuth(reglaHandler.HandleRoot))
+	mux.HandleFunc("/api/tenant/reglas-financiamiento/", middleware.RequireAuth(reglaHandler.HandleWithID))
 
 	// Asistencias
 	asistenciaRepo := repository.NewAsistenciaRepository(db)

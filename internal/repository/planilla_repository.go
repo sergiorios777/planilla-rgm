@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"log"
@@ -117,7 +118,8 @@ func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio 
 		       COALESCE(o.documento_aprobacion, 'N/A') AS organigrama_documento_aprobacion,
 		       COALESCE(uo.nombre, 'Sin Unidad') AS unidad_organica_nombre,
 		       COALESCE(uo.tipo, 'N/A') AS unidad_organica_tipo,
-		       p.sueldo_presupuestado AS sueldo_basico_historico
+		       p.sueldo_presupuestado AS sueldo_basico_historico,
+		       p.meta_id, p.fuente_rubro_id
 		FROM contratos c
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
 		INNER JOIN puestos p ON c.puesto_id = p.id
@@ -146,11 +148,21 @@ func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio 
 	var lista []models.ContratoPlanilla
 	for rows.Next() {
 		var c models.ContratoPlanilla
+		var metaID, fuenteRubroID sql.NullInt64
 		err := rows.Scan(&c.ID, &c.TenantID, &c.PuestoID, &c.RegimenID, &c.Regimen, &c.RegimenPensionario, &c.AfpID, &c.AfpTipoComision, &c.FechaInicio, &c.FechaFin,
 			&c.TrabajadorNombreCompleto, &c.TrabajadorNumeroDocumento, &c.PuestoNombre, &c.PuestoCodigoAirhsp,
-			&c.OrganigramaDocumentoAprobacion, &c.UnidadOrganicaNombre, &c.UnidadOrganicaTipo, &c.SueldoBasicoHistorico)
+			&c.OrganigramaDocumentoAprobacion, &c.UnidadOrganicaNombre, &c.UnidadOrganicaTipo, &c.SueldoBasicoHistorico,
+			&metaID, &fuenteRubroID)
 		if err != nil {
 			return nil, err
+		}
+		if metaID.Valid {
+			v := int(metaID.Int64)
+			c.MetaID = &v
+		}
+		if fuenteRubroID.Valid {
+			v := int(fuenteRubroID.Int64)
+			c.FuenteRubroID = &v
 		}
 		lista = append(lista, c)
 	}
@@ -215,8 +227,8 @@ func (r *PlanillaRepository) GuardarPlanillaCalculada(planillaID int, boletas []
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`)
 
 	stmtConcepto, _ := tx.Prepare(`
-		INSERT INTO planilla_conceptos (planilla_detalle_id, concepto_tenant_id, maestro_id, tipo_concepto, monto, codigo_sunat, nombre_en_boleta) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7)`)
+		INSERT INTO planilla_conceptos (planilla_detalle_id, concepto_tenant_id, maestro_id, tipo_concepto, monto, codigo_sunat, nombre_en_boleta, meta_id, fuente_rubro_id) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`)
 
 	// 3. BUCLE DE GUARDADO
 	for _, b := range boletas {
@@ -239,7 +251,19 @@ func (r *PlanillaRepository) GuardarPlanillaCalculada(planillaID int, boletas []
 			} else {
 				tenantIDVal = nil
 			}
-			_, err = stmtConcepto.Exec(detalleID, tenantIDVal, linea.MaestroID, linea.TipoConcepto, linea.Monto, linea.CodigoSunat, linea.NombreEnBoleta)
+			var metaIDVal interface{}
+			if linea.MetaID != nil && *linea.MetaID > 0 {
+				metaIDVal = *linea.MetaID
+			} else {
+				metaIDVal = nil
+			}
+			var rubroIDVal interface{}
+			if linea.FuenteRubroID != nil && *linea.FuenteRubroID > 0 {
+				rubroIDVal = *linea.FuenteRubroID
+			} else {
+				rubroIDVal = nil
+			}
+			_, err = stmtConcepto.Exec(detalleID, tenantIDVal, linea.MaestroID, linea.TipoConcepto, linea.Monto, linea.CodigoSunat, linea.NombreEnBoleta, metaIDVal, rubroIDVal)
 			if err != nil {
 				log.Println("Error insertando concepto:", err)
 				tx.Rollback()
@@ -265,14 +289,14 @@ func (r *PlanillaRepository) ObtenerDetalles(planillaID int, tenantID int) ([]mo
 		SELECT d.id, d.planilla_id, d.contrato_id, d.total_ingresos, d.total_retenciones, d.total_aportes, d.neto_pagar,
 		       t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
 		       t.numero_documento AS trabajador_doc,
-		       p.nombre AS puesto_nombre
+		       COALESCE(p.nombre, 'Sin Plaza Asignada') AS puesto_nombre
 		FROM planilla_detalles d
 		INNER JOIN planillas pl ON d.planilla_id = pl.id
 		INNER JOIN contratos c ON d.contrato_id = c.id
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
-		INNER JOIN puestos p ON c.puesto_id = p.id
+		LEFT JOIN puestos p ON c.puesto_id = p.id
 		WHERE d.planilla_id = $1 AND pl.tenant_id = $2
-		ORDER BY t.apellido_paterno ASC
+		ORDER BY t.apellido_paterno ASC, t.apellido_materno ASC, t.nombres ASC
 	`
 	rows, err := r.db.Query(query, planillaID, tenantID)
 	if err != nil {
@@ -293,6 +317,36 @@ func (r *PlanillaRepository) ObtenerDetalles(planillaID int, tenantID int) ([]mo
 		return nil, err
 	}
 	return lista, nil
+}
+
+// ObtenerDetallePorID obtiene la cabecera y los conceptos calculados para una boleta individual
+func (r *PlanillaRepository) ObtenerDetallePorID(detalleID int, tenantID int) (*models.PlanillaDetalle, error) {
+	query := `
+		SELECT d.id, d.planilla_id, d.contrato_id, d.total_ingresos, d.total_retenciones, d.total_aportes, d.neto_pagar,
+		       t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
+		       t.numero_documento AS trabajador_doc,
+		       COALESCE(p.nombre, 'Sin Plaza Asignada') AS puesto_nombre
+		FROM planilla_detalles d
+		INNER JOIN planillas pl ON d.planilla_id = pl.id
+		INNER JOIN contratos c ON d.contrato_id = c.id
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		LEFT JOIN puestos p ON c.puesto_id = p.id
+		WHERE d.id = $1 AND pl.tenant_id = $2
+	`
+	var d models.PlanillaDetalle
+	err := r.db.QueryRow(query, detalleID, tenantID).Scan(
+		&d.ID, &d.PlanillaID, &d.ContratoID, &d.TotalIngresos, &d.TotalRetenciones, &d.TotalAportes, &d.NetoPagar,
+		&d.TrabajadorNombre, &d.TrabajadorDoc, &d.PuestoNombre,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	conceptos, err := r.ObtenerConceptosPorDetalle(detalleID)
+	if err == nil {
+		d.Conceptos = conceptos
+	}
+	return &d, nil
 }
 
 // ObtenerRetencionesPrevias calcula la suma de retenciones según el cuadro de SUNAT
@@ -957,4 +1011,353 @@ func (r *PlanillaRepository) Eliminar(planillaID int, tenantID int) error {
 
 	return tx.Commit()
 }
+
+// ActualizarPresupuestoConceptos actualiza masiva o individualmente la meta y fuente_rubro de conceptos de planilla
+func (r *PlanillaRepository) ActualizarPresupuestoConceptos(ctx context.Context, tenantID int, conceptosIDs []int, metaID *int, fuenteRubroID *int) error {
+	if len(conceptosIDs) == 0 {
+		return nil
+	}
+
+	var metaVal interface{}
+	if metaID != nil && *metaID > 0 {
+		metaVal = *metaID
+	} else {
+		metaVal = nil
+	}
+
+	var rubroVal interface{}
+	if fuenteRubroID != nil && *fuenteRubroID > 0 {
+		rubroVal = *fuenteRubroID
+	} else {
+		rubroVal = nil
+	}
+
+	query := `
+		UPDATE planilla_conceptos
+		SET meta_id = $1, fuente_rubro_id = $2
+		WHERE id = ANY($3)
+		  AND planilla_detalle_id IN (
+			SELECT pd.id
+			FROM planilla_detalles pd
+			INNER JOIN planillas pl ON pd.planilla_id = pl.id
+			WHERE pl.tenant_id = $4
+		  )
+	`
+	_, err := r.db.ExecContext(ctx, query, metaVal, rubroVal, pq.Array(conceptosIDs), tenantID)
+	return err
+}
+
+// ObtenerConceptosPorDetalle trae los conceptos de una boleta con meta_id, fuente_rubro_id y JOINs
+func (r *PlanillaRepository) ObtenerConceptosPorDetalle(detalleID int) ([]models.PlanillaConcepto, error) {
+	query := `
+		SELECT pc.id, pc.planilla_detalle_id, pc.concepto_tenant_id, pc.maestro_id, pc.tipo_concepto, pc.monto, pc.codigo_sunat, pc.nombre_en_boleta,
+		       pc.meta_id, pc.fuente_rubro_id,
+		       COALESCE(m.codigo, '') AS meta_codigo,
+		       COALESCE(m.descripcion, '') AS meta_descripcion,
+		       COALESCE(fr.codigo_fuente_rubro, fr.rubro, '') AS fuente_rubro_codigo,
+		       COALESCE(fr.rubro, '') AS fuente_rubro_descripcion,
+		       COALESCE(cmef.codigo, '') AS clasificador_codigo
+		FROM planilla_conceptos pc
+		LEFT JOIN metas_presupuestales m ON pc.meta_id = m.id
+		LEFT JOIN fuentes_rubros fr ON pc.fuente_rubro_id = fr.id
+		LEFT JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+		LEFT JOIN clasificadores_mef cmef ON ct.clasificador_id = cmef.id
+		WHERE pc.planilla_detalle_id = $1
+		ORDER BY pc.id ASC
+	`
+	rows, err := r.db.Query(query, detalleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.PlanillaConcepto
+	for rows.Next() {
+		var c models.PlanillaConcepto
+		var metaID, rubroID sql.NullInt64
+		err := rows.Scan(
+			&c.ID, &c.PlanillaDetalleID, &c.ConceptoTenantID, &c.MaestroID, &c.TipoConcepto, &c.Monto, &c.CodigoSunat, &c.NombreEnBoleta,
+			&metaID, &rubroID, &c.MetaCodigo, &c.MetaDescripcion, &c.FuenteRubroCodigo, &c.FuenteRubroDescripcion, &c.ClasificadorCodigo,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if metaID.Valid {
+			val := int(metaID.Int64)
+			c.MetaID = &val
+		}
+		if rubroID.Valid {
+			val := int(rubroID.Int64)
+			c.FuenteRubroID = &val
+		}
+		lista = append(lista, c)
+	}
+	return lista, rows.Err()
+}
+
+// ObtenerConceptosPorPlanilla trae todos los conceptos de una planilla con meta_id, fuente_rubro_id y JOINs
+func (r *PlanillaRepository) ObtenerConceptosPorPlanilla(planillaID int, tenantID int) ([]models.PlanillaConcepto, error) {
+	query := `
+		SELECT pc.id, pc.planilla_detalle_id, pc.concepto_tenant_id, pc.maestro_id, pc.tipo_concepto, pc.monto, pc.codigo_sunat, pc.nombre_en_boleta,
+		       pc.meta_id, pc.fuente_rubro_id,
+		       COALESCE(m.codigo, '') AS meta_codigo,
+		       COALESCE(m.descripcion, '') AS meta_descripcion,
+		       COALESCE(fr.codigo_fuente_rubro, fr.rubro, '') AS fuente_rubro_codigo,
+		       COALESCE(fr.rubro, '') AS fuente_rubro_descripcion,
+		       COALESCE(cmef.codigo, '') AS clasificador_codigo
+		FROM planilla_conceptos pc
+		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
+		INNER JOIN planillas pl ON pd.planilla_id = pl.id
+		LEFT JOIN metas_presupuestales m ON pc.meta_id = m.id
+		LEFT JOIN fuentes_rubros fr ON pc.fuente_rubro_id = fr.id
+		LEFT JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+		LEFT JOIN clasificadores_mef cmef ON ct.clasificador_id = cmef.id
+		WHERE pd.planilla_id = $1 AND pl.tenant_id = $2
+		ORDER BY pc.id ASC
+	`
+	rows, err := r.db.Query(query, planillaID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.PlanillaConcepto
+	for rows.Next() {
+		var c models.PlanillaConcepto
+		var metaID, rubroID sql.NullInt64
+		err := rows.Scan(
+			&c.ID, &c.PlanillaDetalleID, &c.ConceptoTenantID, &c.MaestroID, &c.TipoConcepto, &c.Monto, &c.CodigoSunat, &c.NombreEnBoleta,
+			&metaID, &rubroID, &c.MetaCodigo, &c.MetaDescripcion, &c.FuenteRubroCodigo, &c.FuenteRubroDescripcion, &c.ClasificadorCodigo,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if metaID.Valid {
+			val := int(metaID.Int64)
+			c.MetaID = &val
+		}
+		if rubroID.Valid {
+			val := int(rubroID.Int64)
+			c.FuenteRubroID = &val
+		}
+		lista = append(lista, c)
+	}
+	return lista, rows.Err()
+}
+
+// ObtenerDetallesConConceptos trae las boletas de una planilla con todos sus conceptos precargados
+func (r *PlanillaRepository) ObtenerDetallesConConceptos(planillaID int, tenantID int) ([]models.PlanillaDetalle, error) {
+	detalles, err := r.ObtenerDetalles(planillaID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	if len(detalles) == 0 {
+		return detalles, nil
+	}
+
+	conceptos, err := r.ObtenerConceptosPorPlanilla(planillaID, tenantID)
+	if err != nil {
+		return detalles, nil
+	}
+
+	mapaConceptos := make(map[int][]models.PlanillaConcepto)
+	for _, c := range conceptos {
+		mapaConceptos[c.PlanillaDetalleID] = append(mapaConceptos[c.PlanillaDetalleID], c)
+	}
+
+	for i := range detalles {
+		detalles[i].Conceptos = mapaConceptos[detalles[i].ID]
+	}
+
+	return detalles, nil
+}
+
+// CRUD ReglasFinanciamientoConcepto
+
+func (r *PlanillaRepository) ObtenerReglasFinanciamiento(ctx context.Context, tenantID int) ([]models.ReglaFinanciamientoConcepto, error) {
+	query := `
+		SELECT r.id, r.tenant_id, r.concepto_tenant_id, r.regimen_id, r.meta_id, r.fuente_rubro_id, r.activo, r.created_at, r.updated_at,
+		       COALESCE(ct_cm.descripcion, ct.nombre_personalizado, '') AS concepto_nombre,
+		       COALESCE(rl.descripcion, '') AS regimen_nombre,
+		       COALESCE(m.codigo, '') AS meta_codigo,
+		       COALESCE(m.descripcion, '') AS meta_descripcion,
+		       COALESCE(fr.codigo_fuente_rubro, fr.rubro, '') AS fuente_rubro_codigo,
+		       COALESCE(fr.rubro, '') AS fuente_rubro_descripcion
+		FROM reglas_financiamiento_concepto r
+		INNER JOIN conceptos_tenant ct ON r.concepto_tenant_id = ct.id
+		INNER JOIN conceptos_maestros ct_cm ON ct.concepto_id = ct_cm.id
+		LEFT JOIN regimenes_laborales rl ON r.regimen_id = rl.id
+		LEFT JOIN metas_presupuestales m ON r.meta_id = m.id
+		LEFT JOIN fuentes_rubros fr ON r.fuente_rubro_id = fr.id
+		WHERE r.tenant_id = $1
+		ORDER BY r.id DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.ReglaFinanciamientoConcepto
+	for rows.Next() {
+		var reg models.ReglaFinanciamientoConcepto
+		var regID, metaID, rubroID sql.NullInt64
+		err := rows.Scan(
+			&reg.ID, &reg.TenantID, &reg.ConceptoTenantID, &regID, &metaID, &rubroID, &reg.Activo, &reg.CreatedAt, &reg.UpdatedAt,
+			&reg.ConceptoNombre, &reg.RegimenNombre, &reg.MetaCodigo, &reg.MetaDescripcion, &reg.FuenteRubroCodigo, &reg.FuenteRubroDescripcion,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if regID.Valid {
+			v := int(regID.Int64)
+			reg.RegimenID = &v
+		}
+		if metaID.Valid {
+			v := int(metaID.Int64)
+			reg.MetaID = &v
+		}
+		if rubroID.Valid {
+			v := int(rubroID.Int64)
+			reg.FuenteRubroID = &v
+		}
+		lista = append(lista, reg)
+	}
+	return lista, rows.Err()
+}
+
+func (r *PlanillaRepository) ObtenerReglasFinanciamientoPorTenant(tenantID int) ([]models.ReglaFinanciamientoConcepto, error) {
+	return r.ObtenerReglasFinanciamiento(context.Background(), tenantID)
+}
+
+func (r *PlanillaRepository) ObtenerReglaFinanciamientoPorID(ctx context.Context, id int, tenantID int) (*models.ReglaFinanciamientoConcepto, error) {
+	query := `
+		SELECT r.id, r.tenant_id, r.concepto_tenant_id, r.regimen_id, r.meta_id, r.fuente_rubro_id, r.activo, r.created_at, r.updated_at,
+		       COALESCE(ct_cm.descripcion, ct.nombre_personalizado, '') AS concepto_nombre,
+		       COALESCE(rl.descripcion, '') AS regimen_nombre,
+		       COALESCE(m.codigo, '') AS meta_codigo,
+		       COALESCE(m.descripcion, '') AS meta_descripcion,
+		       COALESCE(fr.codigo_fuente_rubro, fr.rubro, '') AS fuente_rubro_codigo,
+		       COALESCE(fr.rubro, '') AS fuente_rubro_descripcion
+		FROM reglas_financiamiento_concepto r
+		INNER JOIN conceptos_tenant ct ON r.concepto_tenant_id = ct.id
+		INNER JOIN conceptos_maestros ct_cm ON ct.concepto_id = ct_cm.id
+		LEFT JOIN regimenes_laborales rl ON r.regimen_id = rl.id
+		LEFT JOIN metas_presupuestales m ON r.meta_id = m.id
+		LEFT JOIN fuentes_rubros fr ON r.fuente_rubro_id = fr.id
+		WHERE r.id = $1 AND r.tenant_id = $2
+	`
+	row := r.db.QueryRowContext(ctx, query, id, tenantID)
+
+	var reg models.ReglaFinanciamientoConcepto
+	var regID, metaID, rubroID sql.NullInt64
+	err := row.Scan(
+		&reg.ID, &reg.TenantID, &reg.ConceptoTenantID, &regID, &metaID, &rubroID, &reg.Activo, &reg.CreatedAt, &reg.UpdatedAt,
+		&reg.ConceptoNombre, &reg.RegimenNombre, &reg.MetaCodigo, &reg.MetaDescripcion, &reg.FuenteRubroCodigo, &reg.FuenteRubroDescripcion,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if regID.Valid {
+		v := int(regID.Int64)
+		reg.RegimenID = &v
+	}
+	if metaID.Valid {
+		v := int(metaID.Int64)
+		reg.MetaID = &v
+	}
+	if rubroID.Valid {
+		v := int(rubroID.Int64)
+		reg.FuenteRubroID = &v
+	}
+	return &reg, nil
+}
+
+func (r *PlanillaRepository) CrearReglaFinanciamiento(ctx context.Context, regla *models.ReglaFinanciamientoConcepto) error {
+	query := `
+		INSERT INTO reglas_financiamiento_concepto (tenant_id, concepto_tenant_id, regimen_id, meta_id, fuente_rubro_id, activo)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, created_at, updated_at
+	`
+	var regID, metaID, rubroID interface{}
+	if regla.RegimenID != nil && *regla.RegimenID > 0 {
+		regID = *regla.RegimenID
+	}
+	if regla.MetaID != nil && *regla.MetaID > 0 {
+		metaID = *regla.MetaID
+	}
+	if regla.FuenteRubroID != nil && *regla.FuenteRubroID > 0 {
+		rubroID = *regla.FuenteRubroID
+	}
+
+	return r.db.QueryRowContext(ctx, query, regla.TenantID, regla.ConceptoTenantID, regID, metaID, rubroID, regla.Activo).
+		Scan(&regla.ID, &regla.CreatedAt, &regla.UpdatedAt)
+}
+
+func (r *PlanillaRepository) ActualizarReglaFinanciamiento(ctx context.Context, regla *models.ReglaFinanciamientoConcepto) error {
+	query := `
+		UPDATE reglas_financiamiento_concepto
+		SET concepto_tenant_id = $1, regimen_id = $2, meta_id = $3, fuente_rubro_id = $4, activo = $5, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $6 AND tenant_id = $7
+	`
+	var regID, metaID, rubroID interface{}
+	if regla.RegimenID != nil && *regla.RegimenID > 0 {
+		regID = *regla.RegimenID
+	}
+	if regla.MetaID != nil && *regla.MetaID > 0 {
+		metaID = *regla.MetaID
+	}
+	if regla.FuenteRubroID != nil && *regla.FuenteRubroID > 0 {
+		rubroID = *regla.FuenteRubroID
+	}
+
+	_, err := r.db.ExecContext(ctx, query, regla.ConceptoTenantID, regID, metaID, rubroID, regla.Activo, regla.ID, regla.TenantID)
+	return err
+}
+
+func (r *PlanillaRepository) EliminarReglaFinanciamiento(ctx context.Context, id int, tenantID int) error {
+	query := `DELETE FROM reglas_financiamiento_concepto WHERE id = $1 AND tenant_id = $2`
+	_, err := r.db.ExecContext(ctx, query, id, tenantID)
+	return err
+}
+
+func (r *PlanillaRepository) ObtenerMetas(tenantID int) ([]models.MetaPresupuestal, error) {
+	query := `SELECT id, tenant_id, anio, codigo, descripcion, activo FROM metas_presupuestales WHERE tenant_id = $1 AND activo = true ORDER BY codigo ASC`
+	rows, err := r.db.Query(query, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.MetaPresupuestal
+	for rows.Next() {
+		var m models.MetaPresupuestal
+		if err := rows.Scan(&m.ID, &m.TenantID, &m.Anio, &m.Codigo, &m.Descripcion, &m.Activo); err != nil {
+			return nil, err
+		}
+		lista = append(lista, m)
+	}
+	return lista, nil
+}
+
+func (r *PlanillaRepository) ObtenerFuentesRubros() ([]models.FuenteRubro, error) {
+	query := `SELECT id, anio, fuente_financiamiento, rubro, COALESCE(codigo_fuente_rubro, ''), activo FROM fuentes_rubros WHERE activo = true ORDER BY id ASC`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.FuenteRubro
+	for rows.Next() {
+		var fr models.FuenteRubro
+		if err := rows.Scan(&fr.ID, &fr.Anio, &fr.FuenteFinanciamiento, &fr.Rubro, &fr.CodigoFuenteRubro, &fr.Activo); err != nil {
+			return nil, err
+		}
+		lista = append(lista, fr)
+	}
+	return lista, nil
+}
+
+
 

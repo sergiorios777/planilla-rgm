@@ -1,66 +1,193 @@
 <article>
-    <header>
-        <h3 style="margin-bottom: 0;">🧾 Detalle de la Planilla Procesada</h3>
-        <p><small>Boletas generadas por el Motor de Cálculo para este periodo.</small></p>
-
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h3 style="margin-bottom: 0;">🧾 Detalle de la Planilla Procesada</h3>
+            <p><small>Resumen de boletas de pago por trabajador para este periodo.</small></p>
+        </div>
+        <div>
+            <span id="badge-estado-planilla">
+                {{if eq .PlanillaEstado "BORRADOR"}}
+                <mark style="background-color: #fff9c4; color: #f57f17; padding: 6px 12px; border-radius: 6px; font-weight: bold;">
+                    📝 BORRADOR (Edición Permitida)
+                </mark>
+                {{else}}
+                <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 6px 12px; border-radius: 6px; font-weight: bold;">
+                    🔒 PLANILLA CERRADA (Solo Lectura)
+                </mark>
+                {{end}}
+            </span>
+        </div>
     </header>
 
-    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 2rem;">
+    <!-- Toolbar superior de acciones -->
+    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
 
-        <button class="secondary outline" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
-            ⬅️ Volver al Historial de Planillas
+        <button class="secondary outline" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant" style="margin-bottom: 0; width: auto;">
+            ⬅️ Volver al Historial
         </button>
 
-        <span style="flex-grow: 1;"></span>
+        <button class="primary outline" hx-get="/tenant/ui/planillas/rubros-metas?id={{.PlanillaID}}" hx-target="#contenido-tenant" style="margin-bottom: 0; width: auto;">
+            🎯 Gestionar Rubros y Metas
+        </button>
 
         {{if eq .PlanillaEstado "BORRADOR"}}
-        <button class="primary" hx-post="/tenant/planillas/procesar?id={{.PlanillaID}}" hx-target="#contenido-tenant">
+        <button class="primary" hx-post="/tenant/planillas/procesar?id={{.PlanillaID}}" hx-target="#contenido-tenant" style="margin-bottom: 0; width: auto;">
             ⚙️ Procesar / Recalcular
         </button>
 
         <button class="contrast" hx-post="/tenant/planillas/cerrar?id={{.PlanillaID}}" hx-target="#contenido-tenant"
-            hx-confirm="⚠️ ¿Estás seguro de cerrar esta planilla? Una vez cerrada, NO podrás recalcular ni modificar montos.">
+            hx-confirm="⚠️ ¿Estás seguro de cerrar esta planilla? Una vez cerrada, NO podrás recalcular ni modificar metas ni rubros." style="margin-bottom: 0; width: auto;">
             🔒 Cerrar Planilla
         </button>
-        {{else}}
-        <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 10px; border-radius: 5px;">
-            🔒 <strong>PLANILLA CERRADA</strong> (Solo Lectura)
-        </mark>
         {{end}}
 
+        <span style="flex-grow: 1;"></span>
+
         <a href="/tenant/planillas/descargar-reporte?id={{.PlanillaID}}" target="_blank" role="button"
-            class="secondary outline">🖨️ Planilla PDF</a>
+            class="secondary outline" style="margin-bottom: 0; width: auto;">🖨️ Planilla PDF</a>
         <a href="/tenant/planillas/descargar-boletas?id={{.PlanillaID}}" target="_blank" role="button"
-            class="secondary outline">🖨️ Boletas PDF</a>
+            class="secondary outline" style="margin-bottom: 0; width: auto;">🖨️ Boletas PDF</a>
     </div>
 
-    <table class="striped">
-        <thead>
-            <tr>
-                <th>Trabajador</th>
-                <th>Plaza Costeada</th>
-                <th style="color: #1b5e20;">Ingresos</th>
-                <th style="color: #b71c1c;">Retenciones</th>
-                <th style="color: #1565c0;">Aportes (Entidad)</th>
-                <th>Neto a Pagar</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .Detalles}}
-            <tr>
-                <td><strong>{{.TrabajadorNombre}}</strong><br><small>Doc: {{.TrabajadorDoc}}</small></td>
-                <td><small>{{.PuestoNombre}}</small></td>
-                <td style="color: #1b5e20;">S/ {{printf "%.2f" .TotalIngresos}}</td>
-                <td style="color: #b71c1c;">S/ {{printf "%.2f" .TotalRetenciones}}</td>
-                <td style="color: #1565c0;">S/ {{printf "%.2f" .TotalAportes}}</td>
-                <td><strong>S/ {{printf "%.2f" .NetoPagar}}</strong></td>
-            </tr>
-            {{else}}
-            <tr>
-                <td colspan="6" style="text-align: center;">No hay trabajadores activos costeados para esta planilla.
-                </td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+    <!-- Buscador de trabajadores -->
+    <div style="margin-bottom: 1rem;">
+        <input type="search" id="filtro-buscar-trabajador" placeholder="🔎 Buscar por nombre de trabajador, documento o puesto..." onkeyup="filtrarTrabajadoresDetalle()" style="margin-bottom: 0;">
+    </div>
+
+    <!-- Resumen por Trabajador -->
+    <div id="vista-resumen-trabajadores">
+        <table class="striped">
+            <thead>
+                <tr>
+                    <th>Trabajador</th>
+                    <th>Plaza Costeada</th>
+                    <th style="color: #1b5e20;">Ingresos</th>
+                    <th style="color: #b71c1c;">Retenciones</th>
+                    <th style="color: #1565c0;">Aportes (Entidad)</th>
+                    <th>Neto a Pagar</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Detalles}}
+                <tr class="fila-trabajador-resumen" data-trabajador="{{.TrabajadorNombre}} {{.TrabajadorDoc}} {{.PuestoNombre}}">
+                    <td><strong>{{.TrabajadorNombre}}</strong><br><small>Doc: {{.TrabajadorDoc}}</small></td>
+                    <td><small>{{.PuestoNombre}}</small></td>
+                    <td style="color: #1b5e20;">S/ {{printf "%.2f" .TotalIngresos}}</td>
+                    <td style="color: #b71c1c;">S/ {{printf "%.2f" .TotalRetenciones}}</td>
+                    <td style="color: #1565c0;">S/ {{printf "%.2f" .TotalAportes}}</td>
+                    <td><strong>S/ {{printf "%.2f" .NetoPagar}}</strong></td>
+                    <td>
+                        <button class="outline secondary" style="padding: 2px 8px; font-size: 0.75rem; margin-bottom: 0;"
+                            hx-get="/tenant/planillas/boleta-modal?id={{.ID}}"
+                            hx-target="#contenido-modal-boleta"
+                            hx-swap="innerHTML">
+                            🔍 Ver Boleta
+                        </button>
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="7" style="text-align: center;">No hay trabajadores activos costeados para esta planilla.</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
 </article>
+
+<!-- Modal único de detalle de boleta individual (Carga dinámica por HTMX) -->
+<dialog id="modal-boleta-individual"
+    hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-boleta') this.showModal()">
+    <article style="max-width: 750px; width: 95%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-boleta-individual').close()"></a>
+            <h4 style="margin-bottom: 0;">🧾 Detalle de Boleta de Pago</h4>
+        </header>
+        <div id="contenido-modal-boleta">
+            <!-- Carga dinámica vía HTMX -->
+        </div>
+    </article>
+</dialog>
+
+{{define "modal_boleta_content"}}
+<div style="padding-top: 0.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; border-bottom: 1px solid var(--pico-muted-border-color, #e0e0e0); padding-bottom: 0.5rem;">
+        <div>
+            <strong style="font-size: 1.1rem;">{{.TrabajadorNombre}}</strong>
+            <div style="font-size: 0.85rem; color: var(--pico-muted-color); margin-top: 2px;">
+                📄 Documento: <strong>{{.TrabajadorDoc}}</strong> | 🏢 Plaza: <strong>{{.PuestoNombre}}</strong>
+            </div>
+        </div>
+    </div>
+
+    <div style="overflow-x: auto; max-height: 380px;">
+        <table class="striped" style="font-size: 0.85em;">
+            <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th>Tipo</th>
+                    <th>Código SUNAT</th>
+                    <th>Rubro / Meta</th>
+                    <th style="text-align: right;">Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Conceptos}}
+                <tr>
+                    <td><strong>{{.NombreEnBoleta}}</strong></td>
+                    <td>
+                        {{if eq .TipoConcepto "INGRESO"}}
+                        <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">INGRESO</mark>
+                        {{else if eq .TipoConcepto "RETENCION"}}
+                        <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">DESCUENTO</mark>
+                        {{else}}
+                        <mark style="background-color: #bbdefb; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">APORTE</mark>
+                        {{end}}
+                    </td>
+                    <td><small>{{.CodigoSunat}}</small></td>
+                    <td>
+                        <small>
+                            {{if .FuenteRubroCodigo}}🏛️ {{.FuenteRubroCodigo}}{{end}}
+                            {{if .MetaCodigo}} 🎯 {{.MetaCodigo}}{{end}}
+                        </small>
+                    </td>
+                    <td style="text-align: right;"><strong>S/ {{printf "%.2f" .Monto}}</strong></td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="5" style="text-align: center;">No hay conceptos registrados para este trabajador.</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid var(--pico-muted-border-color, #e0e0e0); flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; gap: 1.25rem; font-size: 0.85rem; flex-wrap: wrap;">
+            <span>Ingresos: <strong style="color: #1b5e20;">S/ {{printf "%.2f" .TotalIngresos}}</strong></span>
+            <span>Descuentos: <strong style="color: #b71c1c;">S/ {{printf "%.2f" .TotalRetenciones}}</strong></span>
+            <span>Aportes: <strong style="color: #1565c0;">S/ {{printf "%.2f" .TotalAportes}}</strong></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="font-size: 1.05rem;">Neto a Pagar: <strong>S/ {{printf "%.2f" .NetoPagar}}</strong></span>
+            <button type="button" class="secondary" onclick="document.getElementById('modal-boleta-individual').close()" style="margin-bottom: 0; width: auto;">Cerrar</button>
+        </div>
+    </div>
+</div>
+{{end}}
+
+<script>
+function filtrarTrabajadoresDetalle() {
+    const buscarVal = document.getElementById('filtro-buscar-trabajador').value.toLowerCase().trim();
+    const filasResumen = document.querySelectorAll('.fila-trabajador-resumen');
+    filasResumen.forEach(row => {
+        const textoTrab = row.getAttribute('data-trabajador').toLowerCase();
+        if (buscarVal === '' || textoTrab.includes(buscarVal)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
