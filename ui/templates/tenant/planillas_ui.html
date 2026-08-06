@@ -71,6 +71,12 @@
             <input type="text" name="descripcion" placeholder="Ej. Planilla Régimen CAS - Enero" required>
             <small>Usa nombres descriptivos si separas tu planilla por regímenes o fuentes de financiamiento.</small>
         </label>
+        <div style="margin-top: 0.5rem; margin-bottom: 1rem;">
+            <label>
+                <input type="checkbox" name="es_extraordinaria" role="switch" value="true">
+                ¿Es Planilla Extraordinaria / Especial?
+            </label>
+        </div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
             <button type="button" class="secondary outline"
                 onclick="document.getElementById('modal-nuevo-planilla').close()"
@@ -113,7 +119,14 @@
     <tbody>
         {{range .}}
         <tr>
-            <td><strong>{{.Anio}} - {{printf "%02d" .Mes}}</strong></td>
+            <td>
+                <strong>{{.Anio}} - {{printf "%02d" .Mes}}</strong><br>
+                {{if .EsExtraordinaria}}
+                <mark style="background-color: #f3e5f5; color: #6a1b9a; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid #e1bee7;">⭐ EXTRAORDINARIA</mark>
+                {{else}}
+                <mark style="background-color: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid #bbdefb;">📅 ORDINARIA</mark>
+                {{end}}
+            </td>
             <td><small>{{.Descripcion}}</small></td>
             <td>
                 {{if eq .Estado "BORRADOR"}}
@@ -125,13 +138,22 @@
                 {{end}}
             </td>
             <td>
-                <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
-                    hx-post="/tenant/planillas/procesar?id={{.ID}}" hx-target="#contenido-tenant" hx-indicator="this">
-                    <svg class="icono-menu">
-                        <use href="#icono-manufacturing"></use>
-                    </svg>
-                    Procesar
-                </button>
+                {{if eq .Estado "BORRADOR"}}
+                    {{if .EsExtraordinaria}}
+                    <button class="outline primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                        hx-get="/tenant/planillas/especial/ui?id={{.ID}}" hx-target="#contenido-tenant">
+                        🎯 Formular Planilla Especial
+                    </button>
+                    {{else}}
+                    <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                        hx-post="/tenant/planillas/procesar?id={{.ID}}" hx-target="#contenido-tenant" hx-indicator="this">
+                        <svg class="icono-menu">
+                            <use href="#icono-manufacturing"></use>
+                        </svg>
+                        Procesar
+                    </button>
+                    {{end}}
+                {{end}}
                 <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
                     hx-get="/tenant/planillas/detalle/ui?id={{.ID}}" hx-target="#contenido-tenant">
                     <svg class="icono-menu">

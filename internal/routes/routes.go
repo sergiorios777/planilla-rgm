@@ -136,6 +136,7 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	conceptosModeloRepo := repository.NewConceptoModeloRepository(db)
 	puestoRepo := repository.NewPuestoRepository(db)
 	conceptosTenantRepo := repository.NewConceptoTenantRepository(db)
+	planillaRepo := repository.NewPlanillaRepository(db)
 	conceptoModeloService := services.NewConceptoModeloService(conceptosModeloRepo, db)
 	notifRepoForConcepts := repository.NewNotificacionRepository(db)
 	cm := handlers.ConceptoModeloHandler{
@@ -143,6 +144,7 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 		PuestoRepo:         puestoRepo,
 		ConceptoTenantRepo: conceptosTenantRepo,
 		TenantRepo:         tenantRepo,
+		PlanillaRepo:       planillaRepo,
 		Service:            conceptoModeloService,
 		NotificacionRepo:   notifRepoForConcepts,
 	}
@@ -155,6 +157,9 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/admin/conceptos-modelo/sincronizar", middleware.RequireRole("super_admin", cm.Sincronizar))
 	mux.HandleFunc("/admin/conceptos-modelo/importar", middleware.RequireRole("super_admin", cm.ImportarCSV))
 	mux.HandleFunc("/admin/conceptos-modelo/plantilla-csv", middleware.RequireRole("super_admin", cm.PlantillaCSV))
+	mux.HandleFunc("/admin/conceptos-modelo/reglas-modal", middleware.RequireRole("super_admin", cm.ReglasModal))
+	mux.HandleFunc("/admin/conceptos-modelo/reglas/crear", middleware.RequireRole("super_admin", cm.CrearReglaHTMX))
+	mux.HandleFunc("/admin/conceptos-modelo/reglas/eliminar", middleware.RequireRole("super_admin", cm.EliminarReglaHTMX))
 
 	// Rutas del Motor de Conceptos Calculados
 	baseRegimenRepo := repository.NewBaseRegimenRepository(db)
@@ -330,9 +335,11 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 
 	// Rutas protegidas (Bajo la sección de Inquilinos/Presupuesto)
 	conceptoTenantRepo := repository.NewConceptoTenantRepository(db)
+	planillaRepo := repository.NewPlanillaRepository(db)
 	conceptoTenantHandler := handlers.ConceptoTenantHandler{
-		Repo:       conceptoTenantRepo,
-		PuestoRepo: puestoRepo,
+		Repo:         conceptoTenantRepo,
+		PuestoRepo:   puestoRepo,
+		PlanillaRepo: planillaRepo,
 	}
 	mux.HandleFunc("/tenant/ui/conceptos-locales", middleware.RequireAuth(conceptoTenantHandler.VistaUI))
 	mux.HandleFunc("/tenant/conceptos-locales/lista", middleware.RequireAuth(conceptoTenantHandler.Listar))
@@ -345,6 +352,11 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/conceptos-locales/modal-agregar-modelo", middleware.RequireAuth(conceptoTenantHandler.ModalAgregarModeloUI))
 	mux.HandleFunc("/tenant/conceptos-locales/agregar-modelo", middleware.RequireAuth(conceptoTenantHandler.AgregarModelo))
 	mux.HandleFunc("/tenant/conceptos-locales/sincronizar-modelo", middleware.RequireAuth(conceptoTenantHandler.SincronizarModelo))
+	mux.HandleFunc("/tenant/conceptos-locales/reglas-modal", middleware.RequireAuth(conceptoTenantHandler.ReglasModal))
+	mux.HandleFunc("/tenant/conceptos-locales/reglas/crear", middleware.RequireAuth(conceptoTenantHandler.CrearReglaHTMX))
+	mux.HandleFunc("/tenant/conceptos-locales/reglas/eliminar", middleware.RequireAuth(conceptoTenantHandler.EliminarReglaHTMX))
+	mux.HandleFunc("/tenant/conceptos-locales/reglas/actualizar", middleware.RequireAuth(conceptoTenantHandler.ActualizarReglaHTMX))
+	mux.HandleFunc("/tenant/conceptos-locales/reglas/sincronizar-modelo", middleware.RequireAuth(conceptoTenantHandler.SincronizarReglasModeloHTMX))
 
 	// Rutas protegidas (Agrega esto junto a las de Puestos)
 	puestoConceptoRepo := repository.NewPuestoConceptoRepository(db)
@@ -370,19 +382,25 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/puestos-conceptos/actualizar-monto", middleware.RequireAuth(puestoConceptoHandler.ActualizarMonto))
 
 	// Rutas protegidas (Bajo una nueva sección de Procesamiento)
-	planillaRepo := repository.NewPlanillaRepository(db)
 	anexoRepo := repository.NewAnexoRepository(db)
 	tenantRepo = repository.NewTenantRepository(db)
 	anexoService := services.NewAnexoService(anexoRepo, planillaRepo, tenantRepo)
 
 	planillaHandler := handlers.PlanillaHandler{
-		Repo:         planillaRepo,
-		AnexoService: anexoService,
+		Repo:               planillaRepo,
+		PuestoRepo:         puestoRepo,
+		ConceptoTenantRepo: conceptoTenantRepo,
+		OrganigramaRepo:    organigramaRepo,
+		AnexoService:       anexoService,
 	}
 	mux.HandleFunc("/tenant/ui/planillas", middleware.RequireAuth(planillaHandler.VistaUI))
 	mux.HandleFunc("/tenant/planillas/lista", middleware.RequireAuth(planillaHandler.Listar))
 	mux.HandleFunc("/tenant/planillas/crear", middleware.RequireAuth(planillaHandler.Crear))
 	mux.HandleFunc("/tenant/planillas/procesar", middleware.RequireAuth(planillaHandler.Procesar))
+	mux.HandleFunc("/tenant/planillas/especial/ui", middleware.RequireAuth(planillaHandler.VistaFormuladorEspecial))
+	mux.HandleFunc("/tenant/planillas/especial/trabajadores", middleware.RequireAuth(planillaHandler.BuscarTrabajadoresEspecial))
+	mux.HandleFunc("/tenant/planillas/especial/trabajadores-json", middleware.RequireAuth(planillaHandler.BuscarTrabajadoresEspecialJSON))
+	mux.HandleFunc("/tenant/planillas/especial/procesar", middleware.RequireAuth(planillaHandler.ProcesarEspecial))
 	mux.HandleFunc("/tenant/planillas/cerrar", middleware.RequireAuth(planillaHandler.CerrarPlanilla))
 	mux.HandleFunc("/tenant/planillas/eliminar", middleware.RequireAuth(planillaHandler.Eliminar))
 	mux.HandleFunc("/tenant/planillas/detalle/ui", middleware.RequireAuth(planillaHandler.VistaDetalle))

@@ -14,8 +14,7 @@
             </button>
             <button class="secondary outline" style="width: auto; margin-bottom: 0;"
                 onclick="document.getElementById('modal-agregar-modelo').showModal()"
-                hx-get="/tenant/conceptos-locales/modal-agregar-modelo"
-                hx-target="#contenido-modal-agregar-modelo">
+                hx-get="/tenant/conceptos-locales/modal-agregar-modelo" hx-target="#contenido-modal-agregar-modelo">
                 <svg class="icono-menu">
                     <use href="#icono-cajas"></use>
                 </svg> Agregar Concepto Modelo
@@ -122,6 +121,21 @@
             </div>
         </article>
     </dialog>
+
+    <!-- Modal para Reglas de Financiamiento Local -->
+    <dialog id="modal-reglas-tenant"
+        hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-reglas-tenant') this.showModal()">
+        <article style="max-width: 850px; width: 95%;">
+            <header>
+                <a href="#close" aria-label="Close" class="close"
+                    onclick="document.getElementById('modal-reglas-tenant').close()"></a>
+                <h4 style="margin-bottom: 0;">🎯 Reglas de Financiamiento Local (Municipalidad)</h4>
+            </header>
+            <div id="contenido-modal-reglas-tenant">
+                <!-- Carga vía HTMX -->
+            </div>
+        </article>
+    </dialog>
 </article>
 
 {{define "tabla_conceptos_tenant"}}
@@ -179,11 +193,19 @@
                 </td>
                 <td><small>Cód: {{.ConceptoCodigo}}</small></td>
                 <td>
-                    <button class="outline secondary" style="padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
-                        hx-get="/tenant/conceptos-locales/editar-ui?id={{.ID}}" hx-target="#contenido-modal-editar"
-                        hx-swap="innerHTML">
-                        Editar
-                    </button>
+                    <div role="group">
+                        <button class="outline primary" style="padding: 2px 8px; margin-bottom: 0; font-size: 0.8rem;"
+                            hx-get="/tenant/conceptos-locales/reglas-modal?concepto_tenant_id={{.ID}}"
+                            hx-target="#contenido-modal-reglas-tenant" hx-swap="innerHTML">
+                            ⚙️ Reglas
+                        </button>
+                        <button class="outline secondary"
+                            style="padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
+                            hx-get="/tenant/conceptos-locales/editar-ui?id={{.ID}}" hx-target="#contenido-modal-editar"
+                            hx-swap="innerHTML">
+                            Editar
+                        </button>
+                    </div>
                 </td>
             </tr>
             {{else}}
@@ -411,7 +433,8 @@
         </label>
     </div>
 
-    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+    <div
+        style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: space-between; align-items: center; flex-wrap: wrap;">
         <div>
             {{if .Concepto.ModeloID}}
             <button type="button" class="outline contrast" style="margin-bottom: 0; width: auto;"
@@ -426,7 +449,8 @@
         </div>
         <div style="display: flex; gap: 1rem; align-items: center;">
             <button type="button" class="secondary outline"
-                onclick="document.getElementById('modal-editar-concepto').close()" style="margin-bottom: 0; width: auto;">
+                onclick="document.getElementById('modal-editar-concepto').close()"
+                style="margin-bottom: 0; width: auto;">
                 Cancelar
             </button>
             <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">
@@ -451,13 +475,17 @@
             <option value="">-- Seleccione un concepto modelo --</option>
             {{range .ModelosDisponibles}}
             <option value="{{.ID}}">
-                [{{if eq .ConceptoTipo "Ingreso"}}INGRESO{{else if eq .ConceptoTipo "Retencion"}}RETENCIÓN{{else}}APORTE{{end}}] {{.NombrePersonalizado}} — {{.ConceptoCodigo}} ({{if .RegimenesNombres}}{{.RegimenesNombres}}{{else}}Sin régimen{{end}}) {{if .ClasificadorCodigo}}| SIAF: {{.ClasificadorCodigo}}{{end}}
+                [{{if eq .ConceptoTipo "Ingreso"}}INGRESO{{else if eq .ConceptoTipo
+                "Retencion"}}RETENCIÓN{{else}}APORTE{{end}}] {{.NombrePersonalizado}} — {{.ConceptoCodigo}} ({{if
+                .RegimenesNombres}}{{.RegimenesNombres}}{{else}}Sin régimen{{end}}) {{if .ClasificadorCodigo}}| SIAF:
+                {{.ClasificadorCodigo}}{{end}}
             </option>
             {{end}}
         </select>
     </label>
 
-    <p><small style="color: var(--secondary);">Al agregar este concepto modelo, se importará la configuración predeterminada de boleta, régimen laboral aplicable y sus clasificadores presupuestales.</small></p>
+    <p><small style="color: var(--secondary);">Al agregar este concepto modelo, se importará la configuración
+            predeterminada de boleta, régimen laboral aplicable y sus clasificadores presupuestales.</small></p>
 
     <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
         <button type="button" class="secondary outline"
@@ -476,10 +504,131 @@
     ✅ Todos los conceptos modelo disponibles ya han sido agregados al catálogo de su municipalidad.
 </article>
 <div style="display: flex; justify-content: end; margin-top: 1rem;">
-    <button type="button" class="secondary outline"
-        onclick="document.getElementById('modal-agregar-modelo').close()" style="margin-bottom: 0; width: auto;">
+    <button type="button" class="secondary outline" onclick="document.getElementById('modal-agregar-modelo').close()"
+        style="margin-bottom: 0; width: auto;">
         Cerrar
     </button>
 </div>
 {{end}}
-{{end}}
+{{end}}
+
+{{define "modal_reglas_tenant_content"}}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.8rem;">
+    <div>
+        <strong>Concepto Local:</strong> {{.Concepto.NombrePersonalizado}}<br>
+        <small style="color: var(--pico-muted-color);">Configura excepciones de Meta Presupuestal y Fuente/Rubro específicas de tu entidad (Pactos Colectivos / Convenios).</small>
+    </div>
+    {{if .Concepto.ModeloID}}
+    <button type="button" class="outline secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin-bottom: 0;"
+        hx-post="/tenant/conceptos-locales/reglas/sincronizar-modelo?concepto_tenant_id={{.Concepto.ID}}"
+        hx-target="#contenido-modal-reglas-tenant"
+        hx-confirm="¿Deseas restablecer y re-sincronizar las reglas de financiamiento predeterminadas desde el Modelo SaaS?">
+        🔄 Sincronizar Reglas desde Modelo SaaS
+    </button>
+    {{end}}
+</div>
+
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Régimen</th>
+            <th>Meta Presupuestal</th>
+            <th>Fuente / Rubro</th>
+            <th>Estado</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Reglas}}
+        <tr>
+            <td><small>{{.RegimenNombre}}</small></td>
+            <td>
+                <select name="meta_id" style="margin-bottom: 0; padding: 2px 4px; font-size: 0.75rem;"
+                    hx-post="/tenant/conceptos-locales/reglas/actualizar?id={{.ID}}&concepto_tenant_id={{$.Concepto.ID}}"
+                    hx-target="#contenido-modal-reglas-tenant">
+                    <option value="">-- Meta Default del Puesto --</option>
+                    {{$metaVal := .GetMetaID}}
+                    {{range $.Metas}}
+                    <option value="{{.ID}}" {{if eq $metaVal .ID}}selected{{end}}>[{{.Codigo}}] {{.Descripcion}}</option>
+                    {{end}}
+                </select>
+            </td>
+            <td>
+                <select name="fuente_rubro_id" style="margin-bottom: 0; padding: 2px 4px; font-size: 0.75rem;"
+                    hx-post="/tenant/conceptos-locales/reglas/actualizar?id={{.ID}}&concepto_tenant_id={{$.Concepto.ID}}"
+                    hx-target="#contenido-modal-reglas-tenant">
+                    <option value="">-- Rubro Default del Puesto --</option>
+                    {{$rubroVal := .GetFuenteRubroID}}
+                    {{range $.FuentesRubros}}
+                    <option value="{{.ID}}" {{if eq $rubroVal .ID}}selected{{end}}>[{{.CodigoFuenteRubro}}] {{.Rubro}}</option>
+                    {{end}}
+                </select>
+            </td>
+            <td>
+                {{if .Activo}}
+                <span
+                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Activa</span>
+                {{else}}
+                <span
+                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Inactiva</span>
+                {{end}}
+            </td>
+            <td>
+                <button class="outline contrast" style="padding: 2px 8px; font-size: 0.75rem; margin-bottom: 0;"
+                    hx-delete="/tenant/conceptos-locales/reglas/eliminar?id={{.ID}}&concepto_tenant_id={{$.Concepto.ID}}"
+                    hx-target="#contenido-modal-reglas-tenant"
+                    hx-confirm="¿Eliminar esta regla de financiamiento local?">
+                    Eliminar
+                </button>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="5" style="text-align: center;"><small>No hay reglas de financiamiento local configuradas para
+                    este concepto.</small></td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+
+<hr>
+
+<form hx-post="/tenant/conceptos-locales/reglas/crear" hx-target="#contenido-modal-reglas-tenant">
+    <input type="hidden" name="concepto_tenant_id" value="{{.Concepto.ID}}">
+    <h6>➕ Agregar Regla de Financiamiento Local</h6>
+    <div class="grid">
+        <label>Régimen Laboral
+            <select name="regimen_id">
+                <option value="">-- Todos los Regímenes --</option>
+                {{range .Regimenes}}
+                <option value="{{.ID}}">{{.Descripcion}}</option>
+                {{end}}
+            </select>
+        </label>
+        <label>Meta Presupuestal
+            <select name="meta_id">
+                <option value="">-- Meta Default del Puesto --</option>
+                {{range .Metas}}
+                <option value="{{.ID}}">[{{.Codigo}}] {{.Descripcion}}</option>
+                {{end}}
+            </select>
+        </label>
+        <label>Fuente / Rubro
+            <select name="fuente_rubro_id">
+                <option value="">-- Rubro Default del Puesto --</option>
+                {{range .FuentesRubros}}
+                <option value="{{.ID}}">[{{.CodigoFuenteRubro}}] {{.Rubro}}</option>
+                {{end}}
+            </select>
+        </label>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+        <label style="margin-bottom: 0;">
+            <input type="checkbox" name="activo" role="switch" checked> Regla Activa
+        </label>
+        <button type="submit" class="primary" style="width: auto; margin-bottom: 0; padding: 0.3rem 1rem;">
+            Guardar Regla Local
+        </button>
+    </div>
+</form>
+{{end}}

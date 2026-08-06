@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -11,8 +12,9 @@ import (
 )
 
 type ConceptoTenantHandler struct {
-	Repo       *repository.ConceptoTenantRepository
-	PuestoRepo *repository.PuestoRepository
+	Repo         *repository.ConceptoTenantRepository
+	PuestoRepo   *repository.PuestoRepository
+	PlanillaRepo *repository.PlanillaRepository
 }
 
 func (h *ConceptoTenantHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
@@ -358,6 +360,11 @@ func (h *ConceptoTenantHandler) Restaurar(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	err = h.Repo.ClonarReglasFinanciamientoModelo(tenantID)
+	if err != nil {
+		log.Println("⚠️ Advertencia: Error al clonar reglas de financiamiento modelo:", err)
+	}
+
 	// Refrescamos la lista para que el usuario vea los cambios
 	h.Listar(w, r)
 }
@@ -423,6 +430,186 @@ func (h *ConceptoTenantHandler) SincronizarModelo(w http.ResponseWriter, r *http
 
 	r.URL.RawQuery = "id=" + strconv.Itoa(id)
 	h.EditarUI(w, r)
+}
+
+// ReglasModal renderiza el modal HTMX con las reglas de financiamiento de un concepto tenant
+func (h *ConceptoTenantHandler) ReglasModal(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	conceptoTenantID, _ := strconv.Atoi(r.URL.Query().Get("concepto_tenant_id"))
+	if conceptoTenantID <= 0 {
+		conceptoTenantID, _ = strconv.Atoi(r.FormValue("concepto_tenant_id"))
+	}
+	if conceptoTenantID <= 0 {
+		http.Error(w, "ID de concepto tenant no válido", http.StatusBadRequest)
+		return
+	}
+
+	concepto, err := h.Repo.ObtenerPorID(conceptoTenantID, tenantID)
+	if err != nil {
+		http.Error(w, "No se encontró el concepto local: "+err.Error(), http.StatusNotFound)
+		return
+	}
+
+	var reglas []models.ReglaFinanciamientoConcepto
+	var metas []models.MetaPresupuestal
+	var fuentesRubros []models.FuenteRubro
+
+	if h.PlanillaRepo != nil {
+		reglas, _ = h.PlanillaRepo.ObtenerReglasFinanciamientoPorConceptoID(r.Context(), conceptoTenantID, tenantID)
+		metas, _ = h.PlanillaRepo.ObtenerMetas(tenantID)
+		fuentesRubros, _ = h.PlanillaRepo.ObtenerFuentesRubros()
+	}
+	regimenes, _ := h.PuestoRepo.ObtenerRegimenes()
+
+	datos := map[string]interface{}{
+		"Concepto":      concepto,
+		"Reglas":        reglas,
+		"Regimenes":     regimenes,
+		"Metas":          metas,
+		"FuentesRubros": fuentesRubros,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/tenant/conceptos_tenant_ui.html")
+	if err != nil {
+		http.Error(w, "Error al cargar plantilla: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.ExecuteTemplate(w, "modal_reglas_tenant_content", datos)
+}
+
+// CrearReglaHTMX crea una nueva regla de financiamiento local para un concepto tenant
+func (h *ConceptoTenantHandler) CrearReglaHTMX(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	tenantID := obtenerTenantID(r)
+	conceptoTenantID, _ := strconv.Atoi(r.FormValue("concepto_tenant_id"))
+
+	var regimenID, metaID, fuenteRubroID *int
+	if regVal := r.FormValue("regimen_id"); regVal != "" {
+		if id, err := strconv.Atoi(regVal); err == nil && id > 0 {
+			regimenID = &id
+		}
+	}
+	if metaVal := r.FormValue("meta_id"); metaVal != "" {
+		if id, err := strconv.Atoi(metaVal); err == nil && id > 0 {
+			metaID = &id
+		}
+	}
+	if rubVal := r.FormValue("fuente_rubro_id"); rubVal != "" {
+		if id, err := strconv.Atoi(rubVal); err == nil && id > 0 {
+			fuenteRubroID = &id
+		}
+	}
+	activo := r.FormValue("activo") == "true" || r.FormValue("activo") == "on"
+
+	if conceptoTenantID > 0 && h.PlanillaRepo != nil {
+		regla := models.ReglaFinanciamientoConcepto{
+			TenantID:         tenantID,
+			ConceptoTenantID: conceptoTenantID,
+			RegimenID:        regimenID,
+			MetaID:           metaID,
+			FuenteRubroID:    fuenteRubroID,
+			Activo:           activo,
+		}
+		_ = h.PlanillaRepo.CrearReglaFinanciamiento(r.Context(), &regla)
+	}
+
+	r.URL.RawQuery = fmt.Sprintf("concepto_tenant_id=%d", conceptoTenantID)
+	h.ReglasModal(w, r)
+}
+
+// EliminarReglaHTMX elimina una regla de financiamiento local
+func (h *ConceptoTenantHandler) EliminarReglaHTMX(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	conceptoTenantID, _ := strconv.Atoi(r.URL.Query().Get("concepto_tenant_id"))
+
+	if id > 0 && h.PlanillaRepo != nil {
+		_ = h.PlanillaRepo.EliminarReglaFinanciamiento(r.Context(), id, tenantID)
+	}
+
+	r.URL.RawQuery = fmt.Sprintf("concepto_tenant_id=%d", conceptoTenantID)
+	h.ReglasModal(w, r)
+}
+
+// SincronizarReglasModeloHTMX re-sincroniza las reglas de financiamiento desde el modelo SaaS para un concepto tenant
+func (h *ConceptoTenantHandler) SincronizarReglasModeloHTMX(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	conceptoTenantID, _ := strconv.Atoi(r.URL.Query().Get("concepto_tenant_id"))
+	if conceptoTenantID <= 0 {
+		conceptoTenantID, _ = strconv.Atoi(r.FormValue("concepto_tenant_id"))
+	}
+
+	if conceptoTenantID <= 0 {
+		http.Error(w, "ID de concepto no válido", http.StatusBadRequest)
+		return
+	}
+
+	err := h.Repo.SincronizarReglasFinanciamientoDesdeModelo(tenantID, conceptoTenantID)
+	if err != nil {
+		log.Println("Error al sincronizar reglas desde modelo:", err)
+		http.Error(w, "Error al sincronizar reglas desde el modelo SaaS: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	r.URL.RawQuery = fmt.Sprintf("concepto_tenant_id=%d", conceptoTenantID)
+	h.ReglasModal(w, r)
+}
+
+// ActualizarReglaHTMX actualiza una regla de financiamiento local (Meta / Fuente-Rubro / Régimen)
+func (h *ConceptoTenantHandler) ActualizarReglaHTMX(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Error al procesar datos", http.StatusBadRequest)
+		return
+	}
+
+	tenantID := obtenerTenantID(r)
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	if id <= 0 {
+		id, _ = strconv.Atoi(r.FormValue("id"))
+	}
+	conceptoTenantID, _ := strconv.Atoi(r.URL.Query().Get("concepto_tenant_id"))
+	if conceptoTenantID <= 0 {
+		conceptoTenantID, _ = strconv.Atoi(r.FormValue("concepto_tenant_id"))
+	}
+
+	if id > 0 && h.PlanillaRepo != nil {
+		regla, err := h.PlanillaRepo.ObtenerReglaFinanciamientoPorID(r.Context(), id, tenantID)
+		if err == nil && regla != nil {
+			if r.Form.Has("meta_id") {
+				metaVal := r.FormValue("meta_id")
+				if metaVal == "" || metaVal == "0" {
+					regla.MetaID = nil
+				} else if mID, err := strconv.Atoi(metaVal); err == nil && mID > 0 {
+					regla.MetaID = &mID
+				}
+			}
+
+			if r.Form.Has("fuente_rubro_id") {
+				rubVal := r.FormValue("fuente_rubro_id")
+				if rubVal == "" || rubVal == "0" {
+					regla.FuenteRubroID = nil
+				} else if rID, err := strconv.Atoi(rubVal); err == nil && rID > 0 {
+					regla.FuenteRubroID = &rID
+				}
+			}
+
+			if r.Form.Has("regimen_id") {
+				regVal := r.FormValue("regimen_id")
+				if regVal == "" || regVal == "0" {
+					regla.RegimenID = nil
+				} else if rgID, err := strconv.Atoi(regVal); err == nil && rgID > 0 {
+					regla.RegimenID = &rgID
+				}
+			}
+
+			_ = h.PlanillaRepo.ActualizarReglaFinanciamiento(r.Context(), regla)
+		}
+	}
+
+	r.URL.RawQuery = fmt.Sprintf("concepto_tenant_id=%d", conceptoTenantID)
+	h.ReglasModal(w, r)
 }
 
 

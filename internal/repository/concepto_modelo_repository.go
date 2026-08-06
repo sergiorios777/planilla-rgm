@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -444,5 +445,71 @@ func (r *ConceptoModeloRepository) GuardarConceptoModeloImportado(tx *sql.Tx, cm
 	}
 
 	return nil
+}
+
+// CRUD ReglaFinanciamientoModelo (SaaS)
+
+func (r *ConceptoModeloRepository) ObtenerReglasFinanciamientoModelo(ctx context.Context, conceptoModeloID int) ([]models.ReglaFinanciamientoModelo, error) {
+	query := `
+		SELECT r.id, r.concepto_modelo_id, r.regimen_id, r.meta_id, r.fuente_rubro_id, r.activo, r.created_at, r.updated_at,
+		       cm.nombre_personalizado AS concepto_nombre,
+		       COALESCE(rl.descripcion, 'Todos') AS regimen_nombre,
+		       COALESCE(m.codigo, '') AS meta_codigo,
+		       COALESCE(m.descripcion, '') AS meta_descripcion,
+		       COALESCE(fr.codigo_fuente_rubro, fr.rubro, '') AS fuente_rubro_codigo,
+		       COALESCE(fr.rubro, '') AS fuente_rubro_descripcion
+		FROM reglas_financiamiento_modelo r
+		INNER JOIN conceptos_modelo cm ON r.concepto_modelo_id = cm.id
+		LEFT JOIN regimenes_laborales rl ON r.regimen_id = rl.id
+		LEFT JOIN metas_presupuestales m ON r.meta_id = m.id
+		LEFT JOIN fuentes_rubros fr ON r.fuente_rubro_id = fr.id
+		WHERE r.concepto_modelo_id = $1
+		ORDER BY r.id DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, conceptoModeloID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.ReglaFinanciamientoModelo
+	for rows.Next() {
+		var reg models.ReglaFinanciamientoModelo
+		var regimenID, metaID, rubroID sql.NullInt64
+		err := rows.Scan(
+			&reg.ID, &reg.ConceptoModeloID, &regimenID, &metaID, &rubroID, &reg.Activo, &reg.CreatedAt, &reg.UpdatedAt,
+			&reg.ConceptoNombre, &reg.RegimenNombre, &reg.MetaCodigo, &reg.MetaDescripcion, &reg.FuenteRubroCodigo, &reg.FuenteRubroDescripcion,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if regimenID.Valid {
+			v := int(regimenID.Int64)
+			reg.RegimenID = &v
+		}
+		if metaID.Valid {
+			v := int(metaID.Int64)
+			reg.MetaID = &v
+		}
+		if rubroID.Valid {
+			v := int(rubroID.Int64)
+			reg.FuenteRubroID = &v
+		}
+		lista = append(lista, reg)
+	}
+	return lista, rows.Err()
+}
+
+func (r *ConceptoModeloRepository) CrearReglaFinanciamientoModelo(ctx context.Context, regla *models.ReglaFinanciamientoModelo) error {
+	query := `
+		INSERT INTO reglas_financiamiento_modelo (concepto_modelo_id, regimen_id, meta_id, fuente_rubro_id, activo)
+		VALUES ($1, $2, $3, $4, $5) RETURNING id
+	`
+	return r.db.QueryRowContext(ctx, query, regla.ConceptoModeloID, regla.RegimenID, regla.MetaID, regla.FuenteRubroID, regla.Activo).Scan(&regla.ID)
+}
+
+func (r *ConceptoModeloRepository) EliminarReglaFinanciamientoModelo(ctx context.Context, id int) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM reglas_financiamiento_modelo WHERE id = $1`, id)
+	return err
 }
 

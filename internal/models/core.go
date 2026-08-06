@@ -262,6 +262,27 @@ type ReglaFinanciamientoConcepto struct {
 	FuenteRubroDescripcion string `json:"fuente_rubro_descripcion,omitempty"`
 }
 
+func (r ReglaFinanciamientoConcepto) GetMetaID() int {
+	if r.MetaID != nil {
+		return *r.MetaID
+	}
+	return 0
+}
+
+func (r ReglaFinanciamientoConcepto) GetFuenteRubroID() int {
+	if r.FuenteRubroID != nil {
+		return *r.FuenteRubroID
+	}
+	return 0
+}
+
+func (r ReglaFinanciamientoConcepto) GetRegimenID() int {
+	if r.RegimenID != nil {
+		return *r.RegimenID
+	}
+	return 0
+}
+
 // FuenteRubro representa el catálogo del MEF de fuentes de financiamiento
 type FuenteRubro struct {
 	ID                   int    `json:"id"`
@@ -361,14 +382,35 @@ type PuestoConcepto struct {
 	MontoIngresado      bool   `json:"monto_ingresado,omitempty"`
 }
 
+// ReglaFinanciamientoModelo representa una regla de financiamiento a nivel SaaS (Conceptos Modelo)
+type ReglaFinanciamientoModelo struct {
+	ID               int       `json:"id"`
+	ConceptoModeloID int       `json:"concepto_modelo_id"`
+	RegimenID        *int      `json:"regimen_id"`
+	MetaID           *int      `json:"meta_id"`
+	FuenteRubroID    *int      `json:"fuente_rubro_id"`
+	Activo           bool      `json:"activo"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+
+	// Campos auxiliares para JOINs / UI
+	ConceptoNombre         string `json:"concepto_nombre,omitempty"`
+	RegimenNombre          string `json:"regimen_nombre,omitempty"`
+	MetaCodigo             string `json:"meta_codigo,omitempty"`
+	MetaDescripcion        string `json:"meta_descripcion,omitempty"`
+	FuenteRubroCodigo      string `json:"fuente_rubro_codigo,omitempty"`
+	FuenteRubroDescripcion string `json:"fuente_rubro_descripcion,omitempty"`
+}
+
 // Planilla representa la cabecera mensual de cálculos
 type Planilla struct {
-	ID          int    `json:"id"`
-	TenantID    int    `json:"tenant_id"`
-	Anio        int    `json:"anio"`
-	Mes         int    `json:"mes"`
-	Descripcion string `json:"descripcion"`
-	Estado      string `json:"estado"` // BORRADOR, CERRADA
+	ID               int    `json:"id"`
+	TenantID         int    `json:"tenant_id"`
+	Anio             int    `json:"anio"`
+	Mes              int    `json:"mes"`
+	Descripcion      string `json:"descripcion"`
+	Estado           string `json:"estado"` // BORRADOR, CERRADA
+	EsExtraordinaria bool   `json:"es_extraordinaria"`
 }
 
 // PlanillaDetalle representa la boleta consolidada de un trabajador
@@ -560,4 +602,20 @@ type PlameRemuneracion struct {
 	NumeroDocumento string
 	CodigoConcepto  string
 	Monto           float64
+}
+
+// TrabajadorEspecialItem representa un trabajador activo y su plaza para la formulación especial
+type TrabajadorEspecialItem struct {
+	ContratoID           int    `json:"contrato_id"`
+	TrabajadorID         int    `json:"trabajador_id"`
+	NumeroDocumento      string `json:"numero_documento"`
+	NombreCompleto       string `json:"nombre_completo"`
+	PuestoNombre         string `json:"puesto_nombre"`
+	RegimenID            int    `json:"regimen_id"`
+	RegimenNombre        string `json:"regimen_nombre"`
+	MetaID               int    `json:"meta_id"`
+	MetaCodigo           string `json:"meta_codigo"`
+	MetaDescripcion      string `json:"meta_descripcion"`
+	UnidadOrganicaID     int    `json:"unidad_organica_id"`
+	UnidadOrganicaNombre string `json:"unidad_organica_nombre"`
 }

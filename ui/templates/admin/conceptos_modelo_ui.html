@@ -121,6 +121,12 @@
                 <td>{{if .RequiereMonto}}✅{{else}}🤖{{end}}</td>
                 <td>
                     <div role="group">
+                        <button class="outline primary" style="padding: 0.2rem 0.5rem;"
+                            hx-get="/admin/conceptos-modelo/reglas-modal?concepto_modelo_id={{.ID}}"
+                            hx-target="#contenido-modal-reglas-modelo"
+                            hx-swap="innerHTML">
+                            ⚙️ Reglas
+                        </button>
                         <button class="outline contrast" style="padding: 0.2rem 0.5rem;"
                             hx-get="/admin/conceptos-modelo/editar_ui?id={{.ID}}" hx-target="#modal-editar-modelo"
                             hx-swap="innerHTML">
@@ -405,6 +411,99 @@
         </form>
     </article>
 </dialog>
+
+<!-- Modal para Reglas de Financiamiento Modelo -->
+<dialog id="modal-reglas-modelo"
+    hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-reglas-modelo') this.showModal()">
+    <article style="max-width: 800px; width: 95%;">
+        <header>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-reglas-modelo').close()"></a>
+            <h4 style="margin-bottom: 0;">🎯 Reglas de Financiamiento Modelo (SaaS)</h4>
+        </header>
+        <div id="contenido-modal-reglas-modelo">
+            <!-- Formulario y lista se cargan aquí vía HTMX -->
+        </div>
+    </article>
+</dialog>
+
+{{define "modal_reglas_modelo_content"}}
+<p style="margin-bottom: 0.5rem;">
+    <strong>Concepto Modelo:</strong> {{.Concepto.NombrePersonalizado}}
+</p>
+<p><small style="color: var(--pico-muted-color);">Define excepciones de financiamiento globales (Decretos de Urgencia / Leyes) a nivel SaaS.</small></p>
+
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Régimen</th>
+            <th>Fuente / Rubro</th>
+            <th>Estado</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Reglas}}
+        <tr>
+            <td><small>{{.RegimenNombre}}</small></td>
+            <td><small>{{if .FuenteRubroCodigo}}[{{.FuenteRubroCodigo}}] {{.FuenteRubroDescripcion}}{{else}}Puesto Default{{end}}</small></td>
+            <td>
+                {{if .Activo}}
+                <span style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Activa</span>
+                {{else}}
+                <span style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Inactiva</span>
+                {{end}}
+            </td>
+            <td>
+                <button class="outline contrast" style="padding: 2px 8px; font-size: 0.75rem; margin-bottom: 0;"
+                    hx-delete="/admin/conceptos-modelo/reglas/eliminar?id={{.ID}}&concepto_modelo_id={{$.Concepto.ID}}"
+                    hx-target="#contenido-modal-reglas-modelo"
+                    hx-confirm="¿Eliminar esta regla de financiamiento modelo?">
+                    Eliminar
+                </button>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="4" style="text-align: center;"><small>No hay reglas de financiamiento configuradas para este concepto modelo.</small></td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+
+<hr>
+
+<form hx-post="/admin/conceptos-modelo/reglas/crear" hx-target="#contenido-modal-reglas-modelo">
+    <input type="hidden" name="concepto_modelo_id" value="{{.Concepto.ID}}">
+    <h6>➕ Agregar Regla de Financiamiento Modelo</h6>
+    <div class="grid">
+        <label>Régimen Laboral
+            <select name="regimen_id">
+                <option value="">-- Todos los Regímenes --</option>
+                {{range .Regimenes}}
+                <option value="{{.ID}}">{{.Descripcion}}</option>
+                {{end}}
+            </select>
+        </label>
+        <label>Fuente / Rubro
+            <select name="fuente_rubro_id">
+                <option value="">-- Default del Puesto --</option>
+                {{range .FuentesRubros}}
+                <option value="{{.ID}}">[{{.CodigoFuenteRubro}}] {{.Rubro}}</option>
+                {{end}}
+            </select>
+        </label>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+        <label style="margin-bottom: 0;">
+            <input type="checkbox" name="activo" role="switch" checked> Regla Activa
+        </label>
+        <button type="submit" class="primary" style="width: auto; margin-bottom: 0; padding: 0.3rem 1rem;">
+            Guardar Regla Modelo
+        </button>
+    </div>
+</form>
+{{end}}
 
 <script>
     function toggleRangoFechas(value) {

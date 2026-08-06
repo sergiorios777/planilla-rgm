@@ -14,8 +14,11 @@ import (
 )
 
 type PlanillaHandler struct {
-	Repo         *repository.PlanillaRepository
-	AnexoService *services.AnexoService
+	Repo               *repository.PlanillaRepository
+	PuestoRepo         *repository.PuestoRepository
+	ConceptoTenantRepo *repository.ConceptoTenantRepository
+	OrganigramaRepo    *repository.OrganigramaRepository
+	AnexoService       *services.AnexoService
 }
 
 func (h *PlanillaHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
@@ -38,11 +41,14 @@ func (h *PlanillaHandler) Crear(w http.ResponseWriter, r *http.Request) {
 	anio, _ := strconv.Atoi(r.FormValue("anio"))
 	mes, _ := strconv.Atoi(r.FormValue("mes"))
 
+	esExtraordinaria := r.FormValue("es_extraordinaria") == "true" || r.FormValue("es_extraordinaria") == "on"
+
 	nuevaPlanilla := models.Planilla{
-		TenantID:    tenantID,
-		Anio:        anio,
-		Mes:         mes,
-		Descripcion: r.FormValue("descripcion"),
+		TenantID:         tenantID,
+		Anio:             anio,
+		Mes:              mes,
+		Descripcion:      r.FormValue("descripcion"),
+		EsExtraordinaria: esExtraordinaria,
 	}
 
 	err := h.Repo.Crear(&nuevaPlanilla)
@@ -816,5 +822,260 @@ func (h *PlanillaHandler) ActualizarPresupuestoBulkHTMX(w http.ResponseWriter, r
 	h.VistaRubrosMetas(w, r)
 }
 
+// VistaFormuladorEspecial carga la interfaz de formulación de planilla especial / extraordinaria
+func (h *PlanillaHandler) VistaFormuladorEspecial(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	if planillaID <= 0 {
+		http.Error(w, "ID de planilla no válido", http.StatusBadRequest)
+		return
+	}
 
+	planilla, err := h.Repo.ObtenerPorID(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "No se encontró la planilla: "+err.Error(), http.StatusNotFound)
+		return
+	}
 
+	// Obtener catálogos
+	var conceptosTenant []models.ConceptoTenant
+	if h.ConceptoTenantRepo != nil {
+		conceptosTenant, _ = h.ConceptoTenantRepo.ObtenerTodos(tenantID)
+	}
+
+	var regimenes []models.RegimenLaboral
+	if h.PuestoRepo != nil {
+		regimenes, _ = h.PuestoRepo.ObtenerRegimenes()
+	}
+
+	metas, _ := h.Repo.ObtenerMetas(tenantID)
+
+	var unidades []models.UnidadOrganica
+	if h.OrganigramaRepo != nil {
+		orgActivo, errOrg := h.OrganigramaRepo.ObtenerOrganigramaActivo(tenantID)
+		if errOrg == nil && orgActivo != nil {
+			unidades, _ = h.OrganigramaRepo.ObtenerUnidades(orgActivo.ID)
+		}
+	}
+
+	// Precargar trabajadores (Página 1) para evitar el parpadeo de "Cargando..." al ingresar
+	limite := 20
+	pagina := 1
+	trabajadores, total, _ := h.Repo.ObtenerTrabajadoresEspecialPaginacion(tenantID, "", 0, 0, 0, limite, 0)
+	totalPaginas := (total + limite - 1) / limite
+	if totalPaginas == 0 {
+		totalPaginas = 1
+	}
+
+	datos := map[string]interface{}{
+		"Planilla":        planilla,
+		"ConceptosTenant": conceptosTenant,
+		"Regimenes":       regimenes,
+		"Metas":           metas,
+		"Unidades":        unidades,
+
+		"Trabajadores":    trabajadores,
+		"TotalRegistros":  total,
+		"PaginaActual":    pagina,
+		"TotalPaginas":    totalPaginas,
+		"PaginaAnterior":  0,
+		"PaginaSiguiente": 2,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/tenant/planilla_especial_ui.html")
+	if err != nil {
+		http.Error(w, "Error al cargar vista de planilla especial: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.Execute(w, datos)
+}
+
+// BuscarTrabajadoresEspecial devuelve la tabla paginada de trabajadores filtrados para HTMX
+func (h *PlanillaHandler) BuscarTrabajadoresEspecial(w http.ResponseWriter, r *http.Request) {
+	_ = r.ParseForm()
+	tenantID := obtenerTenantID(r)
+	busqueda := strings.TrimSpace(r.FormValue("q"))
+	regimenID, _ := strconv.Atoi(r.FormValue("regimen_id"))
+	metaID, _ := strconv.Atoi(r.FormValue("meta_id"))
+	unidadID, _ := strconv.Atoi(r.FormValue("unidad_organica_id"))
+
+	pagina, _ := strconv.Atoi(r.FormValue("pagina"))
+	if pagina <= 0 {
+		pagina = 1
+	}
+	limite, _ := strconv.Atoi(r.FormValue("limite"))
+	if limite <= 0 {
+		limite = 20
+	}
+	offset := (pagina - 1) * limite
+
+	trabajadores, total, err := h.Repo.ObtenerTrabajadoresEspecialPaginacion(tenantID, busqueda, regimenID, metaID, unidadID, limite, offset)
+	if err != nil {
+		http.Error(w, "Error al obtener trabajadores: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	totalPaginas := (total + limite - 1) / limite
+	if totalPaginas == 0 {
+		totalPaginas = 1
+	}
+
+	paginaAnterior := pagina - 1
+	paginaSiguiente := pagina + 1
+	if paginaSiguiente > totalPaginas {
+		paginaSiguiente = totalPaginas
+	}
+
+	datos := map[string]interface{}{
+		"Trabajadores":    trabajadores,
+		"TotalRegistros":  total,
+		"PaginaActual":    pagina,
+		"TotalPaginas":    totalPaginas,
+		"PaginaAnterior":  paginaAnterior,
+		"PaginaSiguiente": paginaSiguiente,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/tenant/planilla_especial_ui.html")
+	if err != nil {
+		http.Error(w, "Error al cargar fragmento de trabajadores: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.ExecuteTemplate(w, "tabla_trabajadores_modal", datos)
+}
+
+// BuscarTrabajadoresEspecialJSON devuelve la lista completa de trabajadores que coinciden con los filtros en formato JSON (para inclusión masiva aditiva)
+func (h *PlanillaHandler) BuscarTrabajadoresEspecialJSON(w http.ResponseWriter, r *http.Request) {
+	_ = r.ParseForm()
+	tenantID := obtenerTenantID(r)
+	busqueda := strings.TrimSpace(r.FormValue("q"))
+	regimenID, _ := strconv.Atoi(r.FormValue("regimen_id"))
+	metaID, _ := strconv.Atoi(r.FormValue("meta_id"))
+	unidadID, _ := strconv.Atoi(r.FormValue("unidad_organica_id"))
+
+	trabajadores, err := h.Repo.ObtenerTrabajadoresEspecialTodos(tenantID, busqueda, regimenID, metaID, unidadID)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"error":   "Error al obtener trabajadores: " + err.Error(),
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":      true,
+		"total":        len(trabajadores),
+		"trabajadores": trabajadores,
+	})
+}
+
+// ProcesarEspecial ejecuta el procesamiento de la planilla extraordinaria/especial
+func (h *PlanillaHandler) ProcesarEspecial(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Error al procesar formulario: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.FormValue("planilla_id"))
+	if planillaID <= 0 {
+		http.Error(w, "ID de planilla no válido", http.StatusBadRequest)
+		return
+	}
+
+	log.Println("----Procesar-Especial----")
+	log.Println("Planilla ID:", planillaID)
+
+	// Parsear conceptos seleccionados y sus montos
+	conceptosIDsStr := r.Form["conceptos_ids"]
+	var conceptosInput []repository.PlanillaEspecialConceptoInput
+	for _, cIDStr := range conceptosIDsStr {
+		cID, err := strconv.Atoi(cIDStr)
+		if err == nil && cID > 0 {
+			montoStr := r.FormValue(fmt.Sprintf("monto_%d", cID))
+			monto, _ := strconv.ParseFloat(montoStr, 64)
+			conceptosInput = append(conceptosInput, repository.PlanillaEspecialConceptoInput{
+				ConceptoTenantID: cID,
+				Monto:            monto,
+			})
+		}
+	}
+
+	if len(conceptosInput) == 0 {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`
+			<div id="alerta-especial" hx-swap-oob="true">
+				<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
+					❌ Debe seleccionar al menos un concepto e ingresar un monto mayor a 0.00.
+				</article>
+			</div>
+		`))
+		return
+	}
+
+	log.Println("Llegamos al final del parseo conceptos seleccionados")
+
+	// Parsear trabajadores/contratos seleccionados
+	contratosIDsStr := r.Form["contratos_ids"]
+	var contratosIDs []int
+	for _, idStr := range contratosIDsStr {
+		id, err := strconv.Atoi(idStr)
+		if err == nil && id > 0 {
+			contratosIDs = append(contratosIDs, id)
+		}
+	}
+
+	if len(contratosIDs) == 0 {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`
+			<div id="alerta-especial" hx-swap-oob="true">
+				<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
+					❌ Debe marcar al menos un trabajador beneficiario.
+				</article>
+			</div>
+		`))
+		return
+	}
+
+	log.Println("Llegamos al final del parseo contratos seleccionados")
+
+	// Parsear montos personalizados por contrato/concepto si existen
+	montosCustom := make(map[string]float64)
+	for key, values := range r.Form {
+		if strings.HasPrefix(key, "monto_custom_") && len(values) > 0 {
+			if val, err := strconv.ParseFloat(values[0], 64); err == nil && val >= 0 {
+				montosCustom[key] = val
+			}
+		}
+	}
+
+	log.Println("Llegamos al final del parseo montos personalizados")
+
+	// Ejecutar procesamiento en repositorio
+	err := h.Repo.ProcesarPlanillaEspecial(r.Context(), planillaID, tenantID, conceptosInput, contratosIDs, montosCustom)
+	if err != nil {
+		log.Println("❌ ERROR EN ProcesarPlanillaEspecial:", err)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`
+			<div id="alerta-especial">
+				<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
+					❌ Error procesando la planilla especial: ` + err.Error() + `
+				</article>
+			</div>
+		`))
+		return
+	}
+
+	log.Println("🎉 PLANILLA ESPECIAL PROCESADA EXITOSAMENTE. CARGANDO VISTA DETALLE...")
+
+	// Redirigir suavemente a la vista de detalle de la planilla
+	w.Header().Set("HX-Push-Url", "/tenant/planillas/detalle/ui?id="+strconv.Itoa(planillaID))
+	r.URL.RawQuery = "id=" + strconv.Itoa(planillaID)
+	h.VistaDetalle(w, r)
+}

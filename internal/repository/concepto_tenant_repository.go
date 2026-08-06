@@ -391,6 +391,38 @@ func (r *ConceptoTenantRepository) ClonarRelacionesRegimen(tenantID int) error {
 	return err
 }
 
+// ClonarReglasFinanciamientoModelo copia las reglas de financiamiento modelo (SaaS) a la municipalidad local
+func (r *ConceptoTenantRepository) ClonarReglasFinanciamientoModelo(tenantID int) error {
+	query := `
+		INSERT INTO reglas_financiamiento_concepto (
+			tenant_id,
+			concepto_tenant_id,
+			regimen_id,
+			meta_id,
+			fuente_rubro_id,
+			activo
+		)
+		SELECT 
+			ct.tenant_id, 
+			ct.id, 
+			rfm.regimen_id, 
+			rfm.meta_id, 
+			rfm.fuente_rubro_id, 
+			rfm.activo
+		FROM conceptos_tenant ct
+		INNER JOIN reglas_financiamiento_modelo rfm ON ct.modelo_id = rfm.concepto_modelo_id
+		WHERE ct.tenant_id = $1
+		  AND NOT EXISTS (
+		      SELECT 1 FROM reglas_financiamiento_concepto rfc
+		      WHERE rfc.tenant_id = ct.tenant_id
+		        AND rfc.concepto_tenant_id = ct.id
+		        AND (rfc.regimen_id IS NOT DISTINCT FROM rfm.regimen_id)
+		  );
+	`
+	_, err := r.db.Exec(query, tenantID)
+	return err
+}
+
 // ObtenerRegimenesPorConcepto obtiene los IDs de los regímenes asociados a un concepto del tenant
 func (r *ConceptoTenantRepository) ObtenerRegimenesPorConcepto(id int, tenantID int) ([]int, error) {
 	query := `SELECT regimen_id FROM regimen_concepto_tenant WHERE concepto_tenant_id = $1 AND tenant_id = $2`
@@ -465,6 +497,38 @@ func (r *ConceptoTenantRepository) SincronizarDesdeModeloAvanzado(tenantID int, 
 	_, err = tx.Exec(queryRegimenes, tenantID)
 	if err != nil {
 		return fmt.Errorf("error al clonar relaciones de regimenes: %w", err)
+	}
+
+	// 3. Sincronizar reglas de financiamiento modelo hacia reglas de financiamiento concepto
+	queryReglas := `
+		INSERT INTO reglas_financiamiento_concepto (
+			tenant_id,
+			concepto_tenant_id,
+			regimen_id,
+			meta_id,
+			fuente_rubro_id,
+			activo
+		)
+		SELECT 
+			ct.tenant_id, 
+			ct.id, 
+			rfm.regimen_id, 
+			rfm.meta_id, 
+			rfm.fuente_rubro_id, 
+			rfm.activo
+		FROM conceptos_tenant ct
+		INNER JOIN reglas_financiamiento_modelo rfm ON ct.modelo_id = rfm.concepto_modelo_id
+		WHERE ct.tenant_id = $1
+		  AND NOT EXISTS (
+		      SELECT 1 FROM reglas_financiamiento_concepto rfc
+		      WHERE rfc.tenant_id = ct.tenant_id
+		        AND rfc.concepto_tenant_id = ct.id
+		        AND (rfc.regimen_id IS NOT DISTINCT FROM rfm.regimen_id)
+		  );
+	`
+	_, err = tx.Exec(queryReglas, tenantID)
+	if err != nil {
+		return fmt.Errorf("error al clonar reglas de financiamiento modelo: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -595,6 +659,25 @@ func (r *ConceptoTenantRepository) AgregarDesdeModelo(tenantID int, modeloID int
 		return fmt.Errorf("error al sembrar base_regimen_tenant: %w", err)
 	}
 
+	// 4. Sembrar reglas_financiamiento_concepto desde reglas_financiamiento_modelo
+	queryReglas := `
+		INSERT INTO reglas_financiamiento_concepto (tenant_id, concepto_tenant_id, regimen_id, meta_id, fuente_rubro_id, activo)
+		SELECT ct.tenant_id, ct.id, rfm.regimen_id, rfm.meta_id, rfm.fuente_rubro_id, rfm.activo
+		FROM conceptos_tenant ct
+		INNER JOIN reglas_financiamiento_modelo rfm ON ct.modelo_id = rfm.concepto_modelo_id
+		WHERE ct.tenant_id = $1 AND ct.modelo_id = $2
+		  AND NOT EXISTS (
+		      SELECT 1 FROM reglas_financiamiento_concepto rfc
+		      WHERE rfc.tenant_id = $1
+		        AND rfc.concepto_tenant_id = ct.id
+		        AND (rfc.regimen_id IS NOT DISTINCT FROM rfm.regimen_id)
+		  );
+	`
+	_, err = tx.Exec(queryReglas, tenantID, modeloID)
+	if err != nil {
+		return fmt.Errorf("error al clonar reglas_financiamiento_concepto: %w", err)
+	}
+
 	return tx.Commit()
 }
 
@@ -669,6 +752,64 @@ func (r *ConceptoTenantRepository) SincronizarConceptoModelo(tenantID int, id in
 	_, err = tx.Exec(queryBaseRegimen, id, tenantID)
 	if err != nil {
 		return fmt.Errorf("error al reinsertar base_regimen_tenant: %w", err)
+	}
+
+	// 4. Re-sincronizar reglas_financiamiento_concepto desde reglas_financiamiento_modelo
+	queryReglas := `
+		INSERT INTO reglas_financiamiento_concepto (tenant_id, concepto_tenant_id, regimen_id, meta_id, fuente_rubro_id, activo)
+		SELECT $2, ct.id, rfm.regimen_id, rfm.meta_id, rfm.fuente_rubro_id, rfm.activo
+		FROM conceptos_tenant ct
+		INNER JOIN reglas_financiamiento_modelo rfm ON ct.modelo_id = rfm.concepto_modelo_id
+		WHERE ct.id = $1 AND ct.tenant_id = $2
+		  AND NOT EXISTS (
+		      SELECT 1 FROM reglas_financiamiento_concepto rfc
+		      WHERE rfc.tenant_id = $2
+		        AND rfc.concepto_tenant_id = $1
+		        AND (rfc.regimen_id IS NOT DISTINCT FROM rfm.regimen_id)
+		  );
+	`
+	_, err = tx.Exec(queryReglas, id, tenantID)
+	if err != nil {
+		return fmt.Errorf("error al reinsertar reglas de financiamiento: %w", err)
+	}
+
+	return tx.Commit()
+}
+
+// SincronizarReglasFinanciamientoDesdeModelo restablece y clona las reglas de financiamiento SaaS del modelo padre al concepto tenant
+func (r *ConceptoTenantRepository) SincronizarReglasFinanciamientoDesdeModelo(tenantID int, conceptoTenantID int) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fmt.Errorf("error al iniciar transacción: %w", err)
+	}
+	defer tx.Rollback()
+
+	// 1. Obtener modelo_id del concepto tenant
+	var modeloID sql.NullInt64
+	err = tx.QueryRow(`SELECT modelo_id FROM conceptos_tenant WHERE id = $1 AND tenant_id = $2`, conceptoTenantID, tenantID).Scan(&modeloID)
+	if err != nil {
+		return fmt.Errorf("concepto local no encontrado: %w", err)
+	}
+	if !modeloID.Valid || modeloID.Int64 <= 0 {
+		return fmt.Errorf("el concepto local no procede de ningún concepto modelo SaaS")
+	}
+
+	// 2. Limpiar reglas anteriores de este concepto tenant
+	_, err = tx.Exec(`DELETE FROM reglas_financiamiento_concepto WHERE concepto_tenant_id = $1 AND tenant_id = $2`, conceptoTenantID, tenantID)
+	if err != nil {
+		return fmt.Errorf("error al limpiar reglas previas del concepto: %w", err)
+	}
+
+	// 3. Reinsertar las reglas definidas a nivel SaaS para el concepto modelo
+	query := `
+		INSERT INTO reglas_financiamiento_concepto (tenant_id, concepto_tenant_id, regimen_id, meta_id, fuente_rubro_id, activo)
+		SELECT $1, $2, rfm.regimen_id, rfm.meta_id, rfm.fuente_rubro_id, rfm.activo
+		FROM reglas_financiamiento_modelo rfm
+		WHERE rfm.concepto_modelo_id = $3 AND rfm.activo = true
+	`
+	_, err = tx.Exec(query, tenantID, conceptoTenantID, modeloID.Int64)
+	if err != nil {
+		return fmt.Errorf("error al copiar reglas de financiamiento modelo: %w", err)
 	}
 
 	return tx.Commit()

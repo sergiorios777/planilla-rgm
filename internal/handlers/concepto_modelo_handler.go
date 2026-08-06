@@ -17,6 +17,7 @@ type ConceptoModeloHandler struct {
 	PuestoRepo         *repository.PuestoRepository         // Lo necesitaremos para el select
 	ConceptoTenantRepo *repository.ConceptoTenantRepository // Conceptos Maestros y clasificadores
 	TenantRepo         *repository.TenantRepository         // Para la sincronización masiva
+	PlanillaRepo       *repository.PlanillaRepository       // Para catálogo de fuentes/rubros y metas
 	Service            *services.ConceptoModeloService
 	NotificacionRepo   *repository.NotificacionRepository
 }
@@ -404,5 +405,91 @@ func (h *ConceptoModeloHandler) PlantillaCSV(w http.ResponseWriter, r *http.Requ
 	ejemplo := "0121,Remuneración Principal Básica,\"1,2,3,4,5,6,7,8,9,10,11,12\",2.1.1.1.1.1,0,0,1,1,1,1,0,1,1,1,0,1\n"
 	
 	w.Write([]byte(cabecera + ejemplo))
+}
+
+// ReglasModal renderiza el modal HTMX con el listado y formulario de reglas de financiamiento modelo (SaaS)
+func (h *ConceptoModeloHandler) ReglasModal(w http.ResponseWriter, r *http.Request) {
+	conceptoModeloID, _ := strconv.Atoi(r.URL.Query().Get("concepto_modelo_id"))
+	if conceptoModeloID <= 0 {
+		conceptoModeloID, _ = strconv.Atoi(r.FormValue("concepto_modelo_id"))
+	}
+	if conceptoModeloID <= 0 {
+		http.Error(w, "ID de concepto modelo no válido", http.StatusBadRequest)
+		return
+	}
+
+	concepto, err := h.Repo.ObtenerPorID(conceptoModeloID)
+	if err != nil {
+		http.Error(w, "No se encontró el concepto modelo: "+err.Error(), http.StatusNotFound)
+		return
+	}
+
+	reglas, _ := h.Repo.ObtenerReglasFinanciamientoModelo(r.Context(), conceptoModeloID)
+	regimenes, _ := h.PuestoRepo.ObtenerRegimenes()
+	var fuentesRubros []models.FuenteRubro
+	if h.PlanillaRepo != nil {
+		fuentesRubros, _ = h.PlanillaRepo.ObtenerFuentesRubros()
+	}
+
+	datos := map[string]interface{}{
+		"Concepto":      concepto,
+		"Reglas":        reglas,
+		"Regimenes":     regimenes,
+		"FuentesRubros": fuentesRubros,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/admin/conceptos_modelo_ui.html")
+	if err != nil {
+		http.Error(w, "Error al cargar plantilla: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.ExecuteTemplate(w, "modal_reglas_modelo_content", datos)
+}
+
+// CrearReglaHTMX inserta una nueva regla de financiamiento modelo y refresca el modal
+func (h *ConceptoModeloHandler) CrearReglaHTMX(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	conceptoModeloID, _ := strconv.Atoi(r.FormValue("concepto_modelo_id"))
+
+	var regimenID, fuenteRubroID *int
+	if regVal := r.FormValue("regimen_id"); regVal != "" {
+		if id, err := strconv.Atoi(regVal); err == nil && id > 0 {
+			regimenID = &id
+		}
+	}
+	if rubVal := r.FormValue("fuente_rubro_id"); rubVal != "" {
+		if id, err := strconv.Atoi(rubVal); err == nil && id > 0 {
+			fuenteRubroID = &id
+		}
+	}
+	activo := r.FormValue("activo") == "true" || r.FormValue("activo") == "on"
+
+	if conceptoModeloID > 0 {
+		regla := models.ReglaFinanciamientoModelo{
+			ConceptoModeloID: conceptoModeloID,
+			RegimenID:        regimenID,
+			FuenteRubroID:    fuenteRubroID,
+			Activo:           activo,
+		}
+		_ = h.Repo.CrearReglaFinanciamientoModelo(r.Context(), &regla)
+	}
+
+	r.URL.RawQuery = fmt.Sprintf("concepto_modelo_id=%d", conceptoModeloID)
+	h.ReglasModal(w, r)
+}
+
+// EliminarReglaHTMX elimina una regla de financiamiento modelo y refresca el modal
+func (h *ConceptoModeloHandler) EliminarReglaHTMX(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	conceptoModeloID, _ := strconv.Atoi(r.URL.Query().Get("concepto_modelo_id"))
+
+	if id > 0 {
+		_ = h.Repo.EliminarReglaFinanciamientoModelo(r.Context(), id)
+	}
+
+	r.URL.RawQuery = fmt.Sprintf("concepto_modelo_id=%d", conceptoModeloID)
+	h.ReglasModal(w, r)
 }
 
