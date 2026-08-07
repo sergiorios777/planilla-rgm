@@ -165,36 +165,13 @@
                     hx-get="/tenant/ui/planillas/rubros-metas?id={{.ID}}" hx-target="#contenido-tenant">
                     🎯 Rubros/Metas
                 </button>
-                <a href="/tenant/planillas/descargar-reporte?id={{.ID}}" target="_blank" role="button"
-                    class="outline primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">
-                    <svg class="icono-menu">
-                        <use href="#icono-folder-supervised"></use>
-                    </svg>
-                    Planilla PDF
-                </a>
-                <a href="/tenant/planillas/descargar-boletas?id={{.ID}}" target="_blank" role="button"
-                    class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">
-                    <svg class="icono-menu">
-                        <use href="#icono-co-present"></use>
-                    </svg>
-                    Boletas PDF
-                </a>
-                <button class="outline primary"
-                    style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0; display: inline-block; width: auto;"
-                    hx-get="/tenant/planillas/exportar-plame-modal?id={{.ID}}" hx-target="#contenido-modal-exportar"
-                    hx-swap="innerHTML">
-                    <svg class="icono-menu">
-                        <use href="#icono-compress"></use>
-                    </svg>
-                    PDT/PLAME
-                </button>
                 <button class="outline secondary"
                     style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0; display: inline-block; width: auto;"
                     hx-get="/tenant/planillas/anexos/ui?id={{.ID}}" hx-target="#contenido-tenant">
                     <svg class="icono-menu">
                         <use href="#icono-clip"></use>
                     </svg>
-                    Anexos
+                    Anexos y Exportaciones
                 </button>
 
                 {{if eq .Estado "BORRADOR"}}

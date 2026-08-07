@@ -4,7 +4,7 @@
             <svg class="icono-menu">
                 <use href="#icono-clip"></use>
             </svg>
-            Anexos de Planilla
+            Anexos y Exportaciones de Planilla
         </h3>
         <button class="secondary outline" style="width: auto; margin-bottom: 0;"
             hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
@@ -26,12 +26,67 @@
         </p>
     </div>
 
+    <!-- Sección de Exportaciones Principales -->
+    <div style="margin-bottom: 2rem;">
+        <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: #1f4e79;">
+            <svg class="icono-menu">
+                <use href="#icono-folder-supervised"></use>
+            </svg>
+            Documentos y Exportaciones Principales
+        </h4>
+
+        <table class="striped" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th style="width: 65%;">Documento / Exportación</th>
+                    <th style="width: 35%; text-align: center;">Acción / Descarga</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <strong>Planilla de Pago Consolidada (Boletón PDF)</strong><br>
+                        <small style="color: var(--muted-color);">Reporte completo en formato PDF con la nómina detallada de trabajadores, conceptos e importes por meta</small>
+                    </td>
+                    <td style="text-align: center;">
+                        <a href="/tenant/planillas/descargar-reporte?id={{.Planilla.ID}}" target="_blank" class="button outline primary" style="padding: 0.35rem 0.9rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                            📄 Planilla PDF
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Boletas de Pago Individuales (PDF)</strong><br>
+                        <small style="color: var(--muted-color);">Documento PDF consolidado con todas las boletas de pago individuales firmables por trabajador</small>
+                    </td>
+                    <td style="text-align: center;">
+                        <a href="/tenant/planillas/descargar-boletas?id={{.Planilla.ID}}" target="_blank" class="button outline secondary" style="padding: 0.35rem 0.9rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                            📄 Boletas PDF
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Estructuras PDT / PLAME 0601 (SUNAT)</strong><br>
+                        <small style="color: var(--muted-color);">Generación de archivos de texto plano (.rem, .jor, .snl, etc.) para la importación mensual en la planilla electrónica PLAME</small>
+                    </td>
+                    <td style="text-align: center;">
+                        <button class="primary" style="padding: 0.35rem 0.9rem; font-size: 0.85rem; width: auto; margin-bottom: 0; display: inline-flex; align-items: center; gap: 4px;"
+                            hx-get="/tenant/planillas/exportar-plame-modal?id={{.Planilla.ID}}" hx-target="#contenido-modal-exportar" hx-swap="innerHTML">
+                            📦 Exportar PLAME
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
     <div style="margin-bottom: 1.5rem;">
         <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
             <svg class="icono-menu">
                 <use href="#icono-folder-supervised"></use>
             </svg>
-            Lista de Anexos a la Planilla
+            Anexos Presupuestales y Contables (MEF / SIAF)
         </h4>
 
         <table class="striped" style="width: 100%;">
@@ -164,3 +219,15 @@
         </button>
     </div>
 </article>
+
+<!-- Modal de Exportación PLAME -->
+<dialog id="modal-exportar-plame"
+    hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-exportar') this.showModal()">
+    <article style="max-width: 700px; width: 90%;">
+        <header>
+            <button class="close" aria-label="Close" rel="prev" onclick="document.getElementById('modal-exportar-plame').close()"></button>
+            <h3 style="margin-bottom: 0;">📦 Exportación Estructuras SUNAT (PDT / PLAME)</h3>
+        </header>
+        <div id="contenido-modal-exportar"></div>
+    </article>
+</dialog>
