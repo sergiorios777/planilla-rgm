@@ -122,9 +122,13 @@
             <td>
                 <strong>{{.Anio}} - {{printf "%02d" .Mes}}</strong><br>
                 {{if .EsExtraordinaria}}
-                <mark style="background-color: #f3e5f5; color: #6a1b9a; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid #e1bee7;">⭐ EXTRAORDINARIA</mark>
+                <mark
+                    style="background-color: #f3e5f5; color: #6a1b9a; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid #e1bee7;">⭐
+                    EXTRAORDINARIA</mark>
                 {{else}}
-                <mark style="background-color: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid #bbdefb;">📅 ORDINARIA</mark>
+                <mark
+                    style="background-color: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid #bbdefb;">📅
+                    ORDINARIA</mark>
                 {{end}}
             </td>
             <td><small>{{.Descripcion}}</small></td>
@@ -139,20 +143,23 @@
             </td>
             <td>
                 {{if eq .Estado "BORRADOR"}}
-                    {{if .EsExtraordinaria}}
-                    <button class="outline primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
-                        hx-get="/tenant/planillas/especial/ui?id={{.ID}}" hx-target="#contenido-tenant">
-                        🎯 Formular Planilla Especial
-                    </button>
-                    {{else}}
-                    <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
-                        hx-post="/tenant/planillas/procesar?id={{.ID}}" hx-target="#contenido-tenant" hx-indicator="this">
-                        <svg class="icono-menu">
-                            <use href="#icono-manufacturing"></use>
-                        </svg>
-                        Procesar
-                    </button>
-                    {{end}}
+                {{if .EsExtraordinaria}}
+                <button class="outline primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                    hx-get="/tenant/planillas/especial/ui?id={{.ID}}" hx-target="#contenido-tenant">
+                    <svg class="icono-menu">
+                        <use href="#icono-wysiwyg"></use>
+                    </svg>
+                    Formular Planilla Especial
+                </button>
+                {{else}}
+                <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                    hx-post="/tenant/planillas/procesar?id={{.ID}}" hx-target="#contenido-tenant" hx-indicator="this">
+                    <svg class="icono-menu">
+                        <use href="#icono-manufacturing"></use>
+                    </svg>
+                    Procesar
+                </button>
+                {{end}}
                 {{end}}
                 <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
                     hx-get="/tenant/planillas/detalle/ui?id={{.ID}}" hx-target="#contenido-tenant">
@@ -163,13 +170,16 @@
                 </button>
                 <button class="outline primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
                     hx-get="/tenant/ui/planillas/rubros-metas?id={{.ID}}" hx-target="#contenido-tenant">
-                    🎯 Rubros/Metas
+                    <svg class="icono-menu">
+                        <use href="#icono-money-range"></use>
+                    </svg>
+                    Rubros/Metas
                 </button>
                 <button class="outline secondary"
                     style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0; display: inline-block; width: auto;"
                     hx-get="/tenant/planillas/anexos/ui?id={{.ID}}" hx-target="#contenido-tenant">
                     <svg class="icono-menu">
-                        <use href="#icono-clip"></use>
+                        <use href="#icono-docs-add-on"></use>
                     </svg>
                     Anexos y Exportaciones
                 </button>

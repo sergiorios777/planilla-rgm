@@ -1,20 +1,28 @@
 <article>
     <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <button class="outline secondary" style="width: auto; margin-bottom: 0.5rem; padding: 0.2rem 0.6rem; font-size: 0.85rem;"
+            <button class="outline secondary"
+                style="width: auto; margin-bottom: 0.5rem; padding: 0.2rem 0.6rem; font-size: 0.85rem;"
                 hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
                 ← Volver a Planillas
             </button>
             <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
-                🎯 Formulador de Planilla Especial / Extraordinaria
+                <svg class="icono-menu">
+                    <use href="#icono-wysiwyg"></use>
+                </svg>
+                Formulador de Planilla Especial / Extraordinaria
             </h3>
             <small style="color: var(--pico-muted-color);">
-                Período: <strong>{{.Planilla.Anio}} - {{printf "%02d" .Planilla.Mes}}</strong> | {{.Planilla.Descripcion}}
+                Período: <strong>{{.Planilla.Anio}} - {{printf "%02d" .Planilla.Mes}}</strong> |
+                {{.Planilla.Descripcion}}
             </small>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <mark style="background-color: #f3e5f5; color: #6a1b9a; padding: 4px 10px; border-radius: 6px; font-weight: bold; border: 1px solid #e1bee7;">⭐ EXTRAORDINARIA</mark>
-            <mark style="background-color: #fff9c4; color: #f57f17; padding: 4px 10px; border-radius: 6px; font-weight: bold;">Borrador</mark>
+            <mark
+                style="background-color: #f3e5f5; color: #6a1b9a; padding: 4px 10px; border-radius: 6px; font-weight: bold; border: 1px solid #e1bee7;">⭐
+                EXTRAORDINARIA</mark>
+            <mark
+                style="background-color: #fff9c4; color: #f57f17; padding: 4px 10px; border-radius: 6px; font-weight: bold;">Borrador</mark>
         </div>
     </header>
 
@@ -24,24 +32,26 @@
         <input type="hidden" name="planilla_id" value="{{.Planilla.ID}}">
 
         <!-- Bloque 1: Configuración de Conceptos y Montos con Buscador TomSelect -->
-        <fieldset style="background: var(--pico-card-sectionning-background); padding: 1.2rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--pico-border-color);">
+        <fieldset
+            style="background: var(--pico-card-sectionning-background); padding: 1.2rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--pico-border-color);">
             <legend><strong>1. Selección de Conceptos y Montos a Otorgar</strong></legend>
-            <p><small>Busca y añade los conceptos de la municipalidad que se otorgarán en esta planilla e ingresa el monto fijo base para cada uno.</small></p>
+            <p><small>Busca y añade los conceptos de la municipalidad que se otorgarán en esta planilla e ingresa el
+                    monto fijo base para cada uno.</small></p>
 
             <!-- Selector TomSelect -->
             <div style="margin-bottom: 1rem;">
-                <select id="select-agregar-concepto" class="select-con-buscador" placeholder="🔍 Buscar y agregar un concepto a la planilla especial...">
+                <select id="select-agregar-concepto" class="select-con-buscador"
+                    placeholder="🔍 Buscar y agregar un concepto a la planilla especial...">
                     <option value="">🔍 Buscar y agregar un concepto a la planilla especial...</option>
                     {{range .ConceptosTenant}}
-                    <option value="{{.ID}}" 
-                        data-nombre="{{.NombrePersonalizado}}" 
-                        data-codigo="{{.ConceptoCodigo}}" 
+                    <option value="{{.ID}}" data-nombre="{{.NombrePersonalizado}}" data-codigo="{{.ConceptoCodigo}}"
                         data-clasificador="{{if .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}}"
                         data-ocasional="{{if .EsOcasional}}1{{else}}0{{end}}"
                         data-extraordinario="{{if .EsExtraordinario}}1{{else}}0{{end}}"
                         data-pensionable="{{if .EsPensionable}}1{{else}}0{{end}}"
                         data-remunerativa="{{if .EsRemunerativa}}1{{else}}0{{end}}">
-                        [{{.ConceptoCodigo}}] {{.NombrePersonalizado}} (Clasificador: {{if .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}})
+                        [{{.ConceptoCodigo}}] {{.NombrePersonalizado}} (Clasificador: {{if
+                        .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}})
                     </option>
                     {{end}}
                 </select>
@@ -59,9 +69,10 @@
                         </tr>
                     </thead>
                     <tbody id="tbody-conceptos-seleccionados">
-                        <tr id="row-sin-conceptos" {{if .FormulacionConceptos}}style="display: none;"{{end}}>
+                        <tr id="row-sin-conceptos" {{if .FormulacionConceptos}}style="display: none;" {{end}}>
                             <td colspan="4" style="text-align: center; color: var(--pico-muted-color);">
-                                <small>No se ha agregado ningún concepto aún. Utiliza el buscador superior para seleccionar un concepto.</small>
+                                <small>No se ha agregado ningún concepto aún. Utiliza el buscador superior para
+                                    seleccionar un concepto.</small>
                             </td>
                         </tr>
                         {{range .FormulacionConceptos}}
@@ -69,21 +80,31 @@
                             <td>
                                 <input type="hidden" name="conceptos_ids" value="{{.ID}}">
                                 <strong>{{.NombrePersonalizado}}</strong><br>
-                                <small style="color: #666;">SUNAT: {{.CodigoSunat}} | Clasificador: {{.ClasificadorCodigo}}</small>
+                                <small style="color: #666;">SUNAT: {{.CodigoSunat}} | Clasificador:
+                                    {{.ClasificadorCodigo}}</small>
                             </td>
                             <td>
                                 <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                                    {{if .EsOcasional}}<mark style="background-color: #eceff1; color: #37474f; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">OCASIONAL</mark>{{end}}
-                                    {{if .EsExtraordinario}}<mark style="background-color: #f3e5f5; color: #6a1b9a; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">EXTRAORDINARIO</mark>{{end}}
-                                    {{if .EsPensionable}}<mark style="background-color: #e8f5e9; color: #2e7d32; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">PENSIONABLE</mark>{{end}}
-                                    {{if .EsRemunerativa}}<mark style="background-color: #e3f2fd; color: #1565c0; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">REMUNERATIVO</mark>{{end}}
+                                    {{if .EsOcasional}}<mark
+                                        style="background-color: #eceff1; color: #37474f; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">OCASIONAL</mark>{{end}}
+                                    {{if .EsExtraordinario}}<mark
+                                        style="background-color: #f3e5f5; color: #6a1b9a; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">EXTRAORDINARIO</mark>{{end}}
+                                    {{if .EsPensionable}}<mark
+                                        style="background-color: #e8f5e9; color: #2e7d32; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">PENSIONABLE</mark>{{end}}
+                                    {{if .EsRemunerativa}}<mark
+                                        style="background-color: #e3f2fd; color: #1565c0; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">REMUNERATIVO</mark>{{end}}
                                 </div>
                             </td>
                             <td>
-                                <input type="number" step="0.01" min="0.01" name="monto_{{.ID}}" value="{{printf "%.2f" .MontoBase}}" placeholder="0.00" required style="margin-bottom: 0; padding: 0.3rem 0.5rem; text-align: right;" oninput="gestorBeneficiarios.renderizarTablaFinal()">
+                                <input type="number" step="0.01" min="0.01" name="monto_{{.ID}}" value="{{printf " %.2f"
+                                    .MontoBase}}" placeholder="0.00" required
+                                    style="margin-bottom: 0; padding: 0.3rem 0.5rem; text-align: right;"
+                                    oninput="gestorBeneficiarios.renderizarTablaFinal()">
                             </td>
                             <td style="text-align: center;">
-                                <button type="button" class="outline contrast" style="padding: 2px 8px; font-size: 0.8rem; margin-bottom: 0;" onclick="quitarConceptoDeFormulario('{{.ID}}')">
+                                <button type="button" class="outline contrast"
+                                    style="padding: 2px 8px; font-size: 0.8rem; margin-bottom: 0;"
+                                    onclick="quitarConceptoDeFormulario('{{.ID}}')">
                                     🗑️
                                 </button>
                             </td>
@@ -95,24 +116,32 @@
         </fieldset>
 
         <!-- Bloque 2: Resumen y Panel de Selección de Población -->
-        <fieldset style="background: var(--pico-card-sectionning-background); padding: 1.2rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--pico-border-color);">
+        <fieldset
+            style="background: var(--pico-card-sectionning-background); padding: 1.2rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--pico-border-color);">
             <legend><strong>2. Población Beneficiaria Acumulada</strong></legend>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
                 <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                    <mark style="background-color: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 6px; font-weight: bold; border: 1px solid #c8e6c9;">
+                    <mark
+                        style="background-color: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 6px; font-weight: bold; border: 1px solid #c8e6c9;">
                         👥 Beneficiarios: <span id="resumen-total-trabajadores">0</span> trabajadores
                     </mark>
-                    <mark style="background-color: #e3f2fd; color: #1565c0; padding: 6px 12px; border-radius: 6px; font-weight: bold; border: 1px solid #bbdefb;">
+                    <mark
+                        style="background-color: #e3f2fd; color: #1565c0; padding: 6px 12px; border-radius: 6px; font-weight: bold; border: 1px solid #bbdefb;">
                         💰 Presupuesto Estimado: S/ <span id="resumen-total-monto">0.00</span>
                     </mark>
                 </div>
 
                 <div style="display: flex; gap: 0.5rem;">
-                    <button type="button" class="outline contrast" style="width: auto; margin-bottom: 0; padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="gestorBeneficiarios.limpiarTodos()">
+                    <button type="button" class="outline contrast"
+                        style="width: auto; margin-bottom: 0; padding: 0.4rem 0.8rem; font-size: 0.85rem;"
+                        onclick="gestorBeneficiarios.limpiarTodos()">
                         🧹 Limpiar Lista
                     </button>
-                    <button type="button" class="primary" style="width: auto; margin-bottom: 0; padding: 0.4rem 1rem; font-size: 0.85rem;" onclick="abrirModalAgregarPoblacion()">
+                    <button type="button" class="primary"
+                        style="width: auto; margin-bottom: 0; padding: 0.4rem 1rem; font-size: 0.85rem;"
+                        onclick="abrirModalAgregarPoblacion()">
                         ➕ Agregar Trabajadores o Grupos
                     </button>
                 </div>
@@ -138,8 +167,11 @@
                     </thead>
                     <tbody id="tbody-beneficiarios-finales">
                         <tr id="row-sin-beneficiarios">
-                            <td colspan="8" style="text-align: center; color: var(--pico-muted-color); padding: 1.5rem;">
-                                <small>No hay trabajadores agregados a la planilla especial aún.<br>Haz clic en el botón <strong>"➕ Agregar Trabajadores o Grupos"</strong> para buscar e incluir poblaciones.</small>
+                            <td colspan="8"
+                                style="text-align: center; color: var(--pico-muted-color); padding: 1.5rem;">
+                                <small>No hay trabajadores agregados a la planilla especial aún.<br>Haz clic en el botón
+                                    <strong>"➕ Agregar Trabajadores o Grupos"</strong> para buscar e incluir
+                                    poblaciones.</small>
                             </td>
                         </tr>
                     </tbody>
@@ -166,9 +198,11 @@
         <header style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <h4 style="margin-bottom: 0;">🔍 Buscador e Inclusión Aditiva de Población</h4>
-                <small style="color: var(--pico-muted-color);">Filtra por criterio y añade trabajadores individualmente o por subgrupos sin borrar selecciones previas.</small>
+                <small style="color: var(--pico-muted-color);">Filtra por criterio y añade trabajadores individualmente
+                    o por subgrupos sin borrar selecciones previas.</small>
             </div>
-            <button aria-label="Close" class="close" onclick="cerrarModalAgregarPoblacion()" style="margin-bottom: 0;"></button>
+            <button aria-label="Close" class="close" onclick="cerrarModalAgregarPoblacion()"
+                style="margin-bottom: 0;"></button>
         </header>
 
         <div style="overflow-y: auto; padding-right: 0.5rem; flex: 1;">
@@ -180,18 +214,15 @@
                 <label>
                     Buscar Trabajador
                     <input type="search" id="filtro-q" name="q" placeholder="DNI o Apellidos y Nombres..."
-                        hx-get="/tenant/planillas/especial/trabajadores" 
-                        hx-trigger="keyup changed delay:300ms, search"
-                        hx-include="#form-filtros-especial input, #form-filtros-especial select" 
+                        hx-get="/tenant/planillas/especial/trabajadores" hx-trigger="keyup changed delay:300ms, search"
+                        hx-include="#form-filtros-especial input, #form-filtros-especial select"
                         hx-target="#contenedor-trabajadores-modal">
                 </label>
 
                 <label>
                     Régimen Laboral
-                    <select id="filtro-regimen" name="regimen_id" 
-                        hx-get="/tenant/planillas/especial/trabajadores" 
-                        hx-trigger="change" 
-                        hx-include="#form-filtros-especial input, #form-filtros-especial select" 
+                    <select id="filtro-regimen" name="regimen_id" hx-get="/tenant/planillas/especial/trabajadores"
+                        hx-trigger="change" hx-include="#form-filtros-especial input, #form-filtros-especial select"
                         hx-target="#contenedor-trabajadores-modal">
                         <option value="">-- Todos los Regímenes --</option>
                         {{range .Regimenes}}
@@ -202,10 +233,8 @@
 
                 <label>
                     Meta Presupuestal
-                    <select id="filtro-meta" name="meta_id" 
-                        hx-get="/tenant/planillas/especial/trabajadores" 
-                        hx-trigger="change" 
-                        hx-include="#form-filtros-especial input, #form-filtros-especial select" 
+                    <select id="filtro-meta" name="meta_id" hx-get="/tenant/planillas/especial/trabajadores"
+                        hx-trigger="change" hx-include="#form-filtros-especial input, #form-filtros-especial select"
                         hx-target="#contenedor-trabajadores-modal">
                         <option value="">-- Todas las Metas --</option>
                         {{range .Metas}}
@@ -216,10 +245,9 @@
 
                 <label>
                     Unidad Orgánica
-                    <select id="filtro-unidad" name="unidad_organica_id" 
-                        hx-get="/tenant/planillas/especial/trabajadores" 
-                        hx-trigger="change" 
-                        hx-include="#form-filtros-especial input, #form-filtros-especial select" 
+                    <select id="filtro-unidad" name="unidad_organica_id"
+                        hx-get="/tenant/planillas/especial/trabajadores" hx-trigger="change"
+                        hx-include="#form-filtros-especial input, #form-filtros-especial select"
                         hx-target="#contenedor-trabajadores-modal">
                         <option value="">-- Todas las Unidades --</option>
                         {{range .Unidades}}
@@ -230,16 +258,22 @@
             </div>
 
             <!-- Botones de Acción del Modal -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-                <button type="button" class="outline secondary" style="padding: 4px 10px; font-size: 0.8rem; margin-bottom: 0;" onclick="limpiarFiltrosEspecial()">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                <button type="button" class="outline secondary"
+                    style="padding: 4px 10px; font-size: 0.8rem; margin-bottom: 0;" onclick="limpiarFiltrosEspecial()">
                     🧹 Limpiar Filtros
                 </button>
 
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <button type="button" class="outline primary" style="padding: 4px 12px; font-size: 0.85rem; margin-bottom: 0;" onclick="agregarVisiblesModal()">
+                    <button type="button" class="outline primary"
+                        style="padding: 4px 12px; font-size: 0.85rem; margin-bottom: 0;"
+                        onclick="agregarVisiblesModal()">
                         ➕ Agregar Marcados en Vista
                     </button>
-                    <button type="button" class="primary" style="padding: 4px 14px; font-size: 0.85rem; margin-bottom: 0; background-color: #2e7d32; border-color: #2e7d32;" onclick="agregarTodosLosFiltradosMasivo()">
+                    <button type="button" class="primary"
+                        style="padding: 4px 14px; font-size: 0.85rem; margin-bottom: 0; background-color: #2e7d32; border-color: #2e7d32;"
+                        onclick="agregarTodosLosFiltradosMasivo()">
                         🎯 Agregar TODOS los trabajadores de este Filtro
                     </button>
                 </div>
@@ -252,7 +286,8 @@
         </div>
 
         <footer>
-            <button type="button" class="secondary" onclick="cerrarModalAgregarPoblacion()" style="width: auto; margin-bottom: 0;">
+            <button type="button" class="secondary" onclick="cerrarModalAgregarPoblacion()"
+                style="width: auto; margin-bottom: 0;">
                 Cerrar Buscador
             </button>
         </footer>
@@ -260,12 +295,15 @@
 </dialog>
 
 {{define "tabla_trabajadores_modal"}}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+<div
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
     <div style="display: flex; gap: 10px; align-items: center;">
-        <button type="button" class="outline secondary" style="padding: 2px 8px; font-size: 0.75rem; margin-bottom: 0;" onclick="marcarTodosModalVisibles(true)">
+        <button type="button" class="outline secondary" style="padding: 2px 8px; font-size: 0.75rem; margin-bottom: 0;"
+            onclick="marcarTodosModalVisibles(true)">
             ✅ Marcar Visibles
         </button>
-        <button type="button" class="outline secondary" style="padding: 2px 8px; font-size: 0.75rem; margin-bottom: 0;" onclick="marcarTodosModalVisibles(false)">
+        <button type="button" class="outline secondary" style="padding: 2px 8px; font-size: 0.75rem; margin-bottom: 0;"
+            onclick="marcarTodosModalVisibles(false)">
             ❌ Desmarcar Visibles
         </button>
     </div>
@@ -290,7 +328,7 @@
             {{range .Trabajadores}}
             <tr>
                 <td>
-                    <input type="checkbox" value="{{.ContratoID}}" class="chk-modal-trabajador" 
+                    <input type="checkbox" value="{{.ContratoID}}" class="chk-modal-trabajador"
                         data-item='{"contrato_id": {{.ContratoID}}, "trabajador_id": {{.TrabajadorID}}, "numero_documento": "{{.NumeroDocumento}}", "nombre_completo": "{{.NombreCompleto}}", "puesto_nombre": "{{.PuestoNombre}}", "regimen_nombre": "{{.RegimenNombre}}", "meta_codigo": "{{.MetaCodigo}}", "meta_descripcion": "{{.MetaDescripcion}}", "unidad_organica_nombre": "{{.UnidadOrganicaNombre}}"}'>
                 </td>
                 <td>
@@ -299,12 +337,14 @@
                 </td>
                 <td><small>{{.PuestoNombre}}</small></td>
                 <td><small>{{.RegimenNombre}}</small></td>
-                <td><small>{{if .MetaCodigo}}[{{.MetaCodigo}}] {{.MetaDescripcion}}{{else}}Default del Puesto{{end}}</small></td>
+                <td><small>{{if .MetaCodigo}}[{{.MetaCodigo}}] {{.MetaDescripcion}}{{else}}Default del
+                        Puesto{{end}}</small></td>
                 <td><small>{{if .UnidadOrganicaNombre}}{{.UnidadOrganicaNombre}}{{else}}Sin Asignar{{end}}</small></td>
             </tr>
             {{else}}
             <tr>
-                <td colspan="6" style="text-align: center;">No se encontraron trabajadores que coincidan con los filtros seleccionados.</td>
+                <td colspan="6" style="text-align: center;">No se encontraron trabajadores que coincidan con los filtros
+                    seleccionados.</td>
             </tr>
             {{end}}
         </tbody>
@@ -316,17 +356,19 @@
     <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
     <div role="group">
         {{if gt .PaginaAnterior 0}}
-        <button type="button" class="outline" hx-get="/tenant/planillas/especial/trabajadores" 
-            hx-include="#form-filtros-especial input, #form-filtros-especial select" hx-vals='{"pagina": {{.PaginaAnterior}}}' 
-            hx-target="#contenedor-trabajadores-modal" style="padding: 2px 8px; font-size: 0.8rem;">
+        <button type="button" class="outline" hx-get="/tenant/planillas/especial/trabajadores"
+            hx-include="#form-filtros-especial input, #form-filtros-especial select"
+            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#contenedor-trabajadores-modal"
+            style="padding: 2px 8px; font-size: 0.8rem;">
             ← Anterior
         </button>
         {{end}}
 
         {{if lt .PaginaActual .TotalPaginas}}
-        <button type="button" class="outline" hx-get="/tenant/planillas/especial/trabajadores" 
-            hx-include="#form-filtros-especial input, #form-filtros-especial select" hx-vals='{"pagina": {{.PaginaSiguiente}}}' 
-            hx-target="#contenedor-trabajadores-modal" style="padding: 2px 8px; font-size: 0.8rem;">
+        <button type="button" class="outline" hx-get="/tenant/planillas/especial/trabajadores"
+            hx-include="#form-filtros-especial input, #form-filtros-especial select"
+            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#contenedor-trabajadores-modal"
+            style="padding: 2px 8px; font-size: 0.8rem;">
             Siguiente →
         </button>
         {{end}}
@@ -339,7 +381,7 @@
 {{if .FormulacionTrabajadoresJSON}}{{.FormulacionTrabajadoresJSON}}{{else}}[]{{end}}
 </script>
 <script>
-window.__datosInicialesTrabajadores = {{if .FormulacionTrabajadoresJSON}}{{.FormulacionTrabajadoresJSON}}{{else}}[]{{end}};
+    window.__datosInicialesTrabajadores = {{if .FormulacionTrabajadoresJSON}}{{.FormulacionTrabajadoresJSON}}{{else}}[]{{end}};
 </script>
 
 <script>
@@ -421,7 +463,7 @@ window.__datosInicialesTrabajadores = {{if .FormulacionTrabajadoresJSON}}{{.Form
             if (worker) {
                 if (!worker.montos_custom) worker.montos_custom = {};
                 worker.montos_custom[String(conceptoID)] = parseFloat(nuevoMonto) || 0;
-                
+
                 // Actualizar la suma total del trabajador en pantalla inmediatamente
                 const conceptos = this.obtenerConceptosSeleccionados();
                 const nuevoTotal = this.obtenerMontoTotalTrabajador(worker, conceptos);
@@ -655,7 +697,7 @@ window.__datosInicialesTrabajadores = {{if .FormulacionTrabajadoresJSON}}{{.Form
                 create: false,
                 maxItems: 1,
                 plugins: ['dropdown_input'],
-                onChange: function(val) {
+                onChange: function (val) {
                     if (val) {
                         const opt = el.querySelector(`option[value="${val}"]`);
                         if (opt) agregarConceptoAFormulario(opt);
@@ -724,7 +766,7 @@ window.__datosInicialesTrabajadores = {{if .FormulacionTrabajadoresJSON}}{{.Form
             if (raw) {
                 try {
                     items.push(JSON.parse(raw));
-                } catch(e) {}
+                } catch (e) { }
             }
         });
 
@@ -769,7 +811,7 @@ window.__datosInicialesTrabajadores = {{if .FormulacionTrabajadoresJSON}}{{.Form
                 msg += ` (${res.duplicados} omitidos por estar previamente incluidos).`;
             }
             mostrarAlertaModal(msg);
-        } catch(err) {
+        } catch (err) {
             mostrarAlertaModal('❌ Error de conexión al realizar la inclusión masiva: ' + err.message, true);
         }
     }
