@@ -58,6 +58,9 @@ func (r *AnexoRepository) ObtenerCompromisoPresupuestal(planillaID int, tenantID
 		}
 		items = append(items, item)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error al iterar filas de compromiso presupuestal: %w", err)
+	}
 
 	return items, nil
 }
@@ -96,6 +99,9 @@ func (r *AnexoRepository) ObtenerSumatoriasSunat(planillaID int, tenantID int) (
 			return nil, err
 		}
 		lista = append(lista, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error al iterar filas de sumatorias SUNAT: %w", err)
 	}
 
 	return lista, nil
@@ -231,6 +237,9 @@ func (r *AnexoRepository) ObtenerResumenConceptosPlanilla(planillaID int, tenant
 		}
 		items = append(items, item)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error al iterar filas de resumen de conceptos: %w", err)
+	}
 
 	return items, nil
 }
@@ -279,6 +288,9 @@ func (r *AnexoRepository) ObtenerResumenAFP(planillaID int, tenantID int) ([]mod
 		}
 		item.TotalAFP = item.AporteObligatorio + item.Comision + item.PrimaSeguro
 		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error al iterar filas de resumen por AFP: %w", err)
 	}
 
 	return items, nil
@@ -348,6 +360,9 @@ func (r *AnexoRepository) ObtenerDevengadoAFP(planillaID int, tenantID int) ([]m
 		item.TotalFila = item.AporteObligatorio + item.Comision + item.PrimaSeguro
 		items = append(items, item)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error al iterar filas de devengado por AFP: %w", err)
+	}
 
 	return items, nil
 }
@@ -414,6 +429,9 @@ func (r *AnexoRepository) ObtenerRetencionesSunat(planillaID int, tenantID int) 
 		}
 		item.TotalFila = item.ONP + item.Renta4ta + item.Renta5ta
 		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error al iterar filas de retenciones SUNAT: %w", err)
 	}
 
 	return items, nil

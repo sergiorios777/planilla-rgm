@@ -49,3 +49,27 @@ type ConceptoReporte struct {
 	Nombre string
 	Monto  float64
 }
+
+type ConceptoFormulacionEspecial struct {
+	ID                  int     `json:"id"`
+	NombrePersonalizado string  `json:"nombre_personalizado"`
+	CodigoSunat         string  `json:"codigo_sunat"`
+	ClasificadorCodigo  string  `json:"clasificador_codigo"`
+	EsOcasional         bool    `json:"es_ocasional"`
+	EsExtraordinario    bool    `json:"es_extraordinario"`
+	EsPensionable       bool    `json:"es_pensionable"`
+	EsRemunerativa      bool    `json:"es_remunerativa"`
+	MontoBase           float64 `json:"monto_base"`
+}
+
+type TrabajadorFormulacionEspecial struct {
+	ContratoID           int                `json:"contrato_id"`
+	NombreCompleto       string             `json:"nombre_completo"`
+	NumeroDocumento      string             `json:"numero_documento"`
+	PuestoNombre         string             `json:"puesto_nombre"`
+	UnidadOrganicaNombre string             `json:"unidad_organica_nombre"`
+	RegimenNombre        string             `json:"regimen_nombre"`
+	MetaCodigo           string             `json:"meta_codigo"`
+	MetaDescripcion      string             `json:"meta_descripcion"`
+	MontosCustom         map[string]float64 `json:"montos_custom"`
+}

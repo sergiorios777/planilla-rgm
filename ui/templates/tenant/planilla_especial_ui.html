@@ -59,11 +59,36 @@
                         </tr>
                     </thead>
                     <tbody id="tbody-conceptos-seleccionados">
-                        <tr id="row-sin-conceptos">
+                        <tr id="row-sin-conceptos" {{if .FormulacionConceptos}}style="display: none;"{{end}}>
                             <td colspan="4" style="text-align: center; color: var(--pico-muted-color);">
                                 <small>No se ha agregado ningún concepto aún. Utiliza el buscador superior para seleccionar un concepto.</small>
                             </td>
                         </tr>
+                        {{range .FormulacionConceptos}}
+                        <tr id="row-concepto-{{.ID}}">
+                            <td>
+                                <input type="hidden" name="conceptos_ids" value="{{.ID}}">
+                                <strong>{{.NombrePersonalizado}}</strong><br>
+                                <small style="color: #666;">SUNAT: {{.CodigoSunat}} | Clasificador: {{.ClasificadorCodigo}}</small>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                    {{if .EsOcasional}}<mark style="background-color: #eceff1; color: #37474f; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">OCASIONAL</mark>{{end}}
+                                    {{if .EsExtraordinario}}<mark style="background-color: #f3e5f5; color: #6a1b9a; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">EXTRAORDINARIO</mark>{{end}}
+                                    {{if .EsPensionable}}<mark style="background-color: #e8f5e9; color: #2e7d32; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">PENSIONABLE</mark>{{end}}
+                                    {{if .EsRemunerativa}}<mark style="background-color: #e3f2fd; color: #1565c0; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">REMUNERATIVO</mark>{{end}}
+                                </div>
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" min="0.01" name="monto_{{.ID}}" value="{{printf "%.2f" .MontoBase}}" placeholder="0.00" required style="margin-bottom: 0; padding: 0.3rem 0.5rem; text-align: right;" oninput="gestorBeneficiarios.renderizarTablaFinal()">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" class="outline contrast" style="padding: 2px 8px; font-size: 0.8rem; margin-bottom: 0;" onclick="quitarConceptoDeFormulario('{{.ID}}')">
+                                    🗑️
+                                </button>
+                            </td>
+                        </tr>
+                        {{end}}
                     </tbody>
                 </table>
             </div>
@@ -309,9 +334,17 @@
 </div>
 {{end}}
 
+<!-- Datos iniciales de formulación para JavaScript -->
+<script id="datos-trabajadores-json" type="application/json">
+{{if .FormulacionTrabajadoresJSON}}{{.FormulacionTrabajadoresJSON}}{{else}}[]{{end}}
+</script>
+<script>
+window.__datosInicialesTrabajadores = {{if .FormulacionTrabajadoresJSON}}{{.FormulacionTrabajadoresJSON}}{{else}}[]{{end}};
+</script>
+
 <script>
     // Gestor de Memoria JS para Prorrateo, Deduplicación y Manejo Aditivo de Beneficiarios
-    class GestorBeneficiariosEspecial {
+    window.GestorBeneficiariosEspecial = window.GestorBeneficiariosEspecial || class {
         constructor() {
             this.mapa = new Map(); // Key: contrato_id (string) -> Value: workerItem { ..., montos_custom: { [concepto_id]: val } }
         }
@@ -542,10 +575,10 @@
 
             spanMonto.textContent = totalGeneral.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
-    }
+    };
 
     // Instancia Global
-    window.gestorBeneficiarios = new GestorBeneficiariosEspecial();
+    window.gestorBeneficiarios = new window.GestorBeneficiariosEspecial();
 
     // 1. Lógica para Conceptos (Bloque 1)
     function agregarConceptoAFormulario(opt) {
@@ -741,10 +774,39 @@
         }
     }
 
-    // Inicializar TomSelect al cargar
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', inicializarBuscadorConceptos);
-    } else {
+    // Inicializar TomSelect y Cargar Formulación Previa si existe
+    function inicializarFormularioEspecial() {
         inicializarBuscadorConceptos();
+        let datosInicialesTrabajadores = window.__datosInicialesTrabajadores || [];
+        if (!Array.isArray(datosInicialesTrabajadores) || datosInicialesTrabajadores.length === 0) {
+            const jsonText = document.getElementById('datos-trabajadores-json')?.textContent?.trim();
+            if (jsonText) {
+                try {
+                    datosInicialesTrabajadores = JSON.parse(jsonText);
+                } catch (err) {
+                    console.error('Error al parsear datos iniciales de trabajadores:', err);
+                }
+            }
+        }
+        if (Array.isArray(datosInicialesTrabajadores) && datosInicialesTrabajadores.length > 0) {
+            if (!window.gestorBeneficiarios) {
+                window.gestorBeneficiarios = new GestorBeneficiariosEspecial();
+            } else {
+                window.gestorBeneficiarios.limpiarTodos();
+            }
+            gestorBeneficiarios.agregarTrabajadores(datosInicialesTrabajadores);
+        }
+    }
+
+    function ejecutarInicializacionConDelay() {
+        setTimeout(() => {
+            inicializarFormularioEspecial();
+        }, 50);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ejecutarInicializacionConDelay);
+    } else {
+        ejecutarInicializacionConDelay();
     }
 </script>

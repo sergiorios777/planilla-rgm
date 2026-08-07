@@ -75,20 +75,31 @@ func (h *PlanillaHandler) Crear(w http.ResponseWriter, r *http.Request) {
 	h.Listar(w, r)
 }
 
-// Procesar ejecuta el motor de cálculo y redirige a la vista de detalle
+// Procesar ejecuta el motor de cálculo (ordinario o recálculo especial) y redirige a la vista de detalle
 func (h *PlanillaHandler) Procesar(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
 	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
 
-	servicioPlanilla := services.NewPlanillaService(h.Repo)
-	err := servicioPlanilla.Procesar(planillaID, tenantID)
+	planilla, err := h.Repo.ObtenerPorID(planillaID, tenantID)
+	if err != nil || planilla == nil {
+		http.Error(w, "Planilla no encontrada", http.StatusNotFound)
+		return
+	}
+
+	if planilla.EsExtraordinaria {
+		err = h.Repo.RecalcularPlanillaEspecial(r.Context(), planillaID, tenantID)
+	} else {
+		servicioPlanilla := services.NewPlanillaService(h.Repo)
+		err = servicioPlanilla.Procesar(planillaID, tenantID)
+	}
+
 	if err != nil {
 		// Si el motor falla, mostramos una alerta sin salir de la página
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`
 			<div id="alerta-planilla" hx-swap-oob="true">
 				<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
-					❌ Error en el Motor de Cálculo: ` + err.Error() + `
+					❌ Error al Procesar Planilla: ` + err.Error() + `
 				</article>
 			</div>
 		`))
@@ -113,16 +124,24 @@ func (h *PlanillaHandler) VistaDetalle(w http.ResponseWriter, r *http.Request) {
 	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
 
 	detalles, _ := h.Repo.ObtenerDetalles(planillaID, tenantID)
-	planillaEstado, _ := h.Repo.ObtenerEstado(planillaID, tenantID)
+	planilla, _ := h.Repo.ObtenerPorID(planillaID, tenantID)
 	metas, _ := h.Repo.ObtenerMetas(tenantID)
 	fuentesRubros, _ := h.Repo.ObtenerFuentesRubros()
 
+	planillaEstado := ""
+	esExtraordinaria := false
+	if planilla != nil {
+		planillaEstado = planilla.Estado
+		esExtraordinaria = planilla.EsExtraordinaria
+	}
+
 	datos := map[string]interface{}{
-		"PlanillaID":     planillaID,
-		"Detalles":       detalles,
-		"PlanillaEstado": planillaEstado,
-		"Metas":          metas,
-		"FuentesRubros":  fuentesRubros,
+		"PlanillaID":       planillaID,
+		"Detalles":         detalles,
+		"PlanillaEstado":   planillaEstado,
+		"EsExtraordinaria": esExtraordinaria,
+		"Metas":            metas,
+		"FuentesRubros":    fuentesRubros,
 	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/planilla_detalle_ui.html")
@@ -867,12 +886,28 @@ func (h *PlanillaHandler) VistaFormuladorEspecial(w http.ResponseWriter, r *http
 		totalPaginas = 1
 	}
 
+	// Obtener formulación existente si ya fue procesada anteriormente
+	formulacionConceptos, formulacionTrabajadores, errForm := h.Repo.ObtenerFormulacionEspecial(planillaID, tenantID)
+	if errForm != nil {
+		log.Println("❌ ERROR EN ObtenerFormulacionEspecial:", errForm)
+	}
+	log.Printf("📊 VistaFormuladorEspecial: PlanillaID=%d, Conceptos=%d, Trabajadores=%d", planillaID, len(formulacionConceptos), len(formulacionTrabajadores))
+
+	formulacionTrabajadoresJSON := "[]"
+	if len(formulacionTrabajadores) > 0 {
+		if jsonBytes, err := json.Marshal(formulacionTrabajadores); err == nil {
+			formulacionTrabajadoresJSON = string(jsonBytes)
+		}
+	}
+
 	datos := map[string]interface{}{
-		"Planilla":        planilla,
-		"ConceptosTenant": conceptosTenant,
-		"Regimenes":       regimenes,
-		"Metas":           metas,
-		"Unidades":        unidades,
+		"Planilla":                    planilla,
+		"ConceptosTenant":             conceptosTenant,
+		"Regimenes":                   regimenes,
+		"Metas":                       metas,
+		"Unidades":                    unidades,
+		"FormulacionConceptos":        formulacionConceptos,
+		"FormulacionTrabajadoresJSON": template.JS(formulacionTrabajadoresJSON),
 
 		"Trabajadores":    trabajadores,
 		"TotalRegistros":  total,
@@ -884,12 +919,26 @@ func (h *PlanillaHandler) VistaFormuladorEspecial(w http.ResponseWriter, r *http
 
 	tmpl, err := template.ParseFiles("ui/templates/tenant/planilla_especial_ui.html")
 	if err != nil {
-		http.Error(w, "Error al cargar vista de planilla especial: "+err.Error(), http.StatusInternalServerError)
+		log.Println("❌ ERROR al parsear planilla_especial_ui.html:", err)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`
+			<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin: 1rem; border-radius: 5px;">
+				❌ Error al cargar la vista de planilla especial: ` + err.Error() + `
+			</article>
+		`))
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = tmpl.Execute(w, datos)
+	err = tmpl.Execute(w, datos)
+	if err != nil {
+		log.Println("❌ ERROR Ejecutando planilla_especial_ui.html:", err)
+		w.Write([]byte(`
+			<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin: 1rem; border-radius: 5px;">
+				❌ Error al renderizar la vista de planilla especial: ` + err.Error() + `
+			</article>
+		`))
+	}
 }
 
 // BuscarTrabajadoresEspecial devuelve la tabla paginada de trabajadores filtrados para HTMX
