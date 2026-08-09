@@ -17,24 +17,22 @@
             <td>{{.Descripcion}}</td>
             <td>
                 {{if eq .TipoTransaccion "Gasto"}}
-                <mark
-                    style="background-color: #ffcdd2; color: #b71c1c; border-radius: 4px; padding: 2px 6px;">Gasto</mark>
+                <mark class="badge badge-danger">Gasto</mark>
                 {{else}}
-                <mark
-                    style="background-color: #c8e6c9; color: #1b5e20; border-radius: 4px; padding: 2px 6px;">Ingreso</mark>
+                <mark class="badge badge-success">Ingreso</mark>
                 {{end}}
             </td>
         </tr>
         {{else}}
         <tr>
-            <td colspan="5" style="text-align: center;">No hay clasificadores registrados.</td>
+            <td colspan="5" class="text-center">No hay clasificadores registrados.</td>
         </tr>
         {{end}}
     </tbody>
 </table>
 
 <!-- Controles de Paginación -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+<div class="flex-row-between mt-md">
     <!-- Mostramos el estado completo de la navegación -->
     <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
 

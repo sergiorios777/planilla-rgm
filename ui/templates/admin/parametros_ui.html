@@ -1,12 +1,12 @@
 <article>
     <header>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0;"><svg class="icono-menu">
+        <div class="flex-row-between">
+            <h3 class="m-0"><svg class="icono-menu">
                     <use href="#icono-ajustes"></use>
                 </svg>
                 Gestión de Parámetros Globales
             </h3>
-            <button class="outline" onclick="document.getElementById('modal-nuevo-parametro').showModal()" style="margin: 0;">
+            <button class="outline btn-compact" onclick="document.getElementById('modal-nuevo-parametro').showModal()">
                 <svg class="icono-menu">
                     <use href="#icono-nuevo-1"></use>
                 </svg> Nuevo Parámetro
@@ -15,11 +15,11 @@
     </header>
     
     <div>
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <div style="display:flex; justify-content: end;">
-                <input class="form-control" type="search" name="buscar"
+        <div class="card mb-lg">
+            <div class="flex-row-end">
+                <input class="form-control max-w-400 m-0" type="search" name="buscar"
                     placeholder="Buscar por clave, valor o descripción..." hx-get="/admin/parametros/lista"
-                    hx-trigger="keyup changed delay:500ms, search" hx-target="#lista-parametros" style="max-width: 400px; margin: 0;">
+                    hx-trigger="keyup changed delay:500ms, search" hx-target="#lista-parametros">
             </div>
         </div>
         <div id="lista-parametros" hx-get="/admin/parametros/lista" hx-trigger="load">
@@ -30,17 +30,17 @@
 
 <!-- Modal para registrar nuevo parámetro -->
 <dialog id="modal-nuevo-parametro">
-    <article style="max-width: 600px; width: 90%;">
+    <article class="modal-card-md">
         <header>
             <a href="#close" aria-label="Close" class="close"
                 onclick="document.getElementById('modal-nuevo-parametro').close()"></a>
             <h3>Registrar Parámetro Global</h3>
         </header>
-        <p><small style="color: var(--pico-muted-color);">Deja "Fecha Hasta" en blanco si el valor está vigente actualmente.</small></p>
+        <p><small class="text-muted">Deja "Fecha Hasta" en blanco si el valor está vigente actualmente.</small></p>
         <form id="form-nuevo-parametro" hx-post="/admin/parametros/guardar" hx-target="#lista-parametros" hx-swap="innerHTML">
             <label>
                 Clave
-                <input type="text" name="clave" placeholder="Clave (Ej. RMV)" required style="text-transform: uppercase;">
+                <input type="text" name="clave" placeholder="Clave (Ej. RMV)" required class="text-uppercase">
             </label>
             <label>
                 Valor Numérico
@@ -64,9 +64,9 @@
             </label>
 
             <footer>
-                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-nuevo-parametro').close()" style="margin-bottom: 0;">Cancelar</button>
-                    <button type="submit" style="margin-bottom: 0;">Guardar Parámetro</button>
+                <div class="flex-row-end">
+                    <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-nuevo-parametro').close()">Cancelar</button>
+                    <button type="submit" class="btn-compact">Guardar Parámetro</button>
                 </div>
             </footer>
         </form>
@@ -101,14 +101,14 @@
             </td>
             <td><small>{{.Descripcion}}</small></td>
             <td>
-                <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin: 0;"
+                <button class="outline btn-sm"
                     hx-get="/admin/parametros/editar_ui?id={{.ID}}" hx-target="#modal-editar-parametro"
                     hx-swap="innerHTML">Editar</button>
             </td>
         </tr>
         {{else}}
         <tr>
-            <td colspan="5" style="text-align: center;">No hay parámetros registrados.</td>
+            <td colspan="5" class="text-center">No hay parámetros registrados.</td>
         </tr>
         {{end}}
     </tbody>
@@ -116,18 +116,18 @@
 {{end}}
 
 {{define "formulario_editar"}}
-<article style="max-width: 600px; width: 90%;">
+<article class="modal-card-md">
     <header>
         <a href="#close" aria-label="Close" class="close"
             onclick="document.getElementById('modal-editar-parametro').close()"></a>
         <h3>✏️ Editar Parámetro: {{.Clave}}</h3>
     </header>
-    <p><small style="color: var(--pico-muted-color);">Deja "Fecha Hasta" en blanco si el valor está vigente actualmente.</small></p>
+    <p><small class="text-muted">Deja "Fecha Hasta" en blanco si el valor está vigente actualmente.</small></p>
     <form hx-post="/admin/parametros/actualizar" hx-target="#lista-parametros" hx-swap="innerHTML">
         <input type="hidden" name="id" value="{{.ID}}">
         <label>
             Clave
-            <input type="text" name="clave" value="{{.Clave}}" placeholder="Clave (Ej. RMV)" required style="text-transform: uppercase;">
+            <input type="text" name="clave" value="{{.Clave}}" placeholder="Clave (Ej. RMV)" required class="text-uppercase">
         </label>
         <label>
             Valor Numérico
@@ -151,9 +151,9 @@
         </label>
 
         <footer>
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-parametro').close()" style="margin-bottom: 0;">Cancelar</button>
-                <button type="submit" style="margin-bottom: 0;">Actualizar Parámetro</button>
+            <div class="flex-row-end">
+                <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-editar-parametro').close()">Cancelar</button>
+                <button type="submit" class="btn-compact">Actualizar Parámetro</button>
             </div>
         </footer>
     </form>

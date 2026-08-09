@@ -1,17 +1,17 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+    <header class="flex-row-between">
+        <h3 class="mb-0 flex-gap-sm">
             <svg class="icono-menu">
                 <use href="#icono-usuarios"></use>
             </svg>
             Legajo de Trabajadores
         </h3>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button class="primary" style="width: auto; margin-bottom: 0;"
+        <div class="flex-row-start flex-gap-sm">
+            <button class="primary btn-compact"
                 onclick="document.getElementById('modal-nuevo-trabajador').showModal()">
                 ➕ Registrar Nuevo Trabajador
             </button>
-            <button class="contrast outline" style="width: auto; margin-bottom: 0;"
+            <button class="contrast outline btn-compact"
                 onclick="document.getElementById('modal-importar-trabajador').showModal()">
                 <svg class="icono-menu">
                     <use href="#icono-importar"></use>
@@ -22,7 +22,7 @@
 
     <div id="contenedor-lista">
         <div class="card">
-            <div style="display:flex; justify-content: end;">
+            <div class="flex-row-end">
                 <input id="input-buscar-trabajador" class="form-control" type="search" name="buscar"
                     placeholder="Buscar por nombre o DNI..." hx-get="/tenant/trabajadores/lista"
                     hx-trigger="keyup changed delay:500ms, search" hx-target="#lista-trabajadores">
@@ -35,11 +35,11 @@
 
     <!-- Modal de Creación de Trabajador -->
     <dialog id="modal-nuevo-trabajador">
-        <article style="max-width: 750px; width: 95%;">
+        <article class="modal-card-lg">
             <header>
                 <a href="#close" aria-label="Close" class="close"
                     onclick="document.getElementById('modal-nuevo-trabajador').close()"></a>
-                <h4 style="margin-bottom: 0;">➕ Registrar Nuevo Trabajador</h4>
+                <h4 class="mb-0">➕ Registrar Nuevo Trabajador</h4>
             </header>
             {{template "formulario_crear" .}}
         </article>
@@ -47,11 +47,11 @@
 
     <!-- Modal de Importación de Trabajador -->
     <dialog id="modal-importar-trabajador">
-        <article style="max-width: 750px; width: 95%;">
+        <article class="modal-card-lg">
             <header>
                 <a href="#close" aria-label="Close" class="close"
                     onclick="document.getElementById('modal-importar-trabajador').close()"></a>
-                <h4 style="margin-bottom: 0;">📤 Importación Masiva (Excel)</h4>
+                <h4 class="mb-0">📤 Importación Masiva (Excel)</h4>
             </header>
             <div id="contenedor-formulario-importar-trabajadores">
                 {{template "formulario_importar_trabajadores" .}}
@@ -62,11 +62,11 @@
     <!-- Modal de Edición de Trabajador -->
     <dialog id="modal-editar-trabajador"
         hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
-        <article style="max-width: 750px; width: 95%;">
+        <article class="modal-card-lg">
             <header>
                 <a href="#close" aria-label="Close" class="close"
                     onclick="document.getElementById('modal-editar-trabajador').close()"></a>
-                <h4 style="margin-bottom: 0;">✏️ Editar Trabajador</h4>
+                <h4 class="mb-0">✏️ Editar Trabajador</h4>
             </header>
             <div id="contenido-modal-editar">
                 <!-- Cargar formulario aquí -->
@@ -175,11 +175,10 @@
         <input type="checkbox" name="activo" id="checkbox-activo-crear" checked> Personal Activo
     </label>
 
-    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline"
-            onclick="document.getElementById('modal-nuevo-trabajador').close()"
-            style="margin-bottom: 0; width: auto;">Cancelar</button>
-        <button type="submit" style="margin-bottom: 0; width: auto;">Guardar Trabajador</button>
+    <div class="flex-row-end mt-lg">
+        <button type="button" class="secondary outline btn-compact"
+            onclick="document.getElementById('modal-nuevo-trabajador').close()">Cancelar</button>
+        <button type="submit" class="btn-compact">Guardar Trabajador</button>
     </div>
 </form>
 {{end}}
@@ -286,11 +285,10 @@
         <input type="checkbox" name="activo" id="checkbox-activo-editar" {{if .Activo}}checked{{end}}> Personal Activo
     </label>
 
-    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline"
-            onclick="document.getElementById('modal-editar-trabajador').close()"
-            style="margin-bottom: 0; width: auto;">Cancelar</button>
-        <button type="submit" style="margin-bottom: 0; width: auto;">Actualizar</button>
+    <div class="flex-row-end mt-lg">
+        <button type="button" class="secondary outline btn-compact"
+            onclick="document.getElementById('modal-editar-trabajador').close()">Cancelar</button>
+        <button type="submit" class="btn-compact">Actualizar</button>
     </div>
 </form>
 {{end}}
@@ -316,8 +314,7 @@
             <td><small>{{.NumeroDocumento}}</small></td>
             <td><strong>{{.ApellidoPaterno}} {{.ApellidoMaterno}}</strong><br><small>{{.Nombres}}</small></td>
             <td>
-                {{if .Banco}}<strong>{{.Banco}}</strong>{{else}}<small
-                    style="color: var(--muted-color);">-</small>{{end}}
+                {{if .Banco}}<strong>{{.Banco}}</strong>{{else}}<small class="text-muted">-</small>{{end}}
             </td>
             <td>
                 <small>
@@ -332,15 +329,13 @@
             <td>{{if gt .Edad 0}}{{.Edad}} años{{else}}-{{end}}</td>
             <td>
                 {{if .Activo}}
-                <mark
-                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Activo</mark>
+                <mark class="badge badge-success">Activo</mark>
                 {{else}}
-                <mark
-                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Baja</mark>
+                <mark class="badge badge-danger">Baja</mark>
                 {{end}}
             </td>
             <td>
-                <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                <button class="outline btn-sm"
                     hx-get="/tenant/trabajadores/editar_ui?id={{.ID}}" hx-target="#contenido-modal-editar"
                     hx-swap="innerHTML">
                     Editar
@@ -349,14 +344,14 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="8" style="text-align: center;">No hay trabajadores registrados.</td>
+            <td colspan="8" class="text-center">No hay trabajadores registrados.</td>
         </tr>
         {{end}}
     </tbody>
 </table>
 
 <!-- Controles de paginación-->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+<div class="flex-row-between mt-md">
     <!-- Mostramos el estado completo de la navegación -->
     <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
 
@@ -384,18 +379,17 @@
     <p><small>Sube un archivo <b>.xlsx</b> con las 13 columnas en el orden exacto indicado a continuación. La primera
             fila (cabecera) se omitirá durante el procesamiento.</small></p>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div class="flex-row-between mb-md">
         <strong>Estructura del Archivo Excel:</strong>
-        <a href="/tenant/trabajadores/plantilla" class="button outline primary"
-            style="padding: 4px 12px; font-size: 0.85rem; margin-bottom: 0;">
-            <svg class="icono-menu" style="margin-right: 4px;">
+        <a href="/tenant/trabajadores/plantilla" class="button outline primary btn-sm btn-compact">
+            <svg class="icono-menu mr-xs">
                 <use href="#icono-importar"></use>
             </svg> Descargar Plantilla (.xlsx)
         </a>
     </div>
 
-    <div style="overflow-x: auto; margin-bottom: 1rem; border: 1px solid #e0e0e0; border-radius: 4px;">
-        <table class="striped" style="width: 100%; font-size: 0.7rem; margin-bottom: 0; white-space: nowrap;">
+    <div class="overflow-x-auto mb-md border-box">
+        <table class="striped w-full font-xs mb-0 text-nowrap">
             <thead>
                 <tr>
                     <th>A: TIPO_DOCUMENTO</th>
@@ -452,13 +446,13 @@
         hx-target="#resultado-importacion-trabajador" hx-indicator="#cargando-excel-trabajadores"
         hx-on::after-request="if(event.detail.successful) { htmx.trigger('#input-buscar-trabajador', 'search'); }">
 
-        <div class="grid" style="margin-top: 1rem;">
+        <div class="grid mt-md">
             <label>Archivo Excel (.xlsx)
                 <input type="file" name="archivo_excel" accept=".xlsx" required>
             </label>
 
-            <div style="display: flex; align-items: end; padding-bottom: var(--spacing);">
-                <button type="submit" class="contrast" style="margin-bottom: 0;">Procesar Archivo</button>
+            <div class="flex-end pb-spacing">
+                <button type="submit" class="contrast mb-0">Procesar Archivo</button>
             </div>
         </div>
 
@@ -469,12 +463,11 @@
         </span>
     </form>
 
-    <div id="resultado-importacion-trabajador" style="margin-top: 1rem;"></div>
+    <div id="resultado-importacion-trabajador" class="mt-md"></div>
 
-    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline"
-            onclick="document.getElementById('modal-importar-trabajador').close()"
-            style="margin-bottom: 0; width: auto;">Cerrar</button>
+    <div class="flex-row-end mt-lg">
+        <button type="button" class="secondary outline btn-compact"
+            onclick="document.getElementById('modal-importar-trabajador').close()">Cerrar</button>
     </div>
 </div>
 {{end}}

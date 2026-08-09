@@ -1,13 +1,13 @@
 <article>
     <header>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+        <div class="flex-row-between">
+            <h3 class="m-0 flex-align-center gap-sm">
                 <svg class="icono-menu">
                     <use href="#icono-capas"></use>
                 </svg>
                 Motor de Reglas: Conceptos Calculados
             </h3>
-            <div style="display: flex; gap: 10px;">
+            <div class="flex-gap-sm">
                 <button class="outline" onclick="document.getElementById('modal-nuevo-calculado').showModal()">
                     <svg class="icono-menu">
                         <use href="#icono-plus"></use>
@@ -29,11 +29,11 @@
             aporte por régimen laboral. Al finalizar los cambios, haga clic en <strong>Propagar Reglas</strong> para
             aplicarlos en todos los tenants.</small></p>
 
-    <div id="resultado-propagacion" style="margin-bottom: 1.5rem;"></div>
+    <div id="resultado-propagacion" class="mb-lg"></div>
 
-    <div class="grid" style="grid-template-columns: 1fr 1.5fr; gap: 2rem; align-items: start;">
+    <div class="grid-2col-asym">
         <div>
-            <h5 style="margin-top: 0; border-bottom: 1px solid #ccc; padding-bottom: 0.5rem;">Fórmulas / Conceptos
+            <h5 class="mt-0 border-bottom pb-sm">Fórmulas / Conceptos
                 Calculados</h5>
             <div id="lista-calculados" hx-get="/admin/conceptos-calculados/lista"
                 hx-trigger="load, recargarCalculados from:body" hx-target="this">
@@ -42,11 +42,10 @@
         </div>
 
         <div>
-            <h5 style="margin-top: 0; border-bottom: 1px solid #ccc; padding-bottom: 0.5rem;">Bases de Cálculo Mapeadas
+            <h5 class="mt-0 border-bottom pb-sm">Bases de Cálculo Mapeadas
             </h5>
-            <div id="contenedor-afectaciones"
-                style="background-color: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1.5rem; min-height: 250px;">
-                <p style="color: #777; text-align: center; font-style: italic; margin-top: 4rem;">Seleccione un concepto
+            <div id="contenedor-afectaciones" class="card-placeholder">
+                <p class="text-muted text-center font-italic mt-lg">Seleccione un concepto
                     calculado a la izquierda para ver y editar su base de cálculo.</p>
             </div>
         </div>
@@ -55,11 +54,11 @@
 
 <!-- Modal: Nuevo Concepto Calculado -->
 <dialog id="modal-nuevo-calculado">
-    <article style="max-width: 500px; width: 90%;">
+    <article class="modal-card-sm">
         <header>
             <a href="#close" aria-label="Close" class="close"
                 onclick="document.getElementById('modal-nuevo-calculado').close()"></a>
-            <h4 style="margin: 0;">Nuevo Concepto Calculado</h4>
+            <h4 class="m-0">Nuevo Concepto Calculado</h4>
         </header>
         <form hx-post="/admin/conceptos-calculados/crear" hx-target="#lista-calculados"
             hx-on::after-request="if(event.detail.successful) this.reset();">
@@ -76,14 +75,13 @@
             </label>
             <label>Código Interno (Para el motor Go)
                 <input type="text" name="codigo_interno" placeholder="Ej: VAC_TRUNCAS"
-                    style="text-transform: uppercase;" required>
+                    class="text-uppercase" required>
             </label>
             <footer>
-                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" class="secondary outline"
-                        onclick="document.getElementById('modal-nuevo-calculado').close()"
-                        style="margin-bottom: 0;">Cancelar</button>
-                    <button type="submit" class="secondary" style="margin-bottom: 0;">Guardar</button>
+                <div class="flex-row-end">
+                    <button type="button" class="secondary outline btn-compact"
+                        onclick="document.getElementById('modal-nuevo-calculado').close()">Cancelar</button>
+                    <button type="submit" class="secondary btn-compact">Guardar</button>
                 </div>
             </footer>
         </form>
@@ -92,7 +90,7 @@
 
 <!-- Template: Tabla de Conceptos Calculados -->
 {{define "tabla_calculados"}}
-<table class="striped" style="font-size: 0.9rem;">
+<table class="striped font-sm">
     <thead>
         <tr>
             <th>Concepto</th>
@@ -103,13 +101,13 @@
     </thead>
     <tbody>
         {{range .}}
-        <tr style="cursor: pointer;" hx-get="/admin/conceptos-calculados/afectaciones?id={{.ID}}"
+        <tr class="cursor-pointer" hx-get="/admin/conceptos-calculados/afectaciones?id={{.ID}}"
             hx-target="#contenedor-afectaciones">
             <td><strong>{{.Nombre}}</strong></td>
             <td><code>{{.CodigoInterno}}</code></td>
             <td><small>{{.Tipo}}</small></td>
             <td>
-                <button class="outline secondary" style="padding: 0.1rem 0.4rem; font-size: 0.8rem; margin-bottom: 0;"
+                <button class="outline secondary btn-sm"
                     hx-delete="/admin/conceptos-calculados/eliminar?id={{.ID}}"
                     hx-confirm="¿Está seguro de eliminar este concepto? Se eliminarán todas sus reglas asociadas."
                     hx-target="#lista-calculados" onclick="event.stopPropagation();">
@@ -119,7 +117,7 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="4" style="text-align: center;">No hay conceptos calculados registrados.</td>
+            <td colspan="4" class="text-center">No hay conceptos calculados registrados.</td>
         </tr>
         {{end}}
     </tbody>
@@ -129,20 +127,19 @@
 <!-- Template: Sección de Afectaciones del Concepto -->
 {{define "seccion_afectaciones"}}
 <div>
-    <h6 style="color: var(--pico-primary); font-weight: bold; margin-bottom: 1rem;">
+    <h6 class="text-primary font-bold mb-md">
         Editar Afectaciones - Catálogo ID #{{.CalculadoID}}
     </h6>
 
     {{range $regimen, $afectaciones := .Afectaciones}}
-    <details open
-        style="margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 6px; padding: 0.5rem 1rem; background-color: white;">
-        <summary style="font-weight: bold; font-size: 0.95rem;">📋 {{$regimen}}</summary>
-        <table style="font-size: 0.85rem; margin-bottom: 0; margin-top: 0.5rem;">
+    <details open class="border-box mb-md">
+        <summary class="font-bold font-sm">📋 {{$regimen}}</summary>
+        <table class="font-sm my-sm mb-0">
             <thead>
                 <tr>
                     <th>Variable de Cálculo</th>
                     <th>Concepto Modelo Afecto</th>
-                    <th style="width: 50px; text-align: center;">Acción</th>
+                    <th class="w-action text-center">Acción</th>
                 </tr>
             </thead>
             <tbody>
@@ -150,9 +147,8 @@
                 <tr>
                     <td><code>{{.VariableCalculo}}</code></td>
                     <td>{{.ConceptoModeloDesc}}</td>
-                    <td style="text-align: center;">
-                        <button class="outline secondary"
-                            style="padding: 0.1rem 0.3rem; font-size: 0.75rem; margin-bottom: 0;"
+                    <td class="text-center">
+                        <button class="outline secondary btn-sm"
                             hx-delete="/admin/conceptos-calculados/afectaciones/eliminar?id={{.ID}}&calc_id={{.ConceptoCalculadoID}}"
                             hx-target="#contenedor-afectaciones">
                             ❌
@@ -164,22 +160,22 @@
         </table>
     </details>
     {{else}}
-    <p style="color: #777; font-style: italic; font-size: 0.9rem; text-align: center;">No hay conceptos modelo asignados
+    <p class="text-muted font-italic font-sm text-center">No hay conceptos modelo asignados
         a esta plantilla por el momento.</p>
     {{end}}
 
-    <hr style="margin: 1.5rem 0;">
+    <hr class="my-lg">
 
     <form hx-post="/admin/conceptos-calculados/afectaciones/agregar" hx-target="#contenedor-afectaciones"
-        style="background-color: #f1f8e9; border: 1px dashed #aed581; border-radius: 6px; padding: 1rem; margin-bottom: 0;">
-        <h6 style="margin-top: 0; color: #33691e; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+        class="box-dashed-accent mb-0">
+        <h6 class="mt-0 text-success font-sm flex-align-center gap-sm">
             ➕ Agregar Concepto Modelo a la Base
         </h6>
 
         <input type="hidden" name="concepto_calculado_id" value="{{.CalculadoID}}">
 
-        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <label style="font-size: 0.85rem;">Régimen Laboral
+        <div class="grid mb-md">
+            <label class="font-sm">Régimen Laboral
                 <select name="regimen_id" required hx-get="/admin/conceptos-calculados/opciones-modelo"
                     hx-target="#select-modelo-opciones" hx-trigger="change">
                     <option value="" disabled selected>Seleccione régimen...</option>
@@ -189,7 +185,7 @@
                 </select>
             </label>
 
-            <label style="font-size: 0.85rem;">Variable de Cálculo
+            <label class="font-sm">Variable de Cálculo
                 <select name="variable_calculo" required>
                     <option value="" disabled selected>Seleccione variable...</option>
                     {{range $.Variables}}
@@ -199,14 +195,13 @@
             </label>
         </div>
 
-        <label style="font-size: 0.85rem; margin-bottom: 1rem;">Concepto Modelo (Plantilla)
+        <label class="font-sm mb-md">Concepto Modelo (Plantilla)
             <select name="concepto_modelo_id" id="select-modelo-opciones" required>
                 <option value="" disabled selected>Seleccione un régimen primero...</option>
             </select>
         </label>
 
-        <button type="submit" class="secondary outline"
-            style="width: 100%; margin-bottom: 0; font-size: 0.85rem; padding: 0.5rem 1rem;">
+        <button type="submit" class="secondary outline w-full btn-compact font-sm">
             Asociar Concepto
         </button>
     </form>

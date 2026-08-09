@@ -1,6 +1,6 @@
 <article>
     <header>
-        <h3 style="margin-bottom: 0;">
+        <h3 class="mb-0">
             <svg class="icono-menu">
                 <use href="#icono-edificio-2"></use>
             </svg>
@@ -8,16 +8,16 @@
         </h3>
     </header>
 
-    <div style="margin-bottom: 1rem; display: flex; justify-content: space-between;">
+    <div class="flex-row-between mb-md">
         <label>Consultar Año:
             <select name="anio" hx-get="/admin/fuentes-rubros/lista" hx-target="#lista-fuentes"
-                style="max-width: 150px; display: inline-block; margin-left: 10px;">
+                class="max-w-300 d-inline-block ml-sm">
                 <option value="2026" selected>2026</option>
                 <option value="2027">2027</option>
             </select>
         </label>
         <div class="card">
-            <div style="display:flex; justify-content: end;">
+            <div class="flex-row-end">
                 <input class="form-control" type="search" name="buscar" placeholder="Buscar fuente o rubro..."
                     hx-get="/admin/fuentes-rubros/lista" hx-trigger="keyup changed delay:500ms, search"
                     hx-target="#lista-fuentes">
@@ -34,7 +34,7 @@
 <table class="striped">
     <thead>
         <tr>
-            <th style="width: 100px;">Código</th>
+            <th class="w-100">Código</th>
             <th>Fuente de Financiamiento</th>
             <th>Rubro</th>
             <th>Estado</th>
@@ -54,15 +54,15 @@
     <td><small>{{.Rubro}}</small></td>
     <td>
         {{if .Activo}}
-        <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Activo</mark>
+        <mark class="badge badge-success">Activo</mark>
         {{else}}
-        <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Inactivo</mark>
+        <mark class="badge badge-danger">Inactivo</mark>
         {{end}}
     </td>
 </tr>
 {{else}}
 <tr>
-    <td colspan="4" style="text-align: center;">No hay registros para este año.</td>
+    <td colspan="4" class="text-center">No hay registros para este año.</td>
 </tr>
 {{end}}
 {{end}}

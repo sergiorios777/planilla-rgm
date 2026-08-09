@@ -1,28 +1,28 @@
 <article>
     <header>
-        <h3 style="margin: 0;">📊 Centro de Informes y Reportes Institucionales</h3>
+        <h3 class="m-0">📊 Centro de Informes y Reportes Institucionales</h3>
         <small>Extrae, visualiza y exporta la información oficial de la municipalidad.</small>
     </header>
 
-    <div class="grid" style="grid-template-columns: 250px 1fr; gap: 2rem;">
+    <div class="grid layout-sidebar-main">
         
         <aside>
             <nav>
-                <h5 style="margin-top: 0; padding-left: 0.5rem; color: var(--pico-muted-color);">Módulos</h5>
-                <ul style="list-style: none; padding-left: 0;">
-                    <li><button class="outline secondary style-btn" hx-get="/tenant/reportes/filtrar?modulo=TODOS" hx-target="#panel-lista-reportes" style="width: 100%; text-align: left; margin-bottom: 0.5rem;">📂 Todos los Reportes</button></li>
-                    <li><button class="outline secondary style-btn" hx-get="/tenant/reportes/filtrar?modulo=TRABAJADORES" hx-target="#panel-lista-reportes" style="width: 100%; text-align: left; margin-bottom: 0.5rem;">👥 Trabajadores</button></li>
-                    <li><button class="outline secondary style-btn" hx-get="/tenant/reportes/filtrar?modulo=ORGANIGRAMA" hx-target="#panel-lista-reportes" style="width: 100%; text-align: left; margin-bottom: 0.5rem;">🏢 Organigrama</button></li>
-                    <li><button class="outline secondary style-btn" hx-get="/tenant/reportes/filtrar?modulo=PUESTOS" hx-target="#panel-lista-reportes" style="width: 100%; text-align: left; margin-bottom: 0.5rem;">📊 Puestos (Plazas)</button></li>
-                    <li><button class="outline secondary style-btn" hx-get="/tenant/reportes/filtrar?modulo=CONCEPTOS" hx-target="#panel-lista-reportes" style="width: 100%; text-align: left; margin-bottom: 0.5rem;">⚙️ Conceptos</button></li>
-                    <li><button class="outline secondary style-btn" hx-get="/tenant/reportes/filtrar?modulo=CONTRATOS" hx-target="#panel-lista-reportes" style="width: 100%; text-align: left; margin-bottom: 0.5rem;">⏳ Contratos</button></li>
+                <h5 class="mt-0 pl-sm text-muted">Módulos</h5>
+                <ul class="list-none pl-0">
+                    <li><button class="outline secondary style-btn w-full text-left mb-sm" hx-get="/tenant/reportes/filtrar?modulo=TODOS" hx-target="#panel-lista-reportes">📂 Todos los Reportes</button></li>
+                    <li><button class="outline secondary style-btn w-full text-left mb-sm" hx-get="/tenant/reportes/filtrar?modulo=TRABAJADORES" hx-target="#panel-lista-reportes">👥 Trabajadores</button></li>
+                    <li><button class="outline secondary style-btn w-full text-left mb-sm" hx-get="/tenant/reportes/filtrar?modulo=ORGANIGRAMA" hx-target="#panel-lista-reportes">🏢 Organigrama</button></li>
+                    <li><button class="outline secondary style-btn w-full text-left mb-sm" hx-get="/tenant/reportes/filtrar?modulo=PUESTOS" hx-target="#panel-lista-reportes">📊 Puestos (Plazas)</button></li>
+                    <li><button class="outline secondary style-btn w-full text-left mb-sm" hx-get="/tenant/reportes/filtrar?modulo=CONCEPTOS" hx-target="#panel-lista-reportes">⚙️ Conceptos</button></li>
+                    <li><button class="outline secondary style-btn w-full text-left mb-sm" hx-get="/tenant/reportes/filtrar?modulo=CONTRATOS" hx-target="#panel-lista-reportes">⏳ Contratos</button></li>
                 </ul>
             </nav>
         </aside>
 
         <section>
             <div id="panel-lista-reportes" hx-get="/tenant/reportes/filtrar?modulo=TODOS" hx-trigger="load">
-                <div aria-busy="true" style="text-align: center;">Cargando catálogo de informes...</div>
+                <div aria-busy="true" class="text-center">Cargando catálogo de informes...</div>
             </div>
         </section>
 
@@ -30,24 +30,24 @@
 </article>
 
 {{define "lista_reportes"}}
-    <div style="display: flex; flex-direction: column; gap: 1rem;">
+    <div class="flex-column flex-gap-md">
         {{range .Reportes}}
-        <div style="border: 1px solid var(--pico-border-color); padding: 1.25rem; border-radius: var(--pico-border-radius); background: var(--pico-card-background-color);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-                <div style="flex: 1; min-width: 250px;">
-                    <h5 style="margin: 0 0 0.25rem 0;">{{.Nombre}}</h5>
-                    <p style="margin: 0; font-size: 0.85rem; color: var(--pico-muted-color);">{{.Descripcion}}</p>
+        <div class="border-box p-md">
+            <div class="flex-row-between flex-align-start">
+                <div class="flex-grow min-w-250">
+                    <h5 class="m-0 mb-xs">{{.Nombre}}</h5>
+                    <p class="m-0 font-sm text-muted">{{.Descripcion}}</p>
                     
-                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
-                        <span style="font-size: 0.7rem; background: var(--pico-secondary-background); padding: 2px 8px; border-radius: 4px; font-weight: bold; height: fit-content;">
+                    <div class="flex-row-start flex-gap-md mt-sm">
+                        <span class="badge badge-secondary">
                             📂 {{.Modulo}}
                         </span>
 
                         {{if eq .ID "trab_cumple"}}
                         <!-- Selector de Mes de Cumpleaños -->
-                        <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
-                            <label style="margin: 0; font-size: 0.8rem; font-weight: bold;">Mes:</label>
-                            <select style="width: auto; margin: 0; padding: 0.2rem 1.5rem 0.2rem 0.5rem; font-size: 0.8rem; height: auto;" 
+                        <div class="inline-flex-center flex-gap-sm">
+                            <label class="m-0 font-xs font-bold">Mes:</label>
+                            <select class="select-compact" 
                                     onchange="document.getElementById('pdf-trab_cumple').href='/tenant/reportes/ver-pdf?id=trab_cumple&mes=' + this.value; document.getElementById('excel-trab_cumple').href='/tenant/reportes/descargar-excel?id=trab_cumple&mes=' + this.value;">
                                 <option value="1" {{if eq $.MesActual 1}}selected{{end}}>Enero</option>
                                 <option value="2" {{if eq $.MesActual 2}}selected{{end}}>Febrero</option>
@@ -67,35 +67,35 @@
 
                         {{if eq .ID "contrato_vence"}}
                         <!-- Input de Días de Vencimiento -->
-                        <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
-                            <label style="margin: 0; font-size: 0.8rem; font-weight: bold;">Rango (días):</label>
-                            <input type="number" value="30" min="1" max="365" style="width: 70px; margin: 0; padding: 0.2rem 0.4rem; font-size: 0.8rem; height: auto;"
+                        <div class="inline-flex-center flex-gap-sm">
+                            <label class="m-0 font-xs font-bold">Rango (días):</label>
+                            <input type="number" value="30" min="1" max="365" class="w-70 input-compact"
                                    oninput="document.getElementById('pdf-contrato_vence').href='/tenant/reportes/ver-pdf?id=contrato_vence&dias=' + this.value; document.getElementById('excel-contrato_vence').href='/tenant/reportes/descargar-excel?id=contrato_vence&dias=' + this.value;">
                         </div>
                         {{end}}
                     </div>
                 </div>
                 
-                <div role="group" style="margin-bottom: 0; width: auto; display: inline-flex; gap: 0.5rem;">
+                <div role="group" class="mb-0 w-auto inline-flex flex-gap-sm">
                     {{if eq .ID "trab_cumple"}}
-                    <a id="pdf-trab_cumple" href="/tenant/reportes/ver-pdf?id=trab_cumple&mes={{$.MesActual}}" target="_blank" class="button outline secondary" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; text-decoration: none;">
+                    <a id="pdf-trab_cumple" href="/tenant/reportes/ver-pdf?id=trab_cumple&mes={{$.MesActual}}" target="_blank" class="button outline secondary btn-sm text-no-underline">
                         👁️ Ver PDF
                     </a>
-                    <a id="excel-trab_cumple" href="/tenant/reportes/descargar-excel?id=trab_cumple&mes={{$.MesActual}}" class="button outline contrast" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; text-decoration: none;">
+                    <a id="excel-trab_cumple" href="/tenant/reportes/descargar-excel?id=trab_cumple&mes={{$.MesActual}}" class="button outline contrast btn-sm text-no-underline">
                         📥 Excel
                     </a>
                     {{else if eq .ID "contrato_vence"}}
-                    <a id="pdf-contrato_vence" href="/tenant/reportes/ver-pdf?id=contrato_vence&dias=30" target="_blank" class="button outline secondary" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; text-decoration: none;">
+                    <a id="pdf-contrato_vence" href="/tenant/reportes/ver-pdf?id=contrato_vence&dias=30" target="_blank" class="button outline secondary btn-sm text-no-underline">
                         👁️ Ver PDF
                     </a>
-                    <a id="excel-contrato_vence" href="/tenant/reportes/descargar-excel?id=contrato_vence&dias=30" class="button outline contrast" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; text-decoration: none;">
+                    <a id="excel-contrato_vence" href="/tenant/reportes/descargar-excel?id=contrato_vence&dias=30" class="button outline contrast btn-sm text-no-underline">
                         📥 Excel
                     </a>
                     {{else}}
-                    <a href="/tenant/reportes/ver-pdf?id={{.ID}}" target="_blank" class="button outline secondary" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; text-decoration: none;">
+                    <a href="/tenant/reportes/ver-pdf?id={{.ID}}" target="_blank" class="button outline secondary btn-sm text-no-underline">
                         👁️ Ver PDF
                     </a>
-                    <a href="/tenant/reportes/descargar-excel?id={{.ID}}" class="button outline contrast" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; text-decoration: none;">
+                    <a href="/tenant/reportes/descargar-excel?id={{.ID}}" class="button outline contrast btn-sm text-no-underline">
                         📥 Excel
                     </a>
                     {{end}}
@@ -103,7 +103,7 @@
             </div>
         </div>
         {{else}}
-        <div style="text-align: center; padding: 2rem; font-style: italic; color: var(--pico-muted-color);">
+        <div class="text-center p-md font-italic text-muted">
             No se encontraron reportes disponibles para este módulo.
         </div>
         {{end}}

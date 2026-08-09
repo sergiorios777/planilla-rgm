@@ -1,7 +1,7 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <header class="flex-row-between">
         <div>
-            <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <h3 class="mb-0 flex-gap-sm">
                 🎯 Asignación de Metas y Fuentes/Rubros de Financiamiento
             </h3>
             <p><small>Gestión atómica de afectación presupuestal por concepto de planilla para este periodo.</small></p>
@@ -9,11 +9,11 @@
         <div>
             <span id="badge-estado-planilla">
                 {{if eq .PlanillaEstado "BORRADOR"}}
-                <mark style="background-color: #fff9c4; color: #f57f17; padding: 6px 12px; border-radius: 6px; font-weight: bold;">
+                <mark class="badge badge-warning">
                     📝 BORRADOR (Edición Permitida)
                 </mark>
                 {{else}}
-                <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 6px 12px; border-radius: 6px; font-weight: bold;">
+                <mark class="badge badge-success">
                     🔒 PLANILLA CERRADA (Solo Lectura)
                 </mark>
                 {{end}}
@@ -22,37 +22,37 @@
     </header>
 
     <!-- Toolbar superior de acciones -->
-    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
-        <button class="secondary outline" hx-get="/tenant/planillas/detalle/ui?id={{.PlanillaID}}" hx-target="#contenido-tenant" style="margin-bottom: 0; width: auto;">
+    <div class="flex-row-start mb-lg">
+        <button class="secondary outline btn-compact" hx-get="/tenant/planillas/detalle/ui?id={{.PlanillaID}}" hx-target="#contenido-tenant">
             ⬅️ Volver a Detalle
         </button>
 
-        <button class="secondary outline" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant" style="margin-bottom: 0; width: auto;">
+        <button class="secondary outline btn-compact" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
             ⬅️ Volver al Historial
         </button>
 
         {{if eq .PlanillaEstado "BORRADOR"}}
-        <button id="btn-bulk-asignar-meta" class="primary outline" onclick="abrirModalBulkAsignar()" style="margin-bottom: 0; width: auto;" disabled>
+        <button id="btn-bulk-asignar-meta" class="primary outline btn-compact" onclick="abrirModalBulkAsignar()" disabled>
             📦 Asignar Meta/Rubro a Seleccionados (<span id="cnt-seleccionados">0</span>)
         </button>
         {{end}}
 
-        <span style="flex-grow: 1;"></span>
+        <span class="flex-grow"></span>
 
-        <button class="contrast outline" onclick="document.getElementById('modal-resumen-precierre').showModal()" style="margin-bottom: 0; width: auto;">
+        <button class="contrast outline btn-compact" onclick="document.getElementById('modal-resumen-precierre').showModal()">
             📊 Resumen Pre-Cierre Presupuestal
         </button>
     </div>
 
     <!-- Barra de Filtros Presupuestales -->
-    <div style="background-color: var(--pico-card-background-color, #f8f9fa); border: 1px solid var(--pico-border-color, #e0e0e0); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
-        <h4 style="margin-bottom: 0.75rem; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+    <div class="border-box mb-lg">
+        <h4 class="mb-sm font-sm flex-gap-sm">
             🔍 Filtros de Malla Presupuestal
         </h4>
-        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
-            <label style="margin-bottom: 0; font-size: 0.85rem;">
+        <div class="grid-auto-fit">
+            <label class="mb-0 font-sm">
                 🎯 Meta Presupuestal
-                <select id="filtro-meta-detalle" onchange="filtrarMallaPresupuestal()" style="margin-bottom: 0;">
+                <select id="filtro-meta-detalle" onchange="filtrarMallaPresupuestal()" class="mb-0">
                     <option value="">-- Todas las Metas --</option>
                     <option value="__SIN_META__">⚠️ Sin Meta Asignada</option>
                     {{range .Metas}}
@@ -61,9 +61,9 @@
                 </select>
             </label>
 
-            <label style="margin-bottom: 0; font-size: 0.85rem;">
+            <label class="mb-0 font-sm">
                 🏛️ Fuente / Rubro
-                <select id="filtro-rubro-detalle" onchange="filtrarMallaPresupuestal()" style="margin-bottom: 0;">
+                <select id="filtro-rubro-detalle" onchange="filtrarMallaPresupuestal()" class="mb-0">
                     <option value="">-- Todos los Rubros --</option>
                     <option value="__SIN_RUBRO__">⚠️ Sin Rubro Asignado</option>
                     {{range .FuentesRubros}}
@@ -72,9 +72,9 @@
                 </select>
             </label>
 
-            <label style="margin-bottom: 0; font-size: 0.85rem;">
+            <label class="mb-0 font-sm">
                 🏷️ Tipo de Concepto
-                <select id="filtro-tipo-detalle" onchange="filtrarMallaPresupuestal()" style="margin-bottom: 0;">
+                <select id="filtro-tipo-detalle" onchange="filtrarMallaPresupuestal()" class="mb-0">
                     <option value="">-- Todos los Tipos --</option>
                     <option value="INGRESO">Ingresos</option>
                     <option value="RETENCION">Retenciones / Descuentos</option>
@@ -82,19 +82,19 @@
                 </select>
             </label>
 
-            <label style="margin-bottom: 0; font-size: 0.85rem;">
+            <label class="mb-0 font-sm">
                 🔎 Buscar Trabajador / Concepto
-                <input type="search" id="filtro-buscar-detalle" placeholder="Nombre, doc, clasificador..." onkeyup="filtrarMallaPresupuestal()" style="margin-bottom: 0;">
+                <input type="search" id="filtro-buscar-detalle" placeholder="Nombre, doc, clasificador..." onkeyup="filtrarMallaPresupuestal()" class="mb-0">
             </label>
         </div>
     </div>
 
     <!-- Malla Presupuestal por Concepto -->
-    <div style="overflow-x: auto;">
-        <table class="striped" style="font-size: 0.85em;">
+    <div class="overflow-x-auto">
+        <table class="striped condensed">
             <thead>
                 <tr>
-                    <th style="width: 40px; text-align: center;">
+                    <th class="w-40 text-center">
                         <input type="checkbox" id="chk-seleccionar-todos-conceptos" onchange="toggleSeleccionarTodosConceptos(this)" title="Seleccionar Todos">
                     </th>
                     <th>Trabajador / Plaza</th>
@@ -122,16 +122,16 @@
                         data-meta-id="{{if .MetaID}}{{.MetaID}}{{end}}"
                         data-rubro-id="{{if .FuenteRubroID}}{{.FuenteRubroID}}{{end}}">
                         
-                        <td style="text-align: center;">
+                        <td class="text-center">
                             {{if and (eq $estado "BORRADOR") (ne .TipoConcepto "RETENCION")}}
                             <input type="checkbox" class="chk-concepto-item" value="{{.ID}}" onchange="actualizarContadorSeleccionados()">
                             {{else}}
-                            <span style="color: #bbb;">-</span>
+                            <span class="text-muted">-</span>
                             {{end}}
                         </td>
                         <td>
                             <strong>{{$det.TrabajadorNombre}}</strong><br>
-                            <small style="color: var(--pico-muted-color);">{{$det.PuestoNombre}}</small>
+                            <small class="text-muted">{{$det.PuestoNombre}}</small>
                         </td>
                         <td>
                             <strong>{{.NombreEnBoleta}}</strong><br>
@@ -139,11 +139,11 @@
                         </td>
                         <td>
                             {{if eq .TipoConcepto "INGRESO"}}
-                            <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">INGRESO</mark>
+                            <mark class="badge badge-success">INGRESO</mark>
                             {{else if eq .TipoConcepto "RETENCION"}}
-                            <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">DESCUENTO</mark>
+                            <mark class="badge badge-danger">DESCUENTO</mark>
                             {{else}}
-                            <mark style="background-color: #bbdefb; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">APORTE</mark>
+                            <mark class="badge badge-info">APORTE</mark>
                             {{end}}
                         </td>
                         <td><small><strong>{{if .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}}</strong></small></td>
@@ -152,13 +152,13 @@
                         <!-- Columna Meta -->
                         <td class="celda-meta">
                             {{if .MetaCodigo}}
-                            <abbr title="{{.MetaDescripcion}}" style="background: #e3f2fd; color: #0d47a1; padding: 3px 8px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold; border: 1px solid #90caf9;">
+                            <abbr title="{{.MetaDescripcion}}" class="badge badge-info">
                                 🎯 {{.MetaCodigo}}
                             </abbr>
                             {{else if eq .TipoConcepto "RETENCION"}}
-                            <small style="color: var(--pico-muted-color);">N/A (Retención)</small>
+                            <small class="text-muted">N/A (Retención)</small>
                             {{else}}
-                            <mark style="background-color: #ffebee; color: #c62828; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; border: 1px solid #ffcdd2;">
+                            <mark class="badge badge-danger">
                                 ⚠️ Sin Meta
                             </mark>
                             {{end}}
@@ -167,13 +167,13 @@
                         <!-- Columna Fuente / Rubro -->
                         <td class="celda-rubro">
                             {{if .FuenteRubroCodigo}}
-                            <abbr title="{{.FuenteRubroDescripcion}}" style="background: #efebe9; color: #4e342e; padding: 3px 8px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold; border: 1px solid #d7ccc8;">
+                            <abbr title="{{.FuenteRubroDescripcion}}" class="badge badge-purple">
                                 🏛️ {{.FuenteRubroCodigo}}
                             </abbr>
                             {{else if eq .TipoConcepto "RETENCION"}}
-                            <small style="color: var(--pico-muted-color);">N/A (Retención)</small>
+                            <small class="text-muted">N/A (Retención)</small>
                             {{else}}
-                            <mark style="background-color: #ffebee; color: #c62828; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; border: 1px solid #ffcdd2;">
+                            <mark class="badge badge-danger">
                                 ⚠️ Sin Rubro
                             </mark>
                             {{end}}
@@ -182,12 +182,12 @@
                         {{if eq $estado "BORRADOR"}}
                         <td>
                             {{if ne .TipoConcepto "RETENCION"}}
-                            <button class="outline primary" style="padding: 2px 8px; font-size: 0.75rem; margin-bottom: 0;"
+                            <button class="outline primary btn-badge"
                                 onclick="abrirModalEditarSingleConcepto('{{.ID}}', '{{.NombreEnBoleta}}', '{{$det.TrabajadorNombre}}', '{{.Monto}}', '{{if .MetaID}}{{.MetaID}}{{end}}', '{{if .FuenteRubroID}}{{.FuenteRubroID}}{{end}}')">
                                 ✏️ Meta/Rubro
                             </button>
                             {{else}}
-                            <small style="color: var(--pico-muted-color);">-</small>
+                            <small class="text-muted">-</small>
                             {{end}}
                         </td>
                         {{end}}
@@ -195,7 +195,7 @@
                     {{end}}
                 {{else}}
                 <tr>
-                    <td colspan="9" style="text-align: center; padding: 2rem;">No hay desglose de conceptos disponible para esta planilla.</td>
+                    <td colspan="9" class="text-center p-md">No hay desglose de conceptos disponible para esta planilla.</td>
                 </tr>
                 {{end}}
             </tbody>
@@ -205,12 +205,12 @@
 
 <!-- MODAL 1: Asignación Masiva (Bulk Action) vía HTMX -->
 <dialog id="modal-bulk-asignar-meta-rubro">
-    <article style="max-width: 600px; width: 95%;">
+    <article class="modal-card-md">
         <header>
             <a href="#close" aria-label="Close" class="close" onclick="cerrarModalBulkAsignar()"></a>
-            <h4 style="margin-bottom: 0;">📦 Asignación Masiva de Meta y Fuente/Rubro</h4>
+            <h4 class="mb-0">📦 Asignación Masiva de Meta y Fuente/Rubro</h4>
         </header>
-        <div style="padding-top: 1rem;">
+        <div class="pt-md">
             <p>Se actualizará la afectación presupuestal de <strong><span id="bulk-modal-count">0</span></strong> conceptos seleccionados:</p>
             
             <form hx-post="/tenant/planillas/conceptos/actualizar-presupuesto-bulk" hx-target="#contenido-tenant" onsubmit="prepararSubmitBulk()">
@@ -235,9 +235,9 @@
                     </select>
                 </label>
 
-                <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-                    <button type="button" class="secondary outline" onclick="cerrarModalBulkAsignar()" style="margin-bottom: 0; width: auto;">Cancelar</button>
-                    <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">💾 Aplicar Asignación Masiva</button>
+                <div class="flex-row-end mt-lg">
+                    <button type="button" class="secondary outline btn-compact" onclick="cerrarModalBulkAsignar()">Cancelar</button>
+                    <button type="submit" class="primary btn-compact">💾 Aplicar Asignación Masiva</button>
                 </div>
             </form>
         </div>
@@ -246,16 +246,16 @@
 
 <!-- MODAL 2: Edición Individual vía HTMX -->
 <dialog id="modal-editar-single-concepto">
-    <article style="max-width: 600px; width: 95%;">
+    <article class="modal-card-md">
         <header>
             <a href="#close" aria-label="Close" class="close" onclick="cerrarModalEditarSingleConcepto()"></a>
-            <h4 style="margin-bottom: 0;">✏️ Asignar Meta y Rubro al Concepto</h4>
+            <h4 class="mb-0">✏️ Asignar Meta y Rubro al Concepto</h4>
         </header>
-        <div style="padding-top: 1rem;">
-            <div style="background-color: var(--pico-card-background-color, #f5f5f5); padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; border-left: 4px solid var(--pico-primary);">
-                <strong id="single-concepto-nombre" style="display: block; font-size: 1rem;">Concepto</strong>
-                <small id="single-trabajador-nombre" style="color: var(--pico-muted-color);">Trabajador</small> - 
-                <small id="single-monto" style="font-weight: bold; color: var(--pico-primary);">S/ 0.00</small>
+        <div class="pt-md">
+            <div class="callout-box">
+                <strong id="single-concepto-nombre" class="d-block font-sm">Concepto</strong>
+                <small id="single-trabajador-nombre" class="text-muted">Trabajador</small> - 
+                <small id="single-monto" class="font-bold text-primary">S/ 0.00</small>
             </div>
 
             <form hx-post="/tenant/planillas/conceptos/actualizar-presupuesto-single" hx-target="#contenido-tenant">
@@ -280,9 +280,9 @@
                     </select>
                 </label>
 
-                <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-                    <button type="button" class="secondary outline" onclick="cerrarModalEditarSingleConcepto()" style="margin-bottom: 0; width: auto;">Cancelar</button>
-                    <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">💾 Guardar Cambios</button>
+                <div class="flex-row-end mt-lg">
+                    <button type="button" class="secondary outline btn-compact" onclick="cerrarModalEditarSingleConcepto()">Cancelar</button>
+                    <button type="submit" class="primary btn-compact">💾 Guardar Cambios</button>
                 </div>
             </form>
         </div>
@@ -291,14 +291,14 @@
 
 <!-- MODAL 3: Resumen Pre-Cierre Presupuestal -->
 <dialog id="modal-resumen-precierre">
-    <article style="max-width: 800px; width: 95%;">
+    <article class="modal-card-xl">
         <header>
             <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-resumen-precierre').close()"></a>
-            <h4 style="margin-bottom: 0;">📊 Resumen de Ejecución Presupuestal Pre-Cierre</h4>
+            <h4 class="mb-0">📊 Resumen de Ejecución Presupuestal Pre-Cierre</h4>
         </header>
-        <div style="padding-top: 1rem;">
+        <div class="pt-md">
             <p><small>Agrupación de afectación presupuestal de la planilla en estado Borrador.</small></p>
-            <table class="striped" style="font-size: 0.85em;">
+            <table class="striped condensed">
                 <thead>
                     <tr>
                         <th>Meta</th>
@@ -312,8 +312,8 @@
                         {{range .Conceptos}}
                         {{if ne .TipoConcepto "RETENCION"}}
                         <tr>
-                            <td>{{if .MetaCodigo}}[{{.MetaCodigo}}] {{.MetaDescripcion}}{{else}}<span style="color:red;">⚠️ Sin Meta</span>{{end}}</td>
-                            <td>{{if .FuenteRubroCodigo}}[{{.FuenteRubroCodigo}}] {{.FuenteRubroDescripcion}}{{else}}<span style="color:red;">⚠️ Sin Rubro</span>{{end}}</td>
+                            <td>{{if .MetaCodigo}}[{{.MetaCodigo}}] {{.MetaDescripcion}}{{else}}<span class="text-danger">⚠️ Sin Meta</span>{{end}}</td>
+                            <td>{{if .FuenteRubroCodigo}}[{{.FuenteRubroCodigo}}] {{.FuenteRubroDescripcion}}{{else}}<span class="text-danger">⚠️ Sin Rubro</span>{{end}}</td>
                             <td>{{.TipoConcepto}}</td>
                             <td>S/ {{printf "%.2f" .Monto}}</td>
                         </tr>
@@ -321,13 +321,13 @@
                         {{end}}
                     {{else}}
                     <tr>
-                        <td colspan="4" style="text-align:center;">Sin datos de planilla.</td>
+                        <td colspan="4" class="text-center">Sin datos de planilla.</td>
                     </tr>
                     {{end}}
                 </tbody>
             </table>
-            <div style="display: flex; justify-content: end; margin-top: 1rem;">
-                <button type="button" class="secondary" onclick="document.getElementById('modal-resumen-precierre').close()" style="margin-bottom: 0; width: auto;">Cerrar</button>
+            <div class="flex-row-end mt-md">
+                <button type="button" class="secondary btn-compact" onclick="document.getElementById('modal-resumen-precierre').close()">Cerrar</button>
             </div>
         </div>
     </article>

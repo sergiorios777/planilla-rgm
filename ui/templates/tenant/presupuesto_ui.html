@@ -49,7 +49,7 @@
                         <option value="12">Diciembre</option>
                     </select>
                 </label>
-                <button type="submit" class="primary" style="margin-top: 1rem;">⚙️ Generar Proyección</button>
+                <button type="submit" class="primary mt-md">⚙️ Generar Proyección</button>
             </div>
 
             <div>
@@ -59,13 +59,13 @@
     </form>
 
     <!-- Indicador de carga (Oculto por defecto por HTMX) -->
-    <div id="indicador-carga" class="htmx-indicator" style="text-align: center; padding: 2rem;">
+    <div id="indicador-carga" class="htmx-indicator text-center p-md">
         <p aria-busy="true">Calculando proyección anual de la planilla. Esto puede tardar unos segundos...</p>
     </div>
 </article>
 
 <!-- Contenedor donde aparecerá el mensaje de éxito o error devuelto por Go -->
-<div id="resultado-presupuesto" style="margin-top: 1rem;">
+<div id="resultado-presupuesto" class="mt-md">
     <!-- El resultado se inyectará aquí -->
 </div>
 
@@ -100,7 +100,7 @@
             </label>
         </div>
 
-        <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <div class="mt-lg flex-row-start flex-gap-sm">
             <!-- 1. Ver en pantalla: Usa HTMX. hx-include envía los datos del form -->
             <button type="button" class="primary" hx-get="/tenant/presupuesto/matriz" hx-include="#form-reportes"
                 hx-target="#matriz-contenedor">
@@ -126,30 +126,30 @@
 </article>
 
     <!-- Contenedor para el botón "Ver en pantalla" -->
-    <div id="matriz-contenedor" style="margin-top: 2rem;"></div>
+    <div id="matriz-contenedor" class="mt-lg"></div>
 
     <!-- SECCIÓN: Reglas de Financiamiento Excepcional -->
-    <article style="margin-top: 2rem;">
-        <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <article class="mt-lg">
+        <header class="flex-row-between">
             <div>
-                <h3 style="margin-bottom: 0;">⚡ Reglas de Financiamiento Excepcional</h3>
+                <h3 class="mb-0">⚡ Reglas de Financiamiento Excepcional</h3>
                 <p><small>Prioridad de asignación de Metas y Rubros por Concepto / Régimen antes de procesar planilla (Pre-cálculo).</small></p>
             </div>
-            <button class="primary" style="width: auto; margin-bottom: 0;" onclick="abrirModalCrearReglaFinanciamiento()">
+            <button class="primary btn-compact" onclick="abrirModalCrearReglaFinanciamiento()">
                 ➕ Crear Regla Excepcional
             </button>
         </header>
 
-        <div style="background-color: var(--pico-card-background-color, #f8f9fa); border: 1px solid var(--pico-border-color, #e0e0e0); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
-            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
-                <label style="margin-bottom: 0;">
+        <div class="border-box mb-lg">
+            <div class="grid-auto-fit-200">
+                <label class="mb-0">
                     🔎 Buscar Regla
-                    <input type="search" id="filtro-regla-buscar" placeholder="Concepto, meta, rubro o motivo..." onkeyup="filtrarTablaReglasFinanciamiento()" style="margin-bottom: 0;">
+                    <input type="search" id="filtro-regla-buscar" placeholder="Concepto, meta, rubro o motivo..." onkeyup="filtrarTablaReglasFinanciamiento()" class="mb-0">
                 </label>
 
-                <label style="margin-bottom: 0;">
+                <label class="mb-0">
                     📋 Régimen Laboral
-                    <select id="filtro-regla-regimen" onchange="filtrarTablaReglasFinanciamiento()" style="margin-bottom: 0;">
+                    <select id="filtro-regla-regimen" onchange="filtrarTablaReglasFinanciamiento()" class="mb-0">
                         <option value="">Todos los Regímenes</option>
                         {{range .Regimenes}}
                         <option value="{{.ID}}">{{.Descripcion}}</option>
@@ -157,9 +157,9 @@
                     </select>
                 </label>
 
-                <label style="margin-bottom: 0;">
+                <label class="mb-0">
                     📌 Estado
-                    <select id="filtro-regla-estado" onchange="filtrarTablaReglasFinanciamiento()" style="margin-bottom: 0;">
+                    <select id="filtro-regla-estado" onchange="filtrarTablaReglasFinanciamiento()" class="mb-0">
                         <option value="">Todos</option>
                         <option value="1">Activas</option>
                         <option value="0">Inactivas / Deshabilitadas</option>
@@ -168,8 +168,8 @@
             </div>
         </div>
 
-        <div style="overflow-x: auto;">
-            <table class="striped" style="font-size: 0.9em;">
+        <div class="overflow-x-auto">
+            <table class="striped font-sm">
                 <thead>
                     <tr>
                         <th>Concepto Afecto</th>
@@ -195,48 +195,48 @@
                         
                         <td>
                             <strong>{{.ConceptoNombre}}</strong><br>
-                            <small style="color: var(--pico-muted-color);">SUNAT: {{.CodigoSunat}}</small>
+                            <small class="text-muted">SUNAT: {{.CodigoSunat}}</small>
                         </td>
                         <td>
                             {{if .RegimenNombre}}
-                            <span style="background: #e0f2f1; color: #004d40; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">{{.RegimenNombre}}</span>
+                            <span class="badge badge-teal">{{.RegimenNombre}}</span>
                             {{else}}
-                            <span style="color: var(--pico-muted-color);">Todos los Regímenes</span>
+                            <span class="text-muted">Todos los Regímenes</span>
                             {{end}}
                         </td>
                         <td>
                             {{if .MetaCodigo}}
-                            <abbr title="{{.MetaDescripcion}}" style="background: #e3f2fd; color: #0d47a1; padding: 3px 8px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold;">
+                            <abbr title="{{.MetaDescripcion}}" class="badge badge-info">
                                 🎯 {{.MetaCodigo}}
                             </abbr>
                             {{else}}
-                            <small style="color: var(--pico-muted-color);">(Mantener Meta Puesto)</small>
+                            <small class="text-muted">(Mantener Meta Puesto)</small>
                             {{end}}
                         </td>
                         <td>
                             {{if .FuenteRubroCodigo}}
-                            <abbr title="{{.FuenteRubroDescripcion}}" style="background: #efebe9; color: #4e342e; padding: 3px 8px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold;">
+                            <abbr title="{{.FuenteRubroDescripcion}}" class="badge badge-purple">
                                 🏛️ {{.FuenteRubroCodigo}}
                             </abbr>
                             {{else}}
-                            <small style="color: var(--pico-muted-color);">(Mantener Rubro Puesto)</small>
+                            <small class="text-muted">(Mantener Rubro Puesto)</small>
                             {{end}}
                         </td>
                         <td><small>{{if .Motivo}}{{.Motivo}}{{else}}Sin especificación{{end}}</small></td>
                         <td>
                             {{if .Activo}}
-                            <span style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">Activa</span>
+                            <span class="badge badge-success">Activa</span>
                             {{else}}
-                            <span style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">Inactiva</span>
+                            <span class="badge badge-danger">Inactiva</span>
                             {{end}}
                         </td>
                         <td>
-                            <div style="display: flex; gap: 4px;">
-                                <button class="outline secondary" style="padding: 2px 6px; font-size: 0.75rem; margin-bottom: 0;"
+                            <div class="flex-gap-xs">
+                                <button class="outline secondary btn-badge"
                                     onclick="abrirModalEditarReglaFinanciamiento('{{.ID}}', '{{.ConceptoTenantID}}', '{{.RegimenID}}', '{{.MetaID}}', '{{.FuenteRubroID}}', '{{.Motivo}}', {{.Activo}})">
                                     ✏️ Editar
                                 </button>
-                                <button class="outline contrast" style="padding: 2px 6px; font-size: 0.75rem; margin-bottom: 0;"
+                                <button class="outline contrast btn-badge"
                                     onclick="toggleEstadoReglaFinanciamiento('{{.ID}}', {{.Activo}})">
                                     {{if .Activo}}🚫 Desactivar{{else}}✅ Activar{{end}}
                                 </button>
@@ -245,7 +245,7 @@
                     </tr>
                     {{else}}
                     <tr id="row-sin-reglas">
-                        <td colspan="7" style="text-align: center; padding: 2rem;">No se han configurado reglas de financiamiento excepcional aún.</td>
+                        <td colspan="7" class="text-center p-md">No se han configurado reglas de financiamiento excepcional aún.</td>
                     </tr>
                     {{end}}
                 </tbody>
@@ -255,12 +255,12 @@
 
     <!-- Modal Creación / Edición de Regla de Financiamiento Excepcional -->
     <dialog id="modal-regla-financiamiento">
-        <article style="max-width: 650px; width: 95%;">
+        <article class="modal-card-lg">
             <header>
                 <a href="#close" aria-label="Close" class="close" onclick="cerrarModalReglaFinanciamiento()"></a>
-                <h4 id="regla-modal-titulo" style="margin-bottom: 0;">⚡ Crear Regla de Financiamiento Excepcional</h4>
+                <h4 id="regla-modal-titulo" class="mb-0">⚡ Crear Regla de Financiamiento Excepcional</h4>
             </header>
-            <div style="padding-top: 1rem;">
+            <div class="pt-md">
                 <form id="form-regla-financiamiento" onsubmit="guardarReglaFinanciamiento(event)">
                     <input type="hidden" id="regla-id">
 
@@ -308,14 +308,14 @@
                         <input type="text" id="regla-motivo" placeholder="Ej. Decreto de Urgencia N° 015-2026 / Convenio Colectivo">
                     </label>
 
-                    <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-                        <input type="checkbox" id="regla-activo" checked style="margin-bottom: 0;">
+                    <label class="flex-gap-sm mt-sm">
+                        <input type="checkbox" id="regla-activo" checked class="mb-0">
                         <strong>Regla Activa para los siguientes cálculos de planilla</strong>
                     </label>
 
-                    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-                        <button type="button" class="secondary outline" onclick="cerrarModalReglaFinanciamiento()" style="margin-bottom: 0; width: auto;">Cancelar</button>
-                        <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">💾 Guardar Regla Excepcional</button>
+                    <div class="flex-row-end mt-lg">
+                        <button type="button" class="secondary outline btn-compact" onclick="cerrarModalReglaFinanciamiento()">Cancelar</button>
+                        <button type="submit" class="primary btn-compact">💾 Guardar Regla Excepcional</button>
                     </div>
                 </form>
             </div>
@@ -417,11 +417,11 @@
                 row.setAttribute('data-texto', `${conceptoTexto} ${regimenTexto} ${metaTexto} ${rubroTexto} ${motivo}`);
 
                 row.cells[0].innerHTML = `<strong>${conceptoTexto}</strong>`;
-                row.cells[1].innerHTML = `<span style="background: #e0f2f1; color: #004d40; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${regimenTexto}</span>`;
-                row.cells[2].innerHTML = metaCodigo ? `<abbr title="${metaTexto}" style="background: #e3f2fd; color: #0d47a1; padding: 3px 8px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold;">🎯 ${metaCodigo}</abbr>` : `<small style="color: var(--pico-muted-color);">(Mantener Meta Puesto)</small>`;
-                row.cells[3].innerHTML = `<abbr title="${rubroTexto}" style="background: #efebe9; color: #4e342e; padding: 3px 8px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold;">🏛️ ${rubroCodigo}</abbr>`;
+                row.cells[1].innerHTML = `<span class="badge badge-teal">${regimenTexto}</span>`;
+                row.cells[2].innerHTML = metaCodigo ? `<abbr title="${metaTexto}" class="badge badge-info">🎯 ${metaCodigo}</abbr>` : `<small class="text-muted">(Mantener Meta Puesto)</small>`;
+                row.cells[3].innerHTML = `<abbr title="${rubroTexto}" class="badge badge-purple">🏛️ ${rubroCodigo}</abbr>`;
                 row.cells[4].innerHTML = `<small>${motivo || 'Sin especificación'}</small>`;
-                row.cells[5].innerHTML = activo ? `<span style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">Activa</span>` : `<span style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">Inactiva</span>`;
+                row.cells[5].innerHTML = activo ? `<span class="badge badge-success">Activa</span>` : `<span class="badge badge-danger">Inactiva</span>`;
             }
         } else {
             const newId = Date.now();
@@ -438,15 +438,15 @@
 
             tr.innerHTML = `
                 <td><strong>${conceptoTexto}</strong></td>
-                <td><span style="background: #e0f2f1; color: #004d40; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${regimenTexto}</span></td>
-                <td>${metaCodigo ? `<abbr title="${metaTexto}" style="background: #e3f2fd; color: #0d47a1; padding: 3px 8px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold;">🎯 ${metaCodigo}</abbr>` : `<small style="color: var(--pico-muted-color);">(Mantener Meta Puesto)</small>`}</td>
-                <td><abbr title="${rubroTexto}" style="background: #efebe9; color: #4e342e; padding: 3px 8px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold;">🏛️ ${rubroCodigo}</abbr></td>
+                <td><span class="badge badge-teal">${regimenTexto}</span></td>
+                <td>${metaCodigo ? `<abbr title="${metaTexto}" class="badge badge-info">🎯 ${metaCodigo}</abbr>` : `<small class="text-muted">(Mantener Meta Puesto)</small>`}</td>
+                <td><abbr title="${rubroTexto}" class="badge badge-purple">🏛️ ${rubroCodigo}</abbr></td>
                 <td><small>${motivo || 'Sin especificación'}</small></td>
-                <td>${activo ? `<span style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">Activa</span>` : `<span style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">Inactiva</span>`}</td>
+                <td>${activo ? `<span class="badge badge-success">Activa</span>` : `<span class="badge badge-danger">Inactiva</span>`}</td>
                 <td>
-                    <div style="display: flex; gap: 4px;">
-                        <button class="outline secondary" style="padding: 2px 6px; font-size: 0.75rem; margin-bottom: 0;" onclick="abrirModalEditarReglaFinanciamiento('${newId}', '${conceptoSelect.value}', '${regimenSelect.value}', '${metaSelect.value}', '${rubroSelect.value}', '${motivo}', ${activo})">✏️ Editar</button>
-                        <button class="outline contrast" style="padding: 2px 6px; font-size: 0.75rem; margin-bottom: 0;" onclick="toggleEstadoReglaFinanciamiento('${newId}', ${activo})">🚫 Desactivar</button>
+                    <div class="flex-gap-xs">
+                        <button class="outline secondary btn-badge" onclick="abrirModalEditarReglaFinanciamiento('${newId}', '${conceptoSelect.value}', '${regimenSelect.value}', '${metaSelect.value}', '${rubroSelect.value}', '${motivo}', ${activo})">✏️ Editar</button>
+                        <button class="outline contrast btn-badge" onclick="toggleEstadoReglaFinanciamiento('${newId}', ${activo})">🚫 Desactivar</button>
                     </div>
                 </td>
             `;
@@ -466,8 +466,8 @@
     </header>
 
     <!-- figure ayuda a que la tabla sea scrolleable horizontalmente en pantallas pequeñas -->
-    <figure style="overflow-x: auto;">
-        <table role="grid" style="font-size: 0.85em; white-space: nowrap;">
+    <figure class="overflow-x-auto">
+        <table role="grid" class="font-sm text-nowrap">
             <thead>
                 <tr>
                     <th scope="col">Meta</th>

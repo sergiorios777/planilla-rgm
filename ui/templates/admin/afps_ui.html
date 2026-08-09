@@ -1,20 +1,20 @@
 <article x-data="{ activeTab: 'tasas' }">
     <header>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <h3 style="margin: 0;">
+        <div class="flex-row-between">
+            <h3 class="m-0">
                 <svg class="icono-menu">
                     <use href="#icono-piggy-bank"></use>
                 </svg>
                 Gestión de Comisiones y Administradoras de AFP
             </h3>
             
-            <nav style="margin-bottom: 0;">
-                <ul style="margin-bottom: 0; display: flex; gap: 0.5rem; list-style: none; padding: 0;">
+            <nav class="mb-0">
+                <ul class="mb-0 flex-gap-sm list-unstyled p-0">
                     <li>
                         <button :class="activeTab === 'tasas' ? 'primary' : 'outline secondary'" 
                                 @click="activeTab = 'tasas'" 
                                 type="button"
-                                style="margin-bottom: 0; padding: 0.4rem 0.8rem; font-size: 0.9rem;">
+                                class="btn-compact font-sm">
                             📅 Comisiones Mensuales
                         </button>
                     </li>
@@ -22,7 +22,7 @@
                         <button :class="activeTab === 'afps' ? 'primary' : 'outline secondary'" 
                                 @click="activeTab = 'afps'" 
                                 type="button"
-                                style="margin-bottom: 0; padding: 0.4rem 0.8rem; font-size: 0.9rem;">
+                                class="btn-compact font-sm">
                             🏢 Administradoras (AFPs)
                         </button>
                     </li>
@@ -33,9 +33,9 @@
 
     <!-- Pestaña 1: Comisiones Mensuales -->
     <div x-show="activeTab === 'tasas'">
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-            <form id="form-filtros-tasas" class="grid" style="margin-bottom: 0; flex-grow: 1; max-width: 500px;">
-                <label style="margin-bottom: 0;">
+        <div class="flex-row-between flex-align-end mb-lg">
+            <form id="form-filtros-tasas" class="grid mb-0 flex-grow max-w-500">
+                <label class="mb-0">
                     Año
                     <select name="anio" hx-get="/admin/afps/tasas" hx-target="#lista-tasas" hx-include="#form-filtros-tasas">
                         <option value="2025">2025</option>
@@ -43,7 +43,7 @@
                         <option value="2027">2027</option>
                     </select>
                 </label>
-                <label style="margin-bottom: 0;">
+                <label class="mb-0">
                     Mes
                     <select name="mes" hx-get="/admin/afps/tasas" hx-target="#lista-tasas" hx-include="#form-filtros-tasas">
                         <option value="1">Enero</option>
@@ -96,7 +96,7 @@
                 })();
             </script>
             
-            <button class="outline secondary" onclick="document.getElementById('modal-importar-tasas').setAttribute('open', 'true')" style="margin-bottom: 0; width: auto;" type="button">
+            <button class="outline secondary btn-compact" onclick="document.getElementById('modal-importar-tasas').setAttribute('open', 'true')" type="button">
                 <svg class="icono-menu">
                     <use href="#icono-importar"></use>
                 </svg>
@@ -105,24 +105,24 @@
         </div>
 
         <div id="lista-tasas" hx-get="/admin/afps/tasas" hx-trigger="load, tasasActualizadas from:body" hx-include="#form-filtros-tasas">
-            <p aria-busy="true" style="text-align: center;">Cargando tasas de AFP...</p>
+            <p aria-busy="true" class="text-center">Cargando tasas de AFP...</p>
         </div>
     </div>
 
     <!-- Pestaña 2: Administradoras (AFPs) -->
     <div x-show="activeTab === 'afps'">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-            <input class="form-control" type="search" name="buscar" placeholder="Buscar AFP por nombre..."
+        <div class="flex-row-between mb-lg">
+            <input class="form-control mb-0 max-w-400 w-full" type="search" name="buscar" placeholder="Buscar AFP por nombre..."
                 hx-get="/admin/afps" hx-trigger="keyup changed delay:500ms, search"
-                hx-target="#lista-afps-cuerpo" style="margin-bottom: 0; max-width: 400px; width: 100%;">
+                hx-target="#lista-afps-cuerpo">
                 
-            <button class="primary" onclick="document.getElementById('modal-crear-afp').setAttribute('open', 'true')" style="margin-bottom: 0; width: auto;" type="button">
+            <button class="primary btn-compact" onclick="document.getElementById('modal-crear-afp').setAttribute('open', 'true')" type="button">
                 ➕ Registrar Nueva AFP
             </button>
         </div>
 
         <div id="lista-afps" hx-get="/admin/afps" hx-trigger="load">
-            <p aria-busy="true" style="text-align: center;">Cargando administradoras...</p>
+            <p aria-busy="true" class="text-center">Cargando administradoras...</p>
         </div>
     </div>
 </article>
@@ -132,10 +132,10 @@
 
 <!-- Modal de Carga de CSV -->
 <dialog id="modal-importar-tasas">
-    <article style="max-width: 600px; width: 100%;">
+    <article class="modal-card-md">
         <header>
             <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-importar-tasas').removeAttribute('open')"></button>
-            <h3 style="margin: 0;">
+            <h3 class="m-0">
                 <svg class="icono-menu">
                     <use href="#icono-importar"></use>
                 </svg>
@@ -173,18 +173,18 @@
                 <input type="file" id="archivo_csv_input" name="archivo_csv" accept=".csv" required>
             </label>
             
-            <div style="margin: 1rem 0; padding: 0.75rem; font-size: 0.85rem; border: 1px solid var(--pico-muted-border-color); border-radius: 4px; background-color: var(--pico-form-element-background-color);">
+            <div class="border-box my-md font-sm">
                 <strong>Estructura esperada del CSV (con cabecera):</strong><br>
                 <code>AFP, Comisión Flujo, Comisión Saldo, Prima Seguro, Aporte Obligatorio</code><br>
                 <span>Ejemplo: <code>HABITAT, 1.47%, 1.25%, 1.37%, 10.00%</code></span><br>
-                <small style="color: var(--pico-muted-color);">Nota: También se acepta formato decimal (ej: <code>0.0147, 0.0125</code>).</small>
+                <small class="text-muted">Nota: También se acepta formato decimal (ej: <code>0.0147, 0.0125</code>).</small>
             </div>
             
-            <div id="mensaje-importacion" style="margin-bottom: 1rem; font-size: 0.95rem;"></div>
+            <div id="mensaje-importacion" class="mb-md font-sm"></div>
             
-            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-                <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-tasas').removeAttribute('open')" style="margin-bottom: 0; width: auto;">Cancelar</button>
-                <button type="submit" style="margin-bottom: 0; width: auto;">Iniciar Importación</button>
+            <footer class="flex-row-end">
+                <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-importar-tasas').removeAttribute('open')">Cancelar</button>
+                <button type="submit" class="btn-compact">Iniciar Importación</button>
             </footer>
         </form>
     </article>
@@ -192,10 +192,10 @@
 
 <!-- Modal de Creación de AFP -->
 <dialog id="modal-crear-afp">
-    <article style="max-width: 600px; width: 100%;">
+    <article class="modal-card-md">
         <header>
             <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-crear-afp').removeAttribute('open')"></button>
-            <h3 style="margin: 0;">➕ Registrar Nueva AFP</h3>
+            <h3 class="m-0">➕ Registrar Nueva AFP</h3>
         </header>
         <form hx-post="/admin/afps/crear" hx-target="#lista-afps-cuerpo" hx-swap="innerHTML" 
               hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('modal-crear-afp').removeAttribute('open'); }">
@@ -206,13 +206,13 @@
             <label for="codigo_sbs">Código SBS</label>
             <input type="text" id="codigo_sbs" name="codigo_sbs" placeholder="Ej: 21" maxlength="10">
 
-            <label style="margin-bottom: 1.5rem;">
+            <label class="mb-lg">
                 <input type="checkbox" name="activo" checked> Administradora Activa
             </label>
             
-            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-                <button type="button" class="secondary outline" onclick="document.getElementById('modal-crear-afp').removeAttribute('open')" style="margin-bottom: 0; width: auto;">Cancelar</button>
-                <button type="submit" style="margin-bottom: 0; width: auto;">Guardar AFP</button>
+            <footer class="flex-row-end">
+                <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-crear-afp').removeAttribute('open')">Cancelar</button>
+                <button type="submit" class="btn-compact">Guardar AFP</button>
             </footer>
         </form>
     </article>
@@ -221,10 +221,10 @@
 <!-- BLOQUE: Formulario de Edición de AFP (Cargado dinámicamente) -->
 {{define "formulario_editar_afp"}}
 <dialog id="modal-editar-afp" open>
-    <article style="max-width: 600px; width: 100%;">
+    <article class="modal-card-md">
         <header>
             <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-editar-afp').removeAttribute('open'); document.getElementById('contenedor-modal-editar-afp').innerHTML = '';"></button>
-            <h3 style="margin: 0;">✏️ Editando: {{.Nombre}}</h3>
+            <h3 class="m-0">✏️ Editando: {{.Nombre}}</h3>
         </header>
         <form hx-post="/admin/afps/actualizar" hx-target="#contenido-principal" hx-swap="innerHTML">
             <input type="hidden" name="id" value="{{.ID}}">
@@ -235,13 +235,13 @@
             <label for="edit-codigo_sbs">Código SBS</label>
             <input type="text" id="edit-codigo_sbs" name="codigo_sbs" value="{{.CodigoSBS}}" maxlength="10">
 
-            <label style="margin-bottom: 1.5rem;">
+            <label class="mb-lg">
                 <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Administradora Activa
             </label>
 
-            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-                <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-afp').removeAttribute('open'); document.getElementById('contenedor-modal-editar-afp').innerHTML = '';" style="margin-bottom: 0; width: auto;">Cancelar</button>
-                <button type="submit" style="margin-bottom: 0; width: auto;">Actualizar AFP</button>
+            <footer class="flex-row-end">
+                <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-editar-afp').removeAttribute('open'); document.getElementById('contenedor-modal-editar-afp').innerHTML = '';">Cancelar</button>
+                <button type="submit" class="btn-compact">Actualizar AFP</button>
             </footer>
         </form>
     </article>
@@ -275,13 +275,13 @@
     <td><code>{{if .CodigoSBS}}{{.CodigoSBS}}{{else}}-{{end}}</code></td>
     <td>
         {{if .Activo}}
-        <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">Activo</mark>
+        <mark class="badge badge-success">Activo</mark>
         {{else}}
-        <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">Inactivo</mark>
+        <mark class="badge badge-danger">Inactivo</mark>
         {{end}}
     </td>
     <td>
-        <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0; width: auto;"
+        <button class="outline btn-sm"
             hx-get="/admin/afps/editar_ui?id={{.ID}}" hx-target="#contenedor-modal-editar-afp" hx-swap="innerHTML" type="button">
             Editar
         </button>
@@ -289,7 +289,7 @@
 </tr>
 {{else}}
 <tr>
-    <td colspan="5" style="text-align: center;">No hay administradoras registradas.</td>
+    <td colspan="5" class="text-center">No hay administradoras registradas.</td>
 </tr>
 {{end}}
 {{end}}
@@ -302,12 +302,12 @@
             <tr>
                 <th>AFP</th>
                 <th>Código SBS</th>
-                <th style="text-align: right;">Aporte Obligatorio</th>
-                <th style="text-align: right;">Comisión Flujo</th>
-                <th style="text-align: right;">Comisión Mixta Flujo</th>
-                <th style="text-align: right;">Comisión Saldo (Anual)</th>
-                <th style="text-align: right;">Prima Seguro</th>
-                <th style="text-align: center;">Estado Registro</th>
+                <th class="text-right">Aporte Obligatorio</th>
+                <th class="text-right">Comisión Flujo</th>
+                <th class="text-right">Comisión Mixta Flujo</th>
+                <th class="text-right">Comisión Saldo (Anual)</th>
+                <th class="text-right">Prima Seguro</th>
+                <th class="text-center">Estado Registro</th>
             </tr>
         </thead>
         <tbody>
@@ -315,22 +315,22 @@
             <tr>
                 <td><strong>{{.AfpNombre}}</strong></td>
                 <td><code>{{if .AfpCodigoSBS}}{{.AfpCodigoSBS}}{{else}}-{{end}}</code></td>
-                <td style="text-align: right;">{{printf "%.2f" .AportePct}}%</td>
-                <td style="text-align: right;">{{printf "%.2f" .FlujoPct}}%</td>
-                <td style="text-align: right;">{{printf "%.2f" .MixtaPct}}%</td>
-                <td style="text-align: right;">{{printf "%.2f" .SaldoPct}}%</td>
-                <td style="text-align: right;">{{printf "%.2f" .PrimaPct}}%</td>
-                <td style="text-align: center;">
+                <td class="text-right">{{printf "%.2f" .AportePct}}%</td>
+                <td class="text-right">{{printf "%.2f" .FlujoPct}}%</td>
+                <td class="text-right">{{printf "%.2f" .MixtaPct}}%</td>
+                <td class="text-right">{{printf "%.2f" .SaldoPct}}%</td>
+                <td class="text-right">{{printf "%.2f" .PrimaPct}}%</td>
+                <td class="text-center">
                     {{if .Registrado}}
-                    <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Cargado</mark>
+                    <mark class="badge badge-success">Cargado</mark>
                     {{else}}
-                    <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Pendiente</mark>
+                    <mark class="badge badge-danger">Pendiente</mark>
                     {{end}}
                 </td>
             </tr>
             {{else}}
             <tr>
-                <td colspan="8" style="text-align: center;">No hay administradoras activas registradas en el sistema.</td>
+                <td colspan="8" class="text-center">No hay administradoras activas registradas en el sistema.</td>
             </tr>
             {{end}}
         </tbody>

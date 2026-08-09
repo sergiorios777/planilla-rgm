@@ -1,12 +1,12 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+    <header class="flex-row-between">
+        <h3 class="mb-0 flex-items-center flex-gap-sm">
             <svg class="icono-menu">
                 <use href="#icono-maletin"></use>
             </svg>
             Compensación por Tiempo de Servicios (CTS Semestral)
         </h3>
-        <button class="primary" style="width: auto; margin-bottom: 0;"
+        <button class="primary btn-compact"
             onclick="document.getElementById('modal-nueva-cts').showModal()">
             <svg class="icono-menu">
                 <use href="#icono-plus"></use>
@@ -23,10 +23,10 @@
 
 <!-- Modal de Cálculo de CTS -->
 <dialog id="modal-nueva-cts">
-    <article style="max-width: 600px; width: 95%;">
+    <article class="modal-card-md">
         <header>
             <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nueva-cts').close()"></a>
-            <h4 style="margin-bottom: 0;">
+            <h4 class="mb-0">
                 <svg class="icono-menu">
                     <use href="#icono-plus"></use>
                 </svg>
@@ -40,7 +40,7 @@
 </dialog>
 
 {{define "formulario_crear_cts"}}
-<div style="padding-top: 1rem;">
+<div class="pt-md">
     <div id="alerta-cts"></div>
     <form hx-post="/tenant/cts/crear" hx-target="#lista-cts" hx-swap="innerHTML"
         hx-on::after-request="if (event.detail.successful && !event.detail.xhr.responseText.includes('<div id=\'alerta-cts\'')) { document.getElementById('modal-nueva-cts').close(); this.reset(); }">
@@ -55,10 +55,10 @@
                 </select>
             </label>
         </div>
-        <p><small style="color: #555;">El sistema identificará automáticamente a los trabajadores activos del régimen DL 728 con derecho a percibir este beneficio.</small></p>
-        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-            <button type="button" class="secondary outline" onclick="document.getElementById('modal-nueva-cts').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
-            <button type="submit" style="margin-bottom: 0; width: auto;">Procesar Cálculo</button>
+        <p><small class="text-muted">El sistema identificará automáticamente a los trabajadores activos del régimen DL 728 con derecho a percibir este beneficio.</small></p>
+        <div class="flex-row-end mt-lg">
+            <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-nueva-cts').close()">Cancelar</button>
+            <button type="submit" class="btn-compact">Procesar Cálculo</button>
         </div>
     </form>
 </div>
@@ -81,13 +81,13 @@
             <td>{{.FechaCalculo.Format "02/01/2006 15:04"}}</td>
             <td>
                 {{if eq .Estado "BORRADOR"}}
-                <mark style="background-color: #fff9c4; color: #f57f17; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Borrador</mark>
+                <mark class="badge badge-warning font-sm">Borrador</mark>
                 {{else if eq .Estado "CERRADO"}}
-                <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Cerrado</mark>
+                <mark class="badge badge-success font-sm">Cerrado</mark>
                 {{end}}
             </td>
             <td>
-                <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0;"
+                <button class="outline btn-sm"
                     hx-get="/tenant/cts/detalle?id={{.ID}}" hx-target="#contenido-tenant">
                     <svg class="icono-menu">
                         <use href="#icono-eye"></use>
@@ -95,7 +95,7 @@
                     Ver Detalle
                 </button>
                 {{if eq .Estado "BORRADOR"}}
-                <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0;"
+                <button class="outline secondary btn-sm"
                     hx-delete="/tenant/cts/eliminar?id={{.ID}}" hx-target="#lista-cts"
                     hx-confirm="¿Está seguro de que desea eliminar este cálculo de CTS?">
                     <svg class="icono-menu">
@@ -108,7 +108,7 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="4" style="text-align: center;">No hay periodos de CTS procesados.</td>
+            <td colspan="4" class="text-center">No hay periodos de CTS procesados.</td>
         </tr>
         {{end}}
     </tbody>

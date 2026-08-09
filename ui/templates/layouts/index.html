@@ -5,82 +5,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{.Title}}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        /* Reducimos el tamaño base de la fuente de toda la aplicación */
-        html {
-            font-size: 14px;
-            /* El valor original suele ser 16px o más */
-        }
-
-        /* Estilos para el Layout Principal */
-        .layout-admin {
-            display: grid;
-            grid-template-columns: 260px 1fr;
-            /* El menú mide 260px, el contenido toma el resto */
-            gap: 2rem;
-            align-items: start;
-        }
-
-        .icono-menu {
-            width: 1.25em;
-            height: 1.25em;
-            vertical-align: -0.125em;
-            margin-right: 0.5rem;
-        }
-
-        /* Diseño responsivo: En pantallas móviles (tablets/celulares) se pone uno debajo del otro */
-        @media (max-width: 768px) {
-            .layout-admin {
-                grid-template-columns: 1fr;
-            }
-
-            .sidebar {
-                border-right: none;
-                border-bottom: 1px solid #e0e0e0;
-                min-height: auto;
-                padding-bottom: 1rem;
-            }
-        }
-
-        /* Estilos visuales del menú lateral */
-        .sidebar {
-            border-right: 1px solid #e0e0e0;
-            padding-right: 1rem;
-            min-height: 80vh;
-        }
-
-        .sidebar a {
-            display: block;
-            padding: 0.5rem;
-            border-radius: 0.25rem;
-            text-decoration: none;
-            color: var(--pico-color);
-        }
-
-        .sidebar a:hover {
-            background-color: var(--pico-form-element-background-color);
-        }
-    </style>
 </head>
 
-<body>
-    <nav class="container-fluid" style="border-bottom: 1px solid #e0e0e0; margin-bottom: 2rem;">
+<body class="admin-theme">
+    <nav class="container-fluid nav-header">
         <ul>
             <li><strong>💼 Planillas RGM</strong></li>
         </ul>
-        <ul style="display: flex; align-items: center; gap: 1rem;">
+        <ul class="flex-gap-md mb-0">
             <li id="campana-notificaciones-contenedor" 
                 hx-get="/notificaciones/campana" 
                 hx-trigger="every 30s, load" 
                 hx-swap="innerHTML"
-                style="margin-bottom: 0;">
+                class="mb-0">
             </li>
-            <li style="margin-bottom: 0;">Panel Súper Admin</li>
-            <li style="margin-bottom: 0;">
-                <button class="outline secondary" style="padding: 0.25rem 0.75rem; font-size: 0.85rem; margin-bottom: 0;"
+            <li class="mb-0"><span class="badge badge-purple">Panel Súper Admin</span></li>
+            <li class="mb-0">
+                <button class="outline secondary btn-nav-action"
                     hx-post="/logout">
                     🚪 Salir
                 </button>
@@ -90,7 +38,7 @@
 
     <main class="container-fluid">
         <div class="layout-admin">
-            <aside class="sidebar">
+            <aside class="sidebar-admin">
                 <nav>
                     <ul>
                         <li><small><strong>ADMINISTRACIÓN</strong></small></li>
@@ -165,7 +113,7 @@
                 </nav>
             </aside>
 
-            <div id="contenido-principal" style="padding-left: 1rem;">
+            <div id="contenido-principal" class="pl-md">
                 <article>
                     <h2>Bienvenido al Panel Admin</h2>
                     <p>Seleccione un módulo en el menú lateral izquierdo para comenzar.</p>
@@ -176,16 +124,16 @@
 
     <!-- Modal General de Notificaciones -->
     <dialog id="modal-notificaciones">
-        <article style="max-width: 600px; width: 100%;">
+        <article class="modal-card-md w-full">
             <header>
                 <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-notificaciones').removeAttribute('open')"></button>
-                <h3 style="margin: 0;">🔔 Historial de Notificaciones</h3>
+                <h3 class="m-0">🔔 Historial de Notificaciones</h3>
             </header>
             <div id="notificaciones-lista-contenido" hx-get="/notificaciones/lista" hx-trigger="intersect, revealed">
-                <p aria-busy="true" style="text-align: center;">Cargando notificaciones...</p>
+                <p aria-busy="true" class="text-center">Cargando notificaciones...</p>
             </div>
-            <footer style="display: flex; justify-content: flex-end;">
-                <button class="secondary outline" onclick="document.getElementById('modal-notificaciones').removeAttribute('open'); htmx.trigger('#campana-notificaciones-contenedor', 'load');" style="margin-bottom: 0; width: auto;">Cerrar</button>
+            <footer class="flex-row-end">
+                <button class="secondary outline btn-compact" onclick="document.getElementById('modal-notificaciones').removeAttribute('open'); htmx.trigger('#campana-notificaciones-contenedor', 'load');">Cerrar</button>
             </footer>
         </article>
     </dialog>

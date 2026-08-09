@@ -1,25 +1,25 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin-bottom: 0; display: flex; align-items: center;">
+    <header class="flex-row-between">
+        <h3 class="mb-0 flex-items-center">
             <svg class="icono-menu">
                 <use href="#icono-bloc-notas"></use>
             </svg> Catálogo Local de Conceptos
         </h3>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-            <button class="primary" style="width: auto; margin-bottom: 0;"
+        <div class="flex-gap-sm flex-wrap flex-items-center">
+            <button class="primary btn-compact"
                 onclick="document.getElementById('modal-crear-concepto').showModal()">
                 <svg class="icono-menu">
                     <use href="#icono-nuevo-1"></use>
                 </svg> Registrar Nuevo Concepto
             </button>
-            <button class="secondary outline" style="width: auto; margin-bottom: 0;"
+            <button class="secondary outline btn-compact"
                 onclick="document.getElementById('modal-agregar-modelo').showModal()"
                 hx-get="/tenant/conceptos-locales/modal-agregar-modelo" hx-target="#contenido-modal-agregar-modelo">
                 <svg class="icono-menu">
                     <use href="#icono-cajas"></use>
                 </svg> Agregar Concepto Modelo
             </button>
-            <button class="outline contrast" style="width: auto; margin-bottom: 0;"
+            <button class="outline contrast btn-compact"
                 hx-post="/tenant/conceptos-locales/restaurar" hx-target="#lista-conceptos-tenant"
                 hx-confirm="¿Desea restaurar los conceptos faltantes desde el catálogo maestro? Esto no afectará a los conceptos que ya tiene configurados.">
                 <svg class="icono-menu">
@@ -61,7 +61,7 @@
                 </select>
             </label>
 
-            <label style="width: 150px;">
+            <label class="w-150">
                 Mostrar
                 <select name="limite" hx-get="/tenant/conceptos-locales/lista"
                     hx-include="#form-filtros-conceptos-tenant" hx-target="#lista-conceptos-tenant">
@@ -80,11 +80,11 @@
 
     <!-- Modal de Creación -->
     <dialog id="modal-crear-concepto">
-        <article style="max-width: 750px; width: 95%;">
+        <article class="modal-card-lg">
             <header>
                 <a href="#close" aria-label="Close" class="close"
                     onclick="document.getElementById('modal-crear-concepto').close()"></a>
-                <h4 style="margin-bottom: 0;">➕ Agregar Concepto a la Municipalidad</h4>
+                <h4 class="mb-0">➕ Agregar Concepto a la Municipalidad</h4>
             </header>
             <div id="contenedor-formulario">
                 {{template "formulario_crear" .}}
@@ -95,11 +95,11 @@
     <!-- Modal para Agregar Concepto Modelo -->
     <dialog id="modal-agregar-modelo"
         hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-agregar-modelo') this.showModal()">
-        <article style="max-width: 750px; width: 95%;">
+        <article class="modal-card-lg">
             <header>
                 <a href="#close" aria-label="Close" class="close"
                     onclick="document.getElementById('modal-agregar-modelo').close()"></a>
-                <h4 style="margin-bottom: 0;">📦 Agregar Concepto Modelo a la Municipalidad</h4>
+                <h4 class="mb-0">📦 Agregar Concepto Modelo a la Municipalidad</h4>
             </header>
             <div id="contenido-modal-agregar-modelo">
                 <!-- Formulario se carga aquí vía HTMX -->
@@ -110,11 +110,11 @@
     <!-- Modal de Edición -->
     <dialog id="modal-editar-concepto"
         hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
-        <article style="max-width: 750px; width: 95%;">
+        <article class="modal-card-lg">
             <header>
                 <a href="#close" aria-label="Close" class="close"
                     onclick="document.getElementById('modal-editar-concepto').close()"></a>
-                <h4 style="margin-bottom: 0;">✏️ Editar Concepto Local</h4>
+                <h4 class="mb-0">✏️ Editar Concepto Local</h4>
             </header>
             <div id="contenido-modal-editar">
                 <!-- Formulario se carga aquí vía HTMX -->
@@ -125,11 +125,11 @@
     <!-- Modal para Reglas de Financiamiento Local -->
     <dialog id="modal-reglas-tenant"
         hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-reglas-tenant') this.showModal()">
-        <article style="max-width: 850px; width: 95%;">
+        <article class="modal-card-xl">
             <header>
                 <a href="#close" aria-label="Close" class="close"
                     onclick="document.getElementById('modal-reglas-tenant').close()"></a>
-                <h4 style="margin-bottom: 0;">🎯 Reglas de Financiamiento Local (Municipalidad)</h4>
+                <h4 class="mb-0">🎯 Reglas de Financiamiento Local (Municipalidad)</h4>
             </header>
             <div id="contenido-modal-reglas-tenant">
                 <!-- Carga vía HTMX -->
@@ -139,7 +139,7 @@
 </article>
 
 {{define "tabla_conceptos_tenant"}}
-<div style="overflow-x: auto;">
+<div class="overflow-x-auto">
     <!--Tabla de conceptos del Tenant-->
     <table class="striped">
         <thead>
@@ -158,22 +158,17 @@
                 <td>
                     <strong>{{.NombrePersonalizado}}</strong><br>
                     {{if eq .ConceptoTipo "Ingreso"}}
-                    <mark
-                        style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">INGRESO</mark>
+                    <mark class="badge badge-success font-xs">INGRESO</mark>
                     {{else if eq .ConceptoTipo "Retencion"}}
-                    <mark
-                        style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">RETENCIÓN</mark>
+                    <mark class="badge badge-danger font-xs">RETENCIÓN</mark>
                     {{else}}
-                    <mark
-                        style="background-color: #bbdefb; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">APORTE</mark>
+                    <mark class="badge badge-info font-xs">APORTE</mark>
                     {{end}}
                     {{if .EsOcasional}}
-                    <mark
-                        style="background-color: #eceff1; color: #37474f; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #cfd8dc;">OCAS</mark>
+                    <mark class="badge badge-gray font-xs">OCAS</mark>
                     {{end}}
                     {{if .EsAfectoCargasSociales}}
-                    <mark
-                        style="background-color: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #ffcdd2;">CARG_SOC</mark>
+                    <mark class="badge badge-pink font-xs">CARG_SOC</mark>
                     {{end}}
                 </td>
                 <td>
@@ -184,23 +179,20 @@
                 <td><small>{{if .RegimenesCodigos}}{{.RegimenesCodigos}}{{else}}Sin régimen{{end}}</small></td>
                 <td>
                     {{if .Activo}}
-                    <span
-                        style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">Activo</span>
+                    <span class="badge badge-success">Activo</span>
                     {{else}}
-                    <span
-                        style="background-color: #ffcdd2;color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">Inactivo</span>
+                    <span class="badge badge-danger">Inactivo</span>
                     {{end}}
                 </td>
                 <td><small>Cód: {{.ConceptoCodigo}}</small></td>
                 <td>
                     <div role="group">
-                        <button class="outline primary" style="padding: 2px 8px; margin-bottom: 0; font-size: 0.8rem;"
+                        <button class="outline primary btn-badge"
                             hx-get="/tenant/conceptos-locales/reglas-modal?concepto_tenant_id={{.ID}}"
                             hx-target="#contenido-modal-reglas-tenant" hx-swap="innerHTML">
                             ⚙️ Reglas
                         </button>
-                        <button class="outline secondary"
-                            style="padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
+                        <button class="outline secondary btn-badge"
                             hx-get="/tenant/conceptos-locales/editar-ui?id={{.ID}}" hx-target="#contenido-modal-editar"
                             hx-swap="innerHTML">
                             Editar
@@ -210,14 +202,14 @@
             </tr>
             {{else}}
             <tr>
-                <td colspan="6" style="text-align: center;">Aún no has configurado conceptos locales.</td>
+                <td colspan="6" class="text-center">Aún no has configurado conceptos locales.</td>
             </tr>
             {{end}}
         </tbody>
     </table>
 </div>
 <!-- Controles de paginación-->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+<div class="flex-row-between mt-md">
     <!-- Mostramos el estado completo de la navegación -->
     <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
 
@@ -272,8 +264,7 @@
 
     <fieldset>
         <legend><strong>Asignar a Regímenes Laborales:</strong></legend>
-        <div
-            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <div class="grid-auto-fill card-section mb-md">
             {{range .Regimenes}}
             <label>
                 <input type="checkbox" name="regimenes_ids" value="{{.ID}}">
@@ -331,12 +322,12 @@
         </label>
     </div>
 
-    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline"
-            onclick="document.getElementById('modal-crear-concepto').close()" style="margin-bottom: 0; width: auto;">
+    <div class="flex-row-end mt-lg">
+        <button type="button" class="secondary outline btn-compact"
+            onclick="document.getElementById('modal-crear-concepto').close()">
             Cancelar
         </button>
-        <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">
+        <button type="submit" class="primary btn-compact">
             <svg class="icono-menu">
                 <use href="#icono-guardar"></use>
             </svg> Guardar Configuración
@@ -362,8 +353,7 @@
 
     <fieldset>
         <legend><strong>Regímenes Laborales donde aplica:</strong></legend>
-        <div
-            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <div class="grid-auto-fill card-section mb-md">
             {{range .Regimenes}}
             <label>
                 <input type="checkbox" name="regimenes_ids" value="{{.ID}}" {{if index $.RegimenesMarcados
@@ -433,11 +423,10 @@
         </label>
     </div>
 
-    <div
-        style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+    <div class="flex-row-between mt-lg">
         <div>
             {{if .Concepto.ModeloID}}
-            <button type="button" class="outline contrast" style="margin-bottom: 0; width: auto;"
+            <button type="button" class="outline contrast btn-compact"
                 hx-post="/tenant/conceptos-locales/sincronizar-modelo?id={{.Concepto.ID}}"
                 hx-target="#contenido-modal-editar"
                 hx-confirm="⚠️ ATENCIÓN: Se restablecerán todos los valores y configuraciones de este concepto a los predeterminados del modelo central, con excepción del 'Nombre Personalizado' que se conservará. ¿Desea continuar?">
@@ -447,13 +436,12 @@
             </button>
             {{end}}
         </div>
-        <div style="display: flex; gap: 1rem; align-items: center;">
-            <button type="button" class="secondary outline"
-                onclick="document.getElementById('modal-editar-concepto').close()"
-                style="margin-bottom: 0; width: auto;">
+        <div class="flex-gap-md flex-items-center">
+            <button type="button" class="secondary outline btn-compact"
+                onclick="document.getElementById('modal-editar-concepto').close()">
                 Cancelar
             </button>
-            <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">
+            <button type="submit" class="primary btn-compact">
                 <svg class="icono-menu">
                     <use href="#icono-guardar"></use>
                 </svg> Guardar Cambios
@@ -484,15 +472,15 @@
         </select>
     </label>
 
-    <p><small style="color: var(--secondary);">Al agregar este concepto modelo, se importará la configuración
+    <p><small class="text-muted">Al agregar este concepto modelo, se importará la configuración
             predeterminada de boleta, régimen laboral aplicable y sus clasificadores presupuestales.</small></p>
 
-    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline"
-            onclick="document.getElementById('modal-agregar-modelo').close()" style="margin-bottom: 0; width: auto;">
+    <div class="flex-row-end mt-lg">
+        <button type="button" class="secondary outline btn-compact"
+            onclick="document.getElementById('modal-agregar-modelo').close()">
             Cancelar
         </button>
-        <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">
+        <button type="submit" class="primary btn-compact">
             <svg class="icono-menu">
                 <use href="#icono-guardar"></use>
             </svg> Agregar a Mi Municipalidad
@@ -500,12 +488,11 @@
     </div>
 </form>
 {{else}}
-<article style="background-color: #e8f5e9; color: #2e7d32; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;">
+<article class="alert-box alert-success mb-md">
     ✅ Todos los conceptos modelo disponibles ya han sido agregados al catálogo de su municipalidad.
 </article>
-<div style="display: flex; justify-content: end; margin-top: 1rem;">
-    <button type="button" class="secondary outline" onclick="document.getElementById('modal-agregar-modelo').close()"
-        style="margin-bottom: 0; width: auto;">
+<div class="flex-row-end mt-md">
+    <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-agregar-modelo').close()">
         Cerrar
     </button>
 </div>
@@ -513,13 +500,13 @@
 {{end}}
 
 {{define "modal_reglas_tenant_content"}}
-<div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.8rem;">
+<div class="flex-row-between flex-items-start mb-sm">
     <div>
         <strong>Concepto Local:</strong> {{.Concepto.NombrePersonalizado}}<br>
-        <small style="color: var(--pico-muted-color);">Configura excepciones de Meta Presupuestal y Fuente/Rubro específicas de tu entidad (Pactos Colectivos / Convenios).</small>
+        <small class="text-muted">Configura excepciones de Meta Presupuestal y Fuente/Rubro específicas de tu entidad (Pactos Colectivos / Convenios).</small>
     </div>
     {{if .Concepto.ModeloID}}
-    <button type="button" class="outline secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin-bottom: 0;"
+    <button type="button" class="outline secondary btn-badge"
         hx-post="/tenant/conceptos-locales/reglas/sincronizar-modelo?concepto_tenant_id={{.Concepto.ID}}"
         hx-target="#contenido-modal-reglas-tenant"
         hx-confirm="¿Deseas restablecer y re-sincronizar las reglas de financiamiento predeterminadas desde el Modelo SaaS?">
@@ -543,7 +530,7 @@
         <tr>
             <td><small>{{.RegimenNombre}}</small></td>
             <td>
-                <select name="meta_id" style="margin-bottom: 0; padding: 2px 4px; font-size: 0.75rem;"
+                <select name="meta_id" class="select-compact"
                     hx-post="/tenant/conceptos-locales/reglas/actualizar?id={{.ID}}&concepto_tenant_id={{$.Concepto.ID}}"
                     hx-target="#contenido-modal-reglas-tenant">
                     <option value="">-- Meta Default del Puesto --</option>
@@ -554,7 +541,7 @@
                 </select>
             </td>
             <td>
-                <select name="fuente_rubro_id" style="margin-bottom: 0; padding: 2px 4px; font-size: 0.75rem;"
+                <select name="fuente_rubro_id" class="select-compact"
                     hx-post="/tenant/conceptos-locales/reglas/actualizar?id={{.ID}}&concepto_tenant_id={{$.Concepto.ID}}"
                     hx-target="#contenido-modal-reglas-tenant">
                     <option value="">-- Rubro Default del Puesto --</option>
@@ -566,15 +553,13 @@
             </td>
             <td>
                 {{if .Activo}}
-                <span
-                    style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Activa</span>
+                <span class="badge badge-success font-xs">Activa</span>
                 {{else}}
-                <span
-                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Inactiva</span>
+                <span class="badge badge-danger font-xs">Inactiva</span>
                 {{end}}
             </td>
             <td>
-                <button class="outline contrast" style="padding: 2px 8px; font-size: 0.75rem; margin-bottom: 0;"
+                <button class="outline contrast btn-badge"
                     hx-delete="/tenant/conceptos-locales/reglas/eliminar?id={{.ID}}&concepto_tenant_id={{$.Concepto.ID}}"
                     hx-target="#contenido-modal-reglas-tenant"
                     hx-confirm="¿Eliminar esta regla de financiamiento local?">
@@ -584,7 +569,7 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="5" style="text-align: center;"><small>No hay reglas de financiamiento local configuradas para
+            <td colspan="5" class="text-center"><small>No hay reglas de financiamiento local configuradas para
                     este concepto.</small></td>
         </tr>
         {{end}}
@@ -622,11 +607,11 @@
             </select>
         </label>
     </div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-        <label style="margin-bottom: 0;">
+    <div class="flex-row-between mt-sm">
+        <label class="mb-0">
             <input type="checkbox" name="activo" role="switch" checked> Regla Activa
         </label>
-        <button type="submit" class="primary" style="width: auto; margin-bottom: 0; padding: 0.3rem 1rem;">
+        <button type="submit" class="primary btn-compact p-sm">
             Guardar Regla Local
         </button>
     </div>

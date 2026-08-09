@@ -1,13 +1,13 @@
 <article>
     <header>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <h3 style="margin: 0;">
+        <div class="flex-row-between">
+            <h3 class="m-0">
                 <svg class="icono-menu">
                     <use href="#icono-clasificador"></use>
                 </svg>
                 Catálogo: Clasificadores Presupuestales (MEF)
             </h3>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div class="flex-gap-sm">
                 <button class="outline" onclick="document.getElementById('modal-crear-clasificador').showModal()">
                     <svg class="icono-menu">
                         <use href="#icono-nuevo-1"></use>
@@ -27,7 +27,7 @@
         </div>
     </header>
 
-    <form id="form-filtros-mef" class="grid" style="margin-bottom: 1rem;">
+    <form id="form-filtros-mef" class="grid mb-md">
         <label>
             Año
             <select name="anio" hx-get="/admin/mef" hx-include="#form-filtros-mef" hx-target="#lista-mef">
@@ -78,11 +78,11 @@
 
 {{ define "crear_clasificador"}}
 <dialog id="modal-crear-clasificador">
-    <article style="max-width: 600px; width: 90%;">
+    <article class="modal-card-md">
         <header>
             <a href="#close" aria-label="Close" class="close"
                 onclick="document.getElementById('modal-crear-clasificador').close()"></a>
-            <h4 style="margin: 0;"><svg class="icono-menu">
+            <h4 class="m-0"><svg class="icono-menu">
                     <use href="#icono-nuevo-1"></use>
                 </svg> Registrar Clasificador</h4>
         </header>
@@ -109,9 +109,9 @@
                 </select>
             </label>
             <footer>
-                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-crear-clasificador').close()" style="margin-bottom: 0;">Cancelar</button>
-                    <button type="submit" style="margin-bottom: 0;">Guardar Clasificador</button>
+                <div class="flex-row-end">
+                    <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-crear-clasificador').close()">Cancelar</button>
+                    <button type="submit" class="btn-compact">Guardar Clasificador</button>
                 </div>
             </footer>
         </form>
@@ -121,11 +121,11 @@
 
 {{define "importacion_masiva"}}
 <dialog id="modal-importacion-masiva">
-    <article style="max-width: 600px; width: 90%;">
+    <article class="modal-card-md">
         <header>
             <a href="#close" aria-label="Close" class="close"
                 onclick="document.getElementById('modal-importacion-masiva').close()"></a>
-            <h4 style="margin: 0;"><svg class="icono-menu">
+            <h4 class="m-0"><svg class="icono-menu">
                     <use href="#icono-importar"></use>
                 </svg> Importación Masiva (CSV)</h4>
         </header>
@@ -136,9 +136,9 @@
                 <input type="file" name="archivo_csv" accept=".csv" required>
             </label>
             <footer>
-                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-importacion-masiva').close()" style="margin-bottom: 0;">Cancelar</button>
-                    <button type="submit" class="secondary" style="margin-bottom: 0;">Importar Catálogo</button>
+                <div class="flex-row-end">
+                    <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-importacion-masiva').close()">Cancelar</button>
+                    <button type="submit" class="secondary btn-compact">Importar Catálogo</button>
                 </div>
             </footer>
         </form>
@@ -148,23 +148,23 @@
 
 {{define "vinculacion_jerarquica"}}
 <dialog id="modal-vinculacion-jerarquica">
-    <article style="max-width: 600px; width: 90%;">
+    <article class="modal-card-md">
         <header>
             <a href="#close" aria-label="Close" class="close"
                 onclick="document.getElementById('modal-vinculacion-jerarquica').close()"></a>
-            <h4 style="margin: 0;"><svg class="icono-menu">
+            <h4 class="m-0"><svg class="icono-menu">
                     <use href="#icono-enlace"></use>
                 </svg> Vincular Jerarquía</h4>
         </header>
         <p><small>Ejecuta la vinculación de jerarquías (Padre/Hijo) para un año específico si los datos se desincronizan.</small></p>
         <form hx-post="/admin/mef/vincular" hx-target="#lista-mef" hx-swap="innerHTML">
             <label>Año a Vincular
-                <input type="number" name="anio_vincular" value="2026" style="max-width: 150px;" required>
+                <input type="number" name="anio_vincular" value="2026" class="max-w-300" required>
             </label>
             <footer>
-                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-vinculacion-jerarquica').close()" style="margin-bottom: 0;">Cancelar</button>
-                    <button type="submit" class="outline" style="margin-bottom: 0;">Re-vincular Jerarquía</button>
+                <div class="flex-row-end">
+                    <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-vinculacion-jerarquica').close()">Cancelar</button>
+                    <button type="submit" class="outline btn-compact">Re-vincular Jerarquía</button>
                 </div>
             </footer>
         </form>

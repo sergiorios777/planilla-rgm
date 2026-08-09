@@ -1,26 +1,26 @@
 <article hx-get="/tenant/cts/detalle?id={{.Planilla.ID}}" hx-trigger="refrescarDetalleCts from:body" hx-target="#contenido-tenant">
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-            <button class="outline secondary" style="width: auto; margin-bottom: 0; padding: 0.3rem 0.6rem;"
+    <header class="flex-row-between">
+        <div class="flex-gap-md flex-items-center">
+            <button class="outline secondary btn-compact p-sm"
                 hx-get="/tenant/ui/cts" hx-target="#contenido-tenant">
                 <svg class="icono-menu">
                     <use href="#icono-previo-cuadrado"></use>
                 </svg>
                 Volver
             </button>
-            <h3 style="margin-bottom: 0;">Detalle de Planilla CTS Semestral: {{.Planilla.Anio}} - {{.Planilla.Periodo}}</h3>
+            <h3 class="mb-0">Detalle de Planilla CTS Semestral: {{.Planilla.Anio}} - {{.Planilla.Periodo}}</h3>
         </div>
         <div>
             {{if eq .Planilla.Estado "BORRADOR"}}
-            <mark style="background-color: #fff9c4; color: #f57f17; padding: 6px 12px; border-radius: 4px; font-weight: bold;">Borrador</mark>
-            <button class="outline" style="width: auto; margin-bottom: 0; padding: 0.4rem 1rem; margin-left: 1rem;"
+            <mark class="badge badge-warning p-sm font-bold">Borrador</mark>
+            <button class="outline btn-compact p-sm ml-2"
                 onclick="document.getElementById('modal-cargar-gratificaciones').showModal()">
                 <svg class="icono-menu">
                     <use href="#icono-archive-restore"></use>
                 </svg>
                 Cargar Gratificación Anterior
             </button>
-            <button class="primary" style="width: auto; margin-bottom: 0; padding: 0.4rem 1rem; margin-left: 1rem;"
+            <button class="primary btn-compact p-sm ml-2"
                 hx-post="/tenant/cts/cerrar?id={{.Planilla.ID}}" hx-target="#contenido-tenant"
                 hx-confirm="¿Está seguro de cerrar esta planilla de CTS? Una vez cerrada no se podrán realizar modificaciones ni subir planillas de gratificación.">
                 <svg class="icono-menu">
@@ -29,27 +29,27 @@
                 Cerrar Planilla
             </button>
             {{else if eq .Planilla.Estado "CERRADO"}}
-            <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 6px 12px; border-radius: 4px; font-weight: bold;">Cerrado</mark>
+            <mark class="badge badge-success p-sm font-bold">Cerrado</mark>
             {{end}}
         </div>
     </header>
 
-    <div id="alerta-detalle-cts" style="margin-top: 1rem;">
+    <div id="alerta-detalle-cts" class="mt-md">
         {{if .AlertaExito}}
-        <article style="background-color: #c8e6c9; color: #1b5e20; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
+        <article class="alert-box alert-success">
             ✅ {{.AlertaExito}}
         </article>
         {{end}}
         {{if .AlertaError}}
-        <article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
+        <article class="alert-box alert-danger">
             ❌ {{.AlertaError}}
         </article>
         {{end}}
     </div>
 
     <h4>Detalle de Colaboradores</h4>
-    <div style="overflow-x: auto;">
-        <table class="striped table-detalle-cts" style="font-size: 0.85rem;">
+    <div class="overflow-x-auto">
+        <table class="striped table-detalle-cts font-sm">
             <thead>
                 <tr>
                     <th>Colaborador</th>
@@ -74,15 +74,15 @@
                     <td>S/ {{printf "%.2f" .AsignacionFamilia}}</td>
                     <td>S/ {{printf "%.2f" .SextoGratificacion}}</td>
                     <td>S/ {{printf "%.2f" .PromedioVariables}}</td>
-                    <td><strong style="color: #1565c0;">S/ {{printf "%.2f" .RemuneracionComputable}}</strong></td>
-                    <td style="text-align: center;">{{.MesesComputables}}</td>
-                    <td style="text-align: center;">{{.DiasFaltas}}</td>
-                    <td style="color: #c62828;">S/ {{printf "%.2f" .MontoDescuentoFaltas}}</td>
-                    <td><strong style="color: #2e7d32; font-size: 0.95rem;">S/ {{printf "%.2f" .MontoCts}}</strong></td>
+                    <td><strong class="text-info">S/ {{printf "%.2f" .RemuneracionComputable}}</strong></td>
+                    <td class="text-center">{{.MesesComputables}}</td>
+                    <td class="text-center">{{.DiasFaltas}}</td>
+                    <td class="text-danger">S/ {{printf "%.2f" .MontoDescuentoFaltas}}</td>
+                    <td><strong class="text-success font-md">S/ {{printf "%.2f" .MontoCts}}</strong></td>
                 </tr>
                 {{else}}
                 <tr>
-                    <td colspan="11" style="text-align: center;">No hay trabajadores incluidos en este cálculo de CTS.</td>
+                    <td colspan="11" class="text-center">No hay trabajadores incluidos en este cálculo de CTS.</td>
                 </tr>
                 {{end}}
             </tbody>
@@ -92,28 +92,28 @@
     {{if eq .Planilla.Estado "BORRADOR"}}
     <!-- Modal para Cargar Gratificaciones -->
     <dialog id="modal-cargar-gratificaciones">
-        <article style="max-width: 600px; width: 95%;">
+        <article class="modal-card-md">
             <header>
                 <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-cargar-gratificaciones').close()"></a>
-                <h4 style="margin-bottom: 0;">📊 Cargar Gratificación Anterior</h4>
+                <h4 class="mb-0">📊 Cargar Gratificación Anterior</h4>
             </header>
-            <div style="padding-top: 1rem;">
+            <div class="pt-md">
                 <p><small>Si iniciaste el uso del sistema en medio de un periodo y no posees registros históricos del pago de la gratificación correspondiente a Diciembre o Julio, puedes subir un archivo Excel (.xlsx) con los montos para computar el <strong>1/6 de la Gratificación</strong>.</small></p>
                 
-                <form hx-post="/tenant/cts/subir-excel" hx-encoding="multipart/form-data" hx-target="#contenido-tenant" style="margin-bottom: 0;"
+                <form hx-post="/tenant/cts/subir-excel" hx-encoding="multipart/form-data" hx-target="#contenido-tenant" class="mb-0"
                     hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-cargar-gratificaciones').close(); }">
                     <input type="hidden" name="planilla_cts_id" value="{{.Planilla.ID}}">
                     
                     <label>Selecciona el Excel (.xlsx)
-                        <input type="file" name="excel_file" accept=".xlsx" required style="margin-bottom: 1rem;">
+                        <input type="file" name="excel_file" accept=".xlsx" required class="mb-md">
                     </label>
-                    <small style="color: #666; display: block; margin-bottom: 1.5rem;">
+                    <small class="text-muted block mb-lg">
                         El formato del Excel debe tener 2 columnas con las cabeceras: DNI en columna 1 y Monto de Gratificación en columna 2. Ejemplo: (99991111, 1500.00)
                     </small>
                     
-                    <div style="display: flex; gap: 1rem; justify-content: end;">
-                        <button type="button" class="secondary outline" onclick="document.getElementById('modal-cargar-gratificaciones').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
-                        <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">📥 Importar y Recalcular</button>
+                    <div class="flex-row-end">
+                        <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-cargar-gratificaciones').close()">Cancelar</button>
+                        <button type="submit" class="primary btn-compact">📥 Importar y Recalcular</button>
                     </div>
                 </form>
             </div>

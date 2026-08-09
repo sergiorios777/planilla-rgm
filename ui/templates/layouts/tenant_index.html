@@ -5,148 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Panel Municipal - Planillas RGM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-    <style>
-        /* Reducimos el tamaño base de la fuente de toda la aplicación */
-        html {
-            font-size: 14px;
-            /* El valor original suele ser 16px o más */
-        }
-
-        .icono-menu {
-            width: 1.25em;
-            height: 1.25em;
-            vertical-align: -0.125em;
-            margin-right: 0.5rem;
-        }
-
-        .disabled-link {
-            pointer-events: none;
-            opacity: 0.6;
-            cursor: not-allowed;
-            text-decoration: none;
-            color: #888;
-        }
-
-        /* Ajuste estético de tomSelect para que se integre perfectamente con Pico CSS */
-        .ts-control {
-            border-radius: var(--pico-border-radius) !important;
-            border: var(--pico-border-width) solid var(--pico-form-element-border-color) !important;
-            background-color: var(--pico-form-element-background-color) !important;
-            background-image: none !important;
-            color: var(--pico-color) !important;
-            display: flex !important;
-            align-items: center !important;
-            height: calc(1.5em + var(--pico-form-element-spacing-vertical) * 2 + var(--pico-border-width) * 2) !important;
-            padding: 0 var(--pico-form-element-spacing-horizontal) !important;
-            position: relative !important;
-            box-shadow: none !important;
-        }
-        .ts-control input,
-        .ts-control .item {
-            padding: 0 !important;
-            margin: 0 !important;
-            border: none !important;
-            background: transparent !important;
-            height: auto !important;
-            min-height: 0 !important;
-            box-shadow: none !important;
-            line-height: inherit !important;
-        }
-        .ts-wrapper.focus .ts-control {
-            border-color: var(--pico-form-element-active-border-color) !important;
-            box-shadow: 0 0 0 var(--pico-outline-width) var(--pico-form-element-focus-color) !important;
-        }
-        .ts-wrapper.disabled .ts-control {
-            background-color: var(--pico-form-element-disabled-background-color) !important;
-            opacity: var(--pico-form-element-disabled-opacity) !important;
-        }
-        .ts-dropdown {
-            background-color: var(--pico-form-element-background-color) !important;
-            color: var(--pico-color) !important;
-            border: var(--pico-border-width) solid var(--pico-form-element-border-color) !important;
-        }
-        .ts-dropdown .active {
-            background-color: var(--pico-primary-hover-background) !important;
-            color: var(--pico-primary-inverse) !important;
-        }
-        .ts-dropdown .option {
-            padding: 0.5rem 0.75rem !important;
-        }
-
-        /* Responsividad del Layout del Menú */
-        @media (max-width: 992px) {
-            /* Sobrescribimos el grid rígido a una sola columna */
-            .grid-responsive {
-                grid-template-columns: 1fr !important;
-                gap: 1rem !important;
-            }
-
-            /* Transformamos el aside en un drawer lateral */
-            aside {
-                position: fixed;
-                top: 0;
-                left: -280px; /* Oculto por defecto */
-                width: 270px;
-                height: 100vh;
-                background-color: var(--pico-background-color);
-                border-right: 1px solid var(--pico-muted-border-color);
-                box-shadow: var(--pico-card-box-shadow);
-                z-index: 1000;
-                transition: left 0.3s ease-in-out;
-                padding: 1.5rem;
-                overflow-y: auto;
-                margin: 0;
-            }
-
-            aside.open {
-                left: 0; /* Deslizar hacia adentro */
-            }
-
-            /* Backdrop translúcido detrás del menú */
-            #sidebar-backdrop {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                background-color: rgba(0, 0, 0, 0.5);
-                backdrop-filter: blur(2px);
-                z-index: 999;
-            }
-
-            #sidebar-backdrop.open {
-                display: block;
-            }
-
-            /* Mostrar botón de menú hamburguesa solo en pantallas medianas/pequeñas */
-            #btn-toggle-menu {
-                display: inline-flex !important;
-                align-items: center;
-                justify-content: center;
-            }
-        }
-
-        @media (min-width: 993px) {
-            #btn-toggle-menu {
-                display: none !important;
-            }
-            #sidebar-backdrop {
-                display: none !important;
-            }
-        }
-    </style>
 </head>
 
-<body>
-    <nav class="container-fluid" style="border-bottom: 1px solid #e0e0e0; margin-bottom: 2rem; padding: 1rem;">
+<body class="tenant-theme">
+    <nav class="container-fluid nav-header">
         <ul>
-            <li style="margin-right: 0.5rem; display: none;" id="btn-toggle-menu">
-                <button class="outline secondary" style="padding: 0.25rem 0.5rem; margin-bottom: 0;" aria-label="Abrir menú" onclick="toggleMobileMenu()">
+            <li class="mr-sm d-none" id="btn-toggle-menu">
+                <button class="outline secondary btn-sm" aria-label="Abrir menú" onclick="toggleMobileMenu()">
                     ☰
                 </button>
             </li>
@@ -155,16 +28,16 @@
                     </svg> {{if .TenantNombre}}{{.TenantNombre}}{{else}}Mi Municipalidad{{end}}</strong>
             </li>
         </ul>
-        <ul style="display: flex; align-items: center; gap: 1rem;">
+        <ul class="flex-gap-md mb-0">
             <li id="campana-notificaciones-contenedor" 
                 hx-get="/notificaciones/campana" 
                 hx-trigger="every 30s, load" 
                 hx-swap="innerHTML"
-                style="margin-bottom: 0;">
+                class="mb-0">
             </li>
-            <li style="margin-bottom: 0;"><small>{{if .UsuarioNombre}}👤 {{.UsuarioNombre}} ({{.UsuarioRol}}){{else}}Operador de Planillas{{end}}</small></li>
-            <li style="margin-bottom: 0;">
-                <button class="outline secondary" style="padding: 0.25rem 0.75rem; font-size: 0.85rem; margin-bottom: 0;"
+            <li class="mb-0"><small>{{if .UsuarioNombre}}👤 {{.UsuarioNombre}} ({{.UsuarioRol}}){{else}}Operador de Planillas{{end}}</small></li>
+            <li class="mb-0">
+                <button class="outline secondary btn-nav-action"
                     hx-post="/logout">
                     🚪 Salir
                 </button>
@@ -176,7 +49,7 @@
         <!-- Backdrop para móviles -->
         <div id="sidebar-backdrop" onclick="toggleMobileMenu()"></div>
 
-        <div class="grid grid-responsive" style="grid-template-columns: 250px 1fr; gap: 2rem;">
+        <div class="grid grid-responsive layout-tenant-grid">
 
             <aside>
                 <nav>
@@ -195,7 +68,7 @@
                                 Estructura Orgánica</a>
                         </li>
 
-                        <hr style="margin: 1rem 0;">
+                        <hr class="my-md">
 
                         <li><small><strong>RECURSOS HUMANOS</strong></small></li>
                         <li><a href="#" hx-get="/tenant/ui/trabajadores" hx-target="#contenido-tenant">
@@ -218,7 +91,7 @@
                             </a>
                         </li>
 
-                        <hr style="margin: 1rem 0;">
+                        <hr class="my-md">
 
                         <li><small><strong>PLANILLAS</strong></small></li>
                         <li><a href="#" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
@@ -245,7 +118,7 @@
                                 </svg>
                                 Reportes e Informes</a></li>
 
-                        <hr style="margin: 1rem 0;">
+                        <hr class="my-md">
 
 
                         <li><small><strong>METAS, PLAZAS Y CONCEPTOS</strong></small></li>
@@ -285,16 +158,16 @@
 
     <!-- Modal General de Notificaciones -->
     <dialog id="modal-notificaciones">
-        <article style="max-width: 600px; width: 100%;">
+        <article class="modal-card-md w-full">
             <header>
                 <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-notificaciones').removeAttribute('open')"></button>
-                <h3 style="margin: 0;">🔔 Historial de Notificaciones</h3>
+                <h3 class="m-0">🔔 Historial de Notificaciones</h3>
             </header>
             <div id="notificaciones-lista-contenido" hx-get="/notificaciones/lista" hx-trigger="intersect, revealed">
-                <p aria-busy="true" style="text-align: center;">Cargando notificaciones...</p>
+                <p aria-busy="true" class="text-center">Cargando notificaciones...</p>
             </div>
-            <footer style="display: flex; justify-content: flex-end;">
-                <button class="secondary outline" onclick="document.getElementById('modal-notificaciones').removeAttribute('open'); htmx.trigger('#campana-notificaciones-contenedor', 'load');" style="margin-bottom: 0; width: auto;">Cerrar</button>
+            <footer class="flex-row-end">
+                <button class="secondary outline btn-compact" onclick="document.getElementById('modal-notificaciones').removeAttribute('open'); htmx.trigger('#campana-notificaciones-contenedor', 'load');">Cerrar</button>
             </footer>
         </article>
     </dialog>

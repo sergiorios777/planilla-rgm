@@ -5,31 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Iniciar Sesión - Planillas RGM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <style>
-        /* Estilos para centrar la tarjeta de login vertical y horizontalmente */
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background-color: var(--pico-background-color);
-            margin: 0;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 400px;
-        }
-    </style>
 </head>
 
-<body>
+<body class="login-page">
     <main class="login-card">
         <article>
-            <header style="text-align: center;">
-                <h2 style="margin-bottom: 0;">💼 Planillas RGM</h2>
+            <header class="text-center">
+                <h2 class="mb-0">💼 Planillas RGM</h2>
                 <p><small>Acceso al Sistema</small></p>
             </header>
 
@@ -42,7 +30,7 @@
 
                 <button type="submit">Ingresar</button>
 
-                <div id="error-msg" style="color: #b71c1c; text-align: center; margin-top: 1rem;"></div>
+                <div id="error-msg" class="text-danger text-center mt-md"></div>
             </form>
         </article>
     </main>

@@ -1,26 +1,25 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+    <header class="flex-row-between">
+        <h3 class="mb-0 flex-gap-sm">
             <svg class="icono-menu">
                 <use href="#icono-flujo-trabajo"></use>
             </svg>
             Cuadro de Puestos (Plazas)
         </h3>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button class="primary" style="width: auto; margin-bottom: 0;"
+        <div class="flex-row-start flex-gap-sm">
+            <button class="primary btn-compact"
                 onclick="document.getElementById('modal-nuevo-puesto').showModal()">
                 ➕ Registrar Nueva Plaza
             </button>
-            <button class="contrast outline" style="width: auto; margin-bottom: 0;"
+            <button class="contrast outline btn-compact"
                 onclick="document.getElementById('modal-importar-puesto').showModal()">
                 <svg class="icono-menu">
                     <use href="#icono-importar"></use>
                 </svg> Importación Masiva (Excel)
             </button>
-            <button class="outline" 
+            <button class="outline btn-compact border-danger text-danger" 
                 hx-post="/tenant/puestos-conceptos/restaurar-todos" 
-                hx-confirm="🚨 ¡ATENCIÓN! Esta acción restablecerá los costos de fábrica para TODOS los puestos de la entidad, eliminando cualquier modificación manual de conceptos. ¿Desea continuar?"
-                style="border-color: #d32f2f; color: #d32f2f; width: auto; margin-bottom: 0;">
+                hx-confirm="🚨 ¡ATENCIÓN! Esta acción restablecerá los costos de fábrica para TODOS los puestos de la entidad, eliminando cualquier modificación manual de conceptos. ¿Desea continuar?">
                 🔄 Restaurar Todos los Puestos
             </button>
         </div>
@@ -152,7 +151,7 @@
         </label>
     </div>
 
-    <div class="grid" style="margin-bottom: 1.5rem;">
+    <div class="grid mb-lg">
         <label>
             <input type="checkbox" name="activo" role="switch" checked> Plaza Activa
         </label>
@@ -169,7 +168,7 @@
 {{define "formulario_editar"}}
 <header>
     <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-editar-puesto').close()"></a>
-    <h4 style="margin-bottom: 0;">✏️ Editando Plaza: {{.Puesto.Nombre}}</h4>
+    <h4 class="mb-0">✏️ Editando Plaza: {{.Puesto.Nombre}}</h4>
 </header>
 <form hx-put="/tenant/puestos/actualizar" hx-swap="none" hx-on::after-request="if(event.detail.successful) document.getElementById('modal-editar-puesto').close()">
     <input type="hidden" name="id" value="{{.Puesto.ID}}">
@@ -229,7 +228,7 @@
         </label>
     </div>
 
-    <div class="grid" style="margin-bottom: 1.5rem;">
+    <div class="grid mb-lg">
         <label>
             <input type="checkbox" name="activo" role="switch" {{if .Puesto.Activo}}checked{{end}}>
             Plaza Activa para el ejercicio
@@ -241,7 +240,7 @@
         </label>
     </div>
 
-    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+    <div class="flex-row-end">
         <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-puesto').close()">Cancelar</button>
         <button type="submit" class="primary">Guardar Cambios</button>
     </div>
@@ -271,7 +270,7 @@
                 {{if .CodigoAirhsp}}
                 <code>{{.CodigoAirhsp}}</code>
                 {{else}}
-                <span style="color: #999; font-size: 0.85rem;">— Sin AIRHSP —</span>
+                <span class="text-muted font-sm">— Sin AIRHSP —</span>
                 {{end}}
             </td>
             <td>
@@ -283,36 +282,33 @@
             </td>
             <td>
                 {{if eq .Estado "VACANTE"}}
-                <mark
-                    style="background-color: #fff9c4; color: #f57f17; border-radius: 4px; padding: 2px 6px;">Libre</mark>
+                <mark class="badge badge-warning">Libre</mark>
                 {{else}}
-                <mark
-                    style="background-color: #bbdefb; color: #1565c0; border-radius: 4px; padding: 2px 6px;">Ocupada</mark>
+                <mark class="badge badge-info">Ocupada</mark>
                 {{end}}
 
                 {{if .RequiereRevision}}
-                <div style="margin-top: 0.5rem;">
-                    <span
-                        style="background-color: #ffe0b2; color: #e65100; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
+                <div class="mt-sm">
+                    <span class="badge badge-warning">
                         ⚠️ Faltan Montos
                     </span>
                 </div>
                 {{end}}
             </td>
             <td>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                <div class="flex-gap-sm">
+                    <button class="outline secondary btn-sm"
                         hx-get="/tenant/puestos/editar-ui?id={{.ID}}"
                         hx-target="#contenido-modal-editar-puesto">
                         Editar
                     </button>
 
-                    <button class="outline primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                    <button class="outline primary btn-sm"
                         hx-get="/tenant/puestos-conceptos/ui?puesto_id={{.ID}}" hx-target="#contenido-tenant">
                         ⚙️ Costos
                     </button>
 
-                    <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                    <button class="outline btn-sm"
                         hx-get="/tenant/puestos/asignar-conceptos-ui?id={{.ID}}"
                         hx-target="#contenido-modal-asignacion">
                         💰 Estructura
@@ -322,14 +318,14 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="6" style="text-align: center;">No hay plazas registradas.</td>
+            <td colspan="6" class="text-center">No hay plazas registradas.</td>
         </tr>
         {{end}}
     </tbody>
 </table>
 
 <!-- Controles de paginación-->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+<div class="flex-row-between mt-md">
     <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
 
     <div role="group">
@@ -352,10 +348,10 @@
 
 <!-- Modal de Creación de Puesto -->
 <dialog id="modal-nuevo-puesto">
-    <article style="max-width: 700px; width: 95%;">
+    <article class="modal-card-lg">
         <header>
             <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nuevo-puesto').close()"></a>
-            <h4 style="margin-bottom: 0;">➕ Registrar Nueva Plaza</h4>
+            <h4 class="mb-0">➕ Registrar Nueva Plaza</h4>
         </header>
         {{template "formulario_crear" .}}
     </article>
@@ -363,10 +359,10 @@
 
 <!-- Modal de Importación de Puesto -->
 <dialog id="modal-importar-puesto">
-    <article style="max-width: 750px; width: 95%;">
+    <article class="modal-card-lg">
         <header>
             <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-puesto').close()"></a>
-            <h4 style="margin-bottom: 0;">📤 Importación Masiva (Excel)</h4>
+            <h4 class="mb-0">📤 Importación Masiva (Excel)</h4>
         </header>
         <div id="contenedor-formulario-importar-puestos">
             {{template "formulario_importar_puestos" .}}
@@ -376,11 +372,11 @@
 
 <!-- Modal de Asignación de Conceptos -->
 <dialog id="modal-asignacion-puesto" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-asignacion') this.showModal()">
-    <article style="max-width: 900px; width: 95%;">
+    <article class="modal-card-xl">
         <header>
             <a href="#close" aria-label="Close" class="close"
                 onclick="document.getElementById('modal-asignacion-puesto').close()"></a>
-            <h4 style="margin-bottom: 0;">Configurar Estructura de Pago</h4>
+            <h4 class="mb-0">Configurar Estructura de Pago</h4>
         </header>
         <div id="contenido-modal-asignacion">
         </div>
@@ -391,12 +387,12 @@
 <form hx-post="/tenant/puestos/guardar-asignacion" hx-swap="none">
     <input type="hidden" name="puesto_id" value="{{.PuestoID}}">
 
-    <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+    <div class="max-h-400 overflow-y-auto pr-sm">
         <table class="striped">
             <thead>
                 <tr>
                     <th>Concepto</th>
-                    <th style="text-align: center;">¿Aplica?</th>
+                    <th class="text-center">¿Aplica?</th>
                     <th>Monto / Valor</th>
                 </tr>
             </thead>
@@ -407,17 +403,17 @@
                         <strong>{{.Nombre}}</strong><br>
                         <small>{{.Tipo}}</small>
                     </td>
-                    <td style="text-align: center;">
+                    <td class="text-center">
                         <input type="checkbox" role="switch" name="concepto_tenant_ids" value="{{.ConceptoTenantID}}"
                             {{if .Asignado}}checked{{end}}>
                     </td>
                     <td>
                         {{if .RequiereMonto}}
                         <input type="number" step="0.01" name="monto_{{.ConceptoTenantID}}"
-                            value="{{if .Asignado}}{{.Monto}}{{else}}0.00{{end}}" style="margin-bottom: 0;">
+                            value="{{if .Asignado}}{{.Monto}}{{else}}0.00{{end}}" class="mb-0">
                         {{else}}
                         <input type="hidden" name="monto_{{.ConceptoTenantID}}" value="0.00">
-                        <span style="color: #999; font-size: 0.8rem;">Automático</span>
+                        <span class="text-muted font-xs">Automático</span>
                         {{end}}
                     </td>
                 </tr>
@@ -434,7 +430,7 @@
 
 <!-- Modal de Edición de Puesto -->
 <dialog id="modal-editar-puesto" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar-puesto') this.showModal()">
-    <article id="contenido-modal-editar-puesto" style="max-width: 700px; width: 95%;">
+    <article id="contenido-modal-editar-puesto" class="modal-card-lg">
         <!-- Rellenado dinámicamente por HTMX -->
     </article>
 </dialog>
@@ -522,17 +518,17 @@
 <div>
     <p><small>Sube un archivo <b>.xlsx</b> con las 9 columnas en el orden exacto indicado a continuación. La primera fila (cabecera) se omitirá durante el procesamiento.</small></p>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div class="flex-row-between mb-md">
         <strong>Estructura del Archivo Excel:</strong>
-        <a href="/tenant/puestos/plantilla" class="button outline primary" style="padding: 4px 12px; font-size: 0.85rem; margin-bottom: 0;">
-            <svg class="icono-menu" style="margin-right: 4px;">
+        <a href="/tenant/puestos/plantilla" class="button outline primary btn-sm btn-compact">
+            <svg class="icono-menu mr-xs">
                 <use href="#icono-importar"></use>
             </svg> Descargar Plantilla (.xlsx)
         </a>
     </div>
 
-    <div style="overflow-x: auto; margin-bottom: 1rem; border: 1px solid #e0e0e0; border-radius: 4px;">
-        <table class="striped" style="width: 100%; font-size: 0.65rem; margin-bottom: 0; white-space: nowrap;">
+    <div class="overflow-x-auto mb-md border-box">
+        <table class="striped w-full font-xs mb-0 text-nowrap">
             <thead>
                 <tr>
                     <th>A: NOMBRE</th>
@@ -577,13 +573,13 @@
         hx-target="#resultado-importacion-puesto" hx-indicator="#cargando-excel-puestos"
         hx-on::after-request="if(event.detail.successful) { htmx.trigger('body', 'refrescarPuestos'); }">
 
-        <div class="grid" style="margin-top: 1rem;">
+        <div class="grid mt-md">
             <label>Archivo Excel (.xlsx)
                 <input type="file" name="archivo_excel" accept=".xlsx" required>
             </label>
 
-            <div style="display: flex; align-items: end; padding-bottom: var(--spacing);">
-                <button type="submit" class="contrast" style="margin-bottom: 0;">Procesar Archivo</button>
+            <div class="flex-end pb-spacing">
+                <button type="submit" class="contrast mb-0">Procesar Archivo</button>
             </div>
         </div>
 
@@ -594,10 +590,10 @@
         </span>
     </form>
 
-    <div id="resultado-importacion-puesto" style="margin-top: 1rem;"></div>
+    <div id="resultado-importacion-puesto" class="mt-md"></div>
 
-    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-puesto').close()" style="margin-bottom: 0; width: auto;">Cerrar</button>
+    <div class="flex-row-end mt-lg">
+        <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-importar-puesto').close()">Cerrar</button>
     </div>
 </div>
 {{end}}

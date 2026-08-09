@@ -16,13 +16,12 @@
                     <input type="text" value="{{.Ruc}}" readonly>
                 </label>
             </div>
-            <div style="text-align: center;">
+            <div class="text-center">
                 <label>Logo Institucional</label>
                 {{if .LogoURL}}
-                <img src="{{.LogoURL}}" alt="Logo" style="max-height: 100px; margin-bottom: 1rem;">
+                <img src="{{.LogoURL}}" alt="Logo" class="max-h-100 mb-md">
                 {{else}}
-                <div
-                    style="height: 100px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                <div class="logo-placeholder">
                     Sin Logo
                 </div>
                 {{end}}

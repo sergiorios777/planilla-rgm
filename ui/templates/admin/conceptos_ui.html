@@ -1,12 +1,12 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin: 0;">
+    <header class="flex-row-between">
+        <h3 class="m-0">
             <svg class="icono-menu">
                 <use href="#icono-maletin"></use>
             </svg>
             Catálogo: Conceptos Maestros (SUNAT)
         </h3>
-        <button class="outline secondary" style="width: auto; margin-bottom: 0;" onclick="document.getElementById('modal-importar-conceptos').showModal()">
+        <button class="outline secondary btn-compact" onclick="document.getElementById('modal-importar-conceptos').showModal()">
             <svg class="icono-menu">
                 <use href="#icono-importar"></use>
             </svg> Importación Masiva
@@ -23,11 +23,11 @@
 
 <!-- Modal de Importación Masiva -->
 <dialog id="modal-importar-conceptos">
-    <article style="max-width: 600px; width: 90%;">
+    <article class="modal-card-md">
         <header>
             <a href="#close" aria-label="Close" class="close"
                 onclick="document.getElementById('modal-importar-conceptos').close()"></a>
-            <h4 style="margin: 0;"><svg class="icono-menu">
+            <h4 class="m-0"><svg class="icono-menu">
                     <use href="#icono-importar"></use>
                 </svg> Importación Masiva (CSV)</h4>
         </header>
@@ -38,9 +38,9 @@
                 <input type="file" name="archivo_csv" accept=".csv" required>
             </label>
             <footer>
-                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-conceptos').close()" style="margin-bottom: 0;">Cancelar</button>
-                    <button type="submit" class="secondary" style="margin-bottom: 0;">Importar Conceptos</button>
+                <div class="flex-row-end">
+                    <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-importar-conceptos').close()">Cancelar</button>
+                    <button type="submit" class="secondary btn-compact">Importar Conceptos</button>
                 </div>
             </footer>
         </form>
@@ -73,14 +73,14 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="4" style="text-align: center;">No hay conceptos registrados.</td>
+            <td colspan="4" class="text-center">No hay conceptos registrados.</td>
         </tr>
         {{end}}
     </tbody>
 </table>
 
 <!-- Controles de Paginación -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+<div class="flex-row-between mt-md">
     <!-- Mostramos el estado completo de la navegación -->
     <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
 
@@ -104,7 +104,7 @@
 {{end}}
 
 {{define "filtros_conceptos"}}
-<form id="form-filtros-conceptos" class="grid" style="margin-bottom: 1rem;">
+<form id="form-filtros-conceptos" class="grid mb-md">
     <label>
         Buscar
         <input type="search" name="buscar" placeholder="Código o descripción..." hx-get="/admin/conceptos/lista"

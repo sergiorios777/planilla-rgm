@@ -1,12 +1,12 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+    <header class="flex-row-between">
+        <h3 class="mb-0 flex-items-center flex-gap-sm">
             <svg class="icono-menu">
                 <use href="#icono-source-environment"></use>
             </svg>
             Liquidaciones de Cese (Beneficios Sociales)
         </h3>
-        <button class="primary" style="width: auto; margin-bottom: 0;" hx-get="/tenant/liquidaciones/formulario-crear"
+        <button class="primary btn-compact" hx-get="/tenant/liquidaciones/formulario-crear"
             hx-target="#contenido-modal-nueva-liq" onclick="document.getElementById('modal-nueva-liq').showModal()">
             <svg class="icono-menu">
                 <use href="#icono-plus"></use>
@@ -24,11 +24,11 @@
 
 <!-- Modal de Nueva Liquidación -->
 <dialog id="modal-nueva-liq">
-    <article style="max-width: 700px; width: 95%;">
+    <article class="modal-card-lg">
         <header>
             <a href="#close" aria-label="Close" class="close"
                 onclick="document.getElementById('modal-nueva-liq').close()"></a>
-            <h4 style="margin-bottom: 0;">
+            <h4 class="mb-0">
                 <svg class="icono-menu">
                     <use href="#icono-plus"></use>
                 </svg>
@@ -42,7 +42,7 @@
 </dialog>
 
 {{define "formulario_crear_liq"}}
-<div style="padding-top: 1rem;">
+<div class="pt-md">
     <!--Formulario Crear Liquidación-->
     <div id="alerta-liq"></div>
     <form id="form-liquidacion" hx-post="/tenant/liquidaciones/guardar" hx-target="#lista-liquidaciones"
@@ -71,7 +71,7 @@
             </label>
         </div>
 
-        <div class="grid" style="grid-template-columns: 2fr 1fr;">
+        <div class="grid-2-1">
             <fieldset>
                 <legend><strong>Cálculos / Conceptos a Calcular</strong></legend>
                 <label>
@@ -94,33 +94,33 @@
             </label>
         </div>
 
-        <details style="margin-bottom: 1rem;">
-            <summary style="font-weight: bold; cursor: pointer; padding: 0.5rem 0;">🏖️ Vacaciones Históricas Pendientes (Años Completos Ganados)</summary>
-            <div style="background-color: #fffde7; border: 1px dashed #fbc02d; border-radius: 6px; padding: 1rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
-                <p style="font-size: 0.8rem; margin-top: 0; margin-bottom: 0.8rem; color: #5d4037; line-height: 1.3;">
+        <details class="mb-md">
+            <summary class="font-bold cursor-pointer py-sm">🏖️ Vacaciones Históricas Pendientes (Años Completos Ganados)</summary>
+            <div class="alert-box alert-warning mt-sm mb-sm">
+                <p class="font-xs mt-0 mb-sm text-muted">
                     ℹ️ <em>Los meses y días truncos del año vigente se calcularán automáticamente a partir de las fechas. No los sume en esta sección.</em>
                 </p>
                 <div class="grid">
-                    <label style="font-size: 0.85rem;"
+                    <label class="font-xs"
                         data-tooltip="Años completos ganados y no gozados que ya vencieron en su plazo legal. Genera indemnización (doble pago) en el régimen DL 728.">
                         Periodos Vencidos (Indemnizables DL 728) ❓
                         <input type="number" name="periodos_vencidos_vacaciones" value="0" min="0" step="1"
-                            style="height: 35px; font-size: 0.85rem;">
+                            class="h-35 font-xs">
                     </label>
-                    <label style="font-size: 0.85rem;"
+                    <label class="font-xs"
                         data-tooltip="Años completos ganados que no se gozaron pero que aún están dentro del plazo regular para su descanso (sin indemnización).">
                         Periodos No Vencidos (Pendientes Simples) ❓
                         <input type="number" name="periodos_no_vencidos_vacaciones" value="0" min="0" step="1"
-                            style="height: 35px; font-size: 0.85rem;">
+                            class="h-35 font-xs">
                     </label>
                 </div>
             </div>
         </details>
 
-        <details style="margin-bottom: 1rem;">
-            <summary style="font-weight: bold; cursor: pointer; padding: 0.5rem 0;">➕ Otros Conceptos de Liquidación (Opcional)</summary>
-            <div style="padding-top: 0.5rem;">
-                <div class="grid" style="grid-template-columns: 2fr 1fr;">
+        <details class="mb-md">
+            <summary class="font-bold cursor-pointer py-sm">➕ Otros Conceptos de Liquidación (Opcional)</summary>
+            <div class="pt-sm">
+                <div class="grid-2-1">
                     <label>Concepto Adicional 1
                         <input type="text" name="nombre_concepto_liquidacion_1" placeholder="Nombre del concepto">
                     </label>
@@ -128,7 +128,7 @@
                         <input type="number" step="0.01" name="monto_concepto_liquidacion_1" value="0.00" min="0">
                     </label>
                 </div>
-                <div class="grid" style="grid-template-columns: 2fr 1fr;">
+                <div class="grid-2-1">
                     <label>Concepto Adicional 2
                         <input type="text" name="nombre_concepto_liquidacion_2" placeholder="Nombre del concepto">
                     </label>
@@ -139,7 +139,7 @@
             </div>
         </details>
 
-        <div style="text-align: center; margin: 1.5rem 0;">
+        <div class="text-center mt-lg mb-lg">
             <button type="button" class="outline" hx-post="/tenant/liquidaciones/calcular"
                 hx-target="#resultado-previa-liq" hx-include="#form-liquidacion">
                 <svg class="icono-menu">
@@ -151,15 +151,13 @@
 
         <!-- Resultados de Cálculo en tiempo real -->
         <div id="resultado-previa-liq">
-            <p style="color: #666; text-align: center; font-style: italic;"><small>Ingresa los campos y haz clic en
+            <p class="text-muted text-center font-italic"><small>Ingresa los campos y haz clic en
                     'Calcular Vista Previa' para visualizar el detalle.</small></p>
         </div>
 
-        <div
-            style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end; border-top: 1px solid #eee; padding-top: 1rem;">
-            <button type="button" class="secondary outline" onclick="document.getElementById('modal-nueva-liq').close()"
-                style="margin-bottom: 0; width: auto;">Cancelar</button>
-            <button type="submit" id="btn-guardar-liq" style="margin-bottom: 0; width: auto;" disabled>Confirmar y
+        <div class="flex-row-end mt-lg border-top pt-md">
+            <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-nueva-liq').close()">Cancelar</button>
+            <button type="submit" id="btn-guardar-liq" class="btn-compact" disabled>Confirmar y
                 Registrar Liquidación</button>
         </div>
     </form>
@@ -167,16 +165,15 @@
 {{end}}
 
 {{define "vista_previa_liquidacion"}}
-<div
-    style="padding: 1.2rem; background-color: #f1f8e9; border: 1px solid #c5e1a5; border-radius: 8px; margin-bottom: 1rem;">
-    <h5 style="margin-top: 0; color: #33691e; display: flex; align-items: center; gap: 0.5rem;">
+<div class="card-section alert-success mb-md">
+    <h5 class="mt-0 text-success flex-items-center flex-gap-sm">
         <svg class="icono-menu">
             <use href="#icono-mystery"></use>
         </svg>
         Vista Previa de Liquidación
     </h5>
 
-    <div class="grid" style="font-size: 0.9rem; margin-bottom: 1rem;">
+    <div class="grid mb-md font-sm">
         <div>
             <strong>Trabajador:</strong> {{.TrabajadorNombre}}<br>
             <strong>Documento:</strong> {{.TrabajadorDocumento}}<br>
@@ -189,31 +186,31 @@
         </div>
     </div>
 
-    <table style="margin-bottom: 0; background-color: white; border-radius: 6px; overflow: hidden; font-size: 0.9rem;">
+    <table class="striped font-sm mb-0">
         <tbody>
             <tr>
                 <td><strong>Monto CTS Calculado (Ley/Decreto):</strong></td>
-                <td style="text-align: right; width: 150px;">S/ {{printf "%.2f" .MontoCts}}</td>
+                <td class="text-right w-150">S/ {{printf "%.2f" .MontoCts}}</td>
             </tr>
             <tr>
                 <td><strong>Monto Vacaciones Truncas:</strong></td>
-                <td style="text-align: right;">S/ {{printf "%.2f" .MontoVacacionesTruncas}}</td>
+                <td class="text-right">S/ {{printf "%.2f" .MontoVacacionesTruncas}}</td>
             </tr>
             <tr>
                 <td><strong>Monto Vacaciones No Gozadas:</strong></td>
-                <td style="text-align: right;">S/ {{printf "%.2f" .MontoVacacionesNoGozadas}}</td>
+                <td class="text-right">S/ {{printf "%.2f" .MontoVacacionesNoGozadas}}</td>
             </tr>
             <tr>
                 <td><strong>Monto Indemnización Vacacional:</strong></td>
-                <td style="text-align: right;">S/ {{printf "%.2f" .MontoIndemnizacionVacacional}}</td>
+                <td class="text-right">S/ {{printf "%.2f" .MontoIndemnizacionVacacional}}</td>
             </tr>
             <tr>
                 <td><strong>Monto Gratificación Trunca:</strong></td>
-                <td style="text-align: right;">S/ {{printf "%.2f" .MontoGratiTrunca}}</td>
+                <td class="text-right">S/ {{printf "%.2f" .MontoGratiTrunca}}</td>
             </tr>
-            <tr style="border-top: 2px solid #ccc; background-color: #f9f9f9; font-size: 1rem;">
+            <tr class="total-row font-md">
                 <td><strong>Total Beneficios Sociales a Liquidar:</strong></td>
-                <td style="text-align: right; color: #2e7d32;"><strong>S/ {{printf "%.2f" .TotalLiquidacion}}</strong>
+                <td class="text-right text-success"><strong>S/ {{printf "%.2f" .TotalLiquidacion}}</strong>
                 </td>
             </tr>
         </tbody>
@@ -249,10 +246,10 @@
             <td>DL {{.Regimen}}</td>
             <td>{{.AnosServicios}}a, {{.MesesServicios}}m, {{.DiasServicios}}d</td>
             <td>S/ {{printf "%.2f" .RemuneracionComputable}}</td>
-            <td><strong style="color: #2e7d32;">S/ {{printf "%.2f" .TotalLiquidacion}}</strong></td>
+            <td><strong class="text-success">S/ {{printf "%.2f" .TotalLiquidacion}}</strong></td>
             <td>{{.FechaCese.Format "02/01/2006"}}</td>
             <td>
-                <button class="outline secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0;"
+                <button class="outline secondary btn-sm"
                     hx-delete="/tenant/liquidaciones/eliminar?id={{.ID}}" hx-target="#lista-liquidaciones"
                     hx-confirm="¿Está seguro de eliminar esta liquidación de cese?">
                     🗑️ Eliminar
@@ -261,7 +258,7 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="7" style="text-align: center;">No hay liquidaciones de cese registradas.</td>
+            <td colspan="7" class="text-center">No hay liquidaciones de cese registradas.</td>
         </tr>
         {{end}}
     </tbody>

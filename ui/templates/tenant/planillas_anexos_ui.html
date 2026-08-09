@@ -1,55 +1,55 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+    <header class="flex-row-between">
+        <h3 class="mb-0 flex-gap-sm">
             <svg class="icono-menu">
                 <use href="#icono-clip"></use>
             </svg>
             Anexos y Exportaciones de Planilla
         </h3>
-        <button class="secondary outline" style="width: auto; margin-bottom: 0;"
+        <button class="secondary outline btn-compact"
             hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
             ⬅️ Volver al Historial
         </button>
     </header>
 
-    <div style="background-color: var(--card-sectionning-background-color, #f8f9fa); border-left: 4px solid #1f4e79; padding: 1.2rem; border-radius: 6px; margin: 1.5rem 0;">
-        <h4 style="margin-bottom: 0.4rem; text-transform: uppercase; font-weight: 700; color: #1f4e79; letter-spacing: 0.5px;">{{.Planilla.Descripcion}}</h4>
-        <p style="margin-bottom: 0; font-size: 0.95rem;">
+    <div class="banner-info my-lg">
+        <h4 class="title-banner">{{.Planilla.Descripcion}}</h4>
+        <p class="mb-0 font-sm">
             <strong>Periodo:</strong> {{printf "%02d" .Planilla.Mes}} / {{.Planilla.Anio}}
             &nbsp;|&nbsp; 
             <strong>Estado:</strong> 
             {{if eq .Planilla.Estado "BORRADOR"}}
-            <mark style="background-color: #fff9c4; color: #f57f17; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85rem;">BORRADOR</mark>
+            <mark class="badge badge-warning">BORRADOR</mark>
             {{else}}
-            <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85rem;">CERRADA</mark>
+            <mark class="badge badge-success">CERRADA</mark>
             {{end}}
         </p>
     </div>
 
     <!-- Sección de Exportaciones Principales -->
-    <div style="margin-bottom: 2rem;">
-        <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: #1f4e79;">
+    <div class="mb-lg">
+        <h4 class="mb-md flex-gap-sm text-primary">
             <svg class="icono-menu">
                 <use href="#icono-folder-supervised"></use>
             </svg>
             Documentos y Exportaciones Principales
         </h4>
 
-        <table class="striped" style="width: 100%;">
+        <table class="striped w-full">
             <thead>
                 <tr>
-                    <th style="width: 65%;">Documento / Exportación</th>
-                    <th style="width: 35%; text-align: center;">Acción / Descarga</th>
+                    <th class="w-65">Documento / Exportación</th>
+                    <th class="w-35 text-center">Acción / Descarga</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>
                         <strong>Planilla de Pago Consolidada (Boletón PDF)</strong><br>
-                        <small style="color: var(--muted-color);">Reporte completo en formato PDF con la nómina detallada de trabajadores, conceptos e importes por meta</small>
+                        <small class="text-muted">Reporte completo en formato PDF con la nómina detallada de trabajadores, conceptos e importes por meta</small>
                     </td>
-                    <td style="text-align: center;">
-                        <a href="/tenant/planillas/descargar-reporte?id={{.Planilla.ID}}" target="_blank" class="button outline primary" style="padding: 0.35rem 0.9rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                    <td class="text-center">
+                        <a href="/tenant/planillas/descargar-reporte?id={{.Planilla.ID}}" target="_blank" class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
                             📄 Planilla PDF
                         </a>
                     </td>
@@ -57,10 +57,10 @@
                 <tr>
                     <td>
                         <strong>Boletas de Pago Individuales (PDF)</strong><br>
-                        <small style="color: var(--muted-color);">Documento PDF consolidado con todas las boletas de pago individuales firmables por trabajador</small>
+                        <small class="text-muted">Documento PDF consolidado con todas las boletas de pago individuales firmables por trabajador</small>
                     </td>
-                    <td style="text-align: center;">
-                        <a href="/tenant/planillas/descargar-boletas?id={{.Planilla.ID}}" target="_blank" class="button outline secondary" style="padding: 0.35rem 0.9rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                    <td class="text-center">
+                        <a href="/tenant/planillas/descargar-boletas?id={{.Planilla.ID}}" target="_blank" class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
                             📄 Boletas PDF
                         </a>
                     </td>
@@ -68,10 +68,10 @@
                 <tr>
                     <td>
                         <strong>Estructuras PDT / PLAME 0601 (SUNAT)</strong><br>
-                        <small style="color: var(--muted-color);">Generación de archivos de texto plano (.rem, .jor, .snl, etc.) para la importación mensual en la planilla electrónica PLAME</small>
+                        <small class="text-muted">Generación de archivos de texto plano (.rem, .jor, .snl, etc.) para la importación mensual en la planilla electrónica PLAME</small>
                     </td>
-                    <td style="text-align: center;">
-                        <button class="primary" style="padding: 0.35rem 0.9rem; font-size: 0.85rem; width: auto; margin-bottom: 0; display: inline-flex; align-items: center; gap: 4px;"
+                    <td class="text-center">
+                        <button class="primary btn-sm btn-compact inline-flex-center flex-gap-xs"
                             hx-get="/tenant/planillas/exportar-plame-modal?id={{.Planilla.ID}}" hx-target="#contenido-modal-exportar" hx-swap="innerHTML">
                             📦 Exportar PLAME
                         </button>
@@ -81,33 +81,33 @@
         </table>
     </div>
 
-    <div style="margin-bottom: 1.5rem;">
-        <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+    <div class="mb-lg">
+        <h4 class="mb-md flex-gap-sm">
             <svg class="icono-menu">
                 <use href="#icono-folder-supervised"></use>
             </svg>
             Anexos Presupuestales y Contables (MEF / SIAF)
         </h4>
 
-        <table class="striped" style="width: 100%;">
+        <table class="striped w-full">
             <thead>
                 <tr>
-                    <th style="width: 65%;">Anexo</th>
-                    <th style="width: 35%; text-align: center;">Descargar</th>
+                    <th class="w-65">Anexo</th>
+                    <th class="w-35 text-center">Descargar</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>
                         <strong>Anexo 1. Detalle del Compromiso Presupuestal</strong><br>
-                        <small style="color: var(--muted-color);">Desglose por metas, fuentes de financiamiento y clasificadores de gasto MEF</small>
+                        <small class="text-muted">Desglose por metas, fuentes de financiamiento y clasificadores de gasto MEF</small>
                     </td>
-                    <td style="text-align: center;">
-                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
-                            <a href="/tenant/planillas/anexos/anexo1/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                    <td class="text-center">
+                        <div class="flex-center flex-gap-sm">
+                            <a href="/tenant/planillas/anexos/anexo1/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center">
                                 📄 PDF
                             </a>
-                            <a href="/tenant/planillas/anexos/anexo1/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                            <a href="/tenant/planillas/anexos/anexo1/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center">
                                 📊 Excel
                             </a>
                         </div>
@@ -116,14 +116,14 @@
                 <tr>
                     <td>
                         <strong>Anexo 1A. Resumen por conceptos de planilla</strong><br>
-                        <small style="color: var(--muted-color);">Consolidado organizado por Ingresos, Retenciones y Aportes, con costo total de planilla</small>
+                        <small class="text-muted">Consolidado organizado por Ingresos, Retenciones y Aportes, con costo total de planilla</small>
                     </td>
-                    <td style="text-align: center;">
-                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
-                            <a href="/tenant/planillas/anexos/anexo1a/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                    <td class="text-center">
+                        <div class="flex-center flex-gap-sm">
+                            <a href="/tenant/planillas/anexos/anexo1a/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center">
                                 📄 PDF
                             </a>
-                            <a href="/tenant/planillas/anexos/anexo1a/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                            <a href="/tenant/planillas/anexos/anexo1a/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center">
                                 📊 Excel
                             </a>
                         </div>
@@ -132,14 +132,14 @@
                 <tr>
                     <td>
                         <strong>Anexo 2. Resumen por AFP</strong><br>
-                        <small style="color: var(--muted-color);">Consolidado de aportes obligatorios, prima de seguro y comisiones por AFP</small>
+                        <small class="text-muted">Consolidado de aportes obligatorios, prima de seguro y comisiones por AFP</small>
                     </td>
-                    <td style="text-align: center;">
-                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
-                            <a href="/tenant/planillas/anexos/anexo2/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                    <td class="text-center">
+                        <div class="flex-center flex-gap-sm">
+                            <a href="/tenant/planillas/anexos/anexo2/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center">
                                 📄 PDF
                             </a>
-                            <a href="/tenant/planillas/anexos/anexo2/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                            <a href="/tenant/planillas/anexos/anexo2/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center">
                                 📊 Excel
                             </a>
                         </div>
@@ -148,14 +148,14 @@
                 <tr>
                     <td>
                         <strong>Anexo 2A. Registro Devengado de AFP</strong><br>
-                        <small style="color: var(--muted-color);">Desglose por AFP, metas presupuestales y clasificadores de gasto para devengado SIAF</small>
+                        <small class="text-muted">Desglose por AFP, metas presupuestales y clasificadores de gasto para devengado SIAF</small>
                     </td>
-                    <td style="text-align: center;">
-                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
-                            <a href="/tenant/planillas/anexos/anexo2a/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                    <td class="text-center">
+                        <div class="flex-center flex-gap-sm">
+                            <a href="/tenant/planillas/anexos/anexo2a/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center">
                                 📄 PDF
                             </a>
-                            <a href="/tenant/planillas/anexos/anexo2a/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                            <a href="/tenant/planillas/anexos/anexo2a/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center">
                                 📊 Excel
                             </a>
                         </div>
@@ -164,14 +164,14 @@
                 <tr>
                     <td>
                         <strong>Anexo 3. Retenciones de SUNAT</strong><br>
-                        <small style="color: var(--muted-color);">Consolidado por meta y clasificador de retenciones de ONP (0607), Renta 4ta (S101) y Renta 5ta (0605)</small>
+                        <small class="text-muted">Consolidado por meta y clasificador de retenciones de ONP (0607), Renta 4ta (S101) y Renta 5ta (0605)</small>
                     </td>
-                    <td style="text-align: center;">
-                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
-                            <a href="/tenant/planillas/anexos/anexo3/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                    <td class="text-center">
+                        <div class="flex-center flex-gap-sm">
+                            <a href="/tenant/planillas/anexos/anexo3/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center">
                                 📄 PDF
                             </a>
-                            <a href="/tenant/planillas/anexos/anexo3/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0; text-decoration: none; display: inline-flex; align-items: center;">
+                            <a href="/tenant/planillas/anexos/anexo3/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center">
                                 📊 Excel
                             </a>
                         </div>
@@ -180,14 +180,14 @@
                 <tr>
                     <td>
                         <strong>Anexo 4. Otros descuentos al trabajador</strong><br>
-                        <small style="color: var(--muted-color);">Retenciones por mandato judicial, cuota sindical y otros rubros</small>
+                        <small class="text-muted">Retenciones por mandato judicial, cuota sindical y otros rubros</small>
                     </td>
-                    <td style="text-align: center;">
-                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
-                            <button class="outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 4 (PDF) estará disponible en la siguiente fase.')">
+                    <td class="text-center">
+                        <div class="flex-center flex-gap-sm">
+                            <button class="outline primary btn-sm btn-compact" onclick="alert('La generación del Anexo 4 (PDF) estará disponible en la siguiente fase.')">
                                 📄 PDF
                             </button>
-                            <button class="outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 4 (Excel) estará disponible en la siguiente fase.')">
+                            <button class="outline secondary btn-sm btn-compact" onclick="alert('La generación del Anexo 4 (Excel) estará disponible en la siguiente fase.')">
                                 📊 Excel
                             </button>
                         </div>
@@ -196,14 +196,14 @@
                 <tr>
                     <td>
                         <strong>Anexo 5. Montos netos para abonar</strong><br>
-                        <small style="color: var(--muted-color);">Relación de montos netos finales para depósitos en cuentas de haberes</small>
+                        <small class="text-muted">Relación de montos netos finales para depósitos en cuentas de haberes</small>
                     </td>
-                    <td style="text-align: center;">
-                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
-                            <button class="outline primary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 5 (PDF) estará disponible en la siguiente fase.')">
+                    <td class="text-center">
+                        <div class="flex-center flex-gap-sm">
+                            <button class="outline primary btn-sm btn-compact" onclick="alert('La generación del Anexo 5 (PDF) estará disponible en la siguiente fase.')">
                                 📄 PDF
                             </button>
-                            <button class="outline secondary" style="padding: 0.3rem 0.7rem; font-size: 0.85rem; width: auto; margin-bottom: 0;" onclick="alert('La generación del Anexo 5 (Excel) estará disponible en la siguiente fase.')">
+                            <button class="outline secondary btn-sm btn-compact" onclick="alert('La generación del Anexo 5 (Excel) estará disponible en la siguiente fase.')">
                                 📊 Excel
                             </button>
                         </div>
@@ -213,8 +213,8 @@
         </table>
     </div>
 
-    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color, #e0e0e0); text-align: center;">
-        <button class="primary" style="width: auto; padding: 0.6rem 2rem; font-weight: bold; margin-bottom: 0;" onclick="alert('La descarga consolidada en ZIP estará disponible en la siguiente fase.')">
+    <div class="border-top pt-lg mt-lg text-center">
+        <button class="primary btn-compact font-bold" onclick="alert('La descarga consolidada en ZIP estará disponible en la siguiente fase.')">
             📦 Descargar todo Zip
         </button>
     </div>
@@ -223,10 +223,10 @@
 <!-- Modal de Exportación PLAME -->
 <dialog id="modal-exportar-plame"
     hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-exportar') this.showModal()">
-    <article style="max-width: 700px; width: 90%;">
+    <article class="modal-card-lg">
         <header>
             <button class="close" aria-label="Close" rel="prev" onclick="document.getElementById('modal-exportar-plame').close()"></button>
-            <h3 style="margin-bottom: 0;">📦 Exportación Estructuras SUNAT (PDT / PLAME)</h3>
+            <h3 class="mb-0">📦 Exportación Estructuras SUNAT (PDT / PLAME)</h3>
         </header>
         <div id="contenido-modal-exportar"></div>
     </article>

@@ -1,24 +1,24 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin: 0;">
+    <header class="flex-row-between">
+        <h3 class="m-0">
             <svg class="icono-menu">
                 <use href="#icono-list-todo"></use>
             </svg>
             Tareas Programadas y Recordatorios (SaaS Admin)
         </h3>
-        <button class="primary" style="margin-bottom: 0; width: auto;" onclick="document.getElementById('modal-crear-tarea').setAttribute('open', 'true')">
+        <button class="primary btn-compact" onclick="document.getElementById('modal-crear-tarea').setAttribute('open', 'true')">
             ➕ Programar Nueva Tarea
         </button>
     </header>
 
-    <div style="margin-bottom: 1.5rem; display: flex; justify-content: flex-end;">
-        <input class="form-control" type="search" name="buscar" placeholder="Buscar por título o descripción..."
+    <div class="flex-row-end mb-lg">
+        <input class="form-control mb-0 max-w-400 w-full" type="search" name="buscar" placeholder="Buscar por título o descripción..."
             hx-get="/admin/tareas" hx-trigger="keyup changed delay:500ms, search"
-            hx-target="#lista-tareas-cuerpo" style="margin-bottom: 0; max-width: 400px; width: 100%;">
+            hx-target="#lista-tareas-cuerpo">
     </div>
 
     <div id="lista-tareas" hx-get="/admin/tareas" hx-trigger="load">
-        <p aria-busy="true" style="text-align: center;">Cargando tareas programadas...</p>
+        <p aria-busy="true" class="text-center">Cargando tareas programadas...</p>
     </div>
 </article>
 
@@ -27,10 +27,10 @@
 
 <!-- Modal de Creación -->
 <dialog id="modal-crear-tarea">
-    <article style="max-width: 600px; width: 100%;">
+    <article class="modal-card-md">
         <header>
             <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-crear-tarea').removeAttribute('open')"></button>
-            <h3 style="margin: 0;">➕ Programar Nueva Tarea</h3>
+            <h3 class="m-0">➕ Programar Nueva Tarea</h3>
         </header>
         <form hx-post="/admin/tareas/crear" hx-target="#lista-tareas-cuerpo" hx-swap="innerHTML" 
               hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('modal-crear-tarea').removeAttribute('open'); }">
@@ -50,8 +50,8 @@
                     </select>
                 </label>
                 
-                <label style="display: flex; align-items: center; height: 100%;">
-                    <input type="checkbox" name="activo" checked style="margin-right: 0.5rem;"> Tarea Activa
+                <label class="flex-align-center h-full">
+                    <input type="checkbox" name="activo" checked class="mr-sm"> Tarea Activa
                 </label>
             </div>
 
@@ -65,9 +65,9 @@
                 </label>
             </div>
 
-            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
-                <button type="button" class="secondary outline" onclick="document.getElementById('modal-crear-tarea').removeAttribute('open')" style="margin-bottom: 0; width: auto;">Cancelar</button>
-                <button type="submit" style="margin-bottom: 0; width: auto;">Programar Tarea</button>
+            <footer class="flex-row-end mt-md">
+                <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-crear-tarea').removeAttribute('open')">Cancelar</button>
+                <button type="submit" class="btn-compact">Programar Tarea</button>
             </footer>
         </form>
     </dialog>
@@ -76,10 +76,10 @@
 <!-- BLOQUE: Formulario de Edición de Tarea (Carga Dinámica) -->
 {{define "formulario_editar_tarea"}}
 <dialog id="modal-editar-tarea" open>
-    <article style="max-width: 600px; width: 100%;">
+    <article class="modal-card-md">
         <header>
             <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-editar-tarea').removeAttribute('open'); document.getElementById('contenedor-modal-editar-tarea').innerHTML = '';"></button>
-            <h3 style="margin: 0;">✏️ Editando Tarea: {{.Titulo}}</h3>
+            <h3 class="m-0">✏️ Editando Tarea: {{.Titulo}}</h3>
         </header>
         <form hx-post="/admin/tareas/actualizar" hx-target="#contenido-principal" hx-swap="innerHTML">
             <input type="hidden" name="id" value="{{.ID}}">
@@ -99,8 +99,8 @@
                     </select>
                 </label>
                 
-                <label style="display: flex; align-items: center; height: 100%;">
-                    <input type="checkbox" name="activo" {{if .Activo}}checked{{end}} style="margin-right: 0.5rem;"> Tarea Activa
+                <label class="flex-align-center h-full">
+                    <input type="checkbox" name="activo" {{if .Activo}}checked{{end}} class="mr-sm"> Tarea Activa
                 </label>
             </div>
 
@@ -114,9 +114,9 @@
                 </label>
             </div>
 
-            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
-                <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-tarea').removeAttribute('open'); document.getElementById('contenedor-modal-editar-tarea').innerHTML = '';" style="margin-bottom: 0; width: auto;">Cancelar</button>
-                <button type="submit" style="margin-bottom: 0; width: auto;">Guardar Cambios</button>
+            <footer class="flex-row-end mt-md">
+                <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-editar-tarea').removeAttribute('open'); document.getElementById('contenedor-modal-editar-tarea').innerHTML = '';">Cancelar</button>
+                <button type="submit" class="btn-compact">Guardar Cambios</button>
             </footer>
         </form>
     </article>
@@ -151,11 +151,11 @@
     <td>
         <strong>{{.Titulo}}</strong>
         {{if .Descripcion}}
-        <br><small style="color: var(--pico-muted-color);">{{.Descripcion}}</small>
+        <br><small class="text-muted">{{.Descripcion}}</small>
         {{end}}
     </td>
     <td>
-        <span class="badge" style="font-size: 0.8rem; background-color: var(--pico-form-element-background-color); border: 1px solid var(--pico-muted-border-color); padding: 2px 6px; border-radius: 4px;">
+        <span class="badge badge-secondary">
             {{.Recurrencia}}
         </span>
     </td>
@@ -163,13 +163,13 @@
     <td>{{.ProximoAvisoLegible}}</td>
     <td>
         {{if .Activo}}
-        <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">Activo</mark>
+        <mark class="badge badge-success">Activo</mark>
         {{else}}
-        <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">Inactivo</mark>
+        <mark class="badge badge-danger">Inactivo</mark>
         {{end}}
     </td>
     <td>
-        <button class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; margin-bottom: 0; width: auto;"
+        <button class="outline btn-sm"
             hx-get="/admin/tareas/editar_ui?id={{.ID}}" hx-target="#contenedor-modal-editar-tarea" hx-swap="innerHTML" type="button">
             Editar
         </button>
@@ -177,7 +177,7 @@
 </tr>
 {{else}}
 <tr>
-    <td colspan="7" style="text-align: center;">No hay tareas programadas registradas.</td>
+    <td colspan="7" class="text-center">No hay tareas programadas registradas.</td>
 </tr>
 {{end}}
 {{end}}

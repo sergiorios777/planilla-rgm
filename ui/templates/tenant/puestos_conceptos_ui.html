@@ -1,29 +1,29 @@
 <article>
     <header>
-        <h3 style="margin-bottom: 0;">
+        <h3 class="mb-0">
             <svg class="icono-menu">
                 <use href="#icono-cajas"></use>
             </svg>
-            Estructura de Costos de la Plaza{{if .PuestoNombre}}: <span style="color: var(--primary);">{{.PuestoNombre}}</span>{{end}}
+            Estructura de Costos de la Plaza{{if .PuestoNombre}}: <span class="text-primary">{{.PuestoNombre}}</span>{{end}}
         </h3>
         <p><small>Asigna los ingresos, retenciones y aportes que le corresponden a este puesto.</small></p>
     </header>
 
-    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
-        <button class="secondary outline" hx-get="/tenant/ui/puestos" hx-target="#contenido-tenant" style="margin-bottom: 0; width: auto;">
+    <div class="flex-row-start flex-gap-md mb-lg">
+        <button class="secondary outline btn-compact" hx-get="/tenant/ui/puestos" hx-target="#contenido-tenant">
             <svg class="icono-menu">
                 <use href="#icono-previo-cuadrado"></use>
             </svg> Volver al Cuadro de Puestos
         </button>
 
-        <button class="contrast outline" style="width: auto; margin-bottom: 0;"
+        <button class="contrast outline btn-compact"
             onclick="document.getElementById('modal-nuevo-concepto-plaza').showModal()">
             <svg class="icono-menu">
                 <use href="#icono-nuevo-1"></use>
             </svg> Añadir Concepto a la Plaza
         </button>
 
-        <button class="outline" style="color: #d32f2f; border-color: #d32f2f; margin-bottom: 0; width: auto;"
+        <button class="outline btn-compact border-danger text-danger"
             hx-post="/tenant/puestos-conceptos/restaurar?puesto_id={{.PuestoID}}" hx-target="#contenido-tenant"
             hx-confirm="🚨 ATENCIÓN: Esto borrará los montos actuales y volverá a cargar la plantilla predeterminada. ¿Desea continuar?">
             <svg class="icono-menu">
@@ -40,10 +40,10 @@
 
     <!-- Modal para Añadir Concepto a la Plaza -->
     <dialog id="modal-nuevo-concepto-plaza">
-        <article style="max-width: 600px; width: 95%;">
+        <article class="modal-card-md">
             <header>
                 <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nuevo-concepto-plaza').close()"></a>
-                <h4 style="margin-bottom: 0;">➕ Añadir Concepto a la Plaza</h4>
+                <h4 class="mb-0">➕ Añadir Concepto a la Plaza</h4>
             </header>
             <form hx-post="/tenant/puestos-conceptos/crear" hx-target="#contenido-tenant"
                 hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-nuevo-concepto-plaza').close(); }">
@@ -64,9 +64,9 @@
                     <small>Solo llene esto si el concepto tiene un monto fijo (Ej. Bono exacto de S/ 100).</small>
                 </label>
 
-                <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-nuevo-concepto-plaza').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
-                    <button type="submit" style="margin-bottom: 0; width: auto;">Asignar a la Plaza</button>
+                <div class="flex-row-end mt-lg">
+                    <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-nuevo-concepto-plaza').close()">Cancelar</button>
+                    <button type="submit" class="btn-compact">Asignar a la Plaza</button>
                 </div>
             </form>
         </article>
@@ -91,7 +91,7 @@
             </td>
             <td>
                 {{if .MontoIngresado}}
-                <div style="cursor: pointer;"
+                <div class="cursor-pointer"
                     hx-get="/tenant/puestos-conceptos/editar-monto-ui?id={{.ID}}&puesto_id={{.PuestoID}}"
                     hx-target="this">
                     <strong>S/ {{.Monto}}</strong>
@@ -101,8 +101,7 @@
                 </div>
                 {{else}}
                 {{if .RequiereMontoManual}}
-                <mark
-                    style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; cursor: pointer;"
+                <mark class="badge badge-danger cursor-pointer"
                     hx-get="/tenant/puestos-conceptos/editar-monto-ui?id={{.ID}}&puesto_id={{.PuestoID}}"
                     hx-target="this">
                     <svg class="icono-menu">
@@ -110,7 +109,7 @@
                     </svg> Ingresar Monto
                 </mark>
                 {{else}}
-                <span style="color: #666; font-style: italic;">
+                <span class="text-muted font-italic">
                     <svg class="icono-menu">
                         <use href="#icono-engranaje"></use>
                     </svg>
@@ -119,8 +118,7 @@
                 {{end}}
             </td>
             <td>
-                <button class="outline"
-                    style="padding: 0.2rem 0.5rem; font-size: 0.8rem; color: #b71c1c; border-color: #b71c1c;"
+                <button class="outline btn-sm border-danger text-danger"
                     hx-delete="/tenant/puestos-conceptos/eliminar?id={{.ID}}&puesto_id={{.PuestoID}}"
                     hx-target="#contenido-tenant" hx-confirm="¿Estás seguro de quitar este concepto de la plaza?">
                     Quitar
@@ -129,7 +127,7 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="3" style="text-align: center;">Esta plaza aún no tiene conceptos costeados.</td>
+            <td colspan="3" class="text-center">Esta plaza aún no tiene conceptos costeados.</td>
         </tr>
         {{end}}
     </tbody>

@@ -1,19 +1,19 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin-bottom: 0; display: flex; align-items: center;">
+    <header class="flex-row-between">
+        <h3 class="mb-0 flex-items-center">
             <svg class="icono-menu">
                 <use href="#icono-objetivo"></use>
             </svg>
             Metas Presupuestales
         </h3>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button class="primary" style="width: auto; margin-bottom: 0;"
+        <div class="flex-gap-sm flex-wrap">
+            <button class="primary btn-compact"
                 onclick="document.getElementById('modal-crear-meta').showModal()">
                 <svg class="icono-menu">
                     <use href="#icono-nuevo-1"></use>
                 </svg> Registrar Nueva Meta
             </button>
-            <button class="contrast outline" style="width: auto; margin-bottom: 0;"
+            <button class="contrast outline btn-compact"
                 onclick="document.getElementById('modal-importar-meta').showModal()">
                 <svg class="icono-menu">
                     <use href="#icono-importar"></use>
@@ -41,7 +41,7 @@
                 </select>
             </label>
 
-            <label style="width: 150px;">
+            <label class="w-150">
                 Mostrar
                 <select name="limite" hx-get="/tenant/metas/lista" hx-include="#form-filtros-metas"
                     hx-target="#lista-metas">
@@ -59,10 +59,10 @@
 
     <!-- Modal de Creación -->
     <dialog id="modal-crear-meta">
-        <article style="max-width: 600px; width: 95%;">
+        <article class="modal-card-md">
             <header>
                 <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-crear-meta').close()"></a>
-                <h4 style="margin-bottom: 0;">➕ Registrar Nueva Meta</h4>
+                <h4 class="mb-0">➕ Registrar Nueva Meta</h4>
             </header>
             <div id="contenedor-formulario">
                 {{template "formulario_crear" .}}
@@ -72,10 +72,10 @@
 
     <!-- Modal de Importación -->
     <dialog id="modal-importar-meta">
-        <article style="max-width: 700px; width: 95%;">
+        <article class="modal-card-lg">
             <header>
                 <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-meta').close()"></a>
-                <h4 style="margin-bottom: 0;">📤 Importación Masiva (Excel)</h4>
+                <h4 class="mb-0">📤 Importación Masiva (Excel)</h4>
             </header>
             <div id="contenedor-formulario-importar">
                 {{template "formulario_importar_metas" .}}
@@ -85,10 +85,10 @@
 
     <!-- Modal de Edición -->
     <dialog id="modal-editar-meta" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
-        <article style="max-width: 600px; width: 95%;">
+        <article class="modal-card-md">
             <header>
                 <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-editar-meta').close()"></a>
-                <h4 style="margin-bottom: 0;">✏️ Editar Meta Presupuestal</h4>
+                <h4 class="mb-0">✏️ Editar Meta Presupuestal</h4>
             </header>
             <div id="contenido-modal-editar">
                 <!-- Formulario se carga aquí vía HTMX -->
@@ -114,9 +114,9 @@
     <label>
         <input type="checkbox" name="activo" checked> Meta Activa
     </label>
-    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline" onclick="document.getElementById('modal-crear-meta').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
-        <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">Guardar Meta</button>
+    <div class="flex-row-end mt-lg">
+        <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-crear-meta').close()">Cancelar</button>
+        <button type="submit" class="primary btn-compact">Guardar Meta</button>
     </div>
 </form>
 {{end}}
@@ -143,11 +143,11 @@
         <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Meta Activa
     </label>
 
-    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-meta').close()" style="margin-bottom: 0; width: auto;">
+    <div class="flex-row-end mt-lg">
+        <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-editar-meta').close()">
             Cancelar
         </button>
-        <button type="submit" class="primary" style="margin-bottom: 0; width: auto;">Guardar Cambios</button>
+        <button type="submit" class="primary btn-compact">Guardar Cambios</button>
     </div>
 </form>
 {{end}}
@@ -169,16 +169,14 @@
             <td><strong>{{.Codigo}}</strong></td>
             <td><small>{{.Descripcion}}</small></td>
             <td>
-                <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="flex-gap-sm flex-items-center">
                     {{if .Activo}}
-                    <mark
-                        style="background-color: #c8e6c9; color: #1b5e20; border-radius: 4px; padding: 2px 6px;">Activa</mark>
+                    <mark class="badge badge-success">Activa</mark>
                     {{else}}
-                    <mark
-                        style="background-color: #ffcdd2; color: #b71c1c; border-radius: 4px; padding: 2px 6px;">Inactiva</mark>
+                    <mark class="badge badge-danger">Inactiva</mark>
                     {{end}}
 
-                    <button class="outline secondary" style="padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
+                    <button class="outline secondary btn-sm"
                         hx-get="/tenant/metas/editar-ui?id={{.ID}}" hx-target="#contenido-modal-editar" hx-swap="innerHTML">
                         Editar
                     </button>
@@ -187,14 +185,14 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="4" style="text-align: center;">No hay metas registradas.</td>
+            <td colspan="4" class="text-center">No hay metas registradas.</td>
         </tr>
         {{end}}
     </tbody>
 </table>
 
 <!-- Controles de paginación-->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+<div class="flex-row-between mt-md">
     <!-- Mostramos el estado completo de la navegación -->
     <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
 
@@ -221,16 +219,16 @@
 <div>
     <p><small>Sube un archivo <b>.xlsx</b> con 4 columnas en el orden exacto indicado a continuación. La primera fila (cabecera) se omitirá durante el procesamiento.</small></p>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div class="flex-row-between mb-md">
         <strong>Estructura del Archivo Excel:</strong>
-        <a href="/tenant/metas/plantilla" class="button outline primary" style="padding: 4px 12px; font-size: 0.85rem; margin-bottom: 0;">
-            <svg class="icono-menu" style="margin-right: 4px;">
+        <a href="/tenant/metas/plantilla" class="button outline primary btn-sm">
+            <svg class="icono-menu mr-1">
                 <use href="#icono-importar"></use>
             </svg> Descargar Plantilla (.xlsx)
         </a>
     </div>
 
-    <table class="striped" style="width: 100%; font-size: 0.75rem;">
+    <table class="striped w-full font-xs">
         <thead>
             <tr>
                 <th>A: Año (Fiscal)</th>
@@ -259,13 +257,13 @@
         hx-target="#resultado-importacion-meta" hx-indicator="#cargando-excel-meta"
         hx-on::after-request="if(event.detail.successful) { htmx.trigger('body', 'recargarTablaMetas'); }">
 
-        <div class="grid" style="margin-top: 1rem;">
+        <div class="grid mt-md">
             <label>Archivo Excel (.xlsx)
                 <input type="file" name="archivo_excel" accept=".xlsx" required>
             </label>
 
-            <div style="display: flex; align-items: end; padding-bottom: var(--spacing);">
-                <button type="submit" class="contrast" style="margin-bottom: 0;">Procesar Archivo</button>
+            <div class="flex-items-end pb-sm">
+                <button type="submit" class="contrast mb-0">Procesar Archivo</button>
             </div>
         </div>
 
@@ -276,10 +274,10 @@
         </span>
     </form>
 
-    <div id="resultado-importacion-meta" style="margin-top: 1rem;"></div>
+    <div id="resultado-importacion-meta" class="mt-md"></div>
 
-    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-        <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-meta').close()" style="margin-bottom: 0; width: auto;">Cerrar</button>
+    <div class="flex-row-end mt-lg">
+        <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-importar-meta').close()">Cerrar</button>
     </div>
 </div>
 {{end}}

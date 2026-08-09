@@ -1,15 +1,15 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <header class="flex-row-between">
         <div>
-            <h3 style="margin: 0;"><svg class="icono-menu"><use href="#icono-red"></use></svg> Estructura Orgánica (Organigrama)</h3>
-            <p style="margin: 0;"><small>Gestión de versiones de organigramas y asignación de puestos.</small></p>
+            <h3 class="m-0"><svg class="icono-menu"><use href="#icono-red"></use></svg> Estructura Orgánica (Organigrama)</h3>
+            <p class="m-0"><small>Gestión de versiones de organigramas y asignación de puestos.</small></p>
         </div>
         
-        <div role="group" style="margin-bottom: 0;">
+        <div role="group" class="mb-0">
             <select name="organigrama_id" 
                     hx-get="/tenant/organigrama/arbol" 
                     hx-target="#contenedor-arbol-organico"
-                    style="margin-bottom: 0; max-width: 250px;"
+                    class="mb-0 max-w-250"
                     {{if not .Organigramas}}disabled{{end}}>
                 {{if not .Organigramas}}
                     <option value="">Sin versiones creadas</option>
@@ -24,14 +24,14 @@
             <button class="outline" onclick="abrirModalClonacion()">
                 ✨ Nueva Versión (Clonar)
             </button>
-            <button class="outline" onclick="abrirModalImportacion()" style="border-color: var(--pico-primary); color: var(--pico-primary);" {{if not .Organigramas}}disabled{{end}}>
+            <button class="outline primary" onclick="abrirModalImportacion()" {{if not .Organigramas}}disabled{{end}}>
                 📥 Importar Excel
             </button>
         </div>
     </header>
 
     <div id="contenedor-arbol-organico" hx-get="/tenant/organigrama/arbol" hx-trigger="load, reloadArbol from:body">
-        <div aria-busy="true" style="text-align: center;">Cargando estructura orgánica...</div>
+        <div aria-busy="true" class="text-center">Cargando estructura orgánica...</div>
     </div>
 </article>
 
@@ -76,12 +76,12 @@
             <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-organigrama').close()"></a>
             <h3>📥 Importar Estructura Orgánica</h3>
         </header>
-        <div style="background-color: #fff3cd; color: #856404; padding: 1rem; border: 1px solid #ffeeba; border-radius: 5px; margin-bottom: 1rem;">
+        <div class="card-section alert-warning mb-md">
             <strong>⚠️ ADVERTENCIA CRÍTICA:</strong>
-            <p style="margin-bottom: 0.5rem; font-size: 0.9em;">
+            <p class="mb-sm font-sm">
                 Esta acción borrará todas las unidades orgánicas del organigrama seleccionado y cargará la nueva estructura desde el archivo.
             </p>
-            <p style="margin-bottom: 0; font-size: 0.9em;">
+            <p class="mb-0 font-sm">
                 <strong>Todos los puestos vinculados a la estructura actual serán DESVINCULADOS automáticamente</strong> y deberán ser reasignados manualmente a las nuevas unidades. Asegúrese de tener identificados los puestos afectados antes de proceder, mucho mejor con su código AIRHSP.
             </p>
         </div>
@@ -90,7 +90,7 @@
             <input type="hidden" name="organigrama_id" id="importar-organigrama-id">
             
             <p>
-                <a href="/tenant/organigrama/plantilla" target="_blank" style="text-decoration: underline;">
+                <a href="/tenant/organigrama/plantilla" target="_blank" class="text-underline">
                     📄 Descargar Plantilla Excel de Ejemplo
                 </a>
             </p>
@@ -98,11 +98,11 @@
             <label for="archivo_excel">Seleccione el archivo Excel (.xlsx):</label>
             <input type="file" id="archivo_excel" name="archivo_excel" accept=".xlsx" required>
 
-            <div id="resultado-importacion-organigrama" style="margin-top: 1rem;"></div>
+            <div id="resultado-importacion-organigrama" class="mt-md"></div>
 
             <footer>
                 <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-organigrama').close()">Cancelar</button>
-                <button type="submit" style="background-color: #d9534f; border-color: #d43f3a; color: white;">Confirmar e Importar</button>
+                <button type="submit" class="btn-danger-fill">Confirmar e Importar</button>
             </footer>
         </form>
     </article>
@@ -133,7 +133,7 @@
     {{if .}}
         {{template "nodo_organigrama" .}}
     {{else}}
-        <div style="text-align: center; padding: 2rem;">
+        <div class="text-center p-md">
             <p>No hay unidades orgánicas creadas en esta versión.</p>
             <button class="outline" hx-get="/tenant/organigrama/unidad/agregar_hijo_ui?parent_id=0" hx-include="[name='organigrama_id']" hx-target="#modal-unidad-contenido" onclick="document.getElementById('modal-unidad-global').showModal()">
                 ➕ Crear Primera Unidad Raíz
@@ -143,13 +143,13 @@
 {{end}}
 
 {{define "nodo_organigrama"}}
-    <ul style="list-style-type: none; padding-left: 1.5rem;">
+    <ul class="list-none pl-md">
         {{range .}}
         <li>
-            <details open style="margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px dashed #ccc;">
-                <summary style="font-weight: bold; color: var(--pico-primary); cursor: pointer;">
+            <details open class="mb-sm pb-sm border-bottom-dashed">
+                <summary class="font-bold cursor-pointer">
                     📁 [{{.Tipo}}] {{.Nombre}} 
-                    <small style="color: #666; font-weight: normal; margin-left: 10px;">
+                    <small class="text-muted font-normal ml-2">
                         (Código MEF: {{if .CodigoMef}}{{.CodigoMef}}{{else}}N/A{{end}})
                         {{if .Hijos}}
                             | 👤 Directas: {{.PuestosPropios}} | 🏢 Totales: {{.TotalPuestos}}
@@ -157,16 +157,16 @@
                             | 👤 Plazas: {{.PuestosPropios}}
                         {{end}}
                     </small>
-                    <span style="float: right; font-weight: normal; font-size: 0.8rem;">
-                        <a href="#" hx-get="/tenant/organigrama/unidad/editar_ui?id={{.ID}}" hx-target="#modal-unidad-contenido" onclick="document.getElementById('modal-unidad-global').showModal()" style="margin-right: 15px;">✏️ Editar</a>
-                        <a href="#" hx-get="/tenant/organigrama/unidad/agregar_hijo_ui?parent_id={{.ID}}" hx-include="[name='organigrama_id']" hx-target="#modal-unidad-contenido" onclick="document.getElementById('modal-unidad-global').showModal()" style="color: green;">➕ Subunidad</a>
+                    <span class="float-right font-normal font-xs">
+                        <a href="#" hx-get="/tenant/organigrama/unidad/editar_ui?id={{.ID}}" hx-target="#modal-unidad-contenido" onclick="document.getElementById('modal-unidad-global').showModal()" class="mr-2">✏️ Editar</a>
+                        <a href="#" hx-get="/tenant/organigrama/unidad/agregar_hijo_ui?parent_id={{.ID}}" hx-include="[name='organigrama_id']" hx-target="#modal-unidad-contenido" onclick="document.getElementById('modal-unidad-global').showModal()" class="text-success">➕ Subunidad</a>
                     </span>
                 </summary>
                 
                 {{if .Hijos}}
                     {{template "nodo_organigrama" .Hijos}}
                 {{else}}
-                    <p style="margin-left: 2rem; margin-bottom: 0; font-style: italic; color: #888; display:none;">
+                    <p class="ml-lg mb-0 font-italic text-muted d-none">
                         <small>📍 Sin subunidades.</small>
                     </p>
                 {{end}}
@@ -240,15 +240,14 @@
         <input type="text" id="codigo_mef" name="codigo_mef" value="{{.CodigoMef}}">
 
         <footer>
-            <div style="display: flex; justify-content: space-between; width: 100%;">
-                <button type="button" class="contrast outline" 
+            <div class="flex-row-between w-full">
+                <button type="button" class="contrast outline btn-danger" 
                     hx-delete="/tenant/organigrama/unidad/eliminar?id={{.ID}}" 
                     hx-swap="none" 
-                    hx-on::after-request="document.getElementById('modal-unidad-global').close()" 
-                    style="border-color: red; color: red;">
+                    hx-on::after-request="document.getElementById('modal-unidad-global').close()">
                     🗑️ Eliminar
                 </button>
-                <div style="display: flex; gap: 10px;">
+                <div class="flex-gap-sm">
                     <button type="button" class="secondary outline" onclick="document.getElementById('modal-unidad-global').close()">Cancelar</button>
                     <button type="submit">Actualizar</button>
                 </div>

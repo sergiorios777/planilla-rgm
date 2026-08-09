@@ -1,7 +1,7 @@
 <article>
     <header>
         <h2>Entidades Registradas</h2>
-        <div style="display:flex; justify-content: end;">
+        <div class="flex-row-end">
             <!-- El input de búsqueda debe estar aqui-->
             <input class="form-control" type="search" name="buscar" placeholder="Buscar por nombre o RUC..."
                 hx-get="/admin/tenants" hx-trigger="keyup changed delay:500ms, search"
@@ -42,7 +42,7 @@
         </tr>
     {{else}}
         <tr>
-            <td colspan="4" style="text-align: center;">No hay entidades registradas aún.</td>
+            <td colspan="4" class="text-center">No hay entidades registradas aún.</td>
         </tr>
     {{end}}
 {{end}}

@@ -1,17 +1,17 @@
 <article>
-    <header style="display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+    <header class="flex-row-between">
+        <h3 class="mb-0 flex-items-center flex-gap-sm">
             <svg class="icono-menu">
                 <use href="#icono-carpeta-usuario"></use>
             </svg>
             Gestión de Contratos Laborales
         </h3>
-        <div style="display: flex; gap: 0.5rem; margin-bottom: 0;">
-            <button class="primary" style="width: auto; margin-bottom: 0;"
+        <div class="flex-gap-sm mb-0">
+            <button class="primary btn-compact"
                 onclick="document.getElementById('modal-nuevo-contrato').showModal()">
                 ➕ Asignar Puesto a Trabajador
             </button>
-            <button class="secondary outline" style="width: auto; margin-bottom: 0;"
+            <button class="secondary outline btn-compact"
                 onclick="document.getElementById('modal-importar-contrato').showModal()">
                 📤 Importación Masiva (Excel)
             </button>
@@ -37,7 +37,7 @@
                 </select>
             </label>
 
-            <label style="width: 150px;">
+            <label class="w-150">
                 Mostrar
                 <select name="limite" hx-get="/tenant/contratos/lista" hx-include="#form-filtros-contratos"
                     hx-target="#lista-contratos">
@@ -55,10 +55,10 @@
 
     <!-- Modal de Creación de Contrato -->
     <dialog id="modal-nuevo-contrato">
-        <article style="max-width: 750px; width: 95%;">
+        <article class="modal-card-lg">
             <header>
                 <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nuevo-contrato').close()"></a>
-                <h4 style="margin-bottom: 0;">➕ Asignar Puesto a Trabajador</h4>
+                <h4 class="mb-0">➕ Asignar Puesto a Trabajador</h4>
             </header>
             <div id="contenido-modal-nuevo">
                 {{template "formulario_crear" .}}
@@ -68,10 +68,10 @@
 
     <!-- Modal de Edición de Contrato -->
     <dialog id="modal-editar-contrato" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
-        <article style="max-width: 750px; width: 95%;">
+        <article class="modal-card-lg">
             <header>
                 <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-editar-contrato').close()"></a>
-                <h4 style="margin-bottom: 0;">✏️ Editar Contrato</h4>
+                <h4 class="mb-0">✏️ Editar Contrato</h4>
             </header>
             <div id="contenido-modal-editar">
                 <!-- Cargar formulario aquí -->
@@ -81,25 +81,25 @@
 
     <!-- Modal de Importación de Contrato -->
     <dialog id="modal-importar-contrato">
-        <article style="max-width: 850px; width: 95%;">
+        <article class="modal-card-xl">
             <header>
                 <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';"></a>
-                <h4 style="margin-bottom: 0;">📤 Importación Masiva (Excel)</h4>
+                <h4 class="mb-0">📤 Importación Masiva (Excel)</h4>
             </header>
             <div>
                 <p><small>Sube un archivo <b>.xlsx</b> con las 7 columnas en el orden exacto indicado a continuación. La primera fila (cabecera) se omitirá.</small></p>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div class="flex-row-between mb-md">
                     <strong>Estructura del Archivo Excel:</strong>
-                    <a href="/tenant/contratos/plantilla" class="button outline primary" style="padding: 4px 12px; font-size: 0.85rem; margin-bottom: 0;">
-                        <svg class="icono-menu" style="margin-right: 4px;">
+                    <a href="/tenant/contratos/plantilla" class="button outline primary btn-sm">
+                        <svg class="icono-menu mr-1">
                             <use href="#icono-importar"></use>
                         </svg> Descargar Plantilla (.xlsx)
                     </a>
                 </div>
 
-                <div style="overflow-x: auto; margin-bottom: 1rem; border: 1px solid #e0e0e0; border-radius: 4px;">
-                    <table class="striped" style="width: 100%; font-size: 0.65rem; margin-bottom: 0; white-space: nowrap;">
+                <div class="overflow-x-auto mb-md border-box p-0">
+                    <table class="striped condensed font-xs mb-0 text-nowrap">
                         <thead>
                             <tr>
                                 <th>A: DOCUMENTO_TRABAJADOR</th>
@@ -141,13 +141,13 @@
                     hx-target="#resultado-importacion-contrato" hx-indicator="#cargando-excel-contratos"
                     hx-on::after-request="if(event.detail.successful) { document.getElementById('archivo-excel-contratos').value=''; }">
 
-                    <div class="grid" style="margin-top: 1rem;">
+                    <div class="grid mt-md">
                         <label>Archivo Excel (.xlsx)
                             <input type="file" id="archivo-excel-contratos" name="archivo_excel" accept=".xlsx" required>
                         </label>
 
-                        <div style="display: flex; align-items: end; padding-bottom: var(--spacing);">
-                            <button type="submit" class="contrast" style="margin-bottom: 0;">Procesar Archivo</button>
+                        <div class="flex-items-end pb-sm">
+                            <button type="submit" class="contrast mb-0">Procesar Archivo</button>
                         </div>
                     </div>
 
@@ -158,17 +158,18 @@
                     </span>
                 </form>
 
-                <div id="resultado-importacion-contrato" style="margin-top: 1rem;"></div>
+                <div id="resultado-importacion-contrato" class="mt-md"></div>
 
-                <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';" style="margin-bottom: 0; width: auto;">Cerrar</button>
+                <div class="flex-row-end mt-lg">
+                    <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';">Cerrar</button>
                 </div>
             </div>
-        </dialog>
+        </article>
+    </dialog>
 </article>
 
 {{define "formulario_crear"}}
-<div style="padding-top: 1rem;">
+<div class="pt-md">
     <div id="alerta-contrato"></div>
     <form hx-post="/tenant/contratos/crear" hx-target="#lista-contratos" hx-swap="innerHTML"
         hx-on::after-request="if (event.detail.successful && !event.detail.xhr.responseText.includes('<article')) { document.getElementById('modal-nuevo-contrato').close(); this.reset(); }">
@@ -225,16 +226,16 @@
             <input type="checkbox" name="activo" {{if or (eq (index . "Activo") nil) .Activo}}checked{{end}}> Contrato Activo
         </label>
 
-        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-            <button type="button" class="secondary outline" onclick="document.getElementById('modal-nuevo-contrato').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
-            <button type="submit" style="margin-bottom: 0; width: auto;">Generar Contrato y Ocupar Plaza</button>
+        <div class="flex-row-end mt-lg">
+            <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-nuevo-contrato').close()">Cancelar</button>
+            <button type="submit" class="btn-compact">Generar Contrato y Ocupar Plaza</button>
         </div>
     </form>
 </div>
 {{end}}
 
 {{define "formulario_editar"}}
-<div style="padding-top: 1rem;">
+<div class="pt-md">
     <form hx-post="/tenant/contratos/actualizar" hx-swap="none"
         hx-on::after-request="if (event.detail.successful) { document.getElementById('modal-editar-contrato').close(); }">
         <input type="hidden" name="id" value="{{.ID}}">
@@ -262,19 +263,19 @@
             <input type="text" name="nivel" value="{{.Nivel}}" placeholder="Ej. F-1, Auxiliar, STA...">
         </label>
 
-        <div style="margin-bottom: 1rem;">
-            <span style="font-size: 0.95rem; font-weight: 500;">Estado del Contrato:</span>
+        <div class="mb-md">
+            <span class="font-md font-bold">Estado del Contrato:</span>
             {{if .Activo}}
-            <mark style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">Vigente</mark>
+            <mark class="badge badge-success">Vigente</mark>
             {{else}}
-            <mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">Finalizado</mark>
+            <mark class="badge badge-danger">Finalizado</mark>
             {{end}}
-            <br><small style="color: #666;">Para finalizar este contrato, use el botón "Dar de Baja" desde la lista general.</small>
+            <br><small class="text-muted">Para finalizar este contrato, use el botón "Dar de Baja" desde la lista general.</small>
         </div>
 
-        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: end;">
-            <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-contrato').close()" style="margin-bottom: 0; width: auto;">Cancelar</button>
-            <button type="submit" style="margin-bottom: 0; width: auto;">Guardar Cambios</button>
+        <div class="flex-row-end mt-lg">
+            <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-editar-contrato').close()">Cancelar</button>
+            <button type="submit" class="btn-compact">Guardar Cambios</button>
         </div>
     </form>
 </div>
@@ -303,22 +304,19 @@
             <td><small>Desde: {{.FechaInicio}}<br>Hasta: {{if
                     .FechaFin}}{{.FechaFin}}{{else}}<em>Indeterminado</em>{{end}}</small></td>
             <td>
-                <div style="display: flex; gap: 5px; align-items: center;">
+                <div class="flex-gap-sm flex-items-center">
                     {{if .Activo}}
-                    <mark
-                        style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px;">Vigente</mark>
+                    <mark class="badge badge-success">Vigente</mark>
                     {{else}}
-                    <mark
-                        style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px;">Finalizado</mark>
+                    <mark class="badge badge-danger">Finalizado</mark>
                     {{end}}
 
-                    <button class="outline secondary" style="padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
+                    <button class="outline secondary btn-sm"
                         hx-get="/tenant/contratos/editar-ui?id={{.ID}}" hx-target="#contenido-modal-editar" hx-swap="innerHTML">
                         Editar
                     </button>
                     {{if .Activo}}
-                    <button class="outline contrast" 
-                            style="color: #d32f2f; border-color: #d32f2f; padding: 2px 10px; margin-bottom: 0; font-size: 0.8rem;"
+                    <button class="outline contrast btn-danger btn-sm"
                             data-id="{{.ID}}"
                             data-nombre="{{.TrabajadorNombre}}"
                             onclick="abrirModalBaja(this)">
@@ -330,14 +328,14 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="4" style="text-align: center;">No hay contratos registrados.</td>
+            <td colspan="4" class="text-center">No hay contratos registrados.</td>
         </tr>
         {{end}}
     </tbody>
 </table>
 
 <!-- Controles de paginación-->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+<div class="flex-row-between mt-md">
     <!-- Mostramos el estado completo de la navegación -->
     <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
 
@@ -362,10 +360,10 @@
 
 <!-- Modal de Baja de Contrato -->
 <dialog id="modal-baja">
-    <article style="max-width: 600px; width: 95%;">
+    <article class="modal-card-md">
         <header>
             <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-baja').close()"></a>
-            <h4 style="margin-bottom: 0;">🛑 Finalizar Contrato</h4>
+            <h4 class="mb-0">🛑 Finalizar Contrato</h4>
         </header>
         <p>Está a punto de dar de baja a <strong id="baja-trabajador-nombre"></strong>. La plaza quedará vacante y se limpiará su estructura de costos.</p>
 
@@ -387,9 +385,9 @@
                 <input type="date" name="fecha_fin" required>
             </label>
 
-            <footer style="display: flex; gap: 1rem; justify-content: end; margin-top: 1.5rem;">
-                <button type="button" class="secondary outline" onclick="document.getElementById('modal-baja').close()" style="margin-bottom: 0;">Cancelar</button>
-                <button type="submit" style="background-color: #d32f2f; border-color: #d32f2f; color: white; margin-bottom: 0;">Confirmar Baja</button>
+            <footer class="flex-row-end mt-lg">
+                <button type="button" class="secondary outline mb-0" onclick="document.getElementById('modal-baja').close()">Cancelar</button>
+                <button type="submit" class="btn-danger-fill mb-0">Confirmar Baja</button>
             </footer>
         </form>
     </article>
