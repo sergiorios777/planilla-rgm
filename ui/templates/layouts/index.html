@@ -7,7 +7,9 @@
     <title>{{.Title}}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" href="/static/css/custom.css">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
@@ -20,16 +22,12 @@
             <li><strong>💼 Planillas RGM</strong></li>
         </ul>
         <ul class="flex-gap-md mb-0">
-            <li id="campana-notificaciones-contenedor" 
-                hx-get="/notificaciones/campana" 
-                hx-trigger="every 30s, load" 
-                hx-swap="innerHTML"
-                class="mb-0">
+            <li id="campana-notificaciones-contenedor" hx-get="/notificaciones/campana" hx-trigger="every 30s, load"
+                hx-swap="innerHTML" class="mb-0">
             </li>
             <li class="mb-0"><span class="badge badge-purple">Panel Súper Admin</span></li>
             <li class="mb-0">
-                <button class="outline secondary btn-nav-action"
-                    hx-post="/logout">
+                <button class="outline secondary btn-nav-action" hx-post="/logout">
                     🚪 Salir
                 </button>
             </li>
@@ -126,14 +124,16 @@
     <dialog id="modal-notificaciones">
         <article class="modal-card-md w-full">
             <header>
-                <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-notificaciones').removeAttribute('open')"></button>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-notificaciones').removeAttribute('open')"></button>
                 <h3 class="m-0">🔔 Historial de Notificaciones</h3>
             </header>
             <div id="notificaciones-lista-contenido" hx-get="/notificaciones/lista" hx-trigger="intersect, revealed">
                 <p aria-busy="true" class="text-center">Cargando notificaciones...</p>
             </div>
             <footer class="flex-row-end">
-                <button class="secondary outline btn-compact" onclick="document.getElementById('modal-notificaciones').removeAttribute('open'); htmx.trigger('#campana-notificaciones-contenedor', 'load');">Cerrar</button>
+                <button class="secondary outline btn-compact"
+                    onclick="document.getElementById('modal-notificaciones').removeAttribute('open'); htmx.trigger('#campana-notificaciones-contenedor', 'load');">Cerrar</button>
             </footer>
         </article>
     </dialog>
