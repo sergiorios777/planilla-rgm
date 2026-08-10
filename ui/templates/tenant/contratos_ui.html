@@ -7,8 +7,7 @@
             Gestión de Contratos Laborales
         </h3>
         <div class="flex-gap-sm mb-0">
-            <button class="primary btn-compact"
-                onclick="document.getElementById('modal-nuevo-contrato').showModal()">
+            <button class="primary btn-compact" onclick="document.getElementById('modal-nuevo-contrato').showModal()">
                 ➕ Asignar Puesto a Trabajador
             </button>
             <button class="secondary outline btn-compact"
@@ -57,7 +56,8 @@
     <dialog id="modal-nuevo-contrato">
         <article class="modal-card-lg">
             <header>
-                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nuevo-contrato').close()"></a>
+                <a href="#close" aria-label="Close" class="close"
+                    onclick="document.getElementById('modal-nuevo-contrato').close()"></a>
                 <h4 class="mb-0">➕ Asignar Puesto a Trabajador</h4>
             </header>
             <div id="contenido-modal-nuevo">
@@ -67,10 +67,12 @@
     </dialog>
 
     <!-- Modal de Edición de Contrato -->
-    <dialog id="modal-editar-contrato" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
+    <dialog id="modal-editar-contrato"
+        hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
         <article class="modal-card-lg">
             <header>
-                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-editar-contrato').close()"></a>
+                <a href="#close" aria-label="Close" class="close"
+                    onclick="document.getElementById('modal-editar-contrato').close()"></a>
                 <h4 class="mb-0">✏️ Editar Contrato</h4>
             </header>
             <div id="contenido-modal-editar">
@@ -83,11 +85,13 @@
     <dialog id="modal-importar-contrato">
         <article class="modal-card-xl">
             <header>
-                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';"></a>
+                <a href="#close" aria-label="Close" class="close"
+                    onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';"></a>
                 <h4 class="mb-0">📤 Importación Masiva (Excel)</h4>
             </header>
             <div>
-                <p><small>Sube un archivo <b>.xlsx</b> con las 7 columnas en el orden exacto indicado a continuación. La primera fila (cabecera) se omitirá.</small></p>
+                <p><small>Sube un archivo <b>.xlsx</b> con las 7 columnas en el orden exacto indicado a continuación. La
+                        primera fila (cabecera) se omitirá.</small></p>
 
                 <div class="flex-row-between mb-md">
                     <strong>Estructura del Archivo Excel:</strong>
@@ -143,7 +147,8 @@
 
                     <div class="grid mt-md">
                         <label>Archivo Excel (.xlsx)
-                            <input type="file" id="archivo-excel-contratos" name="archivo_excel" accept=".xlsx" required>
+                            <input type="file" id="archivo-excel-contratos" name="archivo_excel" accept=".xlsx"
+                                required>
                         </label>
 
                         <div class="flex-items-end pb-sm">
@@ -161,7 +166,8 @@
                 <div id="resultado-importacion-contrato" class="mt-md"></div>
 
                 <div class="flex-row-end mt-lg">
-                    <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';">Cerrar</button>
+                    <button type="button" class="secondary outline btn-compact"
+                        onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';">Cerrar</button>
                 </div>
             </div>
         </article>
@@ -180,22 +186,21 @@
                 {{$selTrabajador := .TrabajadorSeleccionadoID}}
                 {{range .Trabajadores}}
                 {{if .Activo}}
-                <option value="{{.ID}}" {{if eq .ID $selTrabajador}}selected{{end}}>{{.ApellidoPaterno}} {{.ApellidoMaterno}}, {{.Nombres}}</option>
+                <option value="{{.ID}}" {{if eq .ID $selTrabajador}}selected{{end}}>{{.ApellidoPaterno}}
+                    {{.ApellidoMaterno}}, {{.Nombres}}</option>
                 {{end}}
                 {{end}}
             </select>
         </label>
 
         <label>Puesto (Plaza) a Ocupar
-            <select name="puesto_id" required class="select-con-buscador"
-                    hx-get="/tenant/contratos/formulario-dinamico"
-                    hx-target="#contenido-modal-nuevo"
-                    hx-include="closest form"
-                    hx-trigger="change">
+            <select name="puesto_id" required class="select-con-buscador" hx-get="/tenant/contratos/formulario-dinamico"
+                hx-target="#contenido-modal-nuevo" hx-include="closest form" hx-trigger="change">
                 <option value="">-- Seleccione una plaza vacante --</option>
                 {{$selPuesto := .PuestoSeleccionadoID}}
                 {{range .Puestos}}
-                <option value="{{.ID}}" {{if eq .ID $selPuesto}}selected{{end}}>{{.Nombre}} | {{.RegimenDesc}} | {{.UnidadOrganicaNombre}} | S/ {{.SueldoPresupuestado}}</option>
+                <option value="{{.ID}}" {{if eq .ID $selPuesto}}selected{{end}}>{{.Nombre}} | {{.RegimenDesc}} |
+                    {{.UnidadOrganicaNombre}} | S/ {{.SueldoPresupuestado}}</option>
                 {{end}}
             </select>
         </label>
@@ -223,11 +228,13 @@
         </div>
 
         <label>
-            <input type="checkbox" name="activo" {{if or (eq (index . "Activo") nil) .Activo}}checked{{end}}> Contrato Activo
+            <input type="checkbox" name="activo" {{if or (eq (index . "Activo" ) nil) .Activo}}checked{{end}}> Contrato
+            Activo
         </label>
 
         <div class="flex-row-end mt-lg">
-            <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-nuevo-contrato').close()">Cancelar</button>
+            <button type="button" class="secondary outline btn-compact"
+                onclick="document.getElementById('modal-nuevo-contrato').close()">Cancelar</button>
             <button type="submit" class="btn-compact">Generar Contrato y Ocupar Plaza</button>
         </div>
     </form>
@@ -270,11 +277,13 @@
             {{else}}
             <mark class="badge badge-danger">Finalizado</mark>
             {{end}}
-            <br><small class="text-muted">Para finalizar este contrato, use el botón "Dar de Baja" desde la lista general.</small>
+            <br><small class="text-muted">Para finalizar este contrato, use el botón "Dar de Baja" desde la lista
+                general.</small>
         </div>
 
         <div class="flex-row-end mt-lg">
-            <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-editar-contrato').close()">Cancelar</button>
+            <button type="button" class="secondary outline btn-compact"
+                onclick="document.getElementById('modal-editar-contrato').close()">Cancelar</button>
             <button type="submit" class="btn-compact">Guardar Cambios</button>
         </div>
     </form>
@@ -311,15 +320,13 @@
                     <mark class="badge badge-danger">Finalizado</mark>
                     {{end}}
 
-                    <button class="outline secondary btn-sm"
-                        hx-get="/tenant/contratos/editar-ui?id={{.ID}}" hx-target="#contenido-modal-editar" hx-swap="innerHTML">
+                    <button class="outline secondary btn-sm" hx-get="/tenant/contratos/editar-ui?id={{.ID}}"
+                        hx-target="#contenido-modal-editar" hx-swap="innerHTML">
                         Editar
                     </button>
                     {{if .Activo}}
-                    <button class="outline contrast btn-danger btn-sm"
-                            data-id="{{.ID}}"
-                            data-nombre="{{.TrabajadorNombre}}"
-                            onclick="abrirModalBaja(this)">
+                    <button class="outline contrast btn-danger btn-sm" data-id="{{.ID}}"
+                        data-nombre="{{.TrabajadorNombre}}" onclick="abrirModalBaja(this)">
                         🛑 Dar de Baja
                     </button>
                     {{end}}
@@ -362,10 +369,12 @@
 <dialog id="modal-baja">
     <article class="modal-card-md">
         <header>
-            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-baja').close()"></a>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-baja').close()"></a>
             <h4 class="mb-0">🛑 Finalizar Contrato</h4>
         </header>
-        <p>Está a punto de dar de baja a <strong id="baja-trabajador-nombre"></strong>. La plaza quedará vacante y se limpiará su estructura de costos.</p>
+        <p>Está a punto de dar de baja a <strong id="baja-trabajador-nombre"></strong>. La plaza quedará vacante y se
+            limpiará su estructura de costos.</p>
 
         <form hx-post="/tenant/contratos/baja" hx-swap="none">
             <input type="hidden" name="contrato_id" id="baja-contrato-id">
@@ -386,7 +395,8 @@
             </label>
 
             <footer class="flex-row-end mt-lg">
-                <button type="button" class="secondary outline mb-0" onclick="document.getElementById('modal-baja').close()">Cancelar</button>
+                <button type="button" class="secondary outline mb-0"
+                    onclick="document.getElementById('modal-baja').close()">Cancelar</button>
                 <button type="submit" class="btn-danger-fill mb-0">Confirmar Baja</button>
             </footer>
         </form>
@@ -424,13 +434,13 @@
     function abrirModalBaja(btn) {
         const id = btn.getAttribute('data-id');
         const nombre = btn.getAttribute('data-nombre');
-        
+
         document.getElementById('baja-contrato-id').value = id;
         document.getElementById('baja-trabajador-nombre').innerText = nombre;
         document.getElementById('modal-baja').showModal();
     }
 
-    document.body.addEventListener("cerrarModalBaja", function() {
+    document.body.addEventListener("cerrarModalBaja", function () {
         document.getElementById('modal-baja').close();
     });
 </script>
