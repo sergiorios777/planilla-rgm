@@ -507,12 +507,219 @@ select:invalid:not([value=""]) {
     align-items: start;
 }
 
-.layout-tenant-grid {
-    grid-template-columns: 250px 1fr;
-    gap: 2rem;
+/* Layout Global App Shell Tenant (2 Columnas: Sidebar Izquierda 100vh + Wrapper Derecha) */
+body.tenant-theme.layout-tenant-app {
+    display: flex;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    background-color: var(--pico-background-color, #ffffff);
+    overflow-x: hidden;
+}
+
+/* 1. Sidebar Izquierda (100% Height en Desktop) */
+aside.tenant-sidebar {
+    width: 260px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    flex-shrink: 0;
+    background-color: var(--pico-card-background-color, #ffffff);
+    border-right: 1px solid var(--pico-muted-border-color, #cbd5e1);
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 1rem;
+    overflow-y: auto;
+    z-index: 100;
+    margin: 0;
+}
+
+/* 2. Contenedor Principal Derecha */
+.tenant-main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 100vh;
+}
+
+/* Header Superior Fijo en Contenedor Derecha */
+header.tenant-top-header,
+nav.tenant-top-header {
+    height: 60px;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--pico-muted-border-color, #cbd5e1);
+    background-color: var(--pico-card-background-color, #ffffff);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 90;
+}
+
+header.tenant-top-header ul,
+nav.tenant-top-header ul {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    list-style-type: none;
+}
+
+header.tenant-top-header li,
+nav.tenant-top-header li {
+    list-style: none;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+header.tenant-top-header li::before,
+nav.tenant-top-header li::before {
+    content: none;
+    display: none;
+}
+
+/* Badge de Usuario con Avatar Genérico (Nombre arriba, Rol abajo) */
+.user-profile-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.25rem 0.75rem;
+    background-color: var(--pico-card-sectionning-background, #f8fafc);
+    border: 1px solid var(--pico-muted-border-color, #cbd5e1);
+    border-radius: 2rem;
+}
+
+.user-avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--pico-primary, #0284c7);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.user-profile-info {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.user-profile-info .user-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--pico-color, #1e293b);
+}
+
+.user-profile-info .user-role {
+    font-size: 0.7rem;
+    color: var(--pico-muted-color, #64748b);
+    text-transform: capitalize;
+}
+
+/* Cuerpo de Contenido Principal */
+.tenant-content-body {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+/* Identidad Visual del Sidebar Tenant */
+.sidebar-tenant-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--pico-muted-border-color, #cbd5e1);
+}
+
+.sidebar-tenant-brand .brand-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: var(--pico-primary, #0284c7);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sidebar-tenant-brand .brand-avatar svg {
+    width: 20px;
+    height: 20px;
+    margin-right: 0;
+}
+
+.sidebar-tenant-brand .brand-text h4 {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--pico-primary, #0284c7);
+    line-height: 1.2;
+}
+
+.sidebar-tenant-brand .brand-text small {
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    color: var(--pico-muted-color, #64748b);
+    text-transform: uppercase;
+}
+
+/* Enlaces del Sidebar con Estado Activo y Hover */
+aside nav ul li a {
+    display: flex;
+    align-items: center;
+    padding: 0.45rem 0.65rem;
+    border-radius: 0.375rem;
+    color: var(--pico-color, #1e293b);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.88rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+aside nav ul li a:hover {
+    background-color: var(--pico-card-sectionning-background, #f1f5f9);
+    color: var(--pico-primary, #0284c7);
+}
+
+aside nav ul li a.active {
+    background-color: rgba(2, 132, 199, 0.12);
+    color: var(--pico-primary, #0284c7);
+    font-weight: 600;
+}
+
+aside nav ul li small {
+    display: block;
+    padding: 0.5rem 0.65rem 0.25rem 0.65rem;
+    font-weight: 700;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    color: var(--pico-muted-color, #64748b);
+    text-transform: uppercase;
+}
+
+.sidebar-tenant-footer {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid var(--pico-muted-border-color, #cbd5e1);
 }
 
 @media (max-width: 768px) {
+    .d-none-mobile {
+        display: none;
+    }
+
     .layout-admin {
         grid-template-columns: 1fr;
     }
@@ -529,7 +736,7 @@ select:invalid:not([value=""]) {
         gap: 1rem;
     }
 
-    aside {
+    aside.tenant-sidebar {
         position: fixed;
         top: 0;
         left: -280px;
@@ -545,7 +752,7 @@ select:invalid:not([value=""]) {
         margin: 0;
     }
 
-    aside.open {
+    aside.tenant-sidebar.open {
         left: 0;
     }
 
@@ -573,7 +780,6 @@ select:invalid:not([value=""]) {
 }
 
 @media (min-width: 993px) {
-
     #btn-toggle-menu,
     #sidebar-backdrop {
         display: none;

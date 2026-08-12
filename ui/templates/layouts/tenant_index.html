@@ -7,7 +7,9 @@
     <title>Panel Municipal - Planillas RGM</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" href="/static/css/custom.css">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
@@ -15,159 +17,242 @@
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 </head>
 
-<body class="tenant-theme">
-    <nav class="container-fluid nav-header">
-        <ul>
-            <li class="mr-sm d-none" id="btn-toggle-menu">
-                <button class="outline secondary btn-sm" aria-label="Abrir menú" onclick="toggleMobileMenu()">
-                    ☰
-                </button>
-            </li>
-            <li><strong><svg class="icono-menu">
-                        <use href="#icono-edificio-2"></use>
-                    </svg> {{if .TenantNombre}}{{.TenantNombre}}{{else}}Mi Municipalidad{{end}}</strong>
-            </li>
-        </ul>
-        <ul class="flex-gap-md mb-0">
-            <li id="campana-notificaciones-contenedor" 
-                hx-get="/notificaciones/campana" 
-                hx-trigger="every 30s, load" 
-                hx-swap="innerHTML"
-                class="mb-0">
-            </li>
-            <li class="mb-0"><small>{{if .UsuarioNombre}}👤 {{.UsuarioNombre}} ({{.UsuarioRol}}){{else}}Operador de Planillas{{end}}</small></li>
-            <li class="mb-0">
-                <button class="outline secondary btn-nav-action"
-                    hx-post="/logout">
-                    🚪 Salir
-                </button>
-            </li>
-        </ul>
-    </nav>
+<body class="tenant-theme layout-tenant-app">
+    <!-- Backdrop para móviles -->
+    <div id="sidebar-backdrop" onclick="toggleMobileMenu()"></div>
 
-    <main class="container-fluid">
-        <!-- Backdrop para móviles -->
-        <div id="sidebar-backdrop" onclick="toggleMobileMenu()"></div>
-
-        <div class="grid grid-responsive layout-tenant-grid">
-
-            <aside>
-                <nav>
-                    <ul>
-                        <li><small><strong>MI ENTIDAD</strong></small></li>
-                        <li><a href="#" hx-get="/tenant/ui/perfil" hx-target="#contenido-tenant">
-                                <svg class="icono-menu">
-                                    <use href="#icono-m-cuadrado"></use>
-                                </svg>
-                                Perfil Institucional</a>
-                        </li>
-                        <li><a href="#" hx-get="/tenant/ui/organigrama" hx-target="#contenido-tenant">
-                                <svg class="icono-menu">
-                                    <use href="#icono-red"></use>
-                                </svg>
-                                Estructura Orgánica</a>
-                        </li>
-
-                        <hr class="my-md">
-
-                        <li><small><strong>RECURSOS HUMANOS</strong></small></li>
-                        <li><a href="#" hx-get="/tenant/ui/trabajadores" hx-target="#contenido-tenant">
-                                <svg class="icono-menu">
-                                    <use href="#icono-usuarios"></use>
-                                </svg>
-                                Trabajadores (Legajo)</a>
-                        </li>
-                        <li><a href="#" hx-get="/tenant/ui/contratos" hx-target="#contenido-tenant">
-                                <svg class="icono-menu">
-                                    <use href="#icono-carpeta-usuario"></use>
-                                </svg>
-                                Contratos</a>
-                        </li>
-                        <li><a href="#" hx-get="/tenant/ui/asistencia" hx-target="#contenido-tenant">
-                                <svg class="icono-menu">
-                                    <use href="#icono-reloj-alarma"></use>
-                                </svg>
-                                Registrar Tardanzas/Faltas
-                            </a>
-                        </li>
-
-                        <hr class="my-md">
-
-                        <li><small><strong>PLANILLAS</strong></small></li>
-                        <li><a href="#" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
-                                <svg class="icono-menu">
-                                    <use href="#icono-calculadora"></use>
-                                </svg>
-                                Cálculo de Planillas</a></li>
-                        <li><a href="#" hx-get="/tenant/ui/cts" hx-target="#contenido-tenant">
-                                <svg class="icono-menu">
-                                    <use href="#icono-calculadora"></use>
-                                </svg>
-                                CTS Semestral</a></li>
-                        <li><a href="#" hx-get="/tenant/ui/liquidaciones" hx-target="#contenido-tenant">
-                                <svg class="icono-menu">
-                                    <use href="#icono-calculadora"></use>
-                                </svg>
-                                Liquidación de Cese</a></li>
-                        <li><a href="#" class="disabled-link" hx-get="/tenant/presupuesto/index"
-                                hx-target="#contenido-tenant" hx-push-url="true">📊
-                                Presupuesto Anual</a></li>
-                        <li><a href="#" hx-get="/tenant/ui/reportes" hx-target="#contenido-tenant">
-                                <svg class="icono-menu">
-                                    <use href="#icono-bloc-notas"></use>
-                                </svg>
-                                Reportes e Informes</a></li>
-
-                        <hr class="my-md">
-
-
-                        <li><small><strong>METAS, PLAZAS Y CONCEPTOS</strong></small></li>
-                        <li><a href="#" hx-get="/tenant/ui/metas" hx-target="#contenido-tenant">
-                                <svg class="icono-menu">
-                                    <use href="#icono-objetivo"></use>
-                                </svg>
-                                Metas Presupuestales</a></li>
-                        <li><a href="#" hx-get="/tenant/ui/puestos" hx-target="#contenido-tenant">
-                                <svg class="icono-menu">
-                                    <use href="#icono-flujo-trabajo"></use>
-                                </svg>
-                                Cuadro de Puestos (CAP)</a></li>
-                        <li><a href="#" hx-get="/tenant/ui/conceptos-locales" hx-target="#contenido-tenant">
-                                <svg class="icono-menu">
-                                    <use href="#icono-bloc-notas"></use>
-                                </svg>
-                                Catálogo de Conceptos</a></li>
-
-                    </ul>
-                </nav>
-            </aside>
-
-            <section id="contenido-tenant">
-                <article>
-                    <header>
-                        <h2>Bienvenido a su Panel de Gestión</h2>
-                    </header>
-                    <p>Seleccione una opción en el menú lateral para comenzar. Recuerde revisar y completar el
-                        <strong>Perfil Institucional</strong> de su municipalidad.
-                    </p>
-                </article>
-            </section>
-
+    <!-- 1. COLUMNA IZQUIERDA: MENÚ LATERAL (100% Height) -->
+    <aside class="tenant-sidebar">
+        <div class="sidebar-tenant-brand mb-md">
+            <div class="brand-avatar">
+                <svg class="icono-menu">
+                    <use href="#icono-edificio-2"></use>
+                </svg>
+            </div>
+            <div class="brand-text">
+                <h4 class="mb-0">Gestión Municipal</h4>
+                <small>Operaciones HR</small>
+            </div>
         </div>
-    </main>
+
+        <button class="primary btn-compact w-full mb-md flex-center flex-gap-sm" hx-get="/tenant/ui/planillas"
+            hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-calculadora"></use>
+            </svg>
+            <strong>+ Nueva Planilla</strong>
+        </button>
+
+        <nav>
+            <ul>
+                <li><small>MI ENTIDAD</small></li>
+                <li><a href="#" hx-get="/tenant/ui/perfil" hx-target="#contenido-tenant" class="active">
+                        <svg class="icono-menu">
+                            <use href="#icono-m-cuadrado"></use>
+                        </svg>
+                        Perfil Institucional</a>
+                </li>
+                <li><a href="#" hx-get="/tenant/ui/organigrama" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-red"></use>
+                        </svg>
+                        Estructura Orgánica</a>
+                </li>
+
+                <hr class="my-sm">
+
+                <li><small>RECURSOS HUMANOS</small></li>
+                <li><a href="#" hx-get="/tenant/ui/trabajadores" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-usuarios"></use>
+                        </svg>
+                        Trabajadores (Legajo)</a>
+                </li>
+                <li><a href="#" hx-get="/tenant/ui/contratos" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-carpeta-usuario"></use>
+                        </svg>
+                        Contratos</a>
+                </li>
+                <li><a href="#" hx-get="/tenant/ui/asistencia" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-reloj-alarma"></use>
+                        </svg>
+                        Registrar Tardanzas/Faltas
+                    </a>
+                </li>
+
+                <hr class="my-sm">
+
+                <li><small>PLANILLAS</small></li>
+                <li><a href="#" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-calculadora"></use>
+                        </svg>
+                        Cálculo de Planillas</a></li>
+                <li><a href="#" hx-get="/tenant/ui/cts" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-calculadora"></use>
+                        </svg>
+                        CTS Semestral</a></li>
+                <li><a href="#" hx-get="/tenant/ui/liquidaciones" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-contracts"></use>
+                        </svg>
+                        Liquidación de Cese</a></li>
+                <li><a href="#" class="disabled-link" hx-get="/tenant/presupuesto/index" hx-target="#contenido-tenant"
+                        hx-push-url="true">📊
+                        Presupuesto Anual</a></li>
+                <li><a href="#" hx-get="/tenant/ui/reportes" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-bloc-notas"></use>
+                        </svg>
+                        Reportes e Informes</a></li>
+
+                <hr class="my-sm">
+
+                <li><small>METAS, PLAZAS Y CONCEPTOS</small></li>
+                <li><a href="#" hx-get="/tenant/ui/metas" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-objetivo"></use>
+                        </svg>
+                        Metas Presupuestales</a></li>
+                <li><a href="#" hx-get="/tenant/ui/puestos" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-flujo-trabajo"></use>
+                        </svg>
+                        Cuadro de Puestos (CAP)</a></li>
+                <li><a href="#" hx-get="/tenant/ui/conceptos-locales" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-bloc-notas"></use>
+                        </svg>
+                        Catálogo de Conceptos</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-tenant-footer">
+            <button class="outline secondary btn-sm btn-compact w-full flex-center flex-gap-sm" hx-post="/logout">
+                <svg class="icono-menu">
+                    <use href="#icono-logout"></use>
+                </svg>
+                Cerrar Sesión
+            </button>
+        </div>
+    </aside>
+
+    <!-- 2. COLUMNA DERECHA: CONTENEDOR PRINCIPAL -->
+    <div class="tenant-main-wrapper">
+        <!-- BARRA SUPERIOR DE NAVEGACIÓN -->
+        <nav class="tenant-top-header">
+            <ul>
+                <li class="mr-sm d-none" id="btn-toggle-menu">
+                    <button class="outline secondary btn-sm" aria-label="Abrir menú" onclick="toggleMobileMenu()">
+                        ☰
+                    </button>
+                </li>
+                <li>
+                    <strong>
+                        <svg class="icono-menu">
+                            <use href="#icono-edificio-2"></use>
+                        </svg>
+                        {{if .TenantNombre}}{{.TenantNombre}}{{else}}Mi Municipalidad{{end}}
+                    </strong>
+                    <small class="text-muted ml-sm d-none-mobile">| Portal de Planillas & Operaciones HR</small>
+                </li>
+            </ul>
+
+            <ul class="flex-gap-md mb-0 flex-align-center">
+                <li id="campana-notificaciones-contenedor" hx-get="/notificaciones/campana" hx-trigger="every 30s, load"
+                    hx-swap="innerHTML" class="mb-0">
+                </li>
+                <li class="mb-0">
+                    <div class="user-profile-badge">
+                        <div class="user-avatar-circle">👤</div>
+                        <div class="user-profile-info">
+                            <span class="user-name">{{if
+                                .UsuarioNombre}}{{.UsuarioNombre}}{{else}}Operador{{end}}</span>
+                            <small class="user-role">{{if
+                                .UsuarioRol}}{{.UsuarioRol}}{{else}}Administrador{{end}}</small>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- SECCIÓN PRINCIPAL DE CONTENIDO DINÁMICO (HTMX Target) -->
+        <main id="contenido-tenant" class="tenant-content-body">
+            <article class="mb-lg">
+                <header class="flex-row-between mb-sm">
+                    <div>
+                        <h2 class="mb-0">Resumen del Panel Municipal</h2>
+                        <small class="text-muted">Estado operativo de planillas y legajo de la entidad</small>
+                    </div>
+                </header>
+
+                <!-- Tarjetas KPI (Bento Grid) -->
+                <div class="grid grid-auto-fit-200 gap-md mb-lg">
+                    <div class="card-section m-0 border-box flex-column justify-between">
+                        <div class="flex-row-between mb-xs">
+                            <small class="text-uppercase text-muted">Trabajadores Activos</small>
+                            <span class="badge badge-info">Legajo</span>
+                        </div>
+                        <h3 class="stat-mono mb-0 text-info">{{if
+                            .TotalTrabajadores}}{{.TotalTrabajadores}}{{else}}--{{end}}</h3>
+                        <small class="text-muted">Personal registrado en entidad</small>
+                    </div>
+
+                    <div class="card-section m-0 border-box flex-column justify-between">
+                        <div class="flex-row-between mb-xs">
+                            <small class="text-uppercase text-muted">Planillas Procesadas</small>
+                            <span class="badge badge-success">Año 2026</span>
+                        </div>
+                        <h3 class="stat-mono mb-0 text-success">{{if
+                            .TotalPlanillasAnno}}{{.TotalPlanillasAnno}}{{else}}--{{end}}</h3>
+                        <small class="text-muted">Lotes de cálculo finalizados</small>
+                    </div>
+
+                    <div class="card-section m-0 border-box flex-column justify-between">
+                        <div class="flex-row-between mb-xs">
+                            <small class="text-uppercase text-muted">Planilla en Borrador</small>
+                            <span class="badge badge-warning">En Proceso</span>
+                        </div>
+                        <h3 class="stat-mono mb-0 text-warning">{{if
+                            .PlanillasBorrador}}{{.PlanillasBorrador}}{{else}}0{{end}}</h3>
+                        <small class="text-muted">Pendientes de cierre/aprobación</small>
+                    </div>
+
+                    <div class="card-section m-0 border-box flex-column justify-between">
+                        <div class="flex-row-between mb-xs">
+                            <small class="text-uppercase text-muted">Monto Total Planilla</small>
+                            <span class="badge badge-purple">Bruto Mes</span>
+                        </div>
+                        <h3 class="stat-mono mb-0 text-purple">S/ {{if
+                            .MontoTotalPlanilla}}{{.MontoTotalPlanilla}}{{else}}0.00{{end}}</h3>
+                        <small class="text-muted">Presupuesto mensual estimado</small>
+                    </div>
+                </div>
+
+                <p>Seleccione una opción en el menú lateral para comenzar a operar. Recuerde mantener actualizado el
+                    <strong>Perfil Institucional</strong> de su municipalidad.
+                </p>
+            </article>
+        </main>
+    </div>
 
     <!-- Modal General de Notificaciones -->
     <dialog id="modal-notificaciones">
         <article class="modal-card-md w-full">
             <header>
-                <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-notificaciones').removeAttribute('open')"></button>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-notificaciones').removeAttribute('open')"></button>
                 <h3 class="m-0">🔔 Historial de Notificaciones</h3>
             </header>
             <div id="notificaciones-lista-contenido" hx-get="/notificaciones/lista" hx-trigger="intersect, revealed">
                 <p aria-busy="true" class="text-center">Cargando notificaciones...</p>
             </div>
             <footer class="flex-row-end">
-                <button class="secondary outline btn-compact" onclick="document.getElementById('modal-notificaciones').removeAttribute('open'); htmx.trigger('#campana-notificaciones-contenedor', 'load');">Cerrar</button>
+                <button class="secondary outline btn-compact"
+                    onclick="document.getElementById('modal-notificaciones').removeAttribute('open'); htmx.trigger('#campana-notificaciones-contenedor', 'load');">Cerrar</button>
             </footer>
         </article>
     </dialog>
@@ -175,20 +260,26 @@
     {{template "svg_sprite" .}}
     <script>
         function toggleMobileMenu() {
-            const sidebar = document.querySelector('aside');
+            const sidebar = document.querySelector('aside.tenant-sidebar');
             const backdrop = document.getElementById('sidebar-backdrop');
             sidebar.classList.toggle('open');
             backdrop.classList.toggle('open');
         }
 
-        // Auto-cerrar el menú en móviles cuando se hace clic en cualquier opción
-        document.querySelector('aside').addEventListener('click', function(e) {
-            const link = e.target.closest('a');
+        // Manejador de estado activo (.active) para los enlaces del sidebar
+        document.addEventListener('click', function (e) {
+            const link = e.target.closest('aside nav a');
             if (link && !link.classList.contains('disabled-link')) {
-                const sidebar = document.querySelector('aside');
+                document.querySelectorAll('aside nav a').forEach(a => a.classList.remove('active'));
+                link.classList.add('active');
+
+                // Auto-cerrar el menú en móviles cuando se hace clic en cualquier opción
+                const sidebar = document.querySelector('aside.tenant-sidebar');
                 const backdrop = document.getElementById('sidebar-backdrop');
-                sidebar.classList.remove('open');
-                backdrop.classList.remove('open');
+                if (sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
+                    backdrop.classList.remove('open');
+                }
             }
         });
     </script>

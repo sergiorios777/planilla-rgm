@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Portal de Planillas - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#85f8c4",
+                        "status-success-text": "#065f46",
+                        "status-special-bg": "#f3e8ff",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed": "#eaddff",
+                        "secondary": "#006c4a",
+                        "tertiary": "#6a42bd",
+                        "tenant-secondary": "#059669",
+                        "status-danger-text": "#991b1b",
+                        "admin-primary": "#5e35b1",
+                        "surface": "#f7f9fb",
+                        "on-secondary-fixed-variant": "#005137",
+                        "surface-variant": "#e0e3e5",
+                        "on-surface-variant": "#3f4850",
+                        "on-secondary-container": "#00714e",
+                        "outline": "#707881",
+                        "status-special-text": "#6b21a8",
+                        "status-success-bg": "#d1fae5",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#cce5ff",
+                        "inverse-primary": "#93ccff",
+                        "status-danger-bg": "#fee2e2",
+                        "status-warning-bg": "#fef3c7",
+                        "on-surface": "#191c1e",
+                        "on-primary-fixed-variant": "#004b73",
+                        "tertiary-fixed-dim": "#d1bcff",
+                        "secondary-container": "#82f5c1",
+                        "primary": "#006194",
+                        "outline-variant": "#bfc7d2",
+                        "primary-container": "#007bb9",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-tertiary-container": "#fffbff",
+                        "error-container": "#ffdad6",
+                        "on-primary-container": "#fdfcff",
+                        "on-background": "#191c1e",
+                        "surface-container-high": "#e6e8ea",
+                        "secondary-fixed-dim": "#68dba9",
+                        "surface-bright": "#f7f9fb",
+                        "tenant-primary": "#0284c7",
+                        "surface-dim": "#d8dadc",
+                        "surface-canvas": "#f8fafc",
+                        "on-error-container": "#93000a",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#24005b",
+                        "on-secondary": "#ffffff",
+                        "surface-tint": "#006398",
+                        "on-secondary-fixed": "#002114",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "status-warning-text": "#92400e",
+                        "inverse-surface": "#2d3133",
+                        "background": "#f7f9fb",
+                        "surface-container-low": "#f2f4f6",
+                        "admin-secondary": "#3f51b5",
+                        "surface-container": "#eceef0",
+                        "on-primary-fixed": "#001d31",
+                        "tertiary-container": "#835dd8",
+                        "border-hairline": "#cbd5e1",
+                        "primary-fixed-dim": "#93ccff",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed-variant": "#5429a7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "baseline": "4px",
+                        "sm": "8px",
+                        "sidebar-width": "260px",
+                        "md": "16px",
+                        "xl": "32px",
+                        "gutter": "16px",
+                        "lg": "24px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "stat-mono": ["JetBrains Mono"],
+                        "body-bold": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-base": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["16.1px", { "lineHeight": "22px", "fontWeight": "600" }],
+                        "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "stat-mono": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "body-bold": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "headline-md": ["18.9px", { "lineHeight": "24px", "fontWeight": "700" }],
+                        "body-base": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["24.5px", { "lineHeight": "30px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="bg-surface-canvas text-on-surface font-body-base text-body-base antialiased selection:bg-primary-container selection:text-on-primary-container h-screen flex overflow-hidden">
+    <!-- SideNavBar Component -->
+    <nav
+        class="fixed left-0 top-0 h-full w-sidebar-width bg-surface border-r border-border-hairline flex flex-col p-lg z-20">
+        <div class="mb-xl flex items-center gap-sm">
+            <div class="w-10 h-10 rounded-full bg-tenant-primary text-on-primary flex items-center justify-center">
+                <span class="material-symbols-outlined" data-icon="account_balance">account_balance</span>
+            </div>
+            <div>
+                <h1 class="font-headline-md text-headline-md font-bold text-tenant-primary tracking-tight">Gestión
+                    Municipal</h1>
+                <p class="font-label-caps text-label-caps text-outline uppercase">Operaciones HR</p>
+            </div>
+        </div>
+        <button
+            class="mb-lg w-full h-[36px] bg-tenant-primary text-on-primary rounded hover:bg-opacity-90 active:opacity-60 transition-opacity font-body-bold text-body-bold flex items-center justify-center gap-sm">
+            <span class="material-symbols-outlined" data-icon="add">add</span>
+            Nueva Planilla
+        </button>
+        <ul class="flex-1 space-y-baseline">
+            <li>
+                <a class="flex items-center gap-md px-sm py-xs rounded bg-secondary-container text-on-secondary-container font-body-bold text-body-bold active:opacity-60 transition-opacity"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                    Panel de Control
+                </a>
+            </li>
+            <li>
+                <a class="flex items-center gap-md px-sm py-xs rounded text-on-surface-variant hover:bg-surface-container hover:bg-surface-container-high transition-colors active:opacity-60 transition-opacity"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="payments">payments</span>
+                    Planillas
+                </a>
+            </li>
+            <li>
+                <a class="flex items-center gap-md px-sm py-xs rounded text-on-surface-variant hover:bg-surface-container hover:bg-surface-container-high transition-colors active:opacity-60 transition-opacity"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="groups">groups</span>
+                    Empleados
+                </a>
+            </li>
+            <li>
+                <a class="flex items-center gap-md px-sm py-xs rounded text-on-surface-variant hover:bg-surface-container hover:bg-surface-container-high transition-colors active:opacity-60 transition-opacity"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+                    Liquidaciones
+                </a>
+            </li>
+            <li>
+                <a class="flex items-center gap-md px-sm py-xs rounded text-on-surface-variant hover:bg-surface-container hover:bg-surface-container-high transition-colors active:opacity-60 transition-opacity"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                    Reportes
+                </a>
+            </li>
+            <li>
+                <a class="flex items-center gap-md px-sm py-xs rounded text-on-surface-variant hover:bg-surface-container hover:bg-surface-container-high transition-colors active:opacity-60 transition-opacity"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="settings">settings</span>
+                    Configuración
+                </a>
+            </li>
+        </ul>
+        <div class="mt-auto border-t border-border-hairline pt-md space-y-baseline">
+            <a class="flex items-center gap-md px-sm py-xs rounded text-on-surface-variant hover:bg-surface-container hover:bg-surface-container-high transition-colors active:opacity-60 transition-opacity"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="help">help</span>
+                Ayuda
+            </a>
+            <a class="flex items-center gap-md px-sm py-xs rounded text-on-surface-variant hover:bg-surface-container hover:bg-surface-container-high transition-colors active:opacity-60 transition-opacity"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="logout">logout</span>
+                Cerrar Sesión
+            </a>
+        </div>
+    </nav>
+    <!-- Main Content Wrapper -->
+    <div class="flex-1 flex flex-col ml-sidebar-width h-full">
+        <!-- TopNavBar Component -->
+        <header
+            class="docked full-width top-0 bg-surface-container-lowest border-b border-border-hairline flex justify-between items-center h-14 px-lg z-10 shrink-0">
+            <div class="flex items-center gap-lg">
+                <h2 class="font-display-lg text-display-lg font-bold text-tenant-primary tracking-tight">Portal de
+                    Planillas</h2>
+                <nav class="hidden md:flex gap-md h-full items-end">
+                    <a class="text-tenant-primary border-b-2 border-tenant-primary pb-sm font-headline-sm text-headline-sm active:scale-95 transition-transform"
+                        href="#">Periodo Actual</a>
+                    <a class="text-on-surface-variant hover:text-tenant-primary pb-sm font-headline-sm text-headline-sm transition-colors active:scale-95 transition-transform"
+                        href="#">Histórico</a>
+                    <a class="text-on-surface-variant hover:text-tenant-primary pb-sm font-headline-sm text-headline-sm transition-colors active:scale-95 transition-transform"
+                        href="#">Validaciones</a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-md">
+                <button class="text-on-surface-variant hover:text-tenant-primary transition-colors">
+                    <span class="material-symbols-outlined" data-icon="search">search</span>
+                </button>
+                <button
+                    class="h-[36px] px-md border border-tenant-primary text-tenant-primary rounded hover:bg-surface-container transition-colors font-body-bold text-body-bold">
+                    Aprobar Lote
+                </button>
+                <div class="flex gap-sm">
+                    <button
+                        class="text-on-surface-variant hover:text-tenant-primary transition-colors rounded-full p-xs hover:bg-surface-container">
+                        <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+                    </button>
+                    <button
+                        class="text-on-surface-variant hover:text-tenant-primary transition-colors rounded-full p-xs hover:bg-surface-container">
+                        <span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+                    </button>
+                </div>
+                <img alt="Usuario Operativo" class="w-8 h-8 rounded-full border border-border-hairline object-cover"
+                    data-alt="A small circular profile portrait of a public sector administrative worker in a crisp white shirt, sitting in a modern, brightly lit office environment. The image uses a clean, light-mode aesthetic with a slate-tinted background, reflecting professional governance and operational efficiency."
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD26j25iSFdgeOGp3t7NAYcbrXOtIvWfRr7DoFWWqEe3AkzEqGN56tesc0NjtatW6BJRRherrJgIZhKlxWpUj6plEBXeggp7qnmRotC5YG0Is76EbafWcSBdtMifk-eaRrXYlLrsABnZxuDpOwFAu87lOxPWa63ZqS6SCPhHIz6QSApi5Lz5LLnncWM4vGNPd9cIOkgoJ0FK-vH6IYkmBjOU75CkGmbvnrlmdOqU0-uR78mwpjsym-T" />
+            </div>
+        </header>
+        <!-- Main Canvas -->
+        <main class="flex-1 overflow-y-auto p-xl space-y-xl">
+            <!-- Resumen Ejecutivo (Bento Grid) -->
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-md">
+                <div
+                    class="bg-surface-container-lowest border border-border-hairline rounded p-md flex flex-col justify-between h-32 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-md text-tenant-primary opacity-20">
+                        <span class="material-symbols-outlined text-4xl"
+                            data-icon="account_balance_wallet">account_balance_wallet</span>
+                    </div>
+                    <h3 class="font-label-caps text-label-caps text-outline uppercase">Total Planilla Mes</h3>
+                    <p class="font-stat-mono text-stat-mono text-2xl text-on-surface tracking-tight">S/ 145,280.50</p>
+                    <div class="flex items-center gap-xs text-tenant-secondary font-label-caps text-label-caps">
+                        <span class="material-symbols-outlined text-[14px]" data-icon="trending_up">trending_up</span>
+                        <span>+2.4% vs mes anterior</span>
+                    </div>
+                </div>
+                <div
+                    class="bg-surface-container-lowest border border-border-hairline rounded p-md flex flex-col justify-between h-32 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-md text-tenant-primary opacity-20">
+                        <span class="material-symbols-outlined text-4xl" data-icon="group">group</span>
+                    </div>
+                    <h3 class="font-label-caps text-label-caps text-outline uppercase">Empleados Activos</h3>
+                    <p class="font-headline-md text-headline-md text-2xl text-on-surface">124</p>
+                    <div class="flex items-center gap-xs text-outline font-label-caps text-label-caps">
+                        <span>Planilla Regular 276</span>
+                    </div>
+                </div>
+                <div
+                    class="bg-surface-container-lowest border border-border-hairline rounded p-md flex flex-col justify-between h-32 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-md text-status-warning-text opacity-20">
+                        <span class="material-symbols-outlined text-4xl"
+                            data-icon="pending_actions">pending_actions</span>
+                    </div>
+                    <h3 class="font-label-caps text-label-caps text-outline uppercase">Pendientes de Firma</h3>
+                    <p class="font-headline-md text-headline-md text-2xl text-on-surface">12</p>
+                    <div class="flex items-center gap-xs text-status-warning-text font-label-caps text-label-caps">
+                        <span class="material-symbols-outlined text-[14px]" data-icon="warning">warning</span>
+                        <span>Requiere atención hoy</span>
+                    </div>
+                </div>
+            </section>
+            <!-- Tabla de Planilla Actual -->
+            <section
+                class="bg-surface-container-lowest border border-border-hairline rounded flex flex-col overflow-hidden">
+                <div class="px-md py-sm border-b border-border-hairline bg-surface flex justify-between items-center">
+                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Detalle de Planilla - Periodo 2023-10
+                    </h3>
+                    <div class="flex gap-sm">
+                        <button
+                            class="h-[28px] px-sm border border-border-hairline text-on-surface-variant rounded hover:bg-surface-container transition-colors font-label-caps text-label-caps flex items-center gap-xs">
+                            <span class="material-symbols-outlined text-[16px]"
+                                data-icon="filter_list">filter_list</span>
+                            Filtrar
+                        </button>
+                        <button
+                            class="h-[28px] px-sm border border-border-hairline text-on-surface-variant rounded hover:bg-surface-container transition-colors font-label-caps text-label-caps flex items-center gap-xs">
+                            <span class="material-symbols-outlined text-[16px]" data-icon="download">download</span>
+                            Exportar
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead class="bg-surface-container-low border-b-2 border-border-hairline">
+                            <tr>
+                                <th
+                                    class="px-sm py-xs font-label-caps text-label-caps text-on-surface-variant uppercase">
+                                    DNI</th>
+                                <th
+                                    class="px-sm py-xs font-label-caps text-label-caps text-on-surface-variant uppercase">
+                                    Empleado</th>
+                                <th
+                                    class="px-sm py-xs font-label-caps text-label-caps text-on-surface-variant uppercase">
+                                    Cargo</th>
+                                <th
+                                    class="px-sm py-xs font-label-caps text-label-caps text-on-surface-variant uppercase text-right">
+                                    Sueldo Bruto</th>
+                                <th
+                                    class="px-sm py-xs font-label-caps text-label-caps text-on-surface-variant uppercase text-right">
+                                    Descuentos</th>
+                                <th
+                                    class="px-sm py-xs font-label-caps text-label-caps text-on-surface-variant uppercase text-right">
+                                    Neto a Pagar</th>
+                                <th
+                                    class="px-sm py-xs font-label-caps text-label-caps text-on-surface-variant uppercase text-center">
+                                    Estado</th>
+                                <th
+                                    class="px-sm py-xs font-label-caps text-label-caps text-on-surface-variant uppercase text-right">
+                                    Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border-hairline font-body-base text-body-base">
+                            <tr class="hover:bg-surface-container-lowest/50 transition-colors">
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-outline">45678912</td>
+                                <td class="px-sm py-xs text-on-surface font-body-bold">QUISPE MAMANI, JUAN</td>
+                                <td class="px-sm py-xs text-on-surface-variant">Especialista TI</td>
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-right">S/ 4,500.00</td>
+                                <td
+                                    class="px-sm py-xs font-stat-mono text-stat-mono text-right text-status-danger-text">
+                                    -S/ 540.00</td>
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-right font-bold">S/ 3,960.00
+                                </td>
+                                <td class="px-sm py-xs text-center">
+                                    <mark
+                                        class="bg-status-success-bg text-status-success-text px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider">Pagado</mark>
+                                </td>
+                                <td class="px-sm py-xs text-right">
+                                    <button
+                                        class="text-tenant-primary hover:text-tenant-secondary transition-colors p-xs"><span
+                                            class="material-symbols-outlined text-[18px]"
+                                            data-icon="more_vert">more_vert</span></button>
+                                </td>
+                            </tr>
+                            <tr
+                                class="bg-[rgba(241,245,249,0.4)] hover:bg-surface-container-lowest/50 transition-colors">
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-outline">78912345</td>
+                                <td class="px-sm py-xs text-on-surface font-body-bold">FLORES ROJAS, MARIA</td>
+                                <td class="px-sm py-xs text-on-surface-variant">Asistente Administrativo</td>
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-right">S/ 2,800.00</td>
+                                <td
+                                    class="px-sm py-xs font-stat-mono text-stat-mono text-right text-status-danger-text">
+                                    -S/ 336.00</td>
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-right font-bold">S/ 2,464.00
+                                </td>
+                                <td class="px-sm py-xs text-center">
+                                    <mark
+                                        class="bg-status-warning-bg text-status-warning-text px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider">Pendiente</mark>
+                                </td>
+                                <td class="px-sm py-xs text-right">
+                                    <button
+                                        class="text-tenant-primary hover:text-tenant-secondary transition-colors p-xs"><span
+                                            class="material-symbols-outlined text-[18px]"
+                                            data-icon="more_vert">more_vert</span></button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-surface-container-lowest/50 transition-colors">
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-outline">12345678</td>
+                                <td class="px-sm py-xs text-on-surface font-body-bold">GARCIA PEREZ, CARLOS</td>
+                                <td class="px-sm py-xs text-on-surface-variant">Técnico Soporte</td>
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-right">S/ 3,200.00</td>
+                                <td
+                                    class="px-sm py-xs font-stat-mono text-stat-mono text-right text-status-danger-text">
+                                    -S/ 384.00</td>
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-right font-bold">S/ 2,816.00
+                                </td>
+                                <td class="px-sm py-xs text-center">
+                                    <mark
+                                        class="bg-status-danger-bg text-status-danger-text px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider">Observado</mark>
+                                </td>
+                                <td class="px-sm py-xs text-right">
+                                    <button
+                                        class="text-tenant-primary hover:text-tenant-secondary transition-colors p-xs"><span
+                                            class="material-symbols-outlined text-[18px]"
+                                            data-icon="more_vert">more_vert</span></button>
+                                </td>
+                            </tr>
+                            <tr
+                                class="bg-[rgba(241,245,249,0.4)] hover:bg-surface-container-lowest/50 transition-colors">
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-outline">98765432</td>
+                                <td class="px-sm py-xs text-on-surface font-body-bold">LOPEZ MENDOZA, ANA</td>
+                                <td class="px-sm py-xs text-on-surface-variant">Jefe de Recursos Humanos</td>
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-right">S/ 6,500.00</td>
+                                <td
+                                    class="px-sm py-xs font-stat-mono text-stat-mono text-right text-status-danger-text">
+                                    -S/ 780.00</td>
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-right font-bold">S/ 5,720.00
+                                </td>
+                                <td class="px-sm py-xs text-center">
+                                    <mark
+                                        class="bg-status-success-bg text-status-success-text px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider">Pagado</mark>
+                                </td>
+                                <td class="px-sm py-xs text-right">
+                                    <button
+                                        class="text-tenant-primary hover:text-tenant-secondary transition-colors p-xs"><span
+                                            class="material-symbols-outlined text-[18px]"
+                                            data-icon="more_vert">more_vert</span></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="bg-surface-container border-t-2 border-border-hairline">
+                            <tr>
+                                <td class="px-sm py-xs text-right font-body-bold text-on-surface uppercase text-[11px]"
+                                    colspan="3">Total Lote (Pág 1):</td>
+                                <td class="px-sm py-xs font-stat-mono text-stat-mono text-right text-on-surface">S/
+                                    17,000.00</td>
+                                <td
+                                    class="px-sm py-xs font-stat-mono text-stat-mono text-right text-status-danger-text">
+                                    -S/ 2,040.00</td>
+                                <td
+                                    class="px-sm py-xs font-stat-mono text-stat-mono text-right text-on-surface font-bold">
+                                    S/ 14,960.00</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>
