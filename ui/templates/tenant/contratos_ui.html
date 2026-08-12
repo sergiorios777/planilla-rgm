@@ -8,16 +8,22 @@
         </h3>
         <div class="flex-gap-sm mb-0">
             <button class="primary btn-compact" onclick="document.getElementById('modal-nuevo-contrato').showModal()">
-                ➕ Asignar Puesto a Trabajador
+                <svg class="icono-menu">
+                    <use href="#icono-nuevo-1"></use>
+                </svg>
+                Asignar Puesto a Trabajador
             </button>
             <button class="secondary outline btn-compact"
                 onclick="document.getElementById('modal-importar-contrato').showModal()">
-                📤 Importación Masiva (Excel)
+                <svg class="icono-menu">
+                    <use href="#icono-importar"></use>
+                </svg>
+                Importación Masiva (Excel)
             </button>
         </div>
     </header>
     <div>
-        <form id="form-filtros-contratos" class="grid">
+        <form id="form-filtros-contratos" class="grid mb-md">
             <label>
                 Buscar
                 <input type="search" name="buscar" placeholder="Código o descripción..."
@@ -56,9 +62,14 @@
     <dialog id="modal-nuevo-contrato">
         <article class="modal-card-lg">
             <header>
-                <a href="#close" aria-label="Close" class="close"
-                    onclick="document.getElementById('modal-nuevo-contrato').close()"></a>
-                <h4 class="mb-0">➕ Asignar Puesto a Trabajador</h4>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-nuevo-contrato').close()"></button>
+                <h4 class="mb-0">
+                    <svg class="icono-menu">
+                        <use href="#icono-nuevo-1"></use>
+                    </svg>
+                    Asignar Puesto a Trabajador
+                </h4>
             </header>
             <div id="contenido-modal-nuevo">
                 {{template "formulario_crear" .}}
@@ -71,8 +82,8 @@
         hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
         <article class="modal-card-lg">
             <header>
-                <a href="#close" aria-label="Close" class="close"
-                    onclick="document.getElementById('modal-editar-contrato').close()"></a>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-editar-contrato').close()"></button>
                 <h4 class="mb-0">✏️ Editar Contrato</h4>
             </header>
             <div id="contenido-modal-editar">
@@ -85,9 +96,14 @@
     <dialog id="modal-importar-contrato">
         <article class="modal-card-xl">
             <header>
-                <a href="#close" aria-label="Close" class="close"
-                    onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';"></a>
-                <h4 class="mb-0">📤 Importación Masiva (Excel)</h4>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';"></button>
+                <h4 class="mb-0">
+                    <svg class="icono-menu">
+                        <use href="#icono-importar"></use>
+                    </svg>
+                    Importación Masiva (Excel)
+                </h4>
             </header>
             <div>
                 <p><small>Sube un archivo <b>.xlsx</b> con las 7 columnas en el orden exacto indicado a continuación. La
@@ -95,8 +111,8 @@
 
                 <div class="flex-row-between mb-md">
                     <strong>Estructura del Archivo Excel:</strong>
-                    <a href="/tenant/contratos/plantilla" class="button outline primary btn-sm">
-                        <svg class="icono-menu mr-1">
+                    <a href="/tenant/contratos/plantilla" class="button outline primary btn-sm btn-compact">
+                        <svg class="icono-menu mr-xs">
                             <use href="#icono-importar"></use>
                         </svg> Descargar Plantilla (.xlsx)
                     </a>
@@ -145,30 +161,24 @@
                     hx-target="#resultado-importacion-contrato" hx-indicator="#cargando-excel-contratos"
                     hx-on::after-request="if(event.detail.successful) { document.getElementById('archivo-excel-contratos').value=''; }">
 
-                    <div class="grid mt-md">
-                        <label>Archivo Excel (.xlsx)
-                            <input type="file" id="archivo-excel-contratos" name="archivo_excel" accept=".xlsx"
-                                required>
-                        </label>
+                    <label class="mt-md">Archivo Excel (.xlsx)
+                        <input type="file" id="archivo-excel-contratos" name="archivo_excel" accept=".xlsx" required>
+                    </label>
 
-                        <div class="flex-items-end pb-sm">
-                            <button type="submit" class="contrast mb-0">Procesar Archivo</button>
-                        </div>
-                    </div>
-
-                    <span id="cargando-excel-contratos" class="htmx-indicator">
+                    <span id="cargando-excel-contratos" class="htmx-indicator mb-md block">
                         <svg class="icono-menu">
                             <use href="#icono-reloj-arena"></use>
                         </svg> Procesando filas y validando contratos...
                     </span>
+
+                    <div id="resultado-importacion-contrato" class="mt-md"></div>
+
+                    <footer>
+                        <button type="button" class="secondary outline btn-compact"
+                            onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';">Cerrar</button>
+                        <button type="submit" class="primary btn-compact">📤 Procesar Archivo</button>
+                    </footer>
                 </form>
-
-                <div id="resultado-importacion-contrato" class="mt-md"></div>
-
-                <div class="flex-row-end mt-lg">
-                    <button type="button" class="secondary outline btn-compact"
-                        onclick="document.getElementById('modal-importar-contrato').close(); document.getElementById('resultado-importacion-contrato').innerHTML = '';">Cerrar</button>
-                </div>
             </div>
         </article>
     </dialog>
@@ -232,11 +242,11 @@
             Activo
         </label>
 
-        <div class="flex-row-end mt-lg">
+        <footer>
             <button type="button" class="secondary outline btn-compact"
                 onclick="document.getElementById('modal-nuevo-contrato').close()">Cancelar</button>
-            <button type="submit" class="btn-compact">Generar Contrato y Ocupar Plaza</button>
-        </div>
+            <button type="submit" class="primary btn-compact">Generar Contrato y Ocupar Plaza</button>
+        </footer>
     </form>
 </div>
 {{end}}
@@ -281,23 +291,24 @@
                 general.</small>
         </div>
 
-        <div class="flex-row-end mt-lg">
+        <footer>
             <button type="button" class="secondary outline btn-compact"
                 onclick="document.getElementById('modal-editar-contrato').close()">Cancelar</button>
-            <button type="submit" class="btn-compact">Guardar Cambios</button>
-        </div>
+            <button type="submit" class="primary btn-compact">Guardar Cambios</button>
+        </footer>
     </form>
 </div>
 {{end}}
 
 {{define "tabla_contratos"}}
-<table class="striped">
+<table class="striped condensed">
     <thead>
         <tr>
             <th>Trabajador</th>
             <th>Plaza Asignada (Puesto)</th>
             <th>Vigencia</th>
             <th>Estado</th>
+            <th class="text-right">Acciones</th>
         </tr>
     </thead>
     <tbody>
@@ -305,29 +316,34 @@
         <tr>
             <td>
                 <strong>{{.TrabajadorNombre}}</strong><br>
-                <small>Doc: {{.TrabajadorDoc}}</small>
+                <small class="stat-mono">Doc: {{.TrabajadorDoc}}</small>
                 {{if .Nivel}}<br><small>Nivel: <strong>{{.Nivel}}</strong></small>{{end}}
             </td>
-            <td><mark>{{.RegimenDesc}}</mark><br><small><strong>{{.PuestoNombre}}</strong> (S/
-                    {{.SueldoPresupuestado}})</small></td>
+            <td><mark>{{.RegimenDesc}}</mark><br><small><strong>{{.PuestoNombre}}</strong> (<span class="stat-mono">S/
+                        {{.SueldoPresupuestado}}</span>)</small></td>
             <td><small>Desde: {{.FechaInicio}}<br>Hasta: {{if
                     .FechaFin}}{{.FechaFin}}{{else}}<em>Indeterminado</em>{{end}}</small></td>
             <td>
-                <div class="flex-gap-sm flex-items-center">
-                    {{if .Activo}}
-                    <mark class="badge badge-success">Vigente</mark>
-                    {{else}}
-                    <mark class="badge badge-danger">Finalizado</mark>
-                    {{end}}
-
+                {{if .Activo}}
+                <mark class="badge badge-success">Vigente</mark>
+                {{else}}
+                <mark class="badge badge-danger">Finalizado</mark>
+                {{end}}
+            </td>
+            <td>
+                <div class="flex-row-end flex-gap-xs">
                     <button class="outline secondary btn-sm" hx-get="/tenant/contratos/editar-ui?id={{.ID}}"
                         hx-target="#contenido-modal-editar" hx-swap="innerHTML">
-                        Editar
+                        <svg class="icono-menu">
+                            <use href="#icono-edit"></use>
+                        </svg>Editar
                     </button>
                     {{if .Activo}}
                     <button class="outline contrast btn-danger btn-sm" data-id="{{.ID}}"
                         data-nombre="{{.TrabajadorNombre}}" onclick="abrirModalBaja(this)">
-                        🛑 Dar de Baja
+                        <svg class="icono-menu">
+                            <use href="#icono-warning"></use>
+                        </svg>Dar de Baja
                     </button>
                     {{end}}
                 </div>
@@ -335,7 +351,7 @@
         </tr>
         {{else}}
         <tr>
-            <td colspan="4" class="text-center">No hay contratos registrados.</td>
+            <td colspan="5" class="text-center">No hay contratos registrados.</td>
         </tr>
         {{end}}
     </tbody>
@@ -369,9 +385,12 @@
 <dialog id="modal-baja">
     <article class="modal-card-md">
         <header>
-            <a href="#close" aria-label="Close" class="close"
-                onclick="document.getElementById('modal-baja').close()"></a>
-            <h4 class="mb-0">🛑 Finalizar Contrato</h4>
+            <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-baja').close()"></button>
+            <h4 class="mb-0">
+                <svg class="icono-menu">
+                    <use href="#icono-warning"></use>
+                </svg>Finalizar Contrato
+            </h4>
         </header>
         <p>Está a punto de dar de baja a <strong id="baja-trabajador-nombre"></strong>. La plaza quedará vacante y se
             limpiará su estructura de costos.</p>
@@ -394,10 +413,10 @@
                 <input type="date" name="fecha_fin" required>
             </label>
 
-            <footer class="flex-row-end mt-lg">
-                <button type="button" class="secondary outline mb-0"
+            <footer>
+                <button type="button" class="secondary outline btn-compact"
                     onclick="document.getElementById('modal-baja').close()">Cancelar</button>
-                <button type="submit" class="btn-danger-fill mb-0">Confirmar Baja</button>
+                <button type="submit" class="btn-danger-fill btn-compact">Confirmar Baja</button>
             </footer>
         </form>
     </article>

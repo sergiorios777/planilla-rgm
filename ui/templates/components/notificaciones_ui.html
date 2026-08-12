@@ -4,15 +4,20 @@
     {{.Conteo}}
 </span>
 {{end}}
-<button class="outline secondary btn-nav-action" onclick="document.getElementById('modal-notificaciones').setAttribute('open', 'true')" type="button">
-    🔔 Avisos
+<button class="outline secondary btn-nav-action"
+    onclick="document.getElementById('modal-notificaciones').setAttribute('open', 'true')" type="button">
+    <svg class="icono-menu">
+        <use href="#icono-notifications"></use>
+    </svg>
+    Avisos
 </button>
 {{end}}
 
 {{define "lista_notificaciones"}}
 <ul class="notif-list">
     {{range .}}
-    <li class="notif-item {{if eq .Tipo "ERROR"}}notif-item-error{{else if eq .Tipo "PROCESO_EXITOSO"}}notif-item-exitoso{{else}}notif-item-advertencia{{end}}">
+    <li class="notif-item {{if eq .Tipo " ERROR"}}notif-item-error{{else if eq .Tipo "PROCESO_EXITOSO"
+        }}notif-item-exitoso{{else}}notif-item-advertencia{{end}}">
         <div class="notif-item-header">
             <strong class="notif-item-title">
                 {{if eq .Tipo "ERROR"}}❌{{else if eq .Tipo "PROCESO_EXITOSO"}}✅{{else}}⏰{{end}}

@@ -7,9 +7,11 @@
             Legajo de Trabajadores
         </h3>
         <div class="flex-row-start flex-gap-sm">
-            <button class="primary btn-compact"
-                onclick="document.getElementById('modal-nuevo-trabajador').showModal()">
-                ➕ Registrar Nuevo Trabajador
+            <button class="primary btn-compact" onclick="document.getElementById('modal-nuevo-trabajador').showModal()">
+                <svg class="icono-menu">
+                    <use href="#icono-nuevo-1"></use>
+                </svg>
+                Registrar Nuevo Trabajador
             </button>
             <button class="contrast outline btn-compact"
                 onclick="document.getElementById('modal-importar-trabajador').showModal()">
@@ -21,12 +23,10 @@
     </header>
 
     <div id="contenedor-lista">
-        <div class="card">
-            <div class="flex-row-end">
-                <input id="input-buscar-trabajador" class="form-control" type="search" name="buscar"
-                    placeholder="Buscar por nombre o DNI..." hx-get="/tenant/trabajadores/lista"
-                    hx-trigger="keyup changed delay:500ms, search" hx-target="#lista-trabajadores">
-            </div>
+        <div class="flex-row-end mb-md">
+            <input id="input-buscar-trabajador" class="form-control mb-0 max-w-400 w-full" type="search" name="buscar"
+                placeholder="Buscar por nombre o DNI..." hx-get="/tenant/trabajadores/lista"
+                hx-trigger="keyup changed delay:500ms, search" hx-target="#lista-trabajadores">
         </div>
         <div id="lista-trabajadores" hx-get="/tenant/trabajadores/lista" hx-trigger="load">
             <p aria-busy="true">Cargando personal...</p>
@@ -37,9 +37,14 @@
     <dialog id="modal-nuevo-trabajador">
         <article class="modal-card-lg">
             <header>
-                <a href="#close" aria-label="Close" class="close"
-                    onclick="document.getElementById('modal-nuevo-trabajador').close()"></a>
-                <h4 class="mb-0">➕ Registrar Nuevo Trabajador</h4>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-nuevo-trabajador').close()"></button>
+                <h4 class="mb-0">
+                    <svg class="icono-menu">
+                        <use href="#icono-nuevo-1"></use>
+                    </svg>
+                    Registrar Nuevo Trabajador
+                </h4>
             </header>
             {{template "formulario_crear" .}}
         </article>
@@ -49,9 +54,14 @@
     <dialog id="modal-importar-trabajador">
         <article class="modal-card-lg">
             <header>
-                <a href="#close" aria-label="Close" class="close"
-                    onclick="document.getElementById('modal-importar-trabajador').close()"></a>
-                <h4 class="mb-0">📤 Importación Masiva (Excel)</h4>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-importar-trabajador').close()"></button>
+                <h4 class="mb-0">
+                    <svg class="icono-menu">
+                        <use href="#icono-importar"></use>
+                    </svg>
+                    Importación Masiva (Excel)
+                </h4>
             </header>
             <div id="contenedor-formulario-importar-trabajadores">
                 {{template "formulario_importar_trabajadores" .}}
@@ -64,8 +74,8 @@
         hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
         <article class="modal-card-lg">
             <header>
-                <a href="#close" aria-label="Close" class="close"
-                    onclick="document.getElementById('modal-editar-trabajador').close()"></a>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-editar-trabajador').close()"></button>
                 <h4 class="mb-0">✏️ Editar Trabajador</h4>
             </header>
             <div id="contenido-modal-editar">
@@ -175,11 +185,11 @@
         <input type="checkbox" name="activo" id="checkbox-activo-crear" checked> Personal Activo
     </label>
 
-    <div class="flex-row-end mt-lg">
+    <footer>
         <button type="button" class="secondary outline btn-compact"
             onclick="document.getElementById('modal-nuevo-trabajador').close()">Cancelar</button>
-        <button type="submit" class="btn-compact">Guardar Trabajador</button>
-    </div>
+        <button type="submit" class="primary btn-compact">Guardar Trabajador</button>
+    </footer>
 </form>
 {{end}}
 
@@ -285,16 +295,16 @@
         <input type="checkbox" name="activo" id="checkbox-activo-editar" {{if .Activo}}checked{{end}}> Personal Activo
     </label>
 
-    <div class="flex-row-end mt-lg">
+    <footer>
         <button type="button" class="secondary outline btn-compact"
             onclick="document.getElementById('modal-editar-trabajador').close()">Cancelar</button>
-        <button type="submit" class="btn-compact">Actualizar</button>
-    </div>
+        <button type="submit" class="primary btn-compact">Actualizar Trabajador</button>
+    </footer>
 </form>
 {{end}}
 
 {{define "tabla_trabajadores"}}
-<table class="striped">
+<table class="striped condensed">
     <thead>
         <tr>
             <th>DNI/Doc</th>
@@ -311,7 +321,7 @@
     <tbody>
         {{range .Trabajadores}}
         <tr>
-            <td><small>{{.NumeroDocumento}}</small></td>
+            <td><small class="stat-mono">{{.NumeroDocumento}}</small></td>
             <td><strong>{{.ApellidoPaterno}} {{.ApellidoMaterno}}</strong><br><small>{{.Nombres}}</small></td>
             <td>
                 {{if .Banco}}<strong>{{.Banco}}</strong>{{else}}<small class="text-muted">-</small>{{end}}
@@ -326,7 +336,7 @@
             </td>
             <td><small>{{if .FechaIngreso}}{{.FechaIngreso}}{{else}}-{{end}}</small></td>
             <td><small>{{if .FechaCese}}{{.FechaCese}}{{else}}-{{end}}</small></td>
-            <td>{{if gt .Edad 0}}{{.Edad}} años{{else}}-{{end}}</td>
+            <td><small>{{if gt .Edad 0}}{{.Edad}} años{{else}}-{{end}}</small></td>
             <td>
                 {{if .Activo}}
                 <mark class="badge badge-success">Activo</mark>
@@ -335,9 +345,8 @@
                 {{end}}
             </td>
             <td>
-                <button class="outline btn-sm"
-                    hx-get="/tenant/trabajadores/editar_ui?id={{.ID}}" hx-target="#contenido-modal-editar"
-                    hx-swap="innerHTML">
+                <button class="outline btn-sm" hx-get="/tenant/trabajadores/editar_ui?id={{.ID}}"
+                    hx-target="#contenido-modal-editar" hx-swap="innerHTML">
                     Editar
                 </button>
             </td>
@@ -389,7 +398,7 @@
     </div>
 
     <div class="overflow-x-auto mb-md border-box">
-        <table class="striped w-full font-xs mb-0 text-nowrap">
+        <table class="striped condensed w-full font-xs mb-0 text-nowrap">
             <thead>
                 <tr>
                     <th>A: TIPO_DOCUMENTO</th>
@@ -446,28 +455,23 @@
         hx-target="#resultado-importacion-trabajador" hx-indicator="#cargando-excel-trabajadores"
         hx-on::after-request="if(event.detail.successful) { htmx.trigger('#input-buscar-trabajador', 'search'); }">
 
-        <div class="grid mt-md">
-            <label>Archivo Excel (.xlsx)
-                <input type="file" name="archivo_excel" accept=".xlsx" required>
-            </label>
+        <label class="mt-md">Archivo Excel (.xlsx)
+            <input type="file" name="archivo_excel" accept=".xlsx" required>
+        </label>
 
-            <div class="flex-end pb-spacing">
-                <button type="submit" class="contrast mb-0">Procesar Archivo</button>
-            </div>
-        </div>
-
-        <span id="cargando-excel-trabajadores" class="htmx-indicator">
+        <span id="cargando-excel-trabajadores" class="htmx-indicator mb-md block">
             <svg class="icono-menu">
                 <use href="#icono-reloj-arena"></use>
             </svg> Procesando filas y validando legajo...
         </span>
+
+        <div id="resultado-importacion-trabajador" class="mt-md"></div>
+
+        <footer>
+            <button type="button" class="secondary outline btn-compact"
+                onclick="document.getElementById('modal-importar-trabajador').close()">Cerrar</button>
+            <button type="submit" class="primary btn-compact">📤 Procesar Archivo</button>
+        </footer>
     </form>
-
-    <div id="resultado-importacion-trabajador" class="mt-md"></div>
-
-    <div class="flex-row-end mt-lg">
-        <button type="button" class="secondary outline btn-compact"
-            onclick="document.getElementById('modal-importar-trabajador').close()">Cerrar</button>
-    </div>
 </div>
 {{end}}
