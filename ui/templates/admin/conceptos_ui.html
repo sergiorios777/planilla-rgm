@@ -29,12 +29,28 @@
                 onclick="document.getElementById('modal-importar-conceptos').close()"></a>
             <h4 class="m-0"><svg class="icono-menu">
                     <use href="#icono-importar"></use>
-                </svg> Importación Masiva (CSV)</h4>
+                </svg> Importación Masiva de Conceptos (CSV)</h4>
         </header>
-        <p><small>Columnas requeridas: CODIGO, DESCRIPCION, TIPO, AFECTA_A (opcional, separado por comas).</small></p>
+        <div class="mb-sm">
+            <p class="m-0 mb-xs"><small><strong>Formato del archivo:</strong> CSV separado por comas (<code>,</code>) o punto y coma (<code>;</code>).</small></p>
+            <p class="m-0 mb-xs"><small><strong>Estructura de columnas:</strong> <code>CODIGO</code>, <code>DESCRIPCION</code>, <code>TIPO</code>, <code>ORIGEN</code> (opcional), <code>AFECTA_A</code> (opcional).</small></p>
+            <ul class="m-0 fs-75 text-muted" style="padding-left: 1.2rem;">
+                <li><strong>TIPO:</strong> <code>Ingreso</code>, <code>Retencion</code>, <code>Aporte</code>.</li>
+                <li><strong>ORIGEN:</strong> <code>sunat</code> (por defecto) o <code>interno</code>.</li>
+                <li><strong>AFECTA_A:</strong> Códigos de afectación separados por comas (ej: <code>0701,0804</code>).</li>
+            </ul>
+        </div>
+
+        <div class="mb-md">
+            <a href="/admin/conceptos/plantilla-ejemplo" class="secondary outline btn-compact inline-flex items-center gap-xs" download="plantilla_conceptos_sunat.csv">
+                <svg class="icono-menu"><use href="#icono-importar"></use></svg>
+                Descargar Plantilla CSV Modelo
+            </a>
+        </div>
+
         <form hx-post="/admin/conceptos/importar" hx-encoding="multipart/form-data" hx-target="#lista-conceptos"
             hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) this.reset();">
-            <label>Archivo CSV
+            <label>Seleccionar Archivo CSV
                 <input type="file" name="archivo_csv" accept=".csv" required>
             </label>
             <footer>

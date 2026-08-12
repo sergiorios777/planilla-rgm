@@ -99,6 +99,118 @@ func (r *ConceptoRepository) ObtenerTodos(busqueda string, tipo string, parentID
 	return lista, totalRegistros, nil
 }
 
+// ResolverCodigoPadre determina el código del concepto padre según las reglas SUNAT,
+// incluyendo las excepciones para las series 1000 (Sector Público) y 2000 (Régimen Laboral Público).
+func ResolverCodigoPadre(cod string) string {
+	if len(cod) != 4 {
+		return ""
+	}
+	// Excepción Serie 1000 (Sector Público)
+	if strings.HasPrefix(cod, "1") {
+		if cod != "1000" {
+			return "1000"
+		}
+		return "" // "1000" es un concepto padre principal
+	}
+	// Excepción Serie 2000 (Régimen Laboral Público)
+	if strings.HasPrefix(cod, "2") {
+		if cod != "2000" {
+			return "2000"
+		}
+		return "" // "2000" es un concepto padre principal
+	}
+	// Regla estándar para series 0100 a 0900
+	if !strings.HasSuffix(cod, "00") {
+		return cod[:2] + "00"
+	}
+	return "" // Termina en "00", es un concepto padre principal
+}
+
+// RecalcularJerarquias recalcula y actualiza la relación parent_id de todos los conceptos maestros existentes
+func (r *ConceptoRepository) RecalcularJerarquias() error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if err := recalcularJerarquiasTx(tx); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func recalcularJerarquiasTx(tx *sql.Tx) error {
+	// 1. Mapa de conceptos padres (donde ResolverCodigoPadre(codigo) == "")
+	mapaPadres := make(map[string]int)
+	rowsPadres, err := tx.Query(`SELECT id, codigo FROM conceptos_maestros ORDER BY id ASC`)
+	if err != nil {
+		return err
+	}
+	for rowsPadres.Next() {
+		var id int
+		var cod string
+		if err := rowsPadres.Scan(&id, &cod); err != nil {
+			rowsPadres.Close()
+			return err
+		}
+		if ResolverCodigoPadre(cod) == "" {
+			if _, existe := mapaPadres[cod]; !existe {
+				mapaPadres[cod] = id
+			}
+		}
+	}
+	rowsPadres.Close()
+
+	// 2. Obtener todos los conceptos para evaluar su jerarquía según su columna `codigo`
+	type itemConcepto struct {
+		id     int
+		codigo string
+	}
+	var todos []itemConcepto
+	rowsAll, err := tx.Query(`SELECT id, codigo FROM conceptos_maestros`)
+	if err != nil {
+		return err
+	}
+	for rowsAll.Next() {
+		var item itemConcepto
+		if err := rowsAll.Scan(&item.id, &item.codigo); err != nil {
+			rowsAll.Close()
+			return err
+		}
+		todos = append(todos, item)
+	}
+	rowsAll.Close()
+
+	stmtJerarquia, err := tx.Prepare(`UPDATE conceptos_maestros SET parent_id = $1 WHERE id = $2`)
+	if err != nil {
+		return err
+	}
+	defer stmtJerarquia.Close()
+
+	stmtNull, err := tx.Prepare(`UPDATE conceptos_maestros SET parent_id = NULL WHERE id = $1`)
+	if err != nil {
+		return err
+	}
+	defer stmtNull.Close()
+
+	for _, item := range todos {
+		codPadre := ResolverCodigoPadre(item.codigo)
+		if codPadre != "" {
+			if idPadre, existe := mapaPadres[codPadre]; existe && idPadre != item.id {
+				stmtJerarquia.Exec(idPadre, item.id)
+			} else {
+				stmtNull.Exec(item.id)
+			}
+		} else {
+			stmtNull.Exec(item.id)
+		}
+	}
+
+	return nil
+}
+
 // ProcesarImportacion ejecuta el algoritmo de 3 pasadas en una sola transacción segura
 func (r *ConceptoRepository) ProcesarImportacion(conceptos []models.ConceptoMaestro, afectaciones map[string][]string) error {
 	tx, err := r.db.Begin()
@@ -118,43 +230,36 @@ func (r *ConceptoRepository) ProcesarImportacion(conceptos []models.ConceptoMaes
 	}
 	for _, c := range conceptos {
 		if _, err := stmtInsert.Exec(c.Codigo, c.CodigoInterno, c.Descripcion, c.Tipo, c.Activo, c.Origen); err != nil {
+			stmtInsert.Close()
 			return err
 		}
 	}
 	stmtInsert.Close()
 
-	// --- Cargamos el diccionario de IDs recién creados en memoria ---
+	// --- PASADA 2: Recalcular Jerarquía (Padre/Hijo) ---
+	if err := recalcularJerarquiasTx(tx); err != nil {
+		return err
+	}
+
+	// --- Cargamos el diccionario de IDs en memoria para Afectaciones ---
 	mapaIds := make(map[string]int)
-	rows, err := tx.Query(`SELECT id, codigo_interno FROM conceptos_maestros`)
+	rows, err := tx.Query(`SELECT id, codigo, codigo_interno FROM conceptos_maestros`)
 	if err != nil {
 		return err
 	}
 	for rows.Next() {
 		var id int
-		var cod string
-		rows.Scan(&id, &cod)
-		mapaIds[cod] = id
+		var cod, codInt string
+		rows.Scan(&id, &cod, &codInt)
+		mapaIds[codInt] = id
+		if _, existe := mapaIds[cod]; !existe {
+			mapaIds[cod] = id
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return err
 	}
 	rows.Close()
-
-	// --- PASADA 2: Vincular Jerarquía (Padre/Hijo) ---
-	stmtJerarquia, err := tx.Prepare(`UPDATE conceptos_maestros SET parent_id = $1 WHERE id = $2`)
-	if err != nil {
-		return err
-	}
-	for cod, idHijo := range mapaIds {
-		// Regla SUNAT: Si tiene 4 caracteres y NO termina en "00" (ej. "0121"), su padre es "0100"
-		if len(cod) == 4 && !strings.HasSuffix(cod, "00") {
-			codigoPadre := cod[:2] + "00"
-			if idPadre, existe := mapaIds[codigoPadre]; existe {
-				stmtJerarquia.Exec(idPadre, idHijo)
-			}
-		}
-	}
-	stmtJerarquia.Close()
 
 	// --- PASADA 3: Vincular Afectaciones ---
 	stmtAfecta, err := tx.Prepare(`
@@ -183,71 +288,4 @@ func (r *ConceptoRepository) ProcesarImportacion(conceptos []models.ConceptoMaes
 	return tx.Commit()
 }
 
-func (r *ContratoRepository) ObtenerPorID(id int, tenantID int) (models.Contrato, error) {
-	var c models.Contrato
-	var fFin sql.NullString
-	var tipoContrato sql.NullString
-	var nivel sql.NullString
-	var motivoBaja sql.NullString
-	query := `
-		SELECT c.id, c.trabajador_id, c.puesto_id, 
-		       TO_CHAR(c.fecha_inicio, 'YYYY-MM-DD'), TO_CHAR(c.fecha_fin, 'YYYY-MM-DD'), c.activo,
-		       t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
-		       p.nombre AS puesto_nombre, COALESCE(c.tipo_contrato, '') AS tipo_contrato, COALESCE(c.nivel, '') AS nivel,
-		       c.motivo_baja
-		FROM contratos c
-		INNER JOIN trabajadores t ON c.trabajador_id = t.id
-		INNER JOIN puestos p ON c.puesto_id = p.id
-		WHERE c.id = $1 AND c.tenant_id = $2
-	`
-	err := r.db.QueryRow(query, id, tenantID).Scan(
-		&c.ID, &c.TrabajadorID, &c.PuestoID, &c.FechaInicio, &fFin, &c.Activo,
-		&c.TrabajadorNombre, &c.PuestoNombre, &tipoContrato, &nivel, &motivoBaja,
-	)
-	if fFin.Valid {
-		c.FechaFin = &fFin.String
-	}
-	if tipoContrato.Valid {
-		c.TipoContrato = tipoContrato.String
-	}
-	if nivel.Valid {
-		c.Nivel = nivel.String
-	}
-	if motivoBaja.Valid {
-		c.MotivoBaja = &motivoBaja.String
-	}
-	return c, err
-}
 
-func (r *ContratoRepository) Actualizar(c *models.Contrato) error {
-	// Solo actualizamos fechas, estado y nivel. Si el contrato pasa a inactivo, la plaza se libera.
-	tx, err := r.db.Begin()
-	if err != nil {
-		return err
-	}
-
-	query := `UPDATE contratos SET fecha_inicio = $1, fecha_fin = NULLIF($2, '')::DATE, activo = $3, nivel = $4 WHERE id = $5 AND tenant_id = $6`
-	_, err = tx.Exec(query, c.FechaInicio, c.FechaFin, c.Activo, c.Nivel, c.ID, c.TenantID)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// Si se inactiva el contrato, liberamos la plaza a VACANTE
-	if !c.Activo {
-		_, err = tx.Exec(`UPDATE puestos SET estado = 'VACANTE' WHERE id = $1`, c.PuestoID)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-	} else {
-		// Si se reactiva (por si acaso), lo marcamos OCUPADO
-		_, err = tx.Exec(`UPDATE puestos SET estado = 'OCUPADO' WHERE id = $1`, c.PuestoID)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-
-	return tx.Commit()
-}

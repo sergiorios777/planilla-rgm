@@ -106,6 +106,7 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/admin/ui/conceptos", middleware.RequireRole("super_admin", c.VistaUI))
 	mux.HandleFunc("/admin/conceptos/lista", middleware.RequireRole("super_admin", c.ListarConceptos))
 	mux.HandleFunc("/admin/conceptos/importar", middleware.RequireRole("super_admin", c.ImportarCSV))
+	mux.HandleFunc("/admin/conceptos/plantilla-ejemplo", middleware.RequireRole("super_admin", c.DescargarPlantillaCSV))
 
 	// Rutas de Parámetros Globales
 	parametroRepo := repository.NewParametroRepository(db)
