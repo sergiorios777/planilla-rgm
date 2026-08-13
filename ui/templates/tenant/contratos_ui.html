@@ -332,25 +332,17 @@
             </td>
             <td>
                 <div class="flex-row-end flex-gap-xs">
-                    <button class="btn-icon" 
-                            data-tooltip="Editar contrato" 
-                            data-placement="top"
-                            aria-label="Editar contrato"
-                            hx-get="/tenant/contratos/editar-ui?id={{.ID}}"
-                            hx-target="#contenido-modal-editar" 
-                            hx-swap="innerHTML">
+                    <button class="btn-icon" data-tooltip="Editar contrato" data-placement="top"
+                        aria-label="Editar contrato" hx-get="/tenant/contratos/editar-ui?id={{.ID}}"
+                        hx-target="#contenido-modal-editar" hx-swap="innerHTML">
                         <svg class="icono-menu">
                             <use href="#icono-edit"></use>
                         </svg>
                     </button>
                     {{if .Activo}}
-                    <button class="btn-icon btn-danger-icon" 
-                            data-tooltip="Dar de baja contrato" 
-                            data-placement="top"
-                            aria-label="Dar de baja contrato"
-                            data-id="{{.ID}}"
-                            data-nombre="{{.TrabajadorNombre}}" 
-                            onclick="abrirModalBaja(this)">
+                    <button class="btn-icon btn-danger-icon" data-tooltip="Dar de baja contrato" data-placement="top"
+                        aria-label="Dar de baja contrato" data-id="{{.ID}}" data-nombre="{{.TrabajadorNombre}}"
+                        onclick="abrirModalBaja(this)">
                         <svg class="icono-menu">
                             <use href="#icono-warning"></use>
                         </svg>

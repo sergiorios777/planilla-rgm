@@ -1,12 +1,6 @@
 <article>
     <header class="flex-row-between">
         <div>
-            <button class="outline secondary btn-compact font-sm mb-sm flex-inline flex-items-center flex-gap-xs"
-                hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
-                <svg class="icono-menu">
-                    <use href="#icono-previo-cuadrado"></use>
-                </svg> Volver a Planillas
-            </button>
             <h3 class="mb-0 flex-items-center flex-gap-sm">
                 <svg class="icono-menu">
                     <use href="#icono-wysiwyg"></use>
@@ -23,6 +17,16 @@
             <mark class="badge badge-warning p-sm font-bold">Borrador</mark>
         </div>
     </header>
+
+    <!-- Toolbar superior de acciones -->
+    <div class="flex-row-start mb-lg">
+        <button class="outline secondary btn-compact font-sm mb-0 flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Volver a Planillas
+        </button>
+    </div>
 
     <div id="alerta-especial"></div>
 
@@ -179,17 +183,17 @@
         </fieldset>
 
         <!-- Botón Final de Procesamiento -->
-        <div class="flex-row-end flex-items-center flex-gap-md">
-            <button type="button" class="outline secondary btn-compact" hx-get="/tenant/ui/planillas"
+        <footer class="grid">
+            <button type="button" class="secondary outline btn-compact" hx-get="/tenant/ui/planillas"
                 hx-target="#contenido-tenant">
                 Cancelar
             </button>
-            <button type="submit" class="primary btn-compact p-md flex-inline flex-items-center flex-gap-xs">
+            <button type="submit" class="primary btn-compact">
                 <svg class="icono-menu">
                     <use href="#icono-engranaje"></use>
                 </svg> Guardar y Procesar Planilla Especial
             </button>
-        </div>
+        </footer>
     </form>
 </article>
 
