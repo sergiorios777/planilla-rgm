@@ -22,39 +22,60 @@
     <!-- Toolbar superior de acciones -->
     <div class="flex-items-center flex-gap-sm mb-lg flex-wrap">
 
-        <button class="secondary outline btn-compact" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
-            ⬅️ Volver al Historial
+        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Volver al Historial
         </button>
 
-        <button class="primary outline btn-compact" hx-get="/tenant/ui/planillas/rubros-metas?id={{.PlanillaID}}"
-            hx-target="#contenido-tenant">
-            🎯 Gestionar Rubros y Metas
+        <button class="primary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/ui/planillas/rubros-metas?id={{.PlanillaID}}" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-money-range"></use>
+            </svg> Rubros y Metas
         </button>
 
         {{if eq .PlanillaEstado "BORRADOR"}}
         {{if .EsExtraordinaria}}
-        <button class="primary outline btn-compact" hx-get="/tenant/planillas/especial/ui?id={{.PlanillaID}}"
-            hx-target="#contenido-tenant">
-            🎯 Editar Formulación
+        <button class="primary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/planillas/especial/ui?id={{.PlanillaID}}" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-wysiwyg"></use>
+            </svg> Editar Formulación
         </button>
         {{end}}
 
-        <button class="primary btn-compact" hx-post="/tenant/planillas/procesar?id={{.PlanillaID}}" hx-target="#contenido-tenant">
-            ⚙️ Procesar / Recalcular
+        <button class="primary btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-post="/tenant/planillas/procesar?id={{.PlanillaID}}" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-engranaje"></use>
+            </svg> Procesar / Recalcular
         </button>
 
-        <button class="contrast btn-compact" hx-post="/tenant/planillas/cerrar?id={{.PlanillaID}}" hx-target="#contenido-tenant"
+        <button class="contrast btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-post="/tenant/planillas/cerrar?id={{.PlanillaID}}" hx-target="#contenido-tenant"
             hx-confirm="⚠️ ¿Estás seguro de cerrar esta planilla? Una vez cerrada, NO podrás recalcular ni modificar metas ni rubros.">
-            🔒 Cerrar Planilla
+            <svg class="icono-menu">
+                <use href="#icono-lock"></use>
+            </svg> Cerrar Planilla
         </button>
         {{end}}
 
         <span class="flex-grow"></span>
 
         <a href="/tenant/planillas/descargar-reporte?id={{.PlanillaID}}" target="_blank" role="button"
-            class="secondary outline btn-compact">🖨️ Planilla PDF</a>
+            class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs">
+            <svg class="icono-menu">
+                <use href="#icono-print"></use>
+            </svg> Planilla PDF
+        </a>
         <a href="/tenant/planillas/descargar-boletas?id={{.PlanillaID}}" target="_blank" role="button"
-            class="secondary outline btn-compact">🖨️ Boletas PDF</a>
+            class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs">
+            <svg class="icono-menu">
+                <use href="#icono-print"></use>
+            </svg> Boletas PDF
+        </a>
     </div>
 
     <!-- Buscador de trabajadores -->
@@ -66,34 +87,39 @@
 
     <!-- Resumen por Trabajador -->
     <div id="vista-resumen-trabajadores">
-        <table class="striped">
+        <table class="striped condensed">
             <thead>
                 <tr>
                     <th>Trabajador</th>
                     <th>Plaza Costeada</th>
-                    <th class="text-success">Ingresos</th>
-                    <th class="text-danger">Retenciones</th>
-                    <th class="text-info">Aportes (Entidad)</th>
-                    <th>Neto a Pagar</th>
-                    <th>Acción</th>
+                    <th class="text-right text-success">Ingresos</th>
+                    <th class="text-right text-danger">Retenciones</th>
+                    <th class="text-right text-info">Aportes (Entidad)</th>
+                    <th class="text-right">Neto a Pagar</th>
+                    <th class="text-right">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {{range .Detalles}}
                 <tr class="fila-trabajador-resumen"
                     data-trabajador="{{.TrabajadorNombre}} {{.TrabajadorDoc}} {{.PuestoNombre}}">
-                    <td><strong>{{.TrabajadorNombre}}</strong><br><small>Doc: {{.TrabajadorDoc}}</small></td>
+                    <td><strong>{{.TrabajadorNombre}}</strong><br><small class="stat-mono">Doc:
+                            {{.TrabajadorDoc}}</small></td>
                     <td><small>{{.PuestoNombre}}</small></td>
-                    <td class="text-success">S/ {{printf "%.2f" .TotalIngresos}}</td>
-                    <td class="text-danger">S/ {{printf "%.2f" .TotalRetenciones}}</td>
-                    <td class="text-info">S/ {{printf "%.2f" .TotalAportes}}</td>
-                    <td><strong>S/ {{printf "%.2f" .NetoPagar}}</strong></td>
+                    <td class="text-right text-success stat-mono">S/ {{printf "%.2f" .TotalIngresos}}</td>
+                    <td class="text-right text-danger stat-mono">S/ {{printf "%.2f" .TotalRetenciones}}</td>
+                    <td class="text-right text-info stat-mono">S/ {{printf "%.2f" .TotalAportes}}</td>
+                    <td class="text-right stat-mono font-bold">S/ {{printf "%.2f" .NetoPagar}}</td>
                     <td>
-                        <button class="outline secondary btn-badge"
-                            hx-get="/tenant/planillas/boleta-modal?id={{.ID}}" hx-target="#contenido-modal-boleta"
-                            hx-swap="innerHTML">
-                            🔍 Ver Boleta
-                        </button>
+                        <div class="flex-row-end">
+                            <button class="btn-icon" data-tooltip="Ver detalle de boleta" data-placement="top"
+                                aria-label="Ver boleta" hx-get="/tenant/planillas/boleta-modal?id={{.ID}}"
+                                hx-target="#contenido-modal-boleta" hx-swap="innerHTML">
+                                <svg class="icono-menu">
+                                    <use href="#icono-clarify"></use>
+                                </svg>
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 {{else}}
@@ -112,8 +138,8 @@
     hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-boleta') this.showModal()">
     <article class="modal-card-lg">
         <header>
-            <a href="#close" aria-label="Close" class="close"
-                onclick="document.getElementById('modal-boleta-individual').close()"></a>
+            <button aria-label="Close" rel="prev"
+                onclick="document.getElementById('modal-boleta-individual').close()"></button>
             <h4 class="mb-0">🧾 Detalle de Boleta de Pago</h4>
         </header>
         <div id="contenido-modal-boleta">
@@ -128,13 +154,14 @@
         <div>
             <strong class="font-xl">{{.TrabajadorNombre}}</strong>
             <div class="font-sm text-muted mt-0">
-                📄 Documento: <strong>{{.TrabajadorDoc}}</strong> | 🏢 Plaza: <strong>{{.PuestoNombre}}</strong>
+                📄 Documento: <strong class="stat-mono">{{.TrabajadorDoc}}</strong> | 🏢 Plaza:
+                <strong>{{.PuestoNombre}}</strong>
             </div>
         </div>
     </div>
 
     <div class="overflow-x-auto max-h-380">
-        <table class="striped font-sm">
+        <table class="striped condensed font-sm">
             <thead>
                 <tr>
                     <th>Concepto</th>
@@ -157,14 +184,14 @@
                         <mark class="badge badge-info font-xs font-bold">APORTE</mark>
                         {{end}}
                     </td>
-                    <td><small>{{.CodigoSunat}}</small></td>
+                    <td><small class="stat-mono">{{.CodigoSunat}}</small></td>
                     <td>
                         <small>
                             {{if .FuenteRubroCodigo}}🏛️ {{.FuenteRubroCodigo}}{{end}}
                             {{if .MetaCodigo}} 🎯 {{.MetaCodigo}}{{end}}
                         </small>
                     </td>
-                    <td class="text-right"><strong>S/ {{printf "%.2f" .Monto}}</strong></td>
+                    <td class="text-right stat-mono font-bold">S/ {{printf "%.2f" .Monto}}</td>
                 </tr>
                 {{else}}
                 <tr>
@@ -175,17 +202,23 @@
         </table>
     </div>
 
-    <div class="flex-row-between flex-items-center mt-md pt-sm border-top flex-wrap flex-gap-sm">
-        <div class="flex-gap-md font-sm flex-wrap">
-            <span>Ingresos: <strong class="text-success">S/ {{printf "%.2f" .TotalIngresos}}</strong></span>
-            <span>Descuentos: <strong class="text-danger">S/ {{printf "%.2f" .TotalRetenciones}}</strong></span>
-            <span>Aportes: <strong class="text-info">S/ {{printf "%.2f" .TotalAportes}}</strong></span>
+    <footer>
+        <div class="flex-row-between flex-items-center w-full flex-wrap flex-gap-sm">
+            <div class="flex-gap-md font-sm flex-wrap">
+                <small>Ingresos: <strong class="text-success stat-mono">S/ {{printf "%.2f"
+                        .TotalIngresos}}</strong></small>
+                <small>Descuentos: <strong class="text-danger stat-mono">S/ {{printf "%.2f"
+                        .TotalRetenciones}}</strong></small>
+                <small>Aportes: <strong class="text-info stat-mono">S/ {{printf "%.2f" .TotalAportes}}</strong></small>
+            </div>
+            <div class="flex-items-center flex-gap-md">
+                <span class="font-lg">Neto a Pagar: <strong class="stat-mono font-bold">S/ {{printf "%.2f"
+                        .NetoPagar}}</strong></span>
+                <button type="button" class="secondary btn-compact"
+                    onclick="document.getElementById('modal-boleta-individual').close()">Cerrar</button>
+            </div>
         </div>
-        <div class="flex-items-center flex-gap-md">
-            <span class="font-lg">Neto a Pagar: <strong>S/ {{printf "%.2f" .NetoPagar}}</strong></span>
-            <button type="button" class="secondary btn-compact" onclick="document.getElementById('modal-boleta-individual').close()">Cerrar</button>
-        </div>
-    </div>
+    </footer>
 </div>
 {{end}}
 

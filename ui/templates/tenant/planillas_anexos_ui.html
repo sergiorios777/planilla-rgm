@@ -6,18 +6,21 @@
             </svg>
             Anexos y Exportaciones de Planilla
         </h3>
-        <button class="secondary outline btn-compact"
+        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
             hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
-            ⬅️ Volver al Historial
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Volver al Historial
         </button>
     </header>
 
     <div class="banner-info my-lg">
         <h4 class="title-banner">{{.Planilla.Descripcion}}</h4>
         <p class="mb-0 font-sm">
-            <strong>Periodo:</strong> {{printf "%02d" .Planilla.Mes}} / {{.Planilla.Anio}}
-            &nbsp;|&nbsp; 
-            <strong>Estado:</strong> 
+            <strong>Periodo:</strong> <span class="stat-mono">{{printf "%02d" .Planilla.Mes}} /
+                {{.Planilla.Anio}}</span>
+            &nbsp;|&nbsp;
+            <strong>Estado:</strong>
             {{if eq .Planilla.Estado "BORRADOR"}}
             <mark class="badge badge-warning">BORRADOR</mark>
             {{else}}
@@ -30,12 +33,12 @@
     <div class="mb-lg">
         <h4 class="mb-md flex-gap-sm text-primary">
             <svg class="icono-menu">
-                <use href="#icono-folder-supervised"></use>
+                <use href="#icono-adf-scanner"></use>
             </svg>
             Documentos y Exportaciones Principales
         </h4>
 
-        <table class="striped w-full">
+        <table class="striped condensed w-full">
             <thead>
                 <tr>
                     <th class="w-65">Documento / Exportación</th>
@@ -46,34 +49,46 @@
                 <tr>
                     <td>
                         <strong>Planilla de Pago Consolidada (Boletón PDF)</strong><br>
-                        <small class="text-muted">Reporte completo en formato PDF con la nómina detallada de trabajadores, conceptos e importes por meta</small>
+                        <small class="text-muted">Reporte completo en formato PDF con la nómina detallada de
+                            trabajadores, conceptos e importes por meta</small>
                     </td>
                     <td class="text-center">
-                        <a href="/tenant/planillas/descargar-reporte?id={{.Planilla.ID}}" target="_blank" class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
-                            📄 Planilla PDF
+                        <a href="/tenant/planillas/descargar-reporte?id={{.Planilla.ID}}" target="_blank"
+                            class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
+                            <svg class="icono-menu">
+                                <use href="#icono-bloc-notas"></use>
+                            </svg> Planilla PDF
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>
                         <strong>Boletas de Pago Individuales (PDF)</strong><br>
-                        <small class="text-muted">Documento PDF consolidado con todas las boletas de pago individuales firmables por trabajador</small>
+                        <small class="text-muted">Documento PDF consolidado con todas las boletas de pago individuales
+                            firmables por trabajador</small>
                     </td>
                     <td class="text-center">
-                        <a href="/tenant/planillas/descargar-boletas?id={{.Planilla.ID}}" target="_blank" class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
-                            📄 Boletas PDF
+                        <a href="/tenant/planillas/descargar-boletas?id={{.Planilla.ID}}" target="_blank"
+                            class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
+                            <svg class="icono-menu">
+                                <use href="#icono-bloc-notas"></use>
+                            </svg> Boletas PDF
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>
                         <strong>Estructuras PDT / PLAME 0601 (SUNAT)</strong><br>
-                        <small class="text-muted">Generación de archivos de texto plano (.rem, .jor, .snl, etc.) para la importación mensual en la planilla electrónica PLAME</small>
+                        <small class="text-muted">Generación de archivos de texto plano (.rem, .jor, .snl, etc.) para la
+                            importación mensual en la planilla electrónica PLAME</small>
                     </td>
                     <td class="text-center">
                         <button class="primary btn-sm btn-compact inline-flex-center flex-gap-xs"
-                            hx-get="/tenant/planillas/exportar-plame-modal?id={{.Planilla.ID}}" hx-target="#contenido-modal-exportar" hx-swap="innerHTML">
-                            📦 Exportar PLAME
+                            hx-get="/tenant/planillas/exportar-plame-modal?id={{.Planilla.ID}}"
+                            hx-target="#contenido-modal-exportar" hx-swap="innerHTML">
+                            <svg class="icono-menu">
+                                <use href="#icono-compress"></use>
+                            </svg> Exportar PLAME
                         </button>
                     </td>
                 </tr>
@@ -89,7 +104,7 @@
             Anexos Presupuestales y Contables (MEF / SIAF)
         </h4>
 
-        <table class="striped w-full">
+        <table class="striped condensed w-full">
             <thead>
                 <tr>
                     <th class="w-65">Anexo</th>
@@ -100,15 +115,22 @@
                 <tr>
                     <td>
                         <strong>Anexo 1. Detalle del Compromiso Presupuestal</strong><br>
-                        <small class="text-muted">Desglose por metas, fuentes de financiamiento y clasificadores de gasto MEF</small>
+                        <small class="text-muted">Desglose por metas, fuentes de financiamiento y clasificadores de
+                            gasto MEF</small>
                     </td>
                     <td class="text-center">
                         <div class="flex-center flex-gap-sm">
-                            <a href="/tenant/planillas/anexos/anexo1/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center">
-                                📄 PDF
+                            <a href="/tenant/planillas/anexos/anexo1/pdf?id={{.Planilla.ID}}" target="_blank"
+                                class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
+                                <svg class="icono-menu">
+                                    <use href="#icono-bloc-notas"></use>
+                                </svg> PDF
                             </a>
-                            <a href="/tenant/planillas/anexos/anexo1/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center">
-                                📊 Excel
+                            <a href="/tenant/planillas/anexos/anexo1/excel?id={{.Planilla.ID}}" target="_blank"
+                                class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
+                                <svg class="icono-menu">
+                                    <use href="#icono-table"></use>
+                                </svg> Excel
                             </a>
                         </div>
                     </td>
@@ -116,15 +138,22 @@
                 <tr>
                     <td>
                         <strong>Anexo 1A. Resumen por conceptos de planilla</strong><br>
-                        <small class="text-muted">Consolidado organizado por Ingresos, Retenciones y Aportes, con costo total de planilla</small>
+                        <small class="text-muted">Consolidado organizado por Ingresos, Retenciones y Aportes, con costo
+                            total de planilla</small>
                     </td>
                     <td class="text-center">
                         <div class="flex-center flex-gap-sm">
-                            <a href="/tenant/planillas/anexos/anexo1a/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center">
-                                📄 PDF
+                            <a href="/tenant/planillas/anexos/anexo1a/pdf?id={{.Planilla.ID}}" target="_blank"
+                                class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
+                                <svg class="icono-menu">
+                                    <use href="#icono-bloc-notas"></use>
+                                </svg> PDF
                             </a>
-                            <a href="/tenant/planillas/anexos/anexo1a/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center">
-                                📊 Excel
+                            <a href="/tenant/planillas/anexos/anexo1a/excel?id={{.Planilla.ID}}" target="_blank"
+                                class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
+                                <svg class="icono-menu">
+                                    <use href="#icono-table"></use>
+                                </svg> Excel
                             </a>
                         </div>
                     </td>
@@ -132,15 +161,22 @@
                 <tr>
                     <td>
                         <strong>Anexo 2. Resumen por AFP</strong><br>
-                        <small class="text-muted">Consolidado de aportes obligatorios, prima de seguro y comisiones por AFP</small>
+                        <small class="text-muted">Consolidado de aportes obligatorios, prima de seguro y comisiones por
+                            AFP</small>
                     </td>
                     <td class="text-center">
                         <div class="flex-center flex-gap-sm">
-                            <a href="/tenant/planillas/anexos/anexo2/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center">
-                                📄 PDF
+                            <a href="/tenant/planillas/anexos/anexo2/pdf?id={{.Planilla.ID}}" target="_blank"
+                                class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
+                                <svg class="icono-menu">
+                                    <use href="#icono-bloc-notas"></use>
+                                </svg> PDF
                             </a>
-                            <a href="/tenant/planillas/anexos/anexo2/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center">
-                                📊 Excel
+                            <a href="/tenant/planillas/anexos/anexo2/excel?id={{.Planilla.ID}}" target="_blank"
+                                class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
+                                <svg class="icono-menu">
+                                    <use href="#icono-table"></use>
+                                </svg> Excel
                             </a>
                         </div>
                     </td>
@@ -148,15 +184,22 @@
                 <tr>
                     <td>
                         <strong>Anexo 2A. Registro Devengado de AFP</strong><br>
-                        <small class="text-muted">Desglose por AFP, metas presupuestales y clasificadores de gasto para devengado SIAF</small>
+                        <small class="text-muted">Desglose por AFP, metas presupuestales y clasificadores de gasto para
+                            devengado SIAF</small>
                     </td>
                     <td class="text-center">
                         <div class="flex-center flex-gap-sm">
-                            <a href="/tenant/planillas/anexos/anexo2a/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center">
-                                📄 PDF
+                            <a href="/tenant/planillas/anexos/anexo2a/pdf?id={{.Planilla.ID}}" target="_blank"
+                                class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
+                                <svg class="icono-menu">
+                                    <use href="#icono-bloc-notas"></use>
+                                </svg> PDF
                             </a>
-                            <a href="/tenant/planillas/anexos/anexo2a/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center">
-                                📊 Excel
+                            <a href="/tenant/planillas/anexos/anexo2a/excel?id={{.Planilla.ID}}" target="_blank"
+                                class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
+                                <svg class="icono-menu">
+                                    <use href="#icono-table"></use>
+                                </svg> Excel
                             </a>
                         </div>
                     </td>
@@ -164,15 +207,22 @@
                 <tr>
                     <td>
                         <strong>Anexo 3. Retenciones de SUNAT</strong><br>
-                        <small class="text-muted">Consolidado por meta y clasificador de retenciones de ONP (0607), Renta 4ta (S101) y Renta 5ta (0605)</small>
+                        <small class="text-muted">Consolidado por meta y clasificador de retenciones de ONP (0607),
+                            Renta 4ta (S101) y Renta 5ta (0605)</small>
                     </td>
                     <td class="text-center">
                         <div class="flex-center flex-gap-sm">
-                            <a href="/tenant/planillas/anexos/anexo3/pdf?id={{.Planilla.ID}}" target="_blank" class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center">
-                                📄 PDF
+                            <a href="/tenant/planillas/anexos/anexo3/pdf?id={{.Planilla.ID}}" target="_blank"
+                                class="button outline primary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
+                                <svg class="icono-menu">
+                                    <use href="#icono-bloc-notas"></use>
+                                </svg> PDF
                             </a>
-                            <a href="/tenant/planillas/anexos/anexo3/excel?id={{.Planilla.ID}}" target="_blank" class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center">
-                                📊 Excel
+                            <a href="/tenant/planillas/anexos/anexo3/excel?id={{.Planilla.ID}}" target="_blank"
+                                class="button outline secondary btn-sm btn-compact text-no-underline inline-flex-center flex-gap-xs">
+                                <svg class="icono-menu">
+                                    <use href="#icono-table"></use>
+                                </svg> Excel
                             </a>
                         </div>
                     </td>
@@ -180,15 +230,22 @@
                 <tr>
                     <td>
                         <strong>Anexo 4. Otros descuentos al trabajador</strong><br>
-                        <small class="text-muted">Retenciones por mandato judicial, cuota sindical y otros rubros</small>
+                        <small class="text-muted">Retenciones por mandato judicial, cuota sindical y otros
+                            rubros</small>
                     </td>
                     <td class="text-center">
                         <div class="flex-center flex-gap-sm">
-                            <button class="outline primary btn-sm btn-compact" onclick="alert('La generación del Anexo 4 (PDF) estará disponible en la siguiente fase.')">
-                                📄 PDF
+                            <button class="outline primary btn-sm btn-compact inline-flex-center flex-gap-xs"
+                                onclick="alert('La generación del Anexo 4 (PDF) estará disponible en la siguiente fase.')">
+                                <svg class="icono-menu">
+                                    <use href="#icono-bloc-notas"></use>
+                                </svg> PDF
                             </button>
-                            <button class="outline secondary btn-sm btn-compact" onclick="alert('La generación del Anexo 4 (Excel) estará disponible en la siguiente fase.')">
-                                📊 Excel
+                            <button class="outline secondary btn-sm btn-compact inline-flex-center flex-gap-xs"
+                                onclick="alert('La generación del Anexo 4 (Excel) estará disponible en la siguiente fase.')">
+                                <svg class="icono-menu">
+                                    <use href="#icono-table"></use>
+                                </svg> Excel
                             </button>
                         </div>
                     </td>
@@ -196,15 +253,22 @@
                 <tr>
                     <td>
                         <strong>Anexo 5. Montos netos para abonar</strong><br>
-                        <small class="text-muted">Relación de montos netos finales para depósitos en cuentas de haberes</small>
+                        <small class="text-muted">Relación de montos netos finales para depósitos en cuentas de
+                            haberes</small>
                     </td>
                     <td class="text-center">
                         <div class="flex-center flex-gap-sm">
-                            <button class="outline primary btn-sm btn-compact" onclick="alert('La generación del Anexo 5 (PDF) estará disponible en la siguiente fase.')">
-                                📄 PDF
+                            <button class="outline primary btn-sm btn-compact inline-flex-center flex-gap-xs"
+                                onclick="alert('La generación del Anexo 5 (PDF) estará disponible en la siguiente fase.')">
+                                <svg class="icono-menu">
+                                    <use href="#icono-bloc-notas"></use>
+                                </svg> PDF
                             </button>
-                            <button class="outline secondary btn-sm btn-compact" onclick="alert('La generación del Anexo 5 (Excel) estará disponible en la siguiente fase.')">
-                                📊 Excel
+                            <button class="outline secondary btn-sm btn-compact inline-flex-center flex-gap-xs"
+                                onclick="alert('La generación del Anexo 5 (Excel) estará disponible en la siguiente fase.')">
+                                <svg class="icono-menu">
+                                    <use href="#icono-table"></use>
+                                </svg> Excel
                             </button>
                         </div>
                     </td>
@@ -214,8 +278,11 @@
     </div>
 
     <div class="border-top pt-lg mt-lg text-center">
-        <button class="primary btn-compact font-bold" onclick="alert('La descarga consolidada en ZIP estará disponible en la siguiente fase.')">
-            📦 Descargar todo Zip
+        <button class="primary btn-compact font-bold inline-flex-center flex-gap-xs"
+            onclick="alert('La descarga consolidada en ZIP estará disponible en la siguiente fase.')">
+            <svg class="icono-menu">
+                <use href="#icono-compress"></use>
+            </svg> Descargar todo Zip
         </button>
     </div>
 </article>
@@ -225,8 +292,13 @@
     hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-exportar') this.showModal()">
     <article class="modal-card-lg">
         <header>
-            <button class="close" aria-label="Close" rel="prev" onclick="document.getElementById('modal-exportar-plame').close()"></button>
-            <h3 class="mb-0">📦 Exportación Estructuras SUNAT (PDT / PLAME)</h3>
+            <button class="close" aria-label="Close" rel="prev"
+                onclick="document.getElementById('modal-exportar-plame').close()"></button>
+            <h3 class="mb-0 flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-compress"></use>
+                </svg> Exportación Estructuras SUNAT (PDT / PLAME)
+            </h3>
         </header>
         <div id="contenido-modal-exportar"></div>
     </article>

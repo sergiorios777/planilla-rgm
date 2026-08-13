@@ -1,9 +1,11 @@
 <article>
     <header class="flex-row-between">
         <div>
-            <button class="outline secondary btn-compact p-sm font-sm mb-sm"
+            <button class="outline secondary btn-compact font-sm mb-sm flex-inline flex-items-center flex-gap-xs"
                 hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
-                ← Volver a Planillas
+                <svg class="icono-menu">
+                    <use href="#icono-previo-cuadrado"></use>
+                </svg> Volver a Planillas
             </button>
             <h3 class="mb-0 flex-items-center flex-gap-sm">
                 <svg class="icono-menu">
@@ -12,7 +14,7 @@
                 Formulador de Planilla Especial / Extraordinaria
             </h3>
             <small class="text-muted">
-                Período: <strong>{{.Planilla.Anio}} - {{printf "%02d" .Planilla.Mes}}</strong> |
+                Período: <strong class="stat-mono">{{.Planilla.Anio}} - {{printf "%02d" .Planilla.Mes}}</strong> |
                 {{.Planilla.Descripcion}}
             </small>
         </div>
@@ -54,17 +56,17 @@
 
             <!-- Tabla de Conceptos Seleccionados -->
             <div class="overflow-x-auto">
-                <table class="striped mb-0">
+                <table class="striped condensed mb-0">
                     <thead>
                         <tr>
                             <th>Concepto Local (Boleta)</th>
                             <th>Frecuencia / Atributos</th>
-                            <th class="w-200">Monto Base (S/)</th>
-                            <th class="w-60 text-center">Acción</th>
+                            <th class="w-200 text-right">Monto Base (S/)</th>
+                            <th class="w-60 text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tbody-conceptos-seleccionados">
-                        <tr id="row-sin-conceptos" {{if .FormulacionConceptos}}class="d-none"{{end}}>
+                        <tr id="row-sin-conceptos" {{if .FormulacionConceptos}}class="d-none" {{end}}>
                             <td colspan="4" class="text-center text-muted">
                                 <small>No se ha agregado ningún concepto aún. Utiliza el buscador superior para
                                     seleccionar un concepto.</small>
@@ -75,28 +77,37 @@
                             <td>
                                 <input type="hidden" name="conceptos_ids" value="{{.ID}}">
                                 <strong>{{.NombrePersonalizado}}</strong><br>
-                                <small class="text-muted">SUNAT: {{.CodigoSunat}} | Clasificador:
+                                <small class="text-muted stat-mono">SUNAT: {{.CodigoSunat}} | Clasificador:
                                     {{.ClasificadorCodigo}}</small>
                             </td>
                             <td>
                                 <div class="flex-gap-xs flex-wrap">
-                                    {{if .EsOcasional}}<mark class="badge badge-gray font-xs font-bold">OCASIONAL</mark>{{end}}
-                                    {{if .EsExtraordinario}}<mark class="badge badge-purple font-xs font-bold">EXTRAORDINARIO</mark>{{end}}
-                                    {{if .EsPensionable}}<mark class="badge badge-success font-xs font-bold">PENSIONABLE</mark>{{end}}
-                                    {{if .EsRemunerativa}}<mark class="badge badge-info font-xs font-bold">REMUNERATIVO</mark>{{end}}
+                                    {{if .EsOcasional}}<mark
+                                        class="badge badge-gray font-xs font-bold">OCASIONAL</mark>{{end}}
+                                    {{if .EsExtraordinario}}<mark
+                                        class="badge badge-purple font-xs font-bold">EXTRAORDINARIO</mark>{{end}}
+                                    {{if .EsPensionable}}<mark
+                                        class="badge badge-success font-xs font-bold">PENSIONABLE</mark>{{end}}
+                                    {{if .EsRemunerativa}}<mark
+                                        class="badge badge-info font-xs font-bold">REMUNERATIVO</mark>{{end}}
                                 </div>
                             </td>
                             <td>
                                 <input type="number" step="0.01" min="0.01" name="monto_{{.ID}}" value="{{printf " %.2f"
                                     .MontoBase}}" placeholder="0.00" required
-                                    class="mb-0 p-sm text-right"
+                                    class="mb-0 p-sm text-right stat-mono font-bold"
                                     oninput="gestorBeneficiarios.renderizarTablaFinal()">
                             </td>
-                            <td class="text-center">
-                                <button type="button" class="outline contrast btn-badge"
-                                    onclick="quitarConceptoDeFormulario('{{.ID}}')">
-                                    🗑️
-                                </button>
+                            <td>
+                                <div class="flex-row-end">
+                                    <button type="button" class="btn-icon btn-danger-icon"
+                                        data-tooltip="Quitar concepto" aria-label="Quitar"
+                                        onclick="quitarConceptoDeFormulario('{{.ID}}')">
+                                        <svg class="icono-menu">
+                                            <use href="#icono-trash"></use>
+                                        </svg>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         {{end}}
@@ -112,21 +123,26 @@
             <div class="flex-row-between flex-items-center flex-wrap flex-gap-md mb-md">
                 <div class="flex-gap-md flex-items-center flex-wrap">
                     <mark class="badge badge-success p-sm font-bold">
-                        👥 Beneficiarios: <span id="resumen-total-trabajadores">0</span> trabajadores
+                        👥 Beneficiarios: <span id="resumen-total-trabajadores" class="stat-mono">0</span> trabajadores
                     </mark>
                     <mark class="badge badge-info p-sm font-bold">
-                        💰 Presupuesto Estimado: S/ <span id="resumen-total-monto">0.00</span>
+                        💰 Presupuesto Estimado: S/ <span id="resumen-total-monto" class="stat-mono">0.00</span>
                     </mark>
                 </div>
 
                 <div class="flex-gap-sm">
-                    <button type="button" class="outline contrast btn-compact p-sm font-sm"
+                    <button type="button"
+                        class="outline contrast btn-compact font-sm flex-inline flex-items-center flex-gap-xs"
                         onclick="gestorBeneficiarios.limpiarTodos()">
-                        🧹 Limpiar Lista
+                        <svg class="icono-menu">
+                            <use href="#icono-cleaning-services"></use>
+                        </svg> Limpiar Lista
                     </button>
-                    <button type="button" class="primary btn-compact p-sm font-sm"
+                    <button type="button" class="primary btn-compact font-sm flex-inline flex-items-center flex-gap-xs"
                         onclick="abrirModalAgregarPoblacion()">
-                        ➕ Agregar Trabajadores o Grupos
+                        <svg class="icono-menu">
+                            <use href="#icono-plus"></use>
+                        </svg> Agregar Trabajadores o Grupos
                     </button>
                 </div>
             </div>
@@ -136,7 +152,7 @@
 
             <!-- Bloque 3: Tabla Principal de Beneficiarios Afectados Finales -->
             <div class="overflow-x-auto">
-                <table class="striped mb-0">
+                <table class="striped condensed mb-0">
                     <thead>
                         <tr>
                             <th class="w-50">#</th>
@@ -146,14 +162,14 @@
                             <th>Meta Presupuestal</th>
                             <th>Conceptos Otorgados</th>
                             <th class="w-150 text-right">Monto (S/)</th>
-                            <th class="w-50 text-center">Acción</th>
+                            <th class="w-60 text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tbody-beneficiarios-finales">
                         <tr id="row-sin-beneficiarios">
                             <td colspan="8" class="text-center text-muted p-md">
                                 <small>No hay trabajadores agregados a la planilla especial aún.<br>Haz clic en el botón
-                                    <strong>"➕ Agregar Trabajadores o Grupos"</strong> para buscar e incluir
+                                    <strong>"Agregar Trabajadores o Grupos"</strong> para buscar e incluir
                                     poblaciones.</small>
                             </td>
                         </tr>
@@ -164,12 +180,14 @@
 
         <!-- Botón Final de Procesamiento -->
         <div class="flex-row-end flex-items-center flex-gap-md">
-            <button type="button" class="outline secondary btn-compact"
-                hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
+            <button type="button" class="outline secondary btn-compact" hx-get="/tenant/ui/planillas"
+                hx-target="#contenido-tenant">
                 Cancelar
             </button>
-            <button type="submit" class="primary btn-compact p-md">
-                🚀 Guardar y Procesar Planilla Especial
+            <button type="submit" class="primary btn-compact p-md flex-inline flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-engranaje"></use>
+                </svg> Guardar y Procesar Planilla Especial
             </button>
         </div>
     </form>
@@ -180,11 +198,11 @@
     <article class="modal-card-full max-h-90vh flex-column">
         <header class="flex-row-between flex-items-center">
             <div>
-                <h4 class="mb-0">🔍 Buscador e Inclusión Aditiva de Población</h4>
+                <h4 class="mb-0">Buscador e Inclusión Aditiva de Población</h4>
                 <small class="text-muted">Filtra por criterio y añade trabajadores individualmente
                     o por subgrupos sin borrar selecciones previas.</small>
             </div>
-            <button aria-label="Close" class="close mb-0" onclick="cerrarModalAgregarPoblacion()"></button>
+            <button aria-label="Close" rel="prev" class="close mb-0" onclick="cerrarModalAgregarPoblacion()"></button>
         </header>
 
         <div class="overflow-y-auto pr-sm flex-1">
@@ -241,16 +259,26 @@
 
             <!-- Botones de Acción del Modal -->
             <div class="flex-row-between flex-items-center mb-md flex-wrap flex-gap-sm">
-                <button type="button" class="outline secondary btn-badge" onclick="limpiarFiltrosEspecial()">
-                    🧹 Limpiar Filtros
+                <button type="button" class="outline secondary btn-badge flex-inline flex-items-center flex-gap-xs"
+                    onclick="limpiarFiltrosEspecial()">
+                    <svg class="icono-menu">
+                        <use href="#icono-trash"></use>
+                    </svg> Limpiar Filtros
                 </button>
 
                 <div class="flex-gap-sm flex-wrap">
-                    <button type="button" class="outline primary btn-compact" onclick="agregarVisiblesModal()">
-                        ➕ Agregar Marcados en Vista
+                    <button type="button" class="outline primary btn-compact flex-inline flex-items-center flex-gap-xs"
+                        onclick="agregarVisiblesModal()">
+                        <svg class="icono-menu">
+                            <use href="#icono-plus"></use>
+                        </svg> Agregar Marcados en Vista
                     </button>
-                    <button type="button" class="primary btn-success-fill btn-compact" onclick="agregarTodosLosFiltradosMasivo()">
-                        🎯 Agregar TODOS los trabajadores de este Filtro
+                    <button type="button"
+                        class="primary btn-success-fill btn-compact flex-inline flex-items-center flex-gap-xs"
+                        onclick="agregarTodosLosFiltradosMasivo()">
+                        <svg class="icono-menu">
+                            <use href="#icono-objetivo"></use>
+                        </svg> Agregar TODOS los trabajadores de este Filtro
                     </button>
                 </div>
             </div>
@@ -279,11 +307,11 @@
             ❌ Desmarcar Visibles
         </button>
     </div>
-    <small>Total Coincidentes: <strong>{{.TotalRegistros}}</strong> trabajadores</small>
+    <small>Total Coincidentes: <strong class="stat-mono">{{.TotalRegistros}}</strong> trabajadores</small>
 </div>
 
 <div class="overflow-x-auto">
-    <table class="striped mb-0">
+    <table class="striped condensed mb-0">
         <thead>
             <tr>
                 <th class="w-50">
@@ -305,11 +333,11 @@
                 </td>
                 <td>
                     <strong>{{.NombreCompleto}}</strong><br>
-                    <small class="text-muted">DNI/Doc: {{.NumeroDocumento}}</small>
+                    <small class="text-muted stat-mono">DNI/Doc: {{.NumeroDocumento}}</small>
                 </td>
                 <td><small>{{.PuestoNombre}}</small></td>
                 <td><small>{{.RegimenNombre}}</small></td>
-                <td><small>{{if .MetaCodigo}}[{{.MetaCodigo}}] {{.MetaDescripcion}}{{else}}Default del
+                <td><small class="stat-mono">{{if .MetaCodigo}}[{{.MetaCodigo}}] {{.MetaDescripcion}}{{else}}Default del
                         Puesto{{end}}</small></td>
                 <td><small>{{if .UnidadOrganicaNombre}}{{.UnidadOrganicaNombre}}{{else}}Sin Asignar{{end}}</small></td>
             </tr>
@@ -351,7 +379,12 @@
 {{if .FormulacionTrabajadoresJSON}}{{.FormulacionTrabajadoresJSON}}{{else}}[]{{end}}
 </script>
 <script>
-    window.__datosInicialesTrabajadores = {{if .FormulacionTrabajadoresJSON}}{{.FormulacionTrabajadoresJSON}}{{else}}[]{{end}};
+    try {
+        const jsonText = document.getElementById('datos-trabajadores-json')?.textContent?.trim();
+        window.__datosInicialesTrabajadores = jsonText ? JSON.parse(jsonText) : [];
+    } catch (e) {
+        window.__datosInicialesTrabajadores = [];
+    }
 </script>
 
 <script>
@@ -519,7 +552,7 @@
                                 <div class="flex-items-center flex-gap-xs">
                                     <span class="font-xs text-muted">S/</span>
                                     <input type="number" step="0.01" min="0" value="${parseFloat(valActual).toFixed(2)}" 
-                                        class="mb-0 p-xs font-xs text-right w-90" 
+                                        class="mb-0 p-xs font-xs text-right stat-mono w-90" 
                                         oninput="gestorBeneficiarios.actualizarMontoCustomTrabajador('${id}', '${c.id}', this.value)">
                                 </div>
                             </div>
@@ -536,12 +569,12 @@
                     const valActual = (w.montos_custom && w.montos_custom[cUnico.id] !== undefined) ? w.montos_custom[cUnico.id] : cUnico.montoDefault;
                     inputMontoCol = `
                         <input type="number" step="0.01" min="0" value="${parseFloat(valActual).toFixed(2)}" 
-                            class="mb-0 p-xs text-right font-bold w-120" 
+                            class="mb-0 p-xs text-right stat-mono font-bold w-120" 
                             oninput="gestorBeneficiarios.actualizarMontoCustomTrabajador('${id}', '${cUnico.id}', this.value)">
                     `;
                 } else {
                     inputMontoCol = `
-                        <strong id="monto-total-worker-${id}" class="text-success font-md">S/ ${montoCalculado.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                        <strong id="monto-total-worker-${id}" class="text-success font-md stat-mono">S/ ${montoCalculado.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                     `;
                 }
 
@@ -551,20 +584,24 @@
                     <td><small>${idx++}</small></td>
                     <td>
                         <strong>${w.nombre_completo}</strong><br>
-                        <small class="text-muted">DNI/Doc: ${w.numero_documento}</small>
+                        <small class="text-muted stat-mono">DNI/Doc: ${w.numero_documento}</small>
                     </td>
                     <td>
                         <strong>${w.puesto_nombre || 'Sin Plaza'}</strong><br>
                         <small class="text-muted">${w.unidad_organica_nombre || 'Sin Unidad Orgánica'}</small>
                     </td>
                     <td><small>${w.regimen_nombre || 'Sin Régimen'}</small></td>
-                    <td><small>${w.meta_codigo ? '[' + w.meta_codigo + '] ' + w.meta_descripcion : 'Default del Puesto'}</small></td>
+                    <td><small class="stat-mono">${w.meta_codigo ? '[' + w.meta_codigo + '] ' + w.meta_descripcion : 'Default del Puesto'}</small></td>
                     <td>${cellConceptos}</td>
                     <td class="text-right">${inputMontoCol}</td>
-                    <td class="text-center">
-                        <button type="button" class="outline contrast btn-badge" onclick="gestorBeneficiarios.eliminarTrabajador('${id}')">
-                            🗑️
-                        </button>
+                    <td class="text-right">
+                        <div class="flex-row-end">
+                            <button type="button" class="btn-icon btn-danger-icon" data-tooltip="Quitar beneficiario" aria-label="Quitar" onclick="gestorBeneficiarios.eliminarTrabajador('${id}')">
+                                <svg class="icono-menu">
+                                    <use href="#icono-trash"></use>
+                                </svg>
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);

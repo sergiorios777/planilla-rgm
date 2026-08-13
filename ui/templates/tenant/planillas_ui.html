@@ -26,8 +26,8 @@
 <dialog id="modal-nuevo-planilla">
     <article class="modal-card-md">
         <header>
-            <a href="#close" aria-label="Close" class="close"
-                onclick="document.getElementById('modal-nuevo-planilla').close()"></a>
+            <button aria-label="Close" rel="prev"
+                onclick="document.getElementById('modal-nuevo-planilla').close()"></button>
             <h4 class="mb-0">
                 <svg class="icono-menu">
                     <use href="#icono-plus"></use>
@@ -77,11 +77,11 @@
                 ¿Es Planilla Extraordinaria / Especial?
             </label>
         </div>
-        <div class="flex-row-end mt-lg">
+        <footer>
             <button type="button" class="secondary outline btn-compact"
                 onclick="document.getElementById('modal-nuevo-planilla').close()">Cancelar</button>
-            <button type="submit" class="btn-compact">Generar Apertura</button>
-        </div>
+            <button type="submit" class="primary btn-compact">Generar Apertura</button>
+        </footer>
     </form>
     <script>
         (function () {
@@ -106,20 +106,20 @@
 {{end}}
 
 {{define "tabla_planillas"}}
-<table class="striped">
+<table class="striped condensed">
     <thead>
         <tr>
             <th>Periodo</th>
             <th>Descripción</th>
             <th>Estado</th>
-            <th>Acción</th>
+            <th class="text-right">Acciones</th>
         </tr>
     </thead>
     <tbody>
         {{range .}}
         <tr>
             <td>
-                <strong>{{.Anio}} - {{printf "%02d" .Mes}}</strong><br>
+                <strong class="stat-mono">{{.Anio}} - {{printf "%02d" .Mes}}</strong><br>
                 {{if .EsExtraordinaria}}
                 <mark class="badge badge-purple">⭐ EXTRAORDINARIA</mark>
                 {{else}}
@@ -135,57 +135,70 @@
                 {{end}}
             </td>
             <td>
-                {{if eq .Estado "BORRADOR"}}
-                {{if .EsExtraordinaria}}
-                <button class="outline primary btn-sm"
-                    hx-get="/tenant/planillas/especial/ui?id={{.ID}}" hx-target="#contenido-tenant">
-                    <svg class="icono-menu">
-                        <use href="#icono-wysiwyg"></use>
-                    </svg>
-                    Formular Planilla Especial
-                </button>
-                {{else}}
-                <button class="outline btn-sm"
-                    hx-post="/tenant/planillas/procesar?id={{.ID}}" hx-target="#contenido-tenant" hx-indicator="this">
-                    <svg class="icono-menu">
-                        <use href="#icono-manufacturing"></use>
-                    </svg>
-                    Procesar
-                </button>
-                {{end}}
-                {{end}}
-                <button class="outline secondary btn-sm"
-                    hx-get="/tenant/planillas/detalle/ui?id={{.ID}}" hx-target="#contenido-tenant">
-                    <svg class="icono-menu">
-                        <use href="#icono-eye"></use>
-                    </svg>
-                    Ver Detalles
-                </button>
-                <button class="outline primary btn-sm"
-                    hx-get="/tenant/ui/planillas/rubros-metas?id={{.ID}}" hx-target="#contenido-tenant">
-                    <svg class="icono-menu">
-                        <use href="#icono-money-range"></use>
-                    </svg>
-                    Rubros/Metas
-                </button>
-                <button class="outline secondary btn-sm btn-compact"
-                    hx-get="/tenant/planillas/anexos/ui?id={{.ID}}" hx-target="#contenido-tenant">
-                    <svg class="icono-menu">
-                        <use href="#icono-docs-add-on"></use>
-                    </svg>
-                    Anexos y Exportaciones
-                </button>
+                <div class="flex-row-end flex-gap-xs flex-items-center">
+                    {{if eq .Estado "BORRADOR"}}
+                    {{if .EsExtraordinaria}}
+                    <button class="outline primary btn-sm btn-compact"
+                        hx-get="/tenant/planillas/especial/ui?id={{.ID}}" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-wysiwyg"></use>
+                        </svg>
+                        Formular
+                    </button>
+                    {{else}}
+                    <button class="primary btn-sm btn-compact"
+                        hx-post="/tenant/planillas/procesar?id={{.ID}}" hx-target="#contenido-tenant" hx-indicator="this">
+                        <svg class="icono-menu">
+                            <use href="#icono-manufacturing"></use>
+                        </svg>
+                        Procesar
+                    </button>
+                    {{end}}
+                    {{else}}
+                    <button class="secondary outline btn-sm btn-compact"
+                        hx-get="/tenant/planillas/detalle/ui?id={{.ID}}" hx-target="#contenido-tenant">
+                        <svg class="icono-menu">
+                            <use href="#icono-eye"></use>
+                        </svg>
+                        Ver Detalles
+                    </button>
+                    {{end}}
 
-                {{if eq .Estado "BORRADOR"}}
-                <button class="outline btn-sm btn-compact border-danger text-danger"
-                    hx-delete="/tenant/planillas/eliminar?id={{.ID}}" hx-target="#lista-planillas"
-                    hx-confirm="¿Está seguro de que desea eliminar esta planilla? Se borrarán todos los cálculos asociados y se revertirá el estado de la asistencia.">
-                    <svg class="icono-menu">
-                        <use href="#icono-trash"></use>
-                    </svg>
-                    Eliminar
-                </button>
-                {{end}}
+                    <details class="dropdown dropdown-kebab">
+                        <summary data-tooltip="Opciones de planilla" data-placement="left" aria-label="Opciones">
+                            <svg class="icono-menu">
+                                <use href="#icono-kebab"></use>
+                            </svg>
+                        </summary>
+                        <ul dir="rtl">
+                            {{if eq .Estado "BORRADOR"}}
+                            <li>
+                                <a hx-get="/tenant/planillas/detalle/ui?id={{.ID}}" hx-target="#contenido-tenant">
+                                    <svg class="icono-menu"><use href="#icono-eye"></use></svg> Ver Detalles
+                                </a>
+                            </li>
+                            {{end}}
+                            <li>
+                                <a hx-get="/tenant/ui/planillas/rubros-metas?id={{.ID}}" hx-target="#contenido-tenant">
+                                    <svg class="icono-menu"><use href="#icono-money-range"></use></svg> Rubros y Metas
+                                </a>
+                            </li>
+                            <li>
+                                <a hx-get="/tenant/planillas/anexos/ui?id={{.ID}}" hx-target="#contenido-tenant">
+                                    <svg class="icono-menu"><use href="#icono-docs-add-on"></use></svg> Anexos (PDT/PLAME)
+                                </a>
+                            </li>
+                            {{if eq .Estado "BORRADOR"}}
+                            <li class="border-top">
+                                <a class="text-danger" hx-delete="/tenant/planillas/eliminar?id={{.ID}}" hx-target="#lista-planillas"
+                                    hx-confirm="¿Está seguro de que desea eliminar esta planilla? Se borrarán todos los cálculos asociados y se revertirá el estado de la asistencia.">
+                                    <svg class="icono-menu"><use href="#icono-trash"></use></svg> Eliminar Planilla
+                                </a>
+                            </li>
+                            {{end}}
+                        </ul>
+                    </details>
+                </div>
             </td>
         </tr>
         {{else}}
@@ -202,8 +215,8 @@
     hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-exportar') this.showModal()">
     <article class="modal-card-md">
         <header>
-            <a href="#close" aria-label="Close" class="close"
-                onclick="document.getElementById('modal-exportar-plame').close()"></a>
+            <button aria-label="Close" rel="prev"
+                onclick="document.getElementById('modal-exportar-plame').close()"></button>
             <h4 class="mb-0">
                 <svg class="icono-menu">
                     <use href="#icono-compress"></use>
@@ -278,15 +291,4 @@
         const modal = document.getElementById('modal-nuevo-planilla');
         if (modal && modal.open) modal.close();
     });
-
-
-</script>
-
-<script>
-    document.body.addEventListener("cerrarModal", function () {
-        const modal = document.getElementById('modal-nuevo-planilla');
-        if (modal && modal.open) modal.close();
-    });
-
-
 </script>

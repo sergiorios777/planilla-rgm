@@ -2,7 +2,9 @@
     <header class="flex-row-between">
         <div>
             <h3 class="mb-0 flex-gap-sm">
-                🎯 Asignación de Metas y Fuentes/Rubros de Financiamiento
+                <svg class="icono-menu">
+                    <use href="#icono-objetivo"></use>
+                </svg> Asignación de Metas y Fuentes/Rubros de Financiamiento
             </h3>
             <p><small>Gestión atómica de afectación presupuestal por concepto de planilla para este periodo.</small></p>
         </div>
@@ -22,36 +24,50 @@
     </header>
 
     <!-- Toolbar superior de acciones -->
-    <div class="flex-row-start mb-lg">
-        <button class="secondary outline btn-compact" hx-get="/tenant/planillas/detalle/ui?id={{.PlanillaID}}" hx-target="#contenido-tenant">
-            ⬅️ Volver a Detalle
+    <div class="flex-row-start mb-lg flex-wrap flex-gap-sm">
+        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Volver al Historial
         </button>
 
-        <button class="secondary outline btn-compact" hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
-            ⬅️ Volver al Historial
+        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/planillas/detalle/ui?id={{.PlanillaID}}" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Volver a Detalle
         </button>
 
         {{if eq .PlanillaEstado "BORRADOR"}}
-        <button id="btn-bulk-asignar-meta" class="primary outline btn-compact" onclick="abrirModalBulkAsignar()" disabled>
-            📦 Asignar Meta/Rubro a Seleccionados (<span id="cnt-seleccionados">0</span>)
+        <button id="btn-bulk-asignar-meta" class="primary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            onclick="abrirModalBulkAsignar()" disabled>
+            <svg class="icono-menu">
+                <use href="#icono-cajas"></use>
+            </svg> Asignar Meta/Rubro a Seleccionados (<span id="cnt-seleccionados">0</span>)
         </button>
         {{end}}
 
         <span class="flex-grow"></span>
 
-        <button class="contrast outline btn-compact" onclick="document.getElementById('modal-resumen-precierre').showModal()">
-            📊 Resumen Pre-Cierre Presupuestal
+        <button class="contrast outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            onclick="document.getElementById('modal-resumen-precierre').showModal()">
+            <svg class="icono-menu">
+                <use href="#icono-objetivo"></use>
+            </svg> Resumen Pre-Cierre Presupuestal
         </button>
     </div>
 
     <!-- Barra de Filtros Presupuestales -->
     <div class="border-box mb-lg">
-        <h4 class="mb-sm font-sm flex-gap-sm">
-            🔍 Filtros de Malla Presupuestal
+        <h4 class="mb-sm font-sm flex-items-center flex-gap-xs">
+            <svg class="icono-menu">
+                <use href="#icono-tune"></use>
+            </svg> Filtros de Malla Presupuestal
         </h4>
         <div class="grid-auto-fit">
             <label class="mb-0 font-sm">
-                🎯 Meta Presupuestal
+                Meta Presupuestal
                 <select id="filtro-meta-detalle" onchange="filtrarMallaPresupuestal()" class="mb-0">
                     <option value="">-- Todas las Metas --</option>
                     <option value="__SIN_META__">⚠️ Sin Meta Asignada</option>
@@ -62,7 +78,7 @@
             </label>
 
             <label class="mb-0 font-sm">
-                🏛️ Fuente / Rubro
+                Fuente / Rubro
                 <select id="filtro-rubro-detalle" onchange="filtrarMallaPresupuestal()" class="mb-0">
                     <option value="">-- Todos los Rubros --</option>
                     <option value="__SIN_RUBRO__">⚠️ Sin Rubro Asignado</option>
@@ -73,7 +89,7 @@
             </label>
 
             <label class="mb-0 font-sm">
-                🏷️ Tipo de Concepto
+                Tipo de Concepto
                 <select id="filtro-tipo-detalle" onchange="filtrarMallaPresupuestal()" class="mb-0">
                     <option value="">-- Todos los Tipos --</option>
                     <option value="INGRESO">Ingresos</option>
@@ -83,8 +99,9 @@
             </label>
 
             <label class="mb-0 font-sm">
-                🔎 Buscar Trabajador / Concepto
-                <input type="search" id="filtro-buscar-detalle" placeholder="Nombre, doc, clasificador..." onkeyup="filtrarMallaPresupuestal()" class="mb-0">
+                Buscar Trabajador / Concepto
+                <input type="search" id="filtro-buscar-detalle" placeholder="Nombre, doc, clasificador..."
+                    onkeyup="filtrarMallaPresupuestal()" class="mb-0">
             </label>
         </div>
     </div>
@@ -95,107 +112,113 @@
             <thead>
                 <tr>
                     <th class="w-40 text-center">
-                        <input type="checkbox" id="chk-seleccionar-todos-conceptos" onchange="toggleSeleccionarTodosConceptos(this)" title="Seleccionar Todos">
+                        <input type="checkbox" id="chk-seleccionar-todos-conceptos"
+                            onchange="toggleSeleccionarTodosConceptos(this)" title="Seleccionar Todos">
                     </th>
                     <th>Trabajador / Plaza</th>
                     <th>Concepto (Boleta)</th>
                     <th>Tipo</th>
                     <th>Clasificador MEF</th>
-                    <th>Monto</th>
+                    <th class="text-right">Monto</th>
                     <th>Meta Presupuestal</th>
                     <th>Fuente y Rubro</th>
                     {{if eq .PlanillaEstado "BORRADOR"}}
-                    <th>Acción</th>
+                    <th class="text-right">Acciones</th>
                     {{end}}
                 </tr>
             </thead>
             <tbody id="tbody-malla-conceptos">
                 {{$estado := .PlanillaEstado}}
                 {{range $det := .Detalles}}
-                    {{range .Conceptos}}
-                    <tr class="fila-concepto-malla"
-                        data-concepto-id="{{.ID}}"
-                        data-detalle-id="{{$det.ID}}"
-                        data-trabajador="{{$det.TrabajadorNombre}} {{$det.TrabajadorDoc}}"
-                        data-concepto-nombre="{{.NombreEnBoleta}}"
-                        data-tipo="{{.TipoConcepto}}"
-                        data-meta-id="{{if .MetaID}}{{.MetaID}}{{end}}"
-                        data-rubro-id="{{if .FuenteRubroID}}{{.FuenteRubroID}}{{end}}">
-                        
-                        <td class="text-center">
-                            {{if and (eq $estado "BORRADOR") (ne .TipoConcepto "RETENCION")}}
-                            <input type="checkbox" class="chk-concepto-item" value="{{.ID}}" onchange="actualizarContadorSeleccionados()">
-                            {{else}}
-                            <span class="text-muted">-</span>
-                            {{end}}
-                        </td>
-                        <td>
-                            <strong>{{$det.TrabajadorNombre}}</strong><br>
-                            <small class="text-muted">{{$det.PuestoNombre}}</small>
-                        </td>
-                        <td>
-                            <strong>{{.NombreEnBoleta}}</strong><br>
-                            <small>Código SUNAT: {{.CodigoSunat}}</small>
-                        </td>
-                        <td>
-                            {{if eq .TipoConcepto "INGRESO"}}
-                            <mark class="badge badge-success">INGRESO</mark>
-                            {{else if eq .TipoConcepto "RETENCION"}}
-                            <mark class="badge badge-danger">DESCUENTO</mark>
-                            {{else}}
-                            <mark class="badge badge-info">APORTE</mark>
-                            {{end}}
-                        </td>
-                        <td><small><strong>{{if .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}}</strong></small></td>
-                        <td><strong>S/ {{printf "%.2f" .Monto}}</strong></td>
-                        
-                        <!-- Columna Meta -->
-                        <td class="celda-meta">
-                            {{if .MetaCodigo}}
-                            <abbr title="{{.MetaDescripcion}}" class="badge badge-info">
-                                🎯 {{.MetaCodigo}}
-                            </abbr>
-                            {{else if eq .TipoConcepto "RETENCION"}}
-                            <small class="text-muted">N/A (Retención)</small>
-                            {{else}}
-                            <mark class="badge badge-danger">
-                                ⚠️ Sin Meta
-                            </mark>
-                            {{end}}
-                        </td>
+                {{range .Conceptos}}
+                <tr class="fila-concepto-malla" data-concepto-id="{{.ID}}" data-detalle-id="{{$det.ID}}"
+                    data-trabajador="{{$det.TrabajadorNombre}} {{$det.TrabajadorDoc}}"
+                    data-concepto-nombre="{{.NombreEnBoleta}}" data-tipo="{{.TipoConcepto}}"
+                    data-meta-id="{{if .MetaID}}{{.MetaID}}{{end}}"
+                    data-rubro-id="{{if .FuenteRubroID}}{{.FuenteRubroID}}{{end}}">
 
-                        <!-- Columna Fuente / Rubro -->
-                        <td class="celda-rubro">
-                            {{if .FuenteRubroCodigo}}
-                            <abbr title="{{.FuenteRubroDescripcion}}" class="badge badge-purple">
-                                🏛️ {{.FuenteRubroCodigo}}
-                            </abbr>
-                            {{else if eq .TipoConcepto "RETENCION"}}
-                            <small class="text-muted">N/A (Retención)</small>
-                            {{else}}
-                            <mark class="badge badge-danger">
-                                ⚠️ Sin Rubro
-                            </mark>
-                            {{end}}
-                        </td>
-
-                        {{if eq $estado "BORRADOR"}}
-                        <td>
-                            {{if ne .TipoConcepto "RETENCION"}}
-                            <button class="outline primary btn-badge"
-                                onclick="abrirModalEditarSingleConcepto('{{.ID}}', '{{.NombreEnBoleta}}', '{{$det.TrabajadorNombre}}', '{{.Monto}}', '{{if .MetaID}}{{.MetaID}}{{end}}', '{{if .FuenteRubroID}}{{.FuenteRubroID}}{{end}}')">
-                                ✏️ Meta/Rubro
-                            </button>
-                            {{else}}
-                            <small class="text-muted">-</small>
-                            {{end}}
-                        </td>
+                    <td class="text-center">
+                        {{if and (eq $estado "BORRADOR") (ne .TipoConcepto "RETENCION")}}
+                        <input type="checkbox" class="chk-concepto-item" value="{{.ID}}"
+                            onchange="actualizarContadorSeleccionados()">
+                        {{else}}
+                        <span class="text-muted">-</span>
                         {{end}}
-                    </tr>
+                    </td>
+                    <td>
+                        <strong>{{$det.TrabajadorNombre}}</strong><br>
+                        <small class="text-muted font-sm">{{$det.PuestoNombre}}</small>
+                    </td>
+                    <td>
+                        <strong>{{.NombreEnBoleta}}</strong><br>
+                        <small class="stat-mono">Código SUNAT: {{.CodigoSunat}}</small>
+                    </td>
+                    <td>
+                        {{if eq .TipoConcepto "INGRESO"}}
+                        <mark class="badge badge-success">INGRESO</mark>
+                        {{else if eq .TipoConcepto "RETENCION"}}
+                        <mark class="badge badge-danger">DESCUENTO</mark>
+                        {{else}}
+                        <mark class="badge badge-info">APORTE</mark>
+                        {{end}}
+                    </td>
+                    <td><small class="stat-mono"><strong>{{if
+                                .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}}</strong></small></td>
+                    <td class="text-right stat-mono font-bold">S/ {{printf "%.2f" .Monto}}</td>
+
+                    <!-- Columna Meta -->
+                    <td class="celda-meta">
+                        {{if .MetaCodigo}}
+                        <abbr title="{{.MetaDescripcion}}" class="badge badge-info stat-mono">
+                            🎯 {{.MetaCodigo}}
+                        </abbr>
+                        {{else if eq .TipoConcepto "RETENCION"}}
+                        <small class="text-muted">N/A (Retención)</small>
+                        {{else}}
+                        <mark class="badge badge-danger">
+                            ⚠️ Sin Meta
+                        </mark>
+                        {{end}}
+                    </td>
+
+                    <!-- Columna Fuente / Rubro -->
+                    <td class="celda-rubro">
+                        {{if .FuenteRubroCodigo}}
+                        <abbr title="{{.FuenteRubroDescripcion}}" class="badge badge-purple stat-mono">
+                            🏛️ {{.FuenteRubroCodigo}}
+                        </abbr>
+                        {{else if eq .TipoConcepto "RETENCION"}}
+                        <small class="text-muted">N/A (Retención)</small>
+                        {{else}}
+                        <mark class="badge badge-danger">
+                            ⚠️ Sin Rubro
+                        </mark>
+                        {{end}}
+                    </td>
+
+                    {{if eq $estado "BORRADOR"}}
+                    <td>
+                        {{if ne .TipoConcepto "RETENCION"}}
+                        <div class="flex-row-end">
+                            <button class="btn-icon" data-tooltip="Editar Meta y Rubro" data-placement="left"
+                                aria-label="Editar Meta y Rubro"
+                                onclick="abrirModalEditarSingleConcepto('{{.ID}}', '{{.NombreEnBoleta}}', '{{$det.TrabajadorNombre}}', '{{.Monto}}', '{{if .MetaID}}{{.MetaID}}{{end}}', '{{if .FuenteRubroID}}{{.FuenteRubroID}}{{end}}')">
+                                <svg class="icono-menu">
+                                    <use href="#icono-lapiz-cuadrado"></use>
+                                </svg>
+                            </button>
+                        </div>
+                        {{else}}
+                        <small class="text-muted text-right d-block">-</small>
+                        {{end}}
+                    </td>
                     {{end}}
+                </tr>
+                {{end}}
                 {{else}}
                 <tr>
-                    <td colspan="9" class="text-center p-md">No hay desglose de conceptos disponible para esta planilla.</td>
+                    <td colspan="9" class="text-center p-md">No hay desglose de conceptos disponible para esta planilla.
+                    </td>
                 </tr>
                 {{end}}
             </tbody>
@@ -207,17 +230,19 @@
 <dialog id="modal-bulk-asignar-meta-rubro">
     <article class="modal-card-md">
         <header>
-            <a href="#close" aria-label="Close" class="close" onclick="cerrarModalBulkAsignar()"></a>
+            <button aria-label="Close" rel="prev" onclick="cerrarModalBulkAsignar()"></button>
             <h4 class="mb-0">📦 Asignación Masiva de Meta y Fuente/Rubro</h4>
         </header>
         <div class="pt-md">
-            <p>Se actualizará la afectación presupuestal de <strong><span id="bulk-modal-count">0</span></strong> conceptos seleccionados:</p>
-            
-            <form hx-post="/tenant/planillas/conceptos/actualizar-presupuesto-bulk" hx-target="#contenido-tenant" onsubmit="prepararSubmitBulk()">
+            <p>Se actualizará la afectación presupuestal de <strong><span id="bulk-modal-count">0</span></strong>
+                conceptos seleccionados:</p>
+
+            <form hx-post="/tenant/planillas/conceptos/actualizar-presupuesto-bulk" hx-target="#contenido-tenant"
+                onsubmit="prepararSubmitBulk()">
                 <input type="hidden" name="planilla_id" value="{{.PlanillaID}}">
                 <input type="hidden" name="conceptos_ids" id="bulk-input-conceptos-ids">
 
-                <label>🎯 Nueva Meta Presupuestal
+                <label>Nueva Meta Presupuestal
                     <select name="meta_id" id="bulk-meta-id">
                         <option value="">-- Sin Cambios / Mantener --</option>
                         {{range .Metas}}
@@ -226,7 +251,7 @@
                     </select>
                 </label>
 
-                <label>🏛️ Nueva Fuente y Rubro de Financiamiento
+                <label>Nueva Fuente y Rubro de Financiamiento
                     <select name="fuente_rubro_id" id="bulk-rubro-id">
                         <option value="">-- Sin Cambios / Mantener --</option>
                         {{range .FuentesRubros}}
@@ -235,10 +260,11 @@
                     </select>
                 </label>
 
-                <div class="flex-row-end mt-lg">
-                    <button type="button" class="secondary outline btn-compact" onclick="cerrarModalBulkAsignar()">Cancelar</button>
-                    <button type="submit" class="primary btn-compact">💾 Aplicar Asignación Masiva</button>
-                </div>
+                <footer>
+                    <button type="button" class="secondary outline btn-compact"
+                        onclick="cerrarModalBulkAsignar()">Cancelar</button>
+                    <button type="submit" class="primary btn-compact">Aplicar Asignación Masiva</button>
+                </footer>
             </form>
         </div>
     </article>
@@ -248,21 +274,21 @@
 <dialog id="modal-editar-single-concepto">
     <article class="modal-card-md">
         <header>
-            <a href="#close" aria-label="Close" class="close" onclick="cerrarModalEditarSingleConcepto()"></a>
+            <button aria-label="Close" rel="prev" onclick="cerrarModalEditarSingleConcepto()"></button>
             <h4 class="mb-0">✏️ Asignar Meta y Rubro al Concepto</h4>
         </header>
         <div class="pt-md">
             <div class="callout-box">
                 <strong id="single-concepto-nombre" class="d-block font-sm">Concepto</strong>
-                <small id="single-trabajador-nombre" class="text-muted">Trabajador</small> - 
-                <small id="single-monto" class="font-bold text-primary">S/ 0.00</small>
+                <small id="single-trabajador-nombre" class="text-muted">Trabajador</small> -
+                <small id="single-monto" class="font-bold text-primary stat-mono">S/ 0.00</small>
             </div>
 
             <form hx-post="/tenant/planillas/conceptos/actualizar-presupuesto-single" hx-target="#contenido-tenant">
                 <input type="hidden" name="planilla_id" value="{{.PlanillaID}}">
                 <input type="hidden" name="concepto_id" id="single-concepto-id">
 
-                <label>🎯 Meta Presupuestal
+                <label>Meta Presupuestal
                     <select name="meta_id" id="single-meta-id">
                         <option value="">-- Seleccionar Meta --</option>
                         {{range .Metas}}
@@ -271,7 +297,7 @@
                     </select>
                 </label>
 
-                <label>🏛️ Fuente y Rubro de Financiamiento
+                <label>Fuente y Rubro de Financiamiento
                     <select name="fuente_rubro_id" id="single-rubro-id">
                         <option value="">-- Seleccionar Fuente y Rubro --</option>
                         {{range .FuentesRubros}}
@@ -280,10 +306,11 @@
                     </select>
                 </label>
 
-                <div class="flex-row-end mt-lg">
-                    <button type="button" class="secondary outline btn-compact" onclick="cerrarModalEditarSingleConcepto()">Cancelar</button>
-                    <button type="submit" class="primary btn-compact">💾 Guardar Cambios</button>
-                </div>
+                <footer>
+                    <button type="button" class="secondary outline btn-compact"
+                        onclick="cerrarModalEditarSingleConcepto()">Cancelar</button>
+                    <button type="submit" class="primary btn-compact">Guardar Cambios</button>
+                </footer>
             </form>
         </div>
     </article>
@@ -293,7 +320,8 @@
 <dialog id="modal-resumen-precierre">
     <article class="modal-card-xl">
         <header>
-            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-resumen-precierre').close()"></a>
+            <button aria-label="Close" rel="prev"
+                onclick="document.getElementById('modal-resumen-precierre').close()"></button>
             <h4 class="mb-0">📊 Resumen de Ejecución Presupuestal Pre-Cierre</h4>
         </header>
         <div class="pt-md">
@@ -304,21 +332,23 @@
                         <th>Meta</th>
                         <th>Fuente / Rubro</th>
                         <th>Tipo Concepto</th>
-                        <th>Monto Total</th>
+                        <th class="text-right">Monto Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     {{range .Detalles}}
-                        {{range .Conceptos}}
-                        {{if ne .TipoConcepto "RETENCION"}}
-                        <tr>
-                            <td>{{if .MetaCodigo}}[{{.MetaCodigo}}] {{.MetaDescripcion}}{{else}}<span class="text-danger">⚠️ Sin Meta</span>{{end}}</td>
-                            <td>{{if .FuenteRubroCodigo}}[{{.FuenteRubroCodigo}}] {{.FuenteRubroDescripcion}}{{else}}<span class="text-danger">⚠️ Sin Rubro</span>{{end}}</td>
-                            <td>{{.TipoConcepto}}</td>
-                            <td>S/ {{printf "%.2f" .Monto}}</td>
-                        </tr>
-                        {{end}}
-                        {{end}}
+                    {{range .Conceptos}}
+                    {{if ne .TipoConcepto "RETENCION"}}
+                    <tr>
+                        <td>{{if .MetaCodigo}}<span class="stat-mono">[{{.MetaCodigo}}]</span>
+                            {{.MetaDescripcion}}{{else}}<span class="text-danger">⚠️ Sin Meta</span>{{end}}</td>
+                        <td>{{if .FuenteRubroCodigo}}<span class="stat-mono">[{{.FuenteRubroCodigo}}]</span>
+                            {{.FuenteRubroDescripcion}}{{else}}<span class="text-danger">⚠️ Sin Rubro</span>{{end}}</td>
+                        <td>{{.TipoConcepto}}</td>
+                        <td class="text-right stat-mono font-bold">S/ {{printf "%.2f" .Monto}}</td>
+                    </tr>
+                    {{end}}
+                    {{end}}
                     {{else}}
                     <tr>
                         <td colspan="4" class="text-center">Sin datos de planilla.</td>
@@ -326,99 +356,100 @@
                     {{end}}
                 </tbody>
             </table>
-            <div class="flex-row-end mt-md">
-                <button type="button" class="secondary btn-compact" onclick="document.getElementById('modal-resumen-precierre').close()">Cerrar</button>
-            </div>
+            <footer>
+                <button type="button" class="secondary btn-compact"
+                    onclick="document.getElementById('modal-resumen-precierre').close()">Cerrar</button>
+            </footer>
         </div>
     </article>
 </dialog>
 
 <script>
-function filtrarMallaPresupuestal() {
-    const metaVal = document.getElementById('filtro-meta-detalle').value;
-    const rubroVal = document.getElementById('filtro-rubro-detalle').value;
-    const tipoVal = document.getElementById('filtro-tipo-detalle').value;
-    const buscarVal = document.getElementById('filtro-buscar-detalle').value.toLowerCase().trim();
+    function filtrarMallaPresupuestal() {
+        const metaVal = document.getElementById('filtro-meta-detalle').value;
+        const rubroVal = document.getElementById('filtro-rubro-detalle').value;
+        const tipoVal = document.getElementById('filtro-tipo-detalle').value;
+        const buscarVal = document.getElementById('filtro-buscar-detalle').value.toLowerCase().trim();
 
-    const filasMalla = document.querySelectorAll('.fila-concepto-malla');
-    filasMalla.forEach(row => {
-        const metaId = row.getAttribute('data-meta-id') || '';
-        const rubroId = row.getAttribute('data-rubro-id') || '';
-        const tipoRow = row.getAttribute('data-tipo') || '';
-        const textoRow = (row.getAttribute('data-trabajador') + ' ' + row.getAttribute('data-concepto-nombre') + ' ' + row.textContent).toLowerCase();
+        const filasMalla = document.querySelectorAll('.fila-concepto-malla');
+        filasMalla.forEach(row => {
+            const metaId = row.getAttribute('data-meta-id') || '';
+            const rubroId = row.getAttribute('data-rubro-id') || '';
+            const tipoRow = row.getAttribute('data-tipo') || '';
+            const textoRow = (row.getAttribute('data-trabajador') + ' ' + row.getAttribute('data-concepto-nombre') + ' ' + row.textContent).toLowerCase();
 
-        let coincideMeta = true;
-        if (metaVal === '__SIN_META__') coincideMeta = (metaId === '' && tipoRow !== 'RETENCION');
-        else if (metaVal !== '') coincideMeta = (metaId === metaVal);
+            let coincideMeta = true;
+            if (metaVal === '__SIN_META__') coincideMeta = (metaId === '' && tipoRow !== 'RETENCION');
+            else if (metaVal !== '') coincideMeta = (metaId === metaVal);
 
-        let coincideRubro = true;
-        if (rubroVal === '__SIN_RUBRO__') coincideRubro = (rubroId === '' && tipoRow !== 'RETENCION');
-        else if (rubroVal !== '') coincideRubro = (rubroId === rubroVal);
+            let coincideRubro = true;
+            if (rubroVal === '__SIN_RUBRO__') coincideRubro = (rubroId === '' && tipoRow !== 'RETENCION');
+            else if (rubroVal !== '') coincideRubro = (rubroId === rubroVal);
 
-        let coincideTipo = (tipoVal === '' || tipoRow === tipoVal);
-        let coincideBuscar = (buscarVal === '' || textoRow.includes(buscarVal));
+            let coincideTipo = (tipoVal === '' || tipoRow === tipoVal);
+            let coincideBuscar = (buscarVal === '' || textoRow.includes(buscarVal));
 
-        if (coincideMeta && coincideRubro && coincideTipo && coincideBuscar) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
-}
-
-function toggleSeleccionarTodosConceptos(chkHeader) {
-    const checkboxes = document.querySelectorAll('.chk-concepto-item');
-    checkboxes.forEach(chk => {
-        const tr = chk.closest('tr');
-        if (tr && tr.style.display !== 'none') {
-            chk.checked = chkHeader.checked;
-        }
-    });
-    actualizarContadorSeleccionados();
-}
-
-function actualizarContadorSeleccionados() {
-    const seleccionados = document.querySelectorAll('.chk-concepto-item:checked');
-    const cntSpan = document.getElementById('cnt-seleccionados');
-    const btnBulk = document.getElementById('btn-bulk-asignar-meta');
-
-    if (cntSpan) cntSpan.textContent = seleccionados.length;
-    if (btnBulk) {
-        btnBulk.disabled = (seleccionados.length === 0);
+            if (coincideMeta && coincideRubro && coincideTipo && coincideBuscar) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
     }
-}
 
-function abrirModalBulkAsignar() {
-    const seleccionados = document.querySelectorAll('.chk-concepto-item:checked');
-    if (seleccionados.length === 0) return;
+    function toggleSeleccionarTodosConceptos(chkHeader) {
+        const checkboxes = document.querySelectorAll('.chk-concepto-item');
+        checkboxes.forEach(chk => {
+            const tr = chk.closest('tr');
+            if (tr && tr.style.display !== 'none') {
+                chk.checked = chkHeader.checked;
+            }
+        });
+        actualizarContadorSeleccionados();
+    }
 
-    document.getElementById('bulk-modal-count').textContent = seleccionados.length;
-    document.getElementById('modal-bulk-asignar-meta-rubro').showModal();
-}
+    function actualizarContadorSeleccionados() {
+        const seleccionados = document.querySelectorAll('.chk-concepto-item:checked');
+        const cntSpan = document.getElementById('cnt-seleccionados');
+        const btnBulk = document.getElementById('btn-bulk-asignar-meta');
 
-function cerrarModalBulkAsignar() {
-    document.getElementById('modal-bulk-asignar-meta-rubro').close();
-}
+        if (cntSpan) cntSpan.textContent = seleccionados.length;
+        if (btnBulk) {
+            btnBulk.disabled = (seleccionados.length === 0);
+        }
+    }
 
-function prepararSubmitBulk() {
-    const seleccionados = Array.from(document.querySelectorAll('.chk-concepto-item:checked')).map(c => c.value);
-    document.getElementById('bulk-input-conceptos-ids').value = seleccionados.join(',');
-    cerrarModalBulkAsignar();
-}
+    function abrirModalBulkAsignar() {
+        const seleccionados = document.querySelectorAll('.chk-concepto-item:checked');
+        if (seleccionados.length === 0) return;
 
-function abrirModalEditarSingleConcepto(id, conceptoNombre, trabajadorNombre, monto, metaId, rubroId) {
-    document.getElementById('single-concepto-id').value = id;
-    document.getElementById('single-concepto-nombre').textContent = conceptoNombre;
-    document.getElementById('single-trabajador-nombre').textContent = trabajadorNombre;
-    document.getElementById('single-monto').textContent = 'S/ ' + parseFloat(monto).toFixed(2);
+        document.getElementById('bulk-modal-count').textContent = seleccionados.length;
+        document.getElementById('modal-bulk-asignar-meta-rubro').showModal();
+    }
 
-    document.getElementById('single-meta-id').value = metaId || '';
-    document.getElementById('single-rubro-id').value = rubroId || '';
+    function cerrarModalBulkAsignar() {
+        document.getElementById('modal-bulk-asignar-meta-rubro').close();
+    }
 
-    document.getElementById('modal-editar-single-concepto').showModal();
-}
+    function prepararSubmitBulk() {
+        const seleccionados = Array.from(document.querySelectorAll('.chk-concepto-item:checked')).map(c => c.value);
+        document.getElementById('bulk-input-conceptos-ids').value = seleccionados.join(',');
+        cerrarModalBulkAsignar();
+    }
 
-function cerrarModalEditarSingleConcepto() {
-    document.getElementById('modal-editar-single-concepto').close();
-}
+    function abrirModalEditarSingleConcepto(id, conceptoNombre, trabajadorNombre, monto, metaId, rubroId) {
+        document.getElementById('single-concepto-id').value = id;
+        document.getElementById('single-concepto-nombre').textContent = conceptoNombre;
+        document.getElementById('single-trabajador-nombre').textContent = trabajadorNombre;
+        document.getElementById('single-monto').textContent = 'S/ ' + parseFloat(monto).toFixed(2);
+
+        document.getElementById('single-meta-id').value = metaId || '';
+        document.getElementById('single-rubro-id').value = rubroId || '';
+
+        document.getElementById('modal-editar-single-concepto').showModal();
+    }
+
+    function cerrarModalEditarSingleConcepto() {
+        document.getElementById('modal-editar-single-concepto').close();
+    }
 </script>
