@@ -60,26 +60,28 @@ func (h *ConceptoTenantHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	totalPaginas := (totalRegistros + limite - 1) / limite
-
 	if totalPaginas == 0 {
 		totalPaginas = 1
 	}
 
+	paginacion := models.CalcularPaginacion(
+		pagina,
+		totalPaginas,
+		totalRegistros,
+		"/tenant/conceptos-locales/lista",
+		"#lista-conceptos-tenant",
+		"#form-filtros-conceptos-tenant",
+	)
+
 	datosVista := struct {
-		Conceptos       []models.ConceptoTenant
-		TotalPaginas    int
-		PaginaActual    int
-		PaginaAnterior  int
-		PaginaSiguiente int
+		Conceptos  []models.ConceptoTenant
+		Paginacion models.PaginacionDTO
 	}{
-		Conceptos:       conceptos,
-		TotalPaginas:    totalPaginas,
-		PaginaActual:    pagina,
-		PaginaAnterior:  pagina - 1,
-		PaginaSiguiente: pagina + 1,
+		Conceptos:  conceptos,
+		Paginacion: paginacion,
 	}
 
-	tmpl, _ := template.ParseFiles("ui/templates/tenant/conceptos_tenant_ui.html")
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/conceptos_tenant_ui.html", "ui/templates/components/paginacion.html")
 	tmpl.ExecuteTemplate(w, "tabla_conceptos_tenant", datosVista)
 }
 

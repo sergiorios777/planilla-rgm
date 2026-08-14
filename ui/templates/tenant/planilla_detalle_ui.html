@@ -55,7 +55,9 @@
 
         <button class="contrast btn-compact flex-inline flex-items-center flex-gap-xs"
             hx-post="/tenant/planillas/cerrar?id={{.PlanillaID}}" hx-target="#contenido-tenant"
-            hx-confirm="⚠️ ¿Estás seguro de cerrar esta planilla? Una vez cerrada, NO podrás recalcular ni modificar metas ni rubros.">
+            data-confirm-title="Confirmar Cierre de Planilla"
+            data-confirm-message="Una vez cerrada la planilla, NO podrás recalcular ni modificar metas ni rubros presupuestales para este periodo."
+            data-confirm-badge="Acción Irreversible" data-confirm-btn="Sí, Cerrar Planilla">
             <svg class="icono-menu">
                 <use href="#icono-lock"></use>
             </svg> Cerrar Planilla
@@ -87,7 +89,9 @@
                 <small class="text-uppercase text-muted">{{.Titulo}}</small>
                 <span class="badge {{.BadgeClase}}">{{.BadgeTexto}}</span>
             </div>
-            <h3 class="stat-mono mb-0 {{if eq .BadgeClase "badge-info"}}text-info{{else if eq .BadgeClase "badge-success"}}text-success{{else if eq .BadgeClase "badge-danger"}}text-danger{{else if eq .BadgeClase "badge-purple"}}text-purple{{else}}text-primary{{end}}">
+            <h3 class="stat-mono mb-0 {{if eq .BadgeClase " badge-info"}}text-info{{else if eq
+                .BadgeClase "badge-success" }}text-success{{else if eq .BadgeClase "badge-danger" }}text-danger{{else if
+                eq .BadgeClase "badge-purple" }}text-purple{{else}}text-primary{{end}}">
                 {{.Valor}}
             </h3>
             <small class="text-muted">{{.Subtitulo}}</small>

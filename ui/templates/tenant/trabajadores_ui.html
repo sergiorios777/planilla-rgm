@@ -359,28 +359,7 @@
     </tbody>
 </table>
 
-<!-- Controles de paginación-->
-<div class="flex-row-between mt-md">
-    <!-- Mostramos el estado completo de la navegación -->
-    <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
-
-    <div role="group">
-        {{if gt .PaginaAnterior 0}}
-        <button class="outline" hx-get="/tenant/trabajadores/lista" hx-include="#input-buscar-trabajador"
-            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#lista-trabajadores">
-            ⬅️ Anterior
-        </button>
-        {{end}}
-
-        <!-- Evaluamos si estamos antes del final para mostrar el botón "Siguiente" -->
-        {{if lt .PaginaActual .TotalPaginas}}
-        <button class="outline" hx-get="/tenant/trabajadores/lista" hx-include="#input-buscar-trabajador"
-            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#lista-trabajadores">
-            Siguiente ➡️
-        </button>
-        {{end}}
-    </div>
-</div>
+{{template "componente_paginacion" .Paginacion}}
 {{end}}
 
 {{define "formulario_importar_trabajadores"}}

@@ -61,8 +61,11 @@
     <dialog id="modal-crear-meta">
         <article class="modal-card-md">
             <header>
-                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-crear-meta').close()"></a>
-                <h4 class="mb-0">➕ Registrar Nueva Meta</h4>
+                <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-crear-meta').close()"></button>
+                <h4 class="mb-0 flex-items-center flex-gap-xs">
+                    <svg class="icono-menu text-primary"><use href="#icono-nuevo-1"></use></svg>
+                    <span>Registrar Nueva Meta</span>
+                </h4>
             </header>
             <div id="contenedor-formulario">
                 {{template "formulario_crear" .}}
@@ -74,8 +77,11 @@
     <dialog id="modal-importar-meta">
         <article class="modal-card-lg">
             <header>
-                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-meta').close()"></a>
-                <h4 class="mb-0">📤 Importación Masiva (Excel)</h4>
+                <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-importar-meta').close()"></button>
+                <h4 class="mb-0 flex-items-center flex-gap-xs">
+                    <svg class="icono-menu text-primary"><use href="#icono-importar"></use></svg>
+                    <span>Importación Masiva (Excel)</span>
+                </h4>
             </header>
             <div id="contenedor-formulario-importar">
                 {{template "formulario_importar_metas" .}}
@@ -87,8 +93,11 @@
     <dialog id="modal-editar-meta" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
         <article class="modal-card-md">
             <header>
-                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-editar-meta').close()"></a>
-                <h4 class="mb-0">✏️ Editar Meta Presupuestal</h4>
+                <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-editar-meta').close()"></button>
+                <h4 class="mb-0 flex-items-center flex-gap-xs">
+                    <svg class="icono-menu text-primary"><use href="#icono-lapiz-cuadrado"></use></svg>
+                    <span>Editar Meta Presupuestal</span>
+                </h4>
             </header>
             <div id="contenido-modal-editar">
                 <!-- Formulario se carga aquí vía HTMX -->
@@ -112,12 +121,17 @@
         <input type="text" name="descripcion" placeholder="Ej. PATRULLAJE POR SECTOR" maxlength="512" required>
     </label>
     <label>
-        <input type="checkbox" name="activo" checked> Meta Activa
+        <input type="checkbox" name="activo" checked role="switch"> Meta Activa
     </label>
-    <div class="flex-row-end mt-lg">
-        <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-crear-meta').close()">Cancelar</button>
-        <button type="submit" class="primary btn-compact">Guardar Meta</button>
-    </div>
+    <footer>
+        <div class="flex-row-end flex-gap-sm">
+            <button type="button" class="secondary outline btn-compact mb-0" onclick="document.getElementById('modal-crear-meta').close()">Cancelar</button>
+            <button type="submit" class="primary btn-compact mb-0 flex-inline flex-items-center flex-gap-xs">
+                <svg class="icono-menu"><use href="#icono-guardar"></use></svg>
+                Guardar Meta
+            </button>
+        </div>
+    </footer>
 </form>
 {{end}}
 
@@ -140,79 +154,70 @@
     </label>
 
     <label>
-        <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Meta Activa
+        <input type="checkbox" name="activo" {{if .Activo}}checked{{end}} role="switch"> Meta Activa
     </label>
 
-    <div class="flex-row-end mt-lg">
-        <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-editar-meta').close()">
-            Cancelar
-        </button>
-        <button type="submit" class="primary btn-compact">Guardar Cambios</button>
-    </div>
+    <footer>
+        <div class="flex-row-end flex-gap-sm">
+            <button type="button" class="secondary outline btn-compact mb-0" onclick="document.getElementById('modal-editar-meta').close()">
+                Cancelar
+            </button>
+            <button type="submit" class="primary btn-compact mb-0 flex-inline flex-items-center flex-gap-xs">
+                <svg class="icono-menu"><use href="#icono-guardar"></use></svg>
+                Guardar Cambios
+            </button>
+        </div>
+    </footer>
 </form>
 {{end}}
 
 {{define "tabla_metas"}}
-<table class="striped">
-    <thead>
-        <tr>
-            <th>Año</th>
-            <th>Código</th>
-            <th>Descripción</th>
-            <th>Estado</th>
-        </tr>
-    </thead>
-    <tbody>
-        {{range .Metas}}
-        <tr>
-            <td>{{.Anio}}</td>
-            <td><strong>{{.Codigo}}</strong></td>
-            <td><small>{{.Descripcion}}</small></td>
-            <td>
-                <div class="flex-gap-sm flex-items-center">
+<div class="overflow-x-auto">
+    <table class="striped condensed w-full">
+        <thead>
+            <tr>
+                <th>Año</th>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th class="text-right">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Metas}}
+            <tr>
+                <td><span class="stat-mono">{{.Anio}}</span></td>
+                <td><strong class="stat-mono">{{.Codigo}}</strong></td>
+                <td><small>{{.Descripcion}}</small></td>
+                <td>
                     {{if .Activo}}
-                    <mark class="badge badge-success">Activa</mark>
+                    <mark class="badge badge-success font-xs">Activa</mark>
                     {{else}}
-                    <mark class="badge badge-danger">Inactiva</mark>
+                    <mark class="badge badge-danger font-xs">Inactiva</mark>
                     {{end}}
-
-                    <button class="outline secondary btn-sm"
-                        hx-get="/tenant/metas/editar-ui?id={{.ID}}" hx-target="#contenido-modal-editar" hx-swap="innerHTML">
-                        Editar
-                    </button>
-                </div>
-            </td>
-        </tr>
-        {{else}}
-        <tr>
-            <td colspan="4" class="text-center">No hay metas registradas.</td>
-        </tr>
-        {{end}}
-    </tbody>
-</table>
-
-<!-- Controles de paginación-->
-<div class="flex-row-between mt-md">
-    <!-- Mostramos el estado completo de la navegación -->
-    <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
-
-    <div role="group">
-        {{if gt .PaginaAnterior 0}}
-        <button class="outline" hx-get="/tenant/metas/lista" hx-include="#form-filtros-metas"
-            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#lista-metas">
-            ⬅️ Anterior
-        </button>
-        {{end}}
-
-        <!-- Evaluamos si estamos antes del final para mostrar el botón "Siguiente" -->
-        {{if lt .PaginaActual .TotalPaginas}}
-        <button class="outline" hx-get="/tenant/metas/lista" hx-include="#form-filtros-metas"
-            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#lista-metas">
-            Siguiente ➡️
-        </button>
-        {{end}}
-    </div>
+                </td>
+                <td>
+                    <div class="flex-row-end">
+                        <button class="btn-icon" data-tooltip="Editar meta presupuestal" data-placement="top"
+                            aria-label="Editar meta"
+                            hx-get="/tenant/metas/editar-ui?id={{.ID}}" hx-target="#contenido-modal-editar" hx-swap="innerHTML">
+                            <svg class="icono-menu">
+                                <use href="#icono-lapiz-cuadrado"></use>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="5" class="text-center">No hay metas registradas.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
 </div>
+
+{{template "componente_paginacion" .Paginacion}}
 {{end}}
 
 {{define "formulario_importar_metas"}}

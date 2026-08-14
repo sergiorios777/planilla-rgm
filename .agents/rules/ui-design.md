@@ -48,3 +48,22 @@ Se permite el uso de clases personalizadas definidas en [custom.css](file:///c:/
 
 - **No agregar micro-utilitarios estilo Tailwind/Bootstrap**: No crear clases atómicas como `.p-2`, `.mt-3`, `.w-60` salvo estricta necesidad de compatibilidad.
 - **Sobrescribir CSS Custom Properties**: Todo ajuste de color, tamaño o espaciado global debe realizarse mediante variables `--pico-*` en `:root` o en los selectores de tema (`body.admin-theme`, `body.tenant-theme`).
+
+---
+
+## 5. Catálogo de Componentes Estandarizados Reutilizables
+
+Todas las vistas de la aplicación deben emplear obligatoriamente los siguientes componentes estandarizados desarrollados para mantener la consistencia estética y funcional:
+
+1. **Paginación Numérica HTMX Reutilizable (`componente_paginacion`)**:
+   - **Regla**: En cualquier vista con tablas o listados paginados (`trabajadores`, `contratos`, `puestos`, `metas`, `conceptos`, `asistencia`), es **obligatorio** invocar `{{template "componente_paginacion" .Paginacion}}` usando en Go `models.CalcularPaginacion(...)` y `models.PaginacionDTO`. Queda estrictamente prohibido maquetar barras de paginación manuales en 2 filas.
+
+2. **Modal de Confirmación Global de Acciones Irreversibles**:
+   - **Regla**: **Prohibido usar `hx-confirm="..."` o `window.confirm()` nativos del navegador**. Toda acción delicada o irreversible (cerrar planilla, eliminar contrato, restaurar conceptos, dar de baja) debe activar el modal global reutilizable mediante los atributos declarativos `data-confirm-title`, `data-confirm-message`, `data-confirm-badge` y `data-confirm-btn`.
+
+3. **Tarjetas de Resumen Financiero y KPIs (Bento Grid)**:
+   - **Regla**: Todas las métricas acumuladas (Ingresos, Retenciones, Aportes, Costo Total, Neto a Pagar, Trabajadores Activos) deben presentarse mediante la rejilla responsiva Bento Grid (`grid-auto-fit-200 gap-md mb-lg`) usando la tipografía monoespaciada `.stat-mono` (`JetBrains Mono`) y los badges cromáticos del dominio (`badge-success`, `badge-danger`, `badge-info`, `badge-warning`, `badge-purple`).
+
+4. **Acciones de Tabla (Botones Planos e Iconos SVG)**:
+   - **Regla**: En las celdas de acciones de las tablas, usar **exclusivamente** botones planos de icono `<button class="btn-icon">` o menús `details.dropdown-kebab` con iconos del sprite SVG (`#icono-*`). Queda prohibido el uso de emoticonos de texto plano o `role="group"` en tablas.
+

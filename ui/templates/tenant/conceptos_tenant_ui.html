@@ -6,8 +6,7 @@
             </svg> Catálogo Local de Conceptos
         </h3>
         <div class="flex-gap-sm flex-wrap flex-items-center">
-            <button class="primary btn-compact"
-                onclick="document.getElementById('modal-crear-concepto').showModal()">
+            <button class="primary btn-compact" onclick="document.getElementById('modal-crear-concepto').showModal()">
                 <svg class="icono-menu">
                     <use href="#icono-nuevo-1"></use>
                 </svg> Registrar Nuevo Concepto
@@ -19,9 +18,10 @@
                     <use href="#icono-cajas"></use>
                 </svg> Agregar Concepto Modelo
             </button>
-            <button class="outline contrast btn-compact"
-                hx-post="/tenant/conceptos-locales/restaurar" hx-target="#lista-conceptos-tenant"
-                hx-confirm="¿Desea restaurar los conceptos faltantes desde el catálogo maestro? Esto no afectará a los conceptos que ya tiene configurados.">
+            <button class="outline contrast btn-compact" hx-post="/tenant/conceptos-locales/restaurar"
+                hx-target="#lista-conceptos-tenant" data-confirm-title="Confirmar Restauración de Conceptos Faltantes"
+                data-confirm-message="Se restaurarán los conceptos predeterminados desde el catálogo maestro que aún no hayan sido agregados. Sus conceptos existentes no serán modificados."
+                data-confirm-badge="Restauración" data-confirm-btn="Sí, Restaurar Conceptos">
                 <svg class="icono-menu">
                     <use href="#icono-refrescar-giro-derecha"></use>
                 </svg> Restaurar Conceptos
@@ -51,13 +51,13 @@
                 </select>
             </label>
 
-            <label aria-disabled="true">
+            <label>
                 Estado
                 <select name="estado" hx-get="/tenant/conceptos-locales/lista"
                     hx-include="#form-filtros-conceptos-tenant" hx-target="#lista-conceptos-tenant">
                     <option value="">Todos</option>
-                    <option value="vacante">Libre</option>
-                    <option value="ocupado">Ocupada</option>
+                    <option value="activo">Activo</option>
+                    <option value="inactivo">Inactivo</option>
                 </select>
             </label>
 
@@ -82,9 +82,14 @@
     <dialog id="modal-crear-concepto">
         <article class="modal-card-lg">
             <header>
-                <a href="#close" aria-label="Close" class="close"
-                    onclick="document.getElementById('modal-crear-concepto').close()"></a>
-                <h4 class="mb-0">➕ Agregar Concepto a la Municipalidad</h4>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-crear-concepto').close()"></button>
+                <h4 class="mb-0 flex-items-center flex-gap-xs">
+                    <svg class="icono-menu text-primary">
+                        <use href="#icono-nuevo-1"></use>
+                    </svg>
+                    <span>Agregar Concepto a la Municipalidad</span>
+                </h4>
             </header>
             <div id="contenedor-formulario">
                 {{template "formulario_crear" .}}
@@ -97,9 +102,14 @@
         hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-agregar-modelo') this.showModal()">
         <article class="modal-card-lg">
             <header>
-                <a href="#close" aria-label="Close" class="close"
-                    onclick="document.getElementById('modal-agregar-modelo').close()"></a>
-                <h4 class="mb-0">📦 Agregar Concepto Modelo a la Municipalidad</h4>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-agregar-modelo').close()"></button>
+                <h4 class="mb-0 flex-items-center flex-gap-xs">
+                    <svg class="icono-menu text-primary">
+                        <use href="#icono-cajas"></use>
+                    </svg>
+                    <span>Agregar Concepto Modelo a la Municipalidad</span>
+                </h4>
             </header>
             <div id="contenido-modal-agregar-modelo">
                 <!-- Formulario se carga aquí vía HTMX -->
@@ -112,9 +122,14 @@
         hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar') this.showModal()">
         <article class="modal-card-lg">
             <header>
-                <a href="#close" aria-label="Close" class="close"
-                    onclick="document.getElementById('modal-editar-concepto').close()"></a>
-                <h4 class="mb-0">✏️ Editar Concepto Local</h4>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-editar-concepto').close()"></button>
+                <h4 class="mb-0 flex-items-center flex-gap-xs">
+                    <svg class="icono-menu text-primary">
+                        <use href="#icono-lapiz-cuadrado"></use>
+                    </svg>
+                    <span>Editar Concepto Local</span>
+                </h4>
             </header>
             <div id="contenido-modal-editar">
                 <!-- Formulario se carga aquí vía HTMX -->
@@ -127,9 +142,14 @@
         hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-reglas-tenant') this.showModal()">
         <article class="modal-card-xl">
             <header>
-                <a href="#close" aria-label="Close" class="close"
-                    onclick="document.getElementById('modal-reglas-tenant').close()"></a>
-                <h4 class="mb-0">🎯 Reglas de Financiamiento Local (Municipalidad)</h4>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-reglas-tenant').close()"></button>
+                <h4 class="mb-0 flex-items-center flex-gap-xs">
+                    <svg class="icono-menu text-primary">
+                        <use href="#icono-objetivo"></use>
+                    </svg>
+                    <span>Reglas de Financiamiento Local (Municipalidad)</span>
+                </h4>
             </header>
             <div id="contenido-modal-reglas-tenant">
                 <!-- Carga vía HTMX -->
@@ -141,7 +161,7 @@
 {{define "tabla_conceptos_tenant"}}
 <div class="overflow-x-auto">
     <!--Tabla de conceptos del Tenant-->
-    <table class="striped">
+    <table class="striped condensed w-full">
         <thead>
             <tr>
                 <th>Concepto (Boleta)</th>
@@ -149,7 +169,7 @@
                 <th>Régimen laboral</th>
                 <th>Estado</th>
                 <th>Base SUNAT</th>
-                <th>Acción</th>
+                <th class="text-right">Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -165,15 +185,15 @@
                     <mark class="badge badge-info font-xs">APORTE</mark>
                     {{end}}
                     {{if .EsOcasional}}
-                    <mark class="badge badge-gray font-xs">OCAS</mark>
+                    <mark class="badge badge-purple font-xs">OCAS</mark>
                     {{end}}
                     {{if .EsAfectoCargasSociales}}
-                    <mark class="badge badge-pink font-xs">CARG_SOC</mark>
+                    <mark class="badge badge-warning font-xs">CARG_SOC</mark>
                     {{end}}
                 </td>
                 <td>
                     <small>Meses: {{.FrecuenciaMeses}}</small><br>
-                    <small>SIAF: <strong>{{if
+                    <small>SIAF: <strong class="stat-mono">{{if
                             .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}}</strong></small>
                 </td>
                 <td><small>{{if .RegimenesCodigos}}{{.RegimenesCodigos}}{{else}}Sin régimen{{end}}</small></td>
@@ -184,18 +204,23 @@
                     <span class="badge badge-danger">Inactivo</span>
                     {{end}}
                 </td>
-                <td><small>Cód: {{.ConceptoCodigo}}</small></td>
+                <td><small class="stat-mono">Cód: {{.ConceptoCodigo}}</small></td>
                 <td>
-                    <div role="group">
-                        <button class="outline primary btn-badge"
+                    <div class="flex-row-end">
+                        <button class="btn-icon" data-tooltip="Configurar reglas de financiamiento local"
+                            data-placement="top" aria-label="Reglas de financiamiento"
                             hx-get="/tenant/conceptos-locales/reglas-modal?concepto_tenant_id={{.ID}}"
                             hx-target="#contenido-modal-reglas-tenant" hx-swap="innerHTML">
-                            ⚙️ Reglas
+                            <svg class="icono-menu">
+                                <use href="#icono-engranaje"></use>
+                            </svg>
                         </button>
-                        <button class="outline secondary btn-badge"
-                            hx-get="/tenant/conceptos-locales/editar-ui?id={{.ID}}" hx-target="#contenido-modal-editar"
-                            hx-swap="innerHTML">
-                            Editar
+                        <button class="btn-icon" data-tooltip="Editar concepto local" data-placement="top"
+                            aria-label="Editar concepto" hx-get="/tenant/conceptos-locales/editar-ui?id={{.ID}}"
+                            hx-target="#contenido-modal-editar" hx-swap="innerHTML">
+                            <svg class="icono-menu">
+                                <use href="#icono-lapiz-cuadrado"></use>
+                            </svg>
                         </button>
                     </div>
                 </td>
@@ -208,38 +233,15 @@
         </tbody>
     </table>
 </div>
-<!-- Controles de paginación-->
-<div class="flex-row-between mt-md">
-    <!-- Mostramos el estado completo de la navegación -->
-    <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
-
-    <div role="group">
-        {{if gt .PaginaAnterior 0}}
-        <button class="outline" hx-get="/tenant/conceptos-locales/lista" hx-include="#form-filtros-conceptos-tenant"
-            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#lista-conceptos-tenant">
-            <svg class="icono-menu">
-                <use href="#icono-previo-cuadrado"></use>
-            </svg> Anterior
-        </button>
-        {{end}}
-
-        <!-- Evaluamos si estamos antes del final para mostrar el botón "Siguiente" -->
-        {{if lt .PaginaActual .TotalPaginas}}
-        <button class="outline" hx-get="/tenant/conceptos-locales/lista" hx-include="#form-filtros-conceptos-tenant"
-            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#lista-conceptos-tenant">
-            Siguiente <svg class="icono-menu">
-                <use href="#icono-siguiente-cuadrado"></use>
-            </svg>
-        </button>
-        {{end}}
-    </div>
-</div>
+{{template "componente_paginacion" .Paginacion}}
 {{end}}
 
 {{define "botonera_acciones"}}
 <div>
-    <button class="outline contrast" hx-post="/tenant/conceptos-locales/restaurar" hx-target="#lista-conceptos-tenant"
-        hx-confirm="¿Desea restaurar los conceptos faltantes desde el catálogo maestro? Esto no afectará a los conceptos que ya tiene configurados.">
+    <button class="outline contrast btn-compact" hx-post="/tenant/conceptos-locales/restaurar"
+        hx-target="#lista-conceptos-tenant" data-confirm-title="Confirmar Restauración de Conceptos Faltantes"
+        data-confirm-message="Se restaurarán los conceptos predeterminados desde el catálogo maestro que aún no hayan sido agregados. Sus conceptos existentes no serán modificados."
+        data-confirm-badge="Restauración" data-confirm-btn="Sí, Restaurar Conceptos">
         <svg class="icono-menu">
             <use href="#icono-refrescar-giro-derecha"></use>
         </svg> Restaurar Conceptos
@@ -428,8 +430,9 @@
             {{if .Concepto.ModeloID}}
             <button type="button" class="outline contrast btn-compact"
                 hx-post="/tenant/conceptos-locales/sincronizar-modelo?id={{.Concepto.ID}}"
-                hx-target="#contenido-modal-editar"
-                hx-confirm="⚠️ ATENCIÓN: Se restablecerán todos los valores y configuraciones de este concepto a los predeterminados del modelo central, con excepción del 'Nombre Personalizado' que se conservará. ¿Desea continuar?">
+                hx-target="#contenido-modal-editar" data-confirm-title="Restablecer Valores del Concepto"
+                data-confirm-message="Se restablecerán todos los valores y configuraciones de este concepto a los predeterminados del modelo central, con excepción del 'Nombre Personalizado' que se conservará. ¿Desea continuar?"
+                data-confirm-badge="Sincronización" data-confirm-btn="Sí, Sincronizar">
                 <svg class="icono-menu">
                     <use href="#icono-refrescar-giro-derecha"></use>
                 </svg> Sincronizar con Modelo
@@ -492,7 +495,8 @@
     ✅ Todos los conceptos modelo disponibles ya han sido agregados al catálogo de su municipalidad.
 </article>
 <div class="flex-row-end mt-md">
-    <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-agregar-modelo').close()">
+    <button type="button" class="secondary outline btn-compact"
+        onclick="document.getElementById('modal-agregar-modelo').close()">
         Cerrar
     </button>
 </div>
@@ -503,26 +507,30 @@
 <div class="flex-row-between flex-items-start mb-sm">
     <div>
         <strong>Concepto Local:</strong> {{.Concepto.NombrePersonalizado}}<br>
-        <small class="text-muted">Configura excepciones de Meta Presupuestal y Fuente/Rubro específicas de tu entidad (Pactos Colectivos / Convenios).</small>
+        <small class="text-muted">Configura excepciones de Meta Presupuestal y Fuente/Rubro específicas de tu entidad
+            (Pactos Colectivos / Convenios).</small>
     </div>
     {{if .Concepto.ModeloID}}
-    <button type="button" class="outline secondary btn-badge"
+    <button type="button" class="outline secondary btn-badge flex-inline flex-items-center flex-gap-xs"
         hx-post="/tenant/conceptos-locales/reglas/sincronizar-modelo?concepto_tenant_id={{.Concepto.ID}}"
-        hx-target="#contenido-modal-reglas-tenant"
-        hx-confirm="¿Deseas restablecer y re-sincronizar las reglas de financiamiento predeterminadas desde el Modelo SaaS?">
-        🔄 Sincronizar Reglas desde Modelo SaaS
+        hx-target="#contenido-modal-reglas-tenant" data-confirm-title="🔄 Sincronizar Reglas de Financiamiento"
+        data-confirm-message="¿Deseas restablecer y re-sincronizar las reglas de financiamiento predeterminadas desde el Modelo SaaS?"
+        data-confirm-badge="Modelo SaaS" data-confirm-btn="Sí, Sincronizar Reglas">
+        <svg class="icono-menu">
+            <use href="#icono-refrescar-giro-derecha"></use>
+        </svg> Sincronizar Reglas desde Modelo SaaS
     </button>
     {{end}}
 </div>
 
-<table class="striped">
+<table class="striped condensed w-full">
     <thead>
         <tr>
             <th>Régimen</th>
             <th>Meta Presupuestal</th>
             <th>Fuente / Rubro</th>
             <th>Estado</th>
-            <th>Acción</th>
+            <th class="text-right">Acción</th>
         </tr>
     </thead>
     <tbody>
@@ -536,7 +544,8 @@
                     <option value="">-- Meta Default del Puesto --</option>
                     {{$metaVal := .GetMetaID}}
                     {{range $.Metas}}
-                    <option value="{{.ID}}" {{if eq $metaVal .ID}}selected{{end}}>[{{.Codigo}}] {{.Descripcion}}</option>
+                    <option value="{{.ID}}" {{if eq $metaVal .ID}}selected{{end}}>[{{.Codigo}}] {{.Descripcion}}
+                    </option>
                     {{end}}
                 </select>
             </td>
@@ -547,7 +556,8 @@
                     <option value="">-- Rubro Default del Puesto --</option>
                     {{$rubroVal := .GetFuenteRubroID}}
                     {{range $.FuentesRubros}}
-                    <option value="{{.ID}}" {{if eq $rubroVal .ID}}selected{{end}}>[{{.CodigoFuenteRubro}}] {{.Rubro}}</option>
+                    <option value="{{.ID}}" {{if eq $rubroVal .ID}}selected{{end}}>[{{.CodigoFuenteRubro}}] {{.Rubro}}
+                    </option>
                     {{end}}
                 </select>
             </td>
@@ -559,12 +569,19 @@
                 {{end}}
             </td>
             <td>
-                <button class="outline contrast btn-badge"
-                    hx-delete="/tenant/conceptos-locales/reglas/eliminar?id={{.ID}}&concepto_tenant_id={{$.Concepto.ID}}"
-                    hx-target="#contenido-modal-reglas-tenant"
-                    hx-confirm="¿Eliminar esta regla de financiamiento local?">
-                    Eliminar
-                </button>
+                <div class="flex-row-end">
+                    <button class="btn-icon btn-danger-icon" data-tooltip="Eliminar regla local" data-placement="top"
+                        aria-label="Eliminar regla"
+                        hx-delete="/tenant/conceptos-locales/reglas/eliminar?id={{.ID}}&concepto_tenant_id={{$.Concepto.ID}}"
+                        hx-target="#contenido-modal-reglas-tenant"
+                        data-confirm-title="🗑️ Eliminar Regla de Financiamiento"
+                        data-confirm-message="¿Estás seguro de eliminar esta regla de financiamiento local?"
+                        data-confirm-badge="Eliminación" data-confirm-btn="Sí, Eliminar">
+                        <svg class="icono-menu">
+                            <use href="#icono-trash"></use>
+                        </svg>
+                    </button>
+                </div>
             </td>
         </tr>
         {{else}}
@@ -576,11 +593,16 @@
     </tbody>
 </table>
 
-<hr>
+<hr class="my-md">
 
 <form hx-post="/tenant/conceptos-locales/reglas/crear" hx-target="#contenido-modal-reglas-tenant">
     <input type="hidden" name="concepto_tenant_id" value="{{.Concepto.ID}}">
-    <h6>➕ Agregar Regla de Financiamiento Local</h6>
+    <h6 class="flex-items-center flex-gap-xs mb-sm">
+        <svg class="icono-menu text-primary">
+            <use href="#icono-plus"></use>
+        </svg>
+        <span>Agregar Regla de Financiamiento Local</span>
+    </h6>
     <div class="grid">
         <label>Régimen Laboral
             <select name="regimen_id">

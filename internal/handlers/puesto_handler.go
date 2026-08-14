@@ -85,26 +85,28 @@ func (h *PuestoHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	totalPaginas := (totalRegistros + limite - 1) / limite
-
 	if totalPaginas == 0 {
 		totalPaginas = 1
 	}
 
+	paginacion := models.CalcularPaginacion(
+		pagina,
+		totalPaginas,
+		totalRegistros,
+		"/tenant/puestos/lista",
+		"#lista-puestos",
+		"#form-filtros-puestos",
+	)
+
 	datosVista := struct {
-		Puestos         []models.Puesto
-		TotalPaginas    int
-		PaginaActual    int
-		PaginaAnterior  int
-		PaginaSiguiente int
+		Puestos    []models.Puesto
+		Paginacion models.PaginacionDTO
 	}{
-		Puestos:         puestos,
-		TotalPaginas:    totalPaginas,
-		PaginaActual:    pagina,
-		PaginaAnterior:  pagina - 1,
-		PaginaSiguiente: pagina + 1,
+		Puestos:    puestos,
+		Paginacion: paginacion,
 	}
 
-	tmpl, _ := template.ParseFiles("ui/templates/tenant/puestos_ui.html")
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/puestos_ui.html", "ui/templates/components/paginacion.html")
 	tmpl.ExecuteTemplate(w, "tabla_puestos", datosVista)
 }
 

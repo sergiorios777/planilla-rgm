@@ -1,0 +1,68 @@
+{{define "componente_paginacion"}}
+<!-- Componente Reutilizable de Paginación Numérica HTMX -->
+<div class="flex-row-between flex-items-center mt-md flex-wrap gap-sm">
+    <div>
+        <small class="text-muted">
+            Página <strong>{{.PaginaActual}}</strong> de <strong>{{.TotalPaginas}}</strong>
+            {{if gt .TotalRegistros 0}}({{.TotalRegistros}} registros){{end}}
+        </small>
+    </div>
+
+    <div class="pagination-bar mb-0">
+        {{if gt .PaginaAnterior 0}}
+        <button type="button" class="secondary outline btn-page mb-0"
+            hx-get="{{.AccionURL}}"
+            {{if .FormIncludeID}}hx-include="{{.FormIncludeID}}"{{end}}
+            hx-vals='{"pagina": {{.PaginaAnterior}}}'
+            hx-target="{{.TargetID}}">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg>
+        </button>
+        {{else}}
+        <button type="button" class="secondary outline btn-page mb-0" disabled>
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg>
+        </button>
+        {{end}}
+
+        {{$paginaActual := .PaginaActual}}
+        {{$accionURL := .AccionURL}}
+        {{$targetID := .TargetID}}
+        {{$formIncludeID := .FormIncludeID}}
+
+        {{range .RangoPaginas}}
+            {{if eq . $paginaActual}}
+            <button type="button" class="primary btn-page mb-0 font-bold" disabled>{{.}}</button>
+            {{else}}
+            <button type="button" class="secondary outline btn-page mb-0"
+                hx-get="{{$accionURL}}"
+                {{if $formIncludeID}}hx-include="{{$formIncludeID}}"{{end}}
+                hx-vals='{"pagina": {{.}}}'
+                hx-target="{{$targetID}}">
+                {{.}}
+            </button>
+            {{end}}
+        {{end}}
+
+        {{if gt .PaginaSiguiente 0}}
+        <button type="button" class="secondary outline btn-page mb-0"
+            hx-get="{{.AccionURL}}"
+            {{if .FormIncludeID}}hx-include="{{.FormIncludeID}}"{{end}}
+            hx-vals='{"pagina": {{.PaginaSiguiente}}}'
+            hx-target="{{.TargetID}}">
+            <svg class="icono-menu">
+                <use href="#icono-siguiente-cuadrado"></use>
+            </svg>
+        </button>
+        {{else}}
+        <button type="button" class="secondary outline btn-page mb-0" disabled>
+            <svg class="icono-menu">
+                <use href="#icono-siguiente-cuadrado"></use>
+            </svg>
+        </button>
+        {{end}}
+    </div>
+</div>
+{{end}}

@@ -47,27 +47,28 @@ func (h *MetaHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	totalPaginas := (totalRegistros + limite - 1) / limite
-
 	if totalPaginas == 0 {
 		totalPaginas = 1
 	}
 
-	// Construimos los datos struc y objetos al vuelo
+	paginacion := models.CalcularPaginacion(
+		pagina,
+		totalPaginas,
+		totalRegistros,
+		"/tenant/metas/lista",
+		"#lista-metas",
+		"#form-filtros-metas",
+	)
+
 	datosVista := struct {
-		Metas           []models.MetaPresupuestal
-		TotalPaginas    int
-		PaginaActual    int
-		PaginaAnterior  int
-		PaginaSiguiente int
+		Metas      []models.MetaPresupuestal
+		Paginacion models.PaginacionDTO
 	}{
-		Metas:           metas,
-		TotalPaginas:    totalPaginas,
-		PaginaActual:    pagina,
-		PaginaAnterior:  pagina - 1,
-		PaginaSiguiente: pagina + 1,
+		Metas:      metas,
+		Paginacion: paginacion,
 	}
 
-	tmpl, _ := template.ParseFiles("ui/templates/tenant/metas_ui.html")
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/metas_ui.html", "ui/templates/components/paginacion.html")
 	tmpl.ExecuteTemplate(w, "tabla_metas", datosVista)
 }
 

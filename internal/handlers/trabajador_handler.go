@@ -68,21 +68,24 @@ func (h *TrabajadorHandler) Listar(w http.ResponseWriter, r *http.Request) {
 		totalPaginas = 1
 	}
 
+	paginacion := models.CalcularPaginacion(
+		pagina,
+		totalPaginas,
+		totalRegistros,
+		"/tenant/trabajadores/lista",
+		"#lista-trabajadores",
+		"#input-buscar-trabajador",
+	)
+
 	datos := struct {
-		Trabajadores    []models.Trabajador
-		TotalPaginas    int
-		PaginaActual    int
-		PaginaAnterior  int
-		PaginaSiguiente int
+		Trabajadores []models.Trabajador
+		Paginacion   models.PaginacionDTO
 	}{
-		Trabajadores:    trabajadores,
-		TotalPaginas:    totalPaginas,
-		PaginaActual:    pagina,
-		PaginaAnterior:  pagina - 1,
-		PaginaSiguiente: pagina + 1,
+		Trabajadores: trabajadores,
+		Paginacion:   paginacion,
 	}
 
-	tmpl, _ := template.ParseFiles("ui/templates/tenant/trabajadores_ui.html")
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/trabajadores_ui.html", "ui/templates/components/paginacion.html")
 	tmpl.ExecuteTemplate(w, "tabla_trabajadores", datos)
 }
 

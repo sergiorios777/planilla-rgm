@@ -1,0 +1,34 @@
+<!-- Modal de Confirmación Global (Reutilizable para HTMX y Formularios) -->
+<dialog id="modal-confirmacion-global">
+    <article class="modal-card-md">
+        <header class="flex-row-between flex-items-center">
+            <h4 class="mb-0 flex-items-center flex-gap-xs" id="confirm-modal-title">
+                <svg class="icono-menu text-warning">
+                    <use href="#icono-warning"></use>
+                </svg>
+                <span>Confirmar Acción</span>
+            </h4>
+            <span id="confirm-modal-badge-container">
+                <mark class="badge badge-warning" id="confirm-modal-badge">Advertencia</mark>
+            </span>
+        </header>
+        <div class="py-sm">
+            <p id="confirm-modal-message" class="mb-0">
+                ¿Estás seguro de realizar esta acción?
+            </p>
+        </div>
+        <footer>
+            <div class="flex-row-end flex-gap-sm">
+                <button type="button" class="secondary outline btn-compact mb-0" id="confirm-modal-btn-cancelar">
+                    Cancelar
+                </button>
+                <button type="button" class="primary btn-compact mb-0 flex-inline flex-items-center flex-gap-xs" id="confirm-modal-btn-aceptar">
+                    <svg class="icono-menu">
+                        <use href="#icono-check"></use>
+                    </svg>
+                    <span id="confirm-modal-btn-texto">Sí, Confirmar</span>
+                </button>
+            </div>
+        </footer>
+    </article>
+</dialog>

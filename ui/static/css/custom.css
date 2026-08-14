@@ -719,6 +719,30 @@ aside nav ul li small {
     border-top: 1px solid var(--pico-muted-border-color, #cbd5e1);
 }
 
+.sidebar-tenant-footer button,
+button.btn-logout,
+button.btn-compact.btn-logout {
+    width: 100%;
+    margin-bottom: 0;
+    --pico-color: #dc2626;
+    --pico-border-color: #ef4444;
+    color: #dc2626;
+    border-color: #ef4444;
+    background-color: transparent;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.sidebar-tenant-footer button:hover,
+button.btn-logout:hover,
+button.btn-compact.btn-logout:hover {
+    --pico-color: #991b1b;
+    --pico-border-color: #dc2626;
+    --pico-background-color: #fef2f2;
+    background-color: #fef2f2;
+    border-color: #dc2626;
+    color: #991b1b;
+}
+
 @media (max-width: 768px) {
     .d-none-mobile {
         display: none;
@@ -1120,6 +1144,27 @@ form input[type="submit"].btn-compact {
     padding: 2px 8px;
     font-size: 0.75rem;
     margin-bottom: 0;
+}
+
+.pagination-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.pagination-bar button,
+button.btn-page {
+    padding: 0.2rem 0.45rem;
+    font-size: 0.8rem;
+    min-width: 2rem;
+    height: auto;
+    line-height: 1.2;
+    margin-bottom: 0;
+    width: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 button.btn-icon,

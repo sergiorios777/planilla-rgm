@@ -6,21 +6,26 @@
             </svg>
             Cuadro de Puestos (Plazas)
         </h3>
-        <div class="flex-row-start flex-gap-sm">
-            <button class="primary btn-compact"
+        <div class="flex-row-start flex-gap-sm flex-wrap">
+            <button class="primary btn-compact flex-inline flex-items-center flex-gap-xs"
                 onclick="document.getElementById('modal-nuevo-puesto').showModal()">
-                ➕ Registrar Nueva Plaza
+                <svg class="icono-menu">
+                    <use href="#icono-nuevo-1"></use>
+                </svg> Registrar Nueva Plaza
             </button>
-            <button class="contrast outline btn-compact"
+            <button class="contrast outline btn-compact flex-inline flex-items-center flex-gap-xs"
                 onclick="document.getElementById('modal-importar-puesto').showModal()">
                 <svg class="icono-menu">
                     <use href="#icono-importar"></use>
                 </svg> Importación Masiva (Excel)
             </button>
-            <button class="outline btn-compact border-danger text-danger" 
-                hx-post="/tenant/puestos-conceptos/restaurar-todos" 
-                hx-confirm="🚨 ¡ATENCIÓN! Esta acción restablecerá los costos de fábrica para TODOS los puestos de la entidad, eliminando cualquier modificación manual de conceptos. ¿Desea continuar?">
-                🔄 Restaurar Todos los Puestos
+            <button class="outline btn-compact border-danger text-danger flex-inline flex-items-center flex-gap-xs"
+                hx-post="/tenant/puestos-conceptos/restaurar-todos" data-confirm-title="Restaurar Todos los Puestos"
+                data-confirm-message="Esta acción restablecerá los costos de fábrica para TODOS los puestos de la entidad, eliminando cualquier modificación manual de conceptos. ¿Desea continuar?"
+                data-confirm-badge="ACCIÓN DELICADA" data-confirm-btn="Sí, Restaurar Todos">
+                <svg class="icono-menu">
+                    <use href="#icono-restart-alt"></use>
+                </svg> Restaurar Todos los Puestos
             </button>
         </div>
     </header>
@@ -90,14 +95,16 @@
             </div>
 
         </form>
-        <div id="lista-puestos" hx-get="/tenant/puestos/lista" hx-trigger="load, refrescarPuestos from:body" hx-include="#form-filtros-puestos">
+        <div id="lista-puestos" hx-get="/tenant/puestos/lista" hx-trigger="load, refrescarPuestos from:body"
+            hx-include="#form-filtros-puestos">
             <p aria-busy="true">Cargando plazas...</p>
         </div>
     </div>
 </article>
 
 {{define "formulario_crear"}}
-<form hx-post="/tenant/puestos/crear" hx-swap="none" hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-nuevo-puesto').close(); this.reset(); }">
+<form hx-post="/tenant/puestos/crear" hx-swap="none"
+    hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-nuevo-puesto').close(); this.reset(); }">
     <label>Nombre del Puesto / Cargo
         <input type="text" name="nombre" placeholder="Ej. Especialista en Logística II" required>
     </label>
@@ -127,10 +134,10 @@
             <select id="unidad_organica_id" name="unidad_organica_id" class="select-con-buscador">
                 <option value="">-- Sin asignar --</option>
                 {{range .Unidades}}
-                    <option value="{{.ID}}">[{{.Tipo}}] {{.Nombre}}</option>
+                <option value="{{.ID}}">[{{.Tipo}}] {{.Nombre}}</option>
                 {{end}}
             </select>
-        </label> 
+        </label>
 
         <label for="codigo_airhsp">Código AIRHSP (MEF):
             <input type="text" id="codigo_airhsp" name="codigo_airhsp" placeholder="Ej: 001245">
@@ -161,16 +168,32 @@
         </label>
     </div>
 
-    <button type="submit">Generar Plaza</button>
+    <footer>
+        <div class="flex-row-end flex-gap-sm">
+            <button type="button" class="secondary outline btn-compact mb-0"
+                onclick="document.getElementById('modal-nuevo-puesto').close()">Cancelar</button>
+            <button type="submit" class="primary btn-compact mb-0 flex-inline flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-guardar"></use>
+                </svg> Generar Plaza
+            </button>
+        </div>
+    </footer>
 </form>
 {{end}}
 
 {{define "formulario_editar"}}
 <header>
-    <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-editar-puesto').close()"></a>
-    <h4 class="mb-0">✏️ Editando Plaza: {{.Puesto.Nombre}}</h4>
+    <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-editar-puesto').close()"></button>
+    <h4 class="mb-0 flex-items-center flex-gap-xs">
+        <svg class="icono-menu text-primary">
+            <use href="#icono-lapiz-cuadrado"></use>
+        </svg>
+        <span>Editando Plaza: {{.Puesto.Nombre}}</span>
+    </h4>
 </header>
-<form hx-put="/tenant/puestos/actualizar" hx-swap="none" hx-on::after-request="if(event.detail.successful) document.getElementById('modal-editar-puesto').close()">
+<form hx-put="/tenant/puestos/actualizar" hx-swap="none"
+    hx-on::after-request="if(event.detail.successful) document.getElementById('modal-editar-puesto').close()">
     <input type="hidden" name="id" value="{{.Puesto.ID}}">
 
     <label>Nombre del Puesto / Cargo
@@ -191,7 +214,8 @@
             <select name="fuente_rubro_id" required>
                 {{$pFuente := .Puesto.FuenteRubroID}}
                 {{range .Fuentes}}
-                <option value="{{.ID}}" {{if eq .ID $pFuente}}selected{{end}}>{{.FuenteFinanciamiento}} | {{.Rubro}}</option>
+                <option value="{{.ID}}" {{if eq .ID $pFuente}}selected{{end}}>{{.FuenteFinanciamiento}} | {{.Rubro}}
+                </option>
                 {{end}}
             </select>
         </label>
@@ -201,15 +225,16 @@
         <label for="unidad_organica_id">Unidad Orgánica (Oficina):
             <select id="unidad_organica_id" name="unidad_organica_id" class="select-con-buscador">
                 <option value="0" {{if eq $.CurrentUnidadID 0}}selected{{end}}>— Sin asignar —</option>
-                
+
                 {{range $.Unidades}}
-                    <option value="{{.ID}}" {{if eq .ID $.CurrentUnidadID}}selected{{end}}>[{{.Tipo}}] {{.Nombre}}</option>
+                <option value="{{.ID}}" {{if eq .ID $.CurrentUnidadID}}selected{{end}}>[{{.Tipo}}] {{.Nombre}}</option>
                 {{end}}
             </select>
-        </label> 
+        </label>
 
         <label for="codigo_airhsp_edit">Código AIRHSP (MEF):
-            <input type="text" id="codigo_airhsp_edit" name="codigo_airhsp" value="{{if .Puesto.CodigoAirhsp}}{{.Puesto.CodigoAirhsp}}{{end}}" placeholder="Ej: 001245">
+            <input type="text" id="codigo_airhsp_edit" name="codigo_airhsp"
+                value="{{if .Puesto.CodigoAirhsp}}{{.Puesto.CodigoAirhsp}}{{end}}" placeholder="Ej: 001245">
         </label>
     </div>
 
@@ -224,7 +249,8 @@
         </label>
 
         <label>Sueldo Presupuestado (S/)
-            <input type="number" step="0.01" name="sueldo_presupuestado" value="{{.Puesto.SueldoPresupuestado}}" required>
+            <input type="number" step="0.01" name="sueldo_presupuestado" value="{{.Puesto.SueldoPresupuestado}}"
+                required>
         </label>
     </div>
 
@@ -240,118 +266,123 @@
         </label>
     </div>
 
-    <div class="flex-row-end">
-        <button type="button" class="secondary outline" onclick="document.getElementById('modal-editar-puesto').close()">Cancelar</button>
-        <button type="submit" class="primary">Guardar Cambios</button>
-    </div>
+    <footer>
+        <div class="flex-row-end flex-gap-sm">
+            <button type="button" class="secondary outline btn-compact mb-0"
+                onclick="document.getElementById('modal-editar-puesto').close()">Cancelar</button>
+            <button type="submit" class="primary btn-compact mb-0 flex-inline flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-guardar"></use>
+                </svg> Guardar Cambios
+            </button>
+        </div>
+    </footer>
 </form>
 {{end}}
 
 {{define "tabla_puestos"}}
-<table class="striped">
-    <thead>
-        <tr>
-            <th>Puesto y Presupuesto</th>
-            <th>Código AIRHSP</th>
-            <th>Unidad Orgánica</th>
-            <th>Estructura de Gasto</th>
-            <th>Estado</th>
-            <th>Configuración</th>
-        </tr>
-    </thead>
-    <tbody>
-        {{range .Puestos}}
-        <tr>
-            <td>
-                <strong>{{.Nombre}}</strong><br>
-                <small>{{.RegimenDesc}} | S/ {{.SueldoPresupuestado}}</small>
-            </td>
-            <td>
-                {{if .CodigoAirhsp}}
-                <code>{{.CodigoAirhsp}}</code>
-                {{else}}
-                <span class="text-muted font-sm">— Sin AIRHSP —</span>
-                {{end}}
-            </td>
-            <td>
-                <small>{{.UnidadOrganicaNombre}}</small>
-            </td>
-            <td>
-                <small>Meta: <strong>{{.MetaCodigo}}</strong></small><br>
-                <small>Rubro: {{.FuenteRubroDesc}}</small>
-            </td>
-            <td>
-                {{if eq .Estado "VACANTE"}}
-                <mark class="badge badge-warning">Libre</mark>
-                {{else}}
-                <mark class="badge badge-info">Ocupada</mark>
-                {{end}}
+<div class="overflow-x-auto">
+    <table class="striped condensed w-full">
+        <thead>
+            <tr>
+                <th>Puesto y Presupuesto</th>
+                <th>Código AIRHSP</th>
+                <th>Unidad Orgánica</th>
+                <th>Estructura de Gasto</th>
+                <th>Estado</th>
+                <th class="text-right">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Puestos}}
+            <tr>
+                <td>
+                    <strong>{{.Nombre}}</strong><br>
+                    <small class="text-muted">{{.RegimenDesc}} | </small><small class="stat-mono font-bold">S/
+                        {{.SueldoPresupuestado}}</small>
+                </td>
+                <td>
+                    {{if .CodigoAirhsp}}
+                    <span class="stat-mono font-bold">{{.CodigoAirhsp}}</span>
+                    {{else}}
+                    <span class="text-muted font-xs">— Sin AIRHSP —</span>
+                    {{end}}
+                </td>
+                <td>
+                    <small>{{.UnidadOrganicaNombre}}</small>
+                </td>
+                <td>
+                    <small>Meta: <strong class="stat-mono">{{.MetaCodigo}}</strong></small><br>
+                    <small>Rubro: {{.FuenteRubroDesc}}</small>
+                </td>
+                <td>
+                    {{if eq .Estado "VACANTE"}}
+                    <mark class="badge badge-warning font-xs">Libre</mark>
+                    {{else}}
+                    <mark class="badge badge-info font-xs">Ocupada</mark>
+                    {{end}}
 
-                {{if .RequiereRevision}}
-                <div class="mt-sm">
-                    <span class="badge badge-warning">
-                        ⚠️ Faltan Montos
-                    </span>
-                </div>
-                {{end}}
-            </td>
-            <td>
-                <div class="flex-gap-sm">
-                    <button class="outline secondary btn-sm"
-                        hx-get="/tenant/puestos/editar-ui?id={{.ID}}"
-                        hx-target="#contenido-modal-editar-puesto">
-                        Editar
-                    </button>
+                    {{if .RequiereRevision}}
+                    <div class="mt-xs">
+                        <mark class="badge badge-danger font-xs">
+                            ⚠️ Faltan Montos
+                        </mark>
+                    </div>
+                    {{end}}
+                </td>
+                <td>
+                    <div class="flex-row-end flex-gap-xs">
+                        <button class="btn-icon" data-tooltip="Editar plaza" data-placement="top"
+                            aria-label="Editar plaza" hx-get="/tenant/puestos/editar-ui?id={{.ID}}"
+                            hx-target="#contenido-modal-editar-puesto">
+                            <svg class="icono-menu">
+                                <use href="#icono-lapiz-cuadrado"></use>
+                            </svg>
+                        </button>
 
-                    <button class="outline primary btn-sm"
-                        hx-get="/tenant/puestos-conceptos/ui?puesto_id={{.ID}}" hx-target="#contenido-tenant">
-                        ⚙️ Costos
-                    </button>
+                        <button class="btn-icon text-primary" data-tooltip="Configurar costos de plaza"
+                            data-placement="top" aria-label="Configurar costos"
+                            hx-get="/tenant/puestos-conceptos/ui?puesto_id={{.ID}}" hx-target="#contenido-tenant">
+                            <svg class="icono-menu">
+                                <use href="#icono-engranaje"></use>
+                            </svg>
+                        </button>
 
-                    <button class="outline btn-sm"
-                        hx-get="/tenant/puestos/asignar-conceptos-ui?id={{.ID}}"
-                        hx-target="#contenido-modal-asignacion">
-                        💰 Estructura
-                    </button>
-                </div>
-            </td>
-        </tr>
-        {{else}}
-        <tr>
-            <td colspan="6" class="text-center">No hay plazas registradas.</td>
-        </tr>
-        {{end}}
-    </tbody>
-</table>
-
-<!-- Controles de paginación-->
-<div class="flex-row-between mt-md">
-    <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
-
-    <div role="group">
-        {{if gt .PaginaAnterior 0}}
-        <button class="outline" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
-            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#lista-puestos">
-            ⬅️ Anterior
-        </button>
-        {{end}}
-
-        {{if lt .PaginaActual .TotalPaginas}}
-        <button class="outline" hx-get="/tenant/puestos/lista" hx-include="#form-filtros-puestos"
-            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#lista-puestos">
-            Siguiente ➡️
-        </button>
-        {{end}}
-    </div>
+                        <button class="btn-icon text-secondary" data-tooltip="Configurar estructura de pago"
+                            data-placement="top" aria-label="Configurar estructura"
+                            hx-get="/tenant/puestos/asignar-conceptos-ui?id={{.ID}}"
+                            hx-target="#contenido-modal-asignacion">
+                            <svg class="icono-menu">
+                                <use href="#icono-monedas"></use>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="6" class="text-center">No hay plazas registradas.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
 </div>
+
+{{template "componente_paginacion" .Paginacion}}
 {{end}}
 
 <!-- Modal de Creación de Puesto -->
 <dialog id="modal-nuevo-puesto">
     <article class="modal-card-lg">
         <header>
-            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nuevo-puesto').close()"></a>
-            <h4 class="mb-0">➕ Registrar Nueva Plaza</h4>
+            <button aria-label="Close" rel="prev"
+                onclick="document.getElementById('modal-nuevo-puesto').close()"></button>
+            <h4 class="mb-0 flex-items-center flex-gap-xs">
+                <svg class="icono-menu text-primary">
+                    <use href="#icono-nuevo-1"></use>
+                </svg>
+                <span>Registrar Nueva Plaza</span>
+            </h4>
         </header>
         {{template "formulario_crear" .}}
     </article>
@@ -361,8 +392,14 @@
 <dialog id="modal-importar-puesto">
     <article class="modal-card-lg">
         <header>
-            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-puesto').close()"></a>
-            <h4 class="mb-0">📤 Importación Masiva (Excel)</h4>
+            <button aria-label="Close" rel="prev"
+                onclick="document.getElementById('modal-importar-puesto').close()"></button>
+            <h4 class="mb-0 flex-items-center flex-gap-xs">
+                <svg class="icono-menu text-primary">
+                    <use href="#icono-importar"></use>
+                </svg>
+                <span>Importación Masiva (Excel)</span>
+            </h4>
         </header>
         <div id="contenedor-formulario-importar-puestos">
             {{template "formulario_importar_puestos" .}}
@@ -371,12 +408,18 @@
 </dialog>
 
 <!-- Modal de Asignación de Conceptos -->
-<dialog id="modal-asignacion-puesto" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-asignacion') this.showModal()">
+<dialog id="modal-asignacion-puesto"
+    hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-asignacion') this.showModal()">
     <article class="modal-card-xl">
         <header>
-            <a href="#close" aria-label="Close" class="close"
-                onclick="document.getElementById('modal-asignacion-puesto').close()"></a>
-            <h4 class="mb-0">Configurar Estructura de Pago</h4>
+            <button aria-label="Close" rel="prev"
+                onclick="document.getElementById('modal-asignacion-puesto').close()"></button>
+            <h4 class="mb-0 flex-items-center flex-gap-xs">
+                <svg class="icono-menu text-primary">
+                    <use href="#icono-monedas"></use>
+                </svg>
+                <span>Configurar Estructura de Pago</span>
+            </h4>
         </header>
         <div id="contenido-modal-asignacion">
         </div>
@@ -429,7 +472,8 @@
 {{end}}
 
 <!-- Modal de Edición de Puesto -->
-<dialog id="modal-editar-puesto" hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar-puesto') this.showModal()">
+<dialog id="modal-editar-puesto"
+    hx-on::after-settle="if(event.detail.target.id === 'contenido-modal-editar-puesto') this.showModal()">
     <article id="contenido-modal-editar-puesto" class="modal-card-lg">
         <!-- Rellenado dinámicamente por HTMX -->
     </article>
@@ -437,7 +481,7 @@
 
 <script>
     // Preservar estado de filtros y paginación en sessionStorage
-    document.body.addEventListener('htmx:configRequest', function(evt) {
+    document.body.addEventListener('htmx:configRequest', function (evt) {
         if (evt.detail.path === '/tenant/puestos/lista') {
             const type = evt.detail.triggeringEvent ? evt.detail.triggeringEvent.type : 'load';
             const isInteractive = type === 'keyup' || type === 'change' || type === 'click' || type === 'search';
@@ -516,7 +560,8 @@
 
 {{define "formulario_importar_puestos"}}
 <div>
-    <p><small>Sube un archivo <b>.xlsx</b> con las 9 columnas en el orden exacto indicado a continuación. La primera fila (cabecera) se omitirá durante el procesamiento.</small></p>
+    <p><small>Sube un archivo <b>.xlsx</b> con las 9 columnas en el orden exacto indicado a continuación. La primera
+            fila (cabecera) se omitirá durante el procesamiento.</small></p>
 
     <div class="flex-row-between mb-md">
         <strong>Estructura del Archivo Excel:</strong>
@@ -569,8 +614,8 @@
         </table>
     </div>
 
-    <form hx-post="/tenant/puestos/importar" hx-encoding="multipart/form-data"
-        hx-target="#resultado-importacion-puesto" hx-indicator="#cargando-excel-puestos"
+    <form hx-post="/tenant/puestos/importar" hx-encoding="multipart/form-data" hx-target="#resultado-importacion-puesto"
+        hx-indicator="#cargando-excel-puestos"
         hx-on::after-request="if(event.detail.successful) { htmx.trigger('body', 'refrescarPuestos'); }">
 
         <div class="grid mt-md">
@@ -593,7 +638,8 @@
     <div id="resultado-importacion-puesto" class="mt-md"></div>
 
     <div class="flex-row-end mt-lg">
-        <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-importar-puesto').close()">Cerrar</button>
+        <button type="button" class="secondary outline btn-compact"
+            onclick="document.getElementById('modal-importar-puesto').close()">Cerrar</button>
     </div>
 </div>
 {{end}}

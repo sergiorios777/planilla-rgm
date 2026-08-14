@@ -74,22 +74,25 @@ func (h *ContratoHandler) Listar(w http.ResponseWriter, r *http.Request) {
 		totalPaginas = 1
 	}
 
-	// Construimos los datos struc y objetos al vuelo
+	paginacion := models.CalcularPaginacion(
+		pagina,
+		totalPaginas,
+		totalRegistros,
+		"/tenant/contratos/lista",
+		"#lista-contratos",
+		"#form-filtros-contratos",
+	)
+
+	// Construimos los datos struct y objetos al vuelo
 	datosPaginacion := struct {
-		Contratos       []models.Contrato
-		TotalPaginas    int
-		PaginaActual    int
-		PaginaAnterior  int
-		PaginaSiguiente int
+		Contratos  []models.Contrato
+		Paginacion models.PaginacionDTO
 	}{
-		Contratos:       contratos,
-		TotalPaginas:    totalPaginas,
-		PaginaActual:    pagina,
-		PaginaAnterior:  pagina - 1,
-		PaginaSiguiente: pagina + 1,
+		Contratos:  contratos,
+		Paginacion: paginacion,
 	}
 
-	tmpl, _ := template.ParseFiles("ui/templates/tenant/contratos_ui.html")
+	tmpl, _ := template.ParseFiles("ui/templates/tenant/contratos_ui.html", "ui/templates/components/paginacion.html")
 	tmpl.ExecuteTemplate(w, "tabla_contratos", datosPaginacion)
 }
 

@@ -23,9 +23,12 @@
             </svg> Añadir Concepto a la Plaza
         </button>
 
-        <button class="outline btn-compact border-danger text-danger"
+        <button class="outline btn-compact border-danger text-danger flex-inline flex-items-center flex-gap-xs"
             hx-post="/tenant/puestos-conceptos/restaurar?puesto_id={{.PuestoID}}" hx-target="#contenido-tenant"
-            hx-confirm="🚨 ATENCIÓN: Esto borrará los montos actuales y volverá a cargar la plantilla predeterminada. ¿Desea continuar?">
+            data-confirm-title="Restaurar Conceptos Base"
+            data-confirm-message="Esto borrará los montos actuales de la plaza y volverá a cargar la plantilla predeterminada. ¿Desea continuar?"
+            data-confirm-badge="ACCIÓN DELICADA"
+            data-confirm-btn="Sí, Restaurar">
             <svg class="icono-menu">
                 <use href="#icono-refrescar-giro-derecha"></use>
             </svg> Restaurar Conceptos Base
@@ -42,8 +45,11 @@
     <dialog id="modal-nuevo-concepto-plaza">
         <article class="modal-card-md">
             <header>
-                <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-nuevo-concepto-plaza').close()"></a>
-                <h4 class="mb-0">➕ Añadir Concepto a la Plaza</h4>
+                <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-nuevo-concepto-plaza').close()"></button>
+                <h4 class="mb-0 flex-items-center flex-gap-xs">
+                    <svg class="icono-menu text-primary"><use href="#icono-nuevo-1"></use></svg>
+                    <span>Añadir Concepto a la Plaza</span>
+                </h4>
             </header>
             <form hx-post="/tenant/puestos-conceptos/crear" hx-target="#contenido-tenant"
                 hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-nuevo-concepto-plaza').close(); }">
@@ -64,74 +70,88 @@
                     <small>Solo llene esto si el concepto tiene un monto fijo (Ej. Bono exacto de S/ 100).</small>
                 </label>
 
-                <div class="flex-row-end mt-lg">
-                    <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-nuevo-concepto-plaza').close()">Cancelar</button>
-                    <button type="submit" class="btn-compact">Asignar a la Plaza</button>
-                </div>
+                <footer>
+                    <div class="flex-row-end flex-gap-sm">
+                        <button type="button" class="secondary outline btn-compact mb-0" onclick="document.getElementById('modal-nuevo-concepto-plaza').close()">Cancelar</button>
+                        <button type="submit" class="primary btn-compact mb-0 flex-inline flex-items-center flex-gap-xs">
+                            <svg class="icono-menu"><use href="#icono-guardar"></use></svg> Asignar a la Plaza
+                        </button>
+                    </div>
+                </footer>
             </form>
         </article>
     </dialog>
 </article>
 
 {{define "tabla_asignados"}}
-<table class="striped">
-    <thead>
-        <tr>
-            <th>Concepto / Clasificador</th>
-            <th>Monto</th>
-            <th>Acción</th>
-        </tr>
-    </thead>
-    <tbody>
-        {{range .}}
-        <tr>
-            <td>
-                <strong>{{.NombrePersonalizado}}</strong><br>
-                <small>{{.ConceptoTipo}} | SIAF: {{if .Clasificador}}{{.Clasificador}}{{else}}N/A{{end}}</small>
-            </td>
-            <td>
-                {{if .MontoIngresado}}
-                <div class="cursor-pointer"
-                    hx-get="/tenant/puestos-conceptos/editar-monto-ui?id={{.ID}}&puesto_id={{.PuestoID}}"
-                    hx-target="this">
-                    <strong>S/ {{.Monto}}</strong>
-                    <svg class="icono-menu">
-                        <use href="#icono-lapiz-cuadrado"></use>
-                    </svg>
-                </div>
-                {{else}}
-                {{if .RequiereMontoManual}}
-                <mark class="badge badge-danger cursor-pointer"
-                    hx-get="/tenant/puestos-conceptos/editar-monto-ui?id={{.ID}}&puesto_id={{.PuestoID}}"
-                    hx-target="this">
-                    <svg class="icono-menu">
-                        <use href="#icono-alerta"></use>
-                    </svg> Ingresar Monto
-                </mark>
-                {{else}}
-                <span class="text-muted font-italic">
-                    <svg class="icono-menu">
-                        <use href="#icono-engranaje"></use>
-                    </svg>
-                    Cálculo Automático</span>
-                {{end}}
-                {{end}}
-            </td>
-            <td>
-                <button class="outline btn-sm border-danger text-danger"
-                    hx-delete="/tenant/puestos-conceptos/eliminar?id={{.ID}}&puesto_id={{.PuestoID}}"
-                    hx-target="#contenido-tenant" hx-confirm="¿Estás seguro de quitar este concepto de la plaza?">
-                    Quitar
-                </button>
-            </td>
-        </tr>
-        {{else}}
-        <tr>
-            <td colspan="3" class="text-center">Esta plaza aún no tiene conceptos costeados.</td>
-        </tr>
-        {{end}}
-    </tbody>
-</table>
+<div class="overflow-x-auto">
+    <table class="striped condensed w-full">
+        <thead>
+            <tr>
+                <th>Concepto / Clasificador</th>
+                <th>Monto</th>
+                <th class="text-right">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .}}
+            <tr>
+                <td>
+                    <strong>{{.NombrePersonalizado}}</strong><br>
+                    <small class="text-muted">{{.ConceptoTipo}} | SIAF: {{if .Clasificador}}<span class="stat-mono font-bold">{{.Clasificador}}</span>{{else}}N/A{{end}}</small>
+                </td>
+                <td>
+                    {{if .MontoIngresado}}
+                    <div class="cursor-pointer flex-inline flex-items-center flex-gap-xs"
+                        hx-get="/tenant/puestos-conceptos/editar-monto-ui?id={{.ID}}&puesto_id={{.PuestoID}}"
+                        hx-target="this">
+                        <strong class="stat-mono">S/ {{.Monto}}</strong>
+                        <svg class="icono-menu text-primary">
+                            <use href="#icono-lapiz-cuadrado"></use>
+                        </svg>
+                    </div>
+                    {{else}}
+                    {{if .RequiereMontoManual}}
+                    <mark class="badge badge-danger cursor-pointer font-xs flex-inline flex-items-center flex-gap-xs"
+                        hx-get="/tenant/puestos-conceptos/editar-monto-ui?id={{.ID}}&puesto_id={{.PuestoID}}"
+                        hx-target="this">
+                        <svg class="icono-menu">
+                            <use href="#icono-alerta"></use>
+                        </svg> Ingresar Monto
+                    </mark>
+                    {{else}}
+                    <span class="text-muted font-italic font-xs flex-inline flex-items-center flex-gap-xs">
+                        <svg class="icono-menu">
+                            <use href="#icono-engranaje"></use>
+                        </svg>
+                        Cálculo Automático</span>
+                    {{end}}
+                    {{end}}
+                </td>
+                <td>
+                    <div class="flex-row-end">
+                        <button class="btn-icon text-danger" data-tooltip="Quitar concepto de la plaza" data-placement="top" aria-label="Quitar concepto"
+                            hx-delete="/tenant/puestos-conceptos/eliminar?id={{.ID}}&puesto_id={{.PuestoID}}"
+                            hx-target="#contenido-tenant"
+                            data-confirm-title="Quitar Concepto de Plaza"
+                            data-confirm-message="¿Estás seguro de quitar el concepto '{{.NombrePersonalizado}}' de esta plaza?"
+                            data-confirm-badge="QUITAR CONCEPTO"
+                            data-confirm-btn="Sí, Quitar">
+                            <svg class="icono-menu">
+                                <use href="#icono-trash"></use>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="3" class="text-center">Esta plaza aún no tiene conceptos costeados.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
 {{end}}
 
 <script>
