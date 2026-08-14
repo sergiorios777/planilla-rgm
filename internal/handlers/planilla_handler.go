@@ -135,6 +135,8 @@ func (h *PlanillaHandler) VistaDetalle(w http.ResponseWriter, r *http.Request) {
 		esExtraordinaria = planilla.EsExtraordinaria
 	}
 
+	tarjetas := services.GenerarTarjetasDetallePlanilla(detalles)
+
 	datos := map[string]interface{}{
 		"PlanillaID":       planillaID,
 		"Detalles":         detalles,
@@ -142,6 +144,7 @@ func (h *PlanillaHandler) VistaDetalle(w http.ResponseWriter, r *http.Request) {
 		"EsExtraordinaria": esExtraordinaria,
 		"Metas":            metas,
 		"FuentesRubros":    fuentesRubros,
+		"Tarjetas":         tarjetas,
 	}
 
 	tmpl, _ := template.ParseFiles("ui/templates/tenant/planilla_detalle_ui.html")

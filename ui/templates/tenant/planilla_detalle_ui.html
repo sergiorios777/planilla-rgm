@@ -78,6 +78,24 @@
         </a>
     </div>
 
+    <!-- Resumen Financiero de la Planilla (KPI Bento Grid) -->
+    {{if .Tarjetas}}
+    <div class="grid grid-auto-fit-200 gap-md mb-lg">
+        {{range .Tarjetas}}
+        <div class="card-section m-0 border-box flex-column justify-between">
+            <div class="flex-row-between mb-xs">
+                <small class="text-uppercase text-muted">{{.Titulo}}</small>
+                <span class="badge {{.BadgeClase}}">{{.BadgeTexto}}</span>
+            </div>
+            <h3 class="stat-mono mb-0 {{if eq .BadgeClase "badge-info"}}text-info{{else if eq .BadgeClase "badge-success"}}text-success{{else if eq .BadgeClase "badge-danger"}}text-danger{{else if eq .BadgeClase "badge-purple"}}text-purple{{else}}text-primary{{end}}">
+                {{.Valor}}
+            </h3>
+            <small class="text-muted">{{.Subtitulo}}</small>
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+
     <!-- Buscador de trabajadores -->
     <div class="mb-md">
         <input type="search" id="filtro-buscar-trabajador"

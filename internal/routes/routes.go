@@ -73,6 +73,10 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	conceptoTenantRepo := repository.NewConceptoTenantRepository(db)
 	h := handlers.AdminHandler{Repo: adminRepo, ConceptoTenantRepo: conceptoTenantRepo}
 
+	resumenRepo := repository.NewResumenRepository(db)
+	resumenService := services.NewResumenService(resumenRepo)
+	resumenHandler := handlers.NewResumenHandler(resumenService, adminRepo, nil)
+
 	// 🔒 Reemplazamos RequireAuth por RequireRole("super_admin")
 	mux.HandleFunc("/admin", middleware.RequireRole("super_admin", func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("ui/templates/layouts/index.html", "ui/templates/layouts/iconos_sprite.html")
@@ -83,6 +87,8 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 
 		tmpl.Execute(w, nil)
 	}))
+
+	mux.HandleFunc("/admin/ui/kpis-parcial", middleware.RequireRole("super_admin", resumenHandler.RefrescarKPIAdminParcial))
 
 	// Ruta: HTMX llamará aquí para obtener la tabla de inquilinos
 	mux.HandleFunc("/admin/ui/inquilinos", middleware.RequireRole("super_admin", h.VistaUI))
@@ -200,64 +206,18 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 
 // --- SECCIÓN TENANT (MUNICIPALIDADES) ---
 func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
-	// Ruta al esqueleto de tenant
-	mux.HandleFunc("/tenant", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
-		// 1. Obtener IDs de la sesión
-		var uID, tID int
-		if val, ok := r.Context().Value(middleware.UsuarioIDKey).(float64); ok {
-			uID = int(val)
-		}
-		if val, ok := r.Context().Value("tenant_id").(float64); ok {
-			tID = int(val)
-		}
+	// Repositorio y Servicio de Resumen / KPIs
+	resumenRepo := repository.NewResumenRepository(db)
+	resumenService := services.NewResumenService(resumenRepo)
+	tenantRepo := repository.NewTenantRepository(db)
+	usuarioRepo := repository.NewUsuarioRepository(db)
+	resumenHandler := handlers.NewResumenHandler(resumenService, tenantRepo, usuarioRepo)
 
-		// 2. Cargar datos de la BD
-		usuarioRepo := repository.NewUsuarioRepository(db)
-		tenantRepo := repository.NewTenantRepository(db)
-
-		var tenantNombre string
-		if tID > 0 {
-			t, err := tenantRepo.ObtenerPorID(tID)
-			if err == nil && t != nil {
-				tenantNombre = t.Nombre
-			}
-		}
-
-		var usuarioNombre, usuarioRol string
-		if uID > 0 {
-			u, err := usuarioRepo.ObtenerPorID(uID)
-			if err == nil && u != nil {
-				usuarioNombre = u.Nombre
-				// Traducir rol de forma amigable
-				switch u.Rol {
-				case "tenant_admin":
-					usuarioRol = "Administrador"
-				case "tenant_operator":
-					usuarioRol = "Operador"
-				case "super_admin":
-					usuarioRol = "Súper Admin"
-				default:
-					usuarioRol = u.Rol
-				}
-			}
-		}
-
-		tmpl, err := template.ParseFiles("ui/templates/layouts/tenant_index.html", "ui/templates/layouts/iconos_sprite.html")
-		if err != nil {
-			http.Error(w, "Error cargando la vista principal del inquilino", http.StatusInternalServerError)
-			return
-		}
-
-		data := map[string]interface{}{
-			"TenantNombre":  tenantNombre,
-			"UsuarioNombre": usuarioNombre,
-			"UsuarioRol":    usuarioRol,
-		}
-		tmpl.Execute(w, data)
-	}))
+	// Ruta principal al esqueleto de tenant cargado con KPIs
+	mux.HandleFunc("/tenant", middleware.RequireAuth(resumenHandler.IndexTenant))
+	mux.HandleFunc("/tenant/ui/kpis-parcial", middleware.RequireAuth(resumenHandler.RefrescarKPITenantParcial))
 
 	// Rutas de Inquilino
-	tenantRepo := repository.NewTenantRepository(db)
 	tenantHandler := handlers.TenantHandler{Repo: tenantRepo}
 	mux.HandleFunc("/tenant/ui/perfil", middleware.RequireAuth(tenantHandler.PerfilUI))
 	mux.HandleFunc("/tenant/perfil/actualizar", middleware.RequireAuth(tenantHandler.ActualizarPerfil))

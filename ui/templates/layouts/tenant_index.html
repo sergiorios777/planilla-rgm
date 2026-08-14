@@ -189,46 +189,59 @@
                     </div>
                 </header>
 
-                <!-- Tarjetas KPI (Bento Grid) -->
-                <div class="grid grid-auto-fit-200 gap-md mb-lg">
-                    <div class="card-section m-0 border-box flex-column justify-between">
-                        <div class="flex-row-between mb-xs">
-                            <small class="text-uppercase text-muted">Trabajadores Activos</small>
-                            <span class="badge badge-info">Legajo</span>
-                        </div>
-                        <h3 class="stat-mono mb-0 text-info">{{if
-                            .TotalTrabajadores}}{{.TotalTrabajadores}}{{else}}--{{end}}</h3>
-                        <small class="text-muted">Personal registrado en entidad</small>
-                    </div>
+                <!-- Tarjetas KPI (Bento Grid con auto-refresh HTMX) -->
+                <div id="kpi-bento-grid-contenedor" hx-get="/tenant/ui/kpis-parcial" hx-trigger="every 60s, kpisActualizados from:body" hx-swap="innerHTML">
+                    <div class="grid grid-auto-fit-200 gap-md mb-lg">
+                        {{if .Tarjetas}}
+                            {{range .Tarjetas}}
+                            <div class="card-section m-0 border-box flex-column justify-between">
+                                <div class="flex-row-between mb-xs">
+                                    <small class="text-uppercase text-muted">{{.Titulo}}</small>
+                                    <span class="badge {{.BadgeClase}}">{{.BadgeTexto}}</span>
+                                </div>
+                                <h3 class="stat-mono mb-0 {{if eq .BadgeClase "badge-info"}}text-info{{else if eq .BadgeClase "badge-success"}}text-success{{else if eq .BadgeClase "badge-warning"}}text-warning{{else if eq .BadgeClase "badge-purple"}}text-purple{{else}}text-primary{{end}}">
+                                    {{.Valor}}
+                                </h3>
+                                <small class="text-muted">{{.Subtitulo}}</small>
+                            </div>
+                            {{end}}
+                        {{else}}
+                            <div class="card-section m-0 border-box flex-column justify-between">
+                                <div class="flex-row-between mb-xs">
+                                    <small class="text-uppercase text-muted">Trabajadores Activos</small>
+                                    <span class="badge badge-info">Legajo</span>
+                                </div>
+                                <h3 class="stat-mono mb-0 text-info">{{if .TotalTrabajadores}}{{.TotalTrabajadores}}{{else}}--{{end}}</h3>
+                                <small class="text-muted">Personal registrado en entidad</small>
+                            </div>
 
-                    <div class="card-section m-0 border-box flex-column justify-between">
-                        <div class="flex-row-between mb-xs">
-                            <small class="text-uppercase text-muted">Planillas Procesadas</small>
-                            <span class="badge badge-success">Año 2026</span>
-                        </div>
-                        <h3 class="stat-mono mb-0 text-success">{{if
-                            .TotalPlanillasAnno}}{{.TotalPlanillasAnno}}{{else}}--{{end}}</h3>
-                        <small class="text-muted">Lotes de cálculo finalizados</small>
-                    </div>
+                            <div class="card-section m-0 border-box flex-column justify-between">
+                                <div class="flex-row-between mb-xs">
+                                    <small class="text-uppercase text-muted">Planillas Procesadas</small>
+                                    <span class="badge badge-success">Año 2026</span>
+                                </div>
+                                <h3 class="stat-mono mb-0 text-success">{{if .TotalPlanillasAnno}}{{.TotalPlanillasAnno}}{{else}}--{{end}}</h3>
+                                <small class="text-muted">Lotes de cálculo finalizados</small>
+                            </div>
 
-                    <div class="card-section m-0 border-box flex-column justify-between">
-                        <div class="flex-row-between mb-xs">
-                            <small class="text-uppercase text-muted">Planilla en Borrador</small>
-                            <span class="badge badge-warning">En Proceso</span>
-                        </div>
-                        <h3 class="stat-mono mb-0 text-warning">{{if
-                            .PlanillasBorrador}}{{.PlanillasBorrador}}{{else}}0{{end}}</h3>
-                        <small class="text-muted">Pendientes de cierre/aprobación</small>
-                    </div>
+                            <div class="card-section m-0 border-box flex-column justify-between">
+                                <div class="flex-row-between mb-xs">
+                                    <small class="text-uppercase text-muted">Planilla en Borrador</small>
+                                    <span class="badge badge-warning">En Proceso</span>
+                                </div>
+                                <h3 class="stat-mono mb-0 text-warning">{{if .PlanillasBorrador}}{{.PlanillasBorrador}}{{else}}0{{end}}</h3>
+                                <small class="text-muted">Pendientes de cierre/aprobación</small>
+                            </div>
 
-                    <div class="card-section m-0 border-box flex-column justify-between">
-                        <div class="flex-row-between mb-xs">
-                            <small class="text-uppercase text-muted">Monto Total Planilla</small>
-                            <span class="badge badge-purple">Bruto Mes</span>
-                        </div>
-                        <h3 class="stat-mono mb-0 text-purple">S/ {{if
-                            .MontoTotalPlanilla}}{{.MontoTotalPlanilla}}{{else}}0.00{{end}}</h3>
-                        <small class="text-muted">Presupuesto mensual estimado</small>
+                            <div class="card-section m-0 border-box flex-column justify-between">
+                                <div class="flex-row-between mb-xs">
+                                    <small class="text-uppercase text-muted">Monto Total Planilla</small>
+                                    <span class="badge badge-purple">Bruto Mes</span>
+                                </div>
+                                <h3 class="stat-mono mb-0 text-purple">S/ {{if .MontoTotalPlanilla}}{{.MontoTotalPlanilla}}{{else}}0.00{{end}}</h3>
+                                <small class="text-muted">Presupuesto mensual estimado</small>
+                            </div>
+                        {{end}}
                     </div>
                 </div>
 

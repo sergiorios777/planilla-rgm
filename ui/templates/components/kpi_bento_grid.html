@@ -1,0 +1,18 @@
+<div class="grid grid-auto-fit-200 gap-md mb-lg">
+    {{range .Tarjetas}}
+    <div class="card-section m-0 border-box flex-column justify-between">
+        <div class="flex-row-between mb-xs">
+            <small class="text-uppercase text-muted">{{.Titulo}}</small>
+            <span class="badge {{.BadgeClase}}">{{.BadgeTexto}}</span>
+        </div>
+        <h3 class="stat-mono mb-0 {{if eq .BadgeClase "badge-info"}}text-info{{else if eq .BadgeClase "badge-success"}}text-success{{else if eq .BadgeClase "badge-warning"}}text-warning{{else if eq .BadgeClase "badge-purple"}}text-purple{{else}}text-primary{{end}}">
+            {{.Valor}}
+        </h3>
+        <small class="text-muted">{{.Subtitulo}}</small>
+    </div>
+    {{else}}
+    <div class="card-section m-0 border-box flex-column justify-between">
+        <small class="text-muted">Sin información de tarjetas resumen disponibles.</small>
+    </div>
+    {{end}}
+</div>
