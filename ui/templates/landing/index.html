@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planilla RGM - SaaS de Planillas para Municipalidades del Perú</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Pico.css v2 Base CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+
+    <!-- Planilla RGM System Styles -->
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%236a42bd%22><path d=%22M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-5.45 9-12V5l-9-4z%22/></svg>">
+    <link rel="stylesheet" href="/static/css/custom.css">
+    <link rel="stylesheet" href="/static/css/landing.css">
+</head>
+
+<body class="landing-theme">
+
+    <!-- 1. TOP NAV BAR -->
+    <nav class="landing-nav">
+        <div class="nav-container">
+            <a href="/" class="landing-brand">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-5.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8Z" />
+                </svg>
+                <span>Planilla RGM</span>
+            </a>
+
+            <ul class="landing-nav-links">
+                <li><a href="#solucion">Solución</a></li>
+                <li><a href="#modulos">Módulos</a></li>
+                <li><a href="#proceso">Proceso</a></li>
+                <li><a href="#confianza">Cumplimiento MEF</a></li>
+            </ul>
+
+            <div class="landing-nav-actions">
+                <a href="/login" class="btn-nav-outline">Acceso Sistema</a>
+                <a href="/solicitar-demo" class="btn-nav-solid">
+                    <span>🛡️</span>
+                    <span>Solicitar Demo</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="landing-main">
+        <!-- 2. HERO SECTION -->
+        <section class="landing-hero">
+            <div class="hero-bg-grid"></div>
+            <div class="hero-ambient-glow"></div>
+            <div class="hero-grid">
+                <!-- Text Content -->
+                <div>
+                    <div class="hero-badge">
+                        <span>✓</span>
+                        <span>100% Adaptado a Servir, MEF y SUNAT Perú</span>
+                    </div>
+
+                    <h1 class="hero-title">
+                        La plataforma SaaS ultrarrápida que simplifica y blindará la gestión de planillas en su
+                        Municipalidad.
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Gestione planillas complejas con precisión quirúrgica. Soporte nativo y automatizado para
+                        regímenes laborales del sector público: <strong>D.L. 276, D.L. 728, y CAS D.L. 1057</strong>.
+                    </p>
+
+                    <div class="hero-actions">
+                        <a href="/solicitar-demo" class="btn-hero-primary">
+                            <span>Solicitar Demostración Institucional</span>
+                            <span>→</span>
+                        </a>
+                        <a href="/login" class="btn-hero-secondary">
+                            <span>Ingresar al Sistema</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Hero Visual Mockup -->
+                <div>
+                    <div class="mockup-card">
+                        <div class="mockup-header">
+                            <div class="mockup-dots">
+                                <div class="mockup-dot"></div>
+                                <div class="mockup-dot"></div>
+                                <div class="mockup-dot"></div>
+                            </div>
+                            <div class="mockup-speed">
+                                <span>⚡</span>
+                                <span>Cálculo completado en 12ms</span>
+                            </div>
+                        </div>
+
+                        <div class="mockup-body">
+                            <div class="mockup-top-info">
+                                <div>
+                                    <h4 style="margin:0; font-size:1rem; font-weight:700;">Planilla Mensual - CAS &
+                                        Nombrados</h4>
+                                    <small style="color:var(--landing-text-variant);">Periodo: Mes en Curso |
+                                        Servidores: 450</small>
+                                </div>
+                                <div style="text-align:right;">
+                                    <small style="color:var(--landing-text-variant); display:block;">Total Bruto
+                                        Lote</small>
+                                    <strong
+                                        style="font-family:'JetBrains Mono',monospace; font-size:1.2rem; color:var(--landing-tertiary);">S/
+                                        1,245,600.00</strong>
+                                </div>
+                            </div>
+
+                            <table class="mockup-table">
+                                <thead>
+                                    <tr>
+                                        <th>SERVIDOR PÚBLICO</th>
+                                        <th>RÉGIMEN</th>
+                                        <th style="text-align:right;">NETO A PAGAR</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Juan Pérez G.</strong></td>
+                                        <td><span class="badge-regimen badge-cas">CAS 1057</span></td>
+                                        <td style="text-align:right; font-family:'JetBrains Mono',monospace;">S/
+                                            3,500.00</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>María López S.</strong></td>
+                                        <td><span class="badge-regimen badge-276">DL 276</span></td>
+                                        <td style="text-align:right; font-family:'JetBrains Mono',monospace;">S/
+                                            2,850.40</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Carlos Ruiz M.</strong></td>
+                                        <td><span class="badge-regimen badge-728">DL 728</span></td>
+                                        <td style="text-align:right; font-family:'JetBrains Mono',monospace;">S/
+                                            4,120.00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="floating-tech-spec">
+                            <span style="font-size:1.2rem;">🚀</span>
+                            <div>
+                                <span
+                                    style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.05em; color:#94a3b8; display:block;">Motor
+                                    de Cálculo</span>
+                                <strong>Golang Concurrent Core</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. PROBLEMA EN MUNICIPALIDADES PERUANAS -->
+        <section class="landing-section bg-alt" id="problema">
+            <div class="section-header">
+                <h2 class="section-title">Los desvelos de la gestión de planillas en los gobiernos locales</h2>
+                <p class="section-subtitle">
+                    Los errores en la liquidación de haberes y aportes ocasionan multas de SUNAT, observaciones de
+                    OCI/Contraloría y huelgas de personal.
+                </p>
+            </div>
+
+            <div class="card-grid-3">
+                <article class="problem-card">
+                    <h3 class="benefit-title">⚠️ Multas SUNAT y Retrasos PLAME</h3>
+                    <p class="benefit-desc">
+                        La inconsistencia en la retención de Quinta Categoría o aportes a las AFPs genera moras e
+                        infracciones graves ante la SUNAT.
+                    </p>
+                </article>
+
+                <article class="problem-card">
+                    <h3 class="benefit-title">⏳ Sistemas Legados Pesados y Lentos</h3>
+                    <p class="benefit-desc">
+                        Software antiguo alojado en un servidor local propenso a caídas, virus, pérdida de base de datos
+                        y lentitud extrema en cierres de mes.
+                    </p>
+                </article>
+
+                <article class="problem-card">
+                    <h3 class="benefit-title">📋 Observaciones de OCI y Contraloría</h3>
+                    <p class="benefit-desc">
+                        Falta de trazabilidad y sustento en conceptos remunerativos, afectando la rendición de cuentas y
+                        la fiscalización presupuestal.
+                    </p>
+                </article>
+            </div>
+        </section>
+
+        <!-- 4. LA SOLUCIÓN SAAS (GO + HTMX) -->
+        <section class="landing-section section-dots-bg" id="solucion">
+            <div class="section-header">
+                <h2 class="section-title">Tecnología de última generación diseñada para el sector público</h2>
+                <p class="section-subtitle">
+                    Planilla RGM combina la potencia de Go en el servidor y la ligereza de HTMX para brindarle una
+                    experiencia instantánea sin complicaciones de TI.
+                </p>
+            </div>
+
+            <div class="card-grid-3">
+                <article class="benefit-card">
+                    <span class="benefit-icon">⚡</span>
+                    <h3 class="benefit-title">Procesamiento en Milisegundos</h3>
+                    <p class="benefit-desc">
+                        Procesa planillas de miles de trabajadores en fracciones de segundo gracias al motor concurrente
+                        desarrollado en Go.
+                    </p>
+                </article>
+
+                <article class="benefit-card">
+                    <span class="benefit-icon">☁️</span>
+                    <h3 class="benefit-title">100% Cloud & Cero Instalación</h3>
+                    <p class="benefit-desc">
+                        Acceda desde cualquier navegador web seguro. Olvídese de instalar servidores locales, parches
+                        manuales o copias en USB.
+                    </p>
+                </article>
+
+                <article class="benefit-card">
+                    <span class="benefit-icon">🏢</span>
+                    <h3 class="benefit-title">Multi-Tenant Aislado</h3>
+                    <p class="benefit-desc">
+                        Arquitectura institucional de alta seguridad con bases de datos segregadas para proteger la
+                        confidencialidad de cada entidad municipal.
+                    </p>
+                </article>
+            </div>
+        </section>
+
+        <!-- 5. MÓDULOS DEL PANEL TENANT -->
+        <section class="landing-section bg-alt" id="modulos">
+            <div class="section-header">
+                <h2 class="section-title">Módulos integrados para una gestión de RRHH 360°</h2>
+                <p class="section-subtitle">
+                    Herramientas especializadas para cubrir todo el ciclo de vida del servidor público y las
+                    obligaciones financieras de la entidad.
+                </p>
+            </div>
+
+            <div class="card-grid-3" style="margin-bottom:1.5rem;">
+                <article class="benefit-card">
+                    <span class="benefit-icon">⚡</span>
+                    <h3 class="benefit-title">Motor de Cálculo de Planillas</h3>
+                    <p class="benefit-desc">
+                        Automatización completa de planillas ordinarias y extraordinarias para D.L. 276, D.L. 728, CAS
+                        D.L. 1057, Practicantes y Dietas de Regidores.
+                    </p>
+                </article>
+
+                <article class="benefit-card">
+                    <span class="benefit-icon">📑</span>
+                    <h3 class="benefit-title">Legajo Digital y Contratos</h3>
+                    <p class="benefit-desc">
+                        Ficha centralizada por trabajador con historial de contratos, adendas, régimen pensionario
+                        (ONP/AFP) y cuentas de abono CCI.
+                    </p>
+                </article>
+
+                <article class="benefit-card">
+                    <span class="benefit-icon">🏖️</span>
+                    <h3 class="benefit-title">CTS y Liquidaciones de Cese</h3>
+                    <p class="benefit-desc">
+                        Cálculo semestral automático de CTS para obreros municipales e indemnizaciones y liquidaciones
+                        por cese con desglose de truncos.
+                    </p>
+                </article>
+            </div>
+
+            <div class="card-grid-2">
+                <article class="benefit-card">
+                    <span class="benefit-icon">🎯</span>
+                    <h3 class="benefit-title">Gestión Presupuestal por Metas (SIAF/MEF)</h3>
+                    <p class="benefit-desc">
+                        Clasificación y distribución del gasto por Metas Presupuestales, Cadenas Funcionales y Fuentes
+                        de Financiamiento (Foncomun, RDR, Canon, RO).
+                    </p>
+                </article>
+
+                <article class="benefit-card">
+                    <span class="benefit-icon">📊</span>
+                    <h3 class="benefit-title">Exportables PLAME, AIRHSP y Bancos</h3>
+                    <p class="benefit-desc">
+                        Generación directa de archivos planos oficializados para SUNAT PLAME, AIRHSP del MEF y archivos
+                        de pago masivo para el Banco de la Nación y BCP.
+                    </p>
+                </article>
+            </div>
+        </section>
+
+        <!-- 6. PROCESO EN 4 PASOS -->
+        <section class="landing-section" id="proceso">
+            <div class="section-header">
+                <h2 class="section-title">Flujo operativo sencillo e intuitivo</h2>
+                <p class="section-subtitle">
+                    Diseñado para que los especialistas de recursos humanos y tesorería trabajen en armonía sin
+                    fricciones.
+                </p>
+            </div>
+
+            <div class="card-grid-4">
+                <article class="step-card">
+                    <div class="step-number">1</div>
+                    <h3 class="benefit-title">Parámetros</h3>
+                    <p class="benefit-desc">Cargue los parámetros del mes, comisiones de AFP, UIT y conceptos
+                        remunerativos.</p>
+                </article>
+
+                <article class="step-card">
+                    <div class="step-number">2</div>
+                    <h3 class="benefit-title">Incidencias</h3>
+                    <p class="benefit-desc">Registre asistencia, tardanzas, faltas y licencias del personal.</p>
+                </article>
+
+                <article class="step-card">
+                    <div class="step-number">3</div>
+                    <h3 class="benefit-title">Cálculo Instantáneo</h3>
+                    <p class="benefit-desc">Ejecute el lote de cálculo en Go y audite los resultados en tiempo real.</p>
+                </article>
+
+                <article class="step-card">
+                    <div class="step-number">4</div>
+                    <h3 class="benefit-title">Cierre y Exportación</h3>
+                    <p class="benefit-desc">Emita boletas digitales, exporte archivos PLAME/SIAF y genere los giros
+                        bancarios.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- 7. BANNER DE CONFIANZA & SEGURIDAD -->
+        <section class="landing-section bg-alt" id="confianza">
+            <div class="trust-banner">
+                <h2 style="font-size:1.8rem; margin-bottom:0.75rem; color:#ffffff;">Garantía de Cumplimiento Normativo
+                    Institucional</h2>
+                <p style="color:#c7d2fe; max-width:700px; margin:0 auto 1.5rem; line-height:1.5;">
+                    Desarrollado bajo las normas vigentes de Servir, Ministerio de Economía y Finanzas (MEF),
+                    Contraloría General de la República y SUNAT.
+                </p>
+
+                <div class="trust-badges-grid">
+                    <div class="trust-badge-item">
+                        <span>🛡️</span>
+                        <span>Encriptación Nivel Bancario AES-256</span>
+                    </div>
+                    <div class="trust-badge-item">
+                        <span>🏛️</span>
+                        <span>Estructuras Planas SIAF / AIRHSP</span>
+                    </div>
+                    <div class="trust-badge-item">
+                        <span>💾</span>
+                        <span>Respaldos Automáticos Diarios</span>
+                    </div>
+                    <div class="trust-badge-item">
+                        <span>👥</span>
+                        <span>Soporte Técnico Especializado</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8. CTA FINAL -->
+        <section class="cta-section" id="contacto">
+            <div class="cta-box">
+                <h2 style="font-size:2rem; margin-bottom:1rem; color:var(--landing-text-main);">
+                    Transforme y modernice la gestión de planillas de su Municipalidad hoy mismo
+                </h2>
+                <p
+                    style="font-size:1.1rem; color:var(--landing-text-variant); margin-bottom:2rem; max-width:700px; margin-left:auto; margin-right:auto;">
+                    Solicite una demostración guiada en vivo para su alcalde, gerente municipal y equipo de recursos
+                    humanos.
+                </p>
+                <div style="display:flex; justify-center; gap:1rem; flex-wrap:wrap; justify-content:center;">
+                    <a href="/solicitar-demo"
+                        class="btn-hero-primary">
+                        <span>Solicitar Demostración en Vivo</span>
+                        <span>✉️</span>
+                    </a>
+                    <a href="/login" class="btn-hero-secondary">
+                        <span>Acceder al Portal Demo</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 9. FOOTER -->
+    <footer class="landing-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <h4 style="display:flex; align-items:center; gap:0.5rem; margin-top:0;">
+                    <span>🛡️</span>
+                    <span>Planilla RGM</span>
+                </h4>
+                <p>
+                    El Escudo de la Gestión Unificada. Plataforma de planillas de alta precisión para gobiernos locales
+                    y municipalidades del Perú.
+                </p>
+                <div
+                    style="display:inline-flex; align-items:center; gap:0.4rem; background:#1e293b; border:1px solid #334155; padding:0.35rem 0.75rem; border-radius:0.25rem; font-size:0.75rem; color:#68dba9; font-weight:700;">
+                    <span>✓</span>
+                    <span>Diseñado para el Sector Público Peruano</span>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h5>Solución</h5>
+                <ul>
+                    <li><a href="#solucion">Arquitectura Go + HTMX</a></li>
+                    <li><a href="#modulos">Regímenes D.L. 276 / 728 / CAS</a></li>
+                    <li><a href="#modulos">Presupuesto por Metas</a></li>
+                    <li><a href="#confianza">Seguridad Multi-Tenant</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h5>Cumplimiento</h5>
+                <ul>
+                    <li><a href="#confianza">SUNAT PLAME</a></li>
+                    <li><a href="#confianza">AIRHSP / MEF</a></li>
+                    <li><a href="#confianza">Normativa SERVIR</a></li>
+                    <li><a href="#confianza">Abonos Banco de la Nación</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h5>Institucional</h5>
+                <ul>
+                    <li><a href="/login">Acceso Sistema</a></li>
+                    <li><a href="/solicitar-demo">Contacto & Demos</a></li>
+                    <li><a href="#">Términos de Servicio</a></li>
+                    <li><a href="#">Privacidad de Datos</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div>
+                © 2026 Planilla RGM - Todos los derechos reservados.
+            </div>
+            <div>
+                Desarrollado para la Modernización de los Gobiernos Locales del Perú.
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+</html>

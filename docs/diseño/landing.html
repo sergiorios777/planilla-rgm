@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Planilla RGM - Gestión de Planillas Municipales</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#e6e8ea",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "on-surface-variant": "#4a4453",
+                        "on-tertiary-container": "#8fe6bb",
+                        "primary-fixed-dim": "#d1bcff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#191c1e",
+                        "background": "#f8fafc", /* Slate 50 as requested */
+                        "on-primary-container": "#decdff",
+                        "surface-tint": "#6d45c0",
+                        "tertiary": "#004f35",
+                        "surface-variant": "#e0e3e5",
+                        "inverse-primary": "#d1bcff",
+                        "primary-container": "#6a42bd",
+                        "surface-bright": "#f7f9fb",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#006948",
+                        "status-warning-bg": "#fef3c7",
+                        "surface-container-low": "#f2f4f6",
+                        "on-secondary-fixed": "#001d31",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#5429a6",
+                        "on-tertiary-fixed": "#002114",
+                        "secondary": "#076396",
+                        "on-primary-fixed": "#24005b",
+                        "primary": "#5226a4",
+                        "on-tertiary-fixed-variant": "#005237",
+                        "outline-variant": "#cbc3d5",
+                        "tertiary-fixed": "#9df4c9",
+                        "on-error-container": "#93000a",
+                        "text-main": "#131b2e",
+                        "secondary-fixed-dim": "#93ccff",
+                        "error-container": "#ffdad6",
+                        "text-variant": "#3f4850",
+                        "surface-border": "#cbd5e1",
+                        "surface": "#ffffff", /* Pure white surfaces */
+                        "on-secondary-container": "#00517d",
+                        "secondary-fixed": "#cce5ff",
+                        "on-error": "#ffffff",
+                        "status-warning-text": "#92400e",
+                        "outline": "#7b7484",
+                        "inverse-surface": "#2d3133",
+                        "status-danger-text": "#991b1b",
+                        "status-danger-bg": "#fee2e2",
+                        "inverse-on-surface": "#eff1f3",
+                        "status-success-bg": "#d1fae5",
+                        "status-special-bg": "#f3e8ff",
+                        "surface-dim": "#d8dadc",
+                        "secondary-container": "#82c5fd",
+                        "on-secondary-fixed-variant": "#004b73",
+                        "primary-fixed": "#eaddff",
+                        "status-special-text": "#6b21a8",
+                        "surface-container-highest": "#e0e3e5",
+                        "status-success-text": "#065f46",
+                        "tertiary-fixed-dim": "#81d8ae"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "base": "4px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "gutter": "16px",
+                        "sidebar-width": "260px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "section": "96px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Inter"],
+                        "body-bold": ["Inter"],
+                        "stat-mono": ["JetBrains Mono"],
+                        "body-base": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["16.1px", { "lineHeight": "22px", "fontWeight": "600" }],
+                        "body-bold": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "stat-mono": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "body-base": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "fontWeight": "700" }], /* Increased for Hero */
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }], /* Increased for Section Headers */
+                        "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.text-main');
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .bg-grid-pattern {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(203, 213, 225, 0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(203, 213, 225, 0.3) 1px, transparent 1px);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen font-body-base text-body-base">
+    <!-- TopNavBar (Shared Component) -->
+    <nav
+        class="bg-surface dark:bg-inverse-surface font-body-base text-body-base docked full-width top-0 sticky z-50 border-b border-surface-border dark:border-outline-variant flat no shadows">
+        <div class="flex justify-between items-center w-full px-lg py-sm max-w-7xl mx-auto">
+            <!-- Brand Logo -->
+            <div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">
+                Planilla RGM
+            </div>
+            <!-- Navigation Links (Desktop) -->
+            <div class="hidden md:flex space-x-lg">
+                <a class="text-primary dark:text-primary-fixed-dim font-bold border-b-2 border-primary py-xs flex items-center transition-colors duration-200"
+                    href="#">
+                    Solución
+                </a>
+                <a class="text-on-surface-variant dark:text-surface-variant hover:text-primary py-xs flex items-center transition-colors duration-200"
+                    href="#">
+                    Beneficios
+                </a>
+                <a class="text-on-surface-variant dark:text-surface-variant hover:text-primary py-xs flex items-center transition-colors duration-200"
+                    href="#">
+                    Cumplimiento MEF
+                </a>
+                <a class="text-on-surface-variant dark:text-surface-variant hover:text-primary py-xs flex items-center transition-colors duration-200"
+                    href="#">
+                    Casos de Éxito
+                </a>
+            </div>
+            <!-- Actions -->
+            <div class="flex items-center space-x-md">
+                <button
+                    class="hidden md:block px-md h-[36px] border border-surface-border text-on-surface rounded-DEFAULT hover:bg-surface-container-low transition-colors text-body-bold">
+                    Acceso Sistema
+                </button>
+                <button
+                    class="px-md h-[36px] bg-primary text-on-primary rounded-DEFAULT hover:bg-primary-container transition-colors flex items-center space-x-sm text-body-bold">
+                    <span class="material-symbols-outlined" data-icon="shield" style="font-size: 18px;">shield</span>
+                    <span>Solicitar Demo</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <main>
+        <!-- 1. HERO SECTION -->
+        <section class="relative pt-xl pb-section overflow-hidden bg-grid-pattern">
+            <!-- Ambient Blur -->
+            <div
+                class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary-fixed-dim/20 blur-[100px] rounded-full pointer-events-none -z-10">
+            </div>
+            <div class="max-w-7xl mx-auto px-lg">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-xl items-center">
+                    <!-- Hero Content -->
+                    <div class="space-y-xl z-10">
+                        <div
+                            class="inline-flex items-center space-x-sm bg-status-success-bg text-status-success-text px-md py-xs rounded-full border border-status-success-text/20">
+                            <span class="material-symbols-outlined text-[16px]"
+                                style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            <span class="font-label-caps text-label-caps">100% ADAPTADO A LA NORMATIVA SERVIR, MEF Y
+                                SUNAT PERÚ</span>
+                        </div>
+                        <h1 class="font-display-lg text-display-lg text-text-main tracking-tight">
+                            La plataforma SaaS ultrarrápida que simplifica y blindará la gestión de planillas en su
+                            Municipalidad.
+                        </h1>
+                        <p class="text-text-variant text-[18px] leading-relaxed max-w-lg">
+                            Gestione planillas complejas con precisión quirúrgica. Soporte nativo y automatizado para
+                            regímenes laborales del sector público: <strong class="text-text-main">DL 276, DL 728, y CAS
+                                DL 1057</strong>.
+                        </p>
+                        <div class="flex flex-col sm:flex-row space-y-md sm:space-y-0 sm:space-x-md pt-sm">
+                            <button
+                                class="h-[44px] px-xl bg-primary text-on-primary rounded-DEFAULT hover:bg-primary-container transition-colors text-body-bold flex items-center justify-center">
+                                Solicitar Demostración Institucional
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Hero Visual (UI Mockup) -->
+                    <div class="relative z-10 lg:ml-lg mt-xl lg:mt-0">
+                        <!-- Glassmorphism Card -->
+                        <div
+                            class="bg-surface/80 backdrop-blur-md border border-surface-border rounded-xl shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1)] overflow-hidden">
+                            <!-- Mockup Header -->
+                            <div
+                                class="bg-surface-container-low border-b border-surface-border px-md py-sm flex justify-between items-center">
+                                <div class="flex space-x-sm">
+                                    <div class="w-3 h-3 rounded-full bg-surface-border"></div>
+                                    <div class="w-3 h-3 rounded-full bg-surface-border"></div>
+                                    <div class="w-3 h-3 rounded-full bg-surface-border"></div>
+                                </div>
+                                <div class="text-[12px] font-mono text-text-variant flex items-center">
+                                    <span
+                                        class="material-symbols-outlined text-[14px] mr-xs text-status-success-text">bolt</span>
+                                    Cálculo completado en 12ms
+                                </div>
+                            </div>
+                            <!-- Mockup Body (Data Table) -->
+                            <div class="p-md">
+                                <div class="mb-md flex justify-between items-end">
+                                    <div>
+                                        <h3 class="font-headline-sm text-headline-sm text-text-main">Planilla Mensual -
+                                            CAS</h3>
+                                        <p class="text-[12px] text-text-variant">Periodo: Octubre 2024 | Trabajadores:
+                                            450</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[12px] text-text-variant mb-xs">Total Planilla Bruta</p>
+                                        <p class="font-stat-mono text-stat-mono text-[20px] text-primary">S/
+                                            1,245,600.00</p>
+                                    </div>
+                                </div>
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-surface-container-low border-b-2 border-surface-border">
+                                            <th class="py-sm px-xs font-label-caps text-label-caps text-text-variant">
+                                                EMPLEADO</th>
+                                            <th class="py-sm px-xs font-label-caps text-label-caps text-text-variant">
+                                                RÉGIMEN</th>
+                                            <th
+                                                class="py-sm px-xs font-label-caps text-label-caps text-text-variant text-right">
+                                                NETO A PAGAR</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-[13px]">
+                                        <tr class="border-b border-surface-border/50 hover:bg-surface-container-low/50">
+                                            <td class="py-sm px-xs text-text-main font-medium">Juan Pérez G.</td>
+                                            <td class="py-sm px-xs"><span
+                                                    class="bg-secondary-container/30 text-on-secondary-container px-2 py-0.5 rounded text-[11px] font-bold">CAS
+                                                    1057</span></td>
+                                            <td
+                                                class="py-sm px-xs text-right font-stat-mono text-stat-mono text-text-main">
+                                                S/ 3,500.00</td>
+                                        </tr>
+                                        <tr
+                                            class="border-b border-surface-border/50 hover:bg-surface-container-low/50 bg-surface-container-lowest">
+                                            <td class="py-sm px-xs text-text-main font-medium">María López S.</td>
+                                            <td class="py-sm px-xs"><span
+                                                    class="bg-tertiary-container/20 text-tertiary px-2 py-0.5 rounded text-[11px] font-bold">DL
+                                                    276</span></td>
+                                            <td
+                                                class="py-sm px-xs text-right font-stat-mono text-stat-mono text-text-main">
+                                                S/ 2,850.40</td>
+                                        </tr>
+                                        <tr class="border-b border-surface-border/50 hover:bg-surface-container-low/50">
+                                            <td class="py-sm px-xs text-text-main font-medium">Carlos Ruiz M.</td>
+                                            <td class="py-sm px-xs"><span
+                                                    class="bg-primary-container/20 text-primary px-2 py-0.5 rounded text-[11px] font-bold">DL
+                                                    728</span></td>
+                                            <td
+                                                class="py-sm px-xs text-right font-stat-mono text-stat-mono text-text-main">
+                                                S/ 4,120.00</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Floating Tech Spec -->
+                        <div
+                            class="absolute -bottom-md -left-md bg-inverse-surface text-inverse-on-surface px-md py-sm rounded-lg shadow-lg border border-outline-variant flex items-center space-x-sm">
+                            <span class="material-symbols-outlined text-tertiary-fixed">memory</span>
+                            <div>
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-outline-variant">Motor de
+                                    Cálculo</p>
+                                <p class="font-stat-mono text-[14px] font-semibold">Golang Concurrent</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="py-section bg-surface">
+            <div class="max-w-7xl mx-auto px-lg">
+                <div class="mb-xl text-center">
+                    <h2 class="font-headline-md text-headline-md text-primary mb-md">Módulos Diseñados para la Gestión
+                        Municipal Eficiente</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-lg mb-lg">
+                    <div class="p-lg bg-surface border border-surface-border rounded-lg space-y-md">
+                        <div class="text-display-lg">⚡</div>
+                        <h3 class="font-body-bold text-body-bold text-text-main">Motor de Cálculo de Planillas (D.L.
+                            276, 728 y CAS 1057)</h3>
+                        <p class="text-body-base text-text-variant">El corazón de Planilla RGM. Procesa miles de
+                            servidores públicos en milisegundos. Calcula planillas ordinarias, gratificaciones,
+                            aguinaldos y dietas de regidores con total precisión en retenciones de ley, Quinta Categoría
+                            y aportes de AFP/ONP.</p>
+                    </div>
+                    <div class="p-lg bg-surface border border-surface-border rounded-lg space-y-md">
+                        <div class="text-display-lg">📑</div>
+                        <h3 class="font-body-bold text-body-bold text-text-main">Legajo Digital y Control de Contratos
+                        </h3>
+                        <p class="text-body-base text-text-variant">Gestione la trayectoria de su personal en una sola
+                            ficha centralizada. Registre contratos, adendas, cuentas bancarias CCI y alertas de
+                            vencimiento para evitar contingencias laborales.</p>
+                    </div>
+                    <div class="p-lg bg-surface border border-surface-border rounded-lg space-y-md">
+                        <div class="text-display-lg">🏖️</div>
+                        <h3 class="font-body-bold text-body-bold text-text-main">CTS y Liquidaciones de Cese
+                            Automatizadas</h3>
+                        <p class="text-body-base text-text-variant">Cálculo semestral instantáneo de CTS para personal
+                            de obreros (D.L. 728) y liquidaciones definitivas por cese con desglose de vacaciones,
+                            gratificaciones y beneficios truncos.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+                    <div class="p-lg bg-surface border border-surface-border rounded-lg space-y-md">
+                        <div class="text-display-lg">🎯</div>
+                        <h3 class="font-body-bold text-body-bold text-text-main">Gestión Presupuestal por Metas y
+                            Clasificadores (SIAF/MEF)</h3>
+                        <p class="text-body-base text-text-variant">Impute cada sol del gasto en personal a su
+                            respectiva Meta Presupuestal, Secuencia Funcional y Fuente de Financiamiento (Foncomun, RDR,
+                            Canon, RO).</p>
+                    </div>
+                    <div class="p-lg bg-surface border border-surface-border rounded-lg space-y-md">
+                        <div class="text-display-lg">📊</div>
+                        <h3 class="font-body-bold text-body-bold text-text-main">Exportación Directa a PLAME, AIRHSP y
+                            Bancos</h3>
+                        <p class="text-body-base text-text-variant">Genere en un clic los archivos planos oficializados
+                            para la SUNAT (PLAME), el MEF (AIRHSP) y la teledispersión de pagos en el Banco de la Nación
+                            o BCP.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Footer (Shared Component) -->
+    <footer
+        class="bg-surface-container-low dark:bg-inverse-surface border-t border-surface-border dark:border-outline-variant full-width flat no shadows">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-xl px-lg py-xl max-w-7xl mx-auto">
+            <!-- Brand & Copyright -->
+            <div class="md:col-span-1 space-y-md">
+                <div class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed-dim">
+                    Planilla RGM
+                </div>
+                <p class="font-body-base text-body-base text-on-surface-variant dark:text-surface-variant">
+                    © 2024 Planilla RGM - Gestión Unificada para Gobiernos Locales.
+                </p>
+                <div
+                    class="inline-flex items-center space-x-xs border border-surface-border px-sm py-xs rounded bg-surface">
+                    <span class="material-symbols-outlined text-[16px] text-tertiary">verified</span>
+                    <span class="text-[11px] font-bold uppercase text-text-variant">Diseñado para el Sector
+                        Público</span>
+                </div>
+            </div>
+            <!-- Links Sections (Simplified for Landing) -->
+            <div class="flex flex-col space-y-sm">
+                <h4 class="font-body-bold text-body-bold text-on-surface dark:text-on-surface mb-xs">Legal</h4>
+                <a class="font-body-base text-body-base text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200"
+                    href="#">Privacidad</a>
+                <a class="font-body-base text-body-base text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200"
+                    href="#">Términos de Servicio</a>
+            </div>
+            <div class="flex flex-col space-y-sm">
+                <h4 class="font-body-bold text-body-bold text-on-surface dark:text-on-surface mb-xs">Institucional</h4>
+                <a class="font-body-base text-body-base text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200"
+                    href="#">Transparencia</a>
+                <a class="font-body-base text-body-base text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200"
+                    href="#">Soporte Técnico</a>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

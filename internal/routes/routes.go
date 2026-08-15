@@ -3,7 +3,6 @@ package routes
 import (
 	"database/sql"
 	"html/template"
-	"log"
 	"net/http"
 	"planilla-rgm/internal/handlers"
 	"planilla-rgm/internal/middleware"
@@ -20,24 +19,25 @@ func ConfigurarRutas(db *sql.DB) *http.ServeMux {
 
 	// Handlers
 	authHandler := handlers.AuthHandler{Repo: usuarioRepo}
+	landingHandler := handlers.NewLandingHandler()
 
 	// 1.5 Archivos Estáticos
 	fs := http.FileServer(http.Dir("ui/static"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	// Ruta principal
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Buscamos el HTML en la nueva ruta relativa
-		tmpl, err := template.ParseFiles("ui/templates/layouts/index.html")
-		if err != nil {
-			// Si hay un error (ej. archivo no encontrado), lo imprimimos en consola
-			// y mandamos un Error 500 al navegador para no tener "Empty Response"
-			log.Printf("Error cargando plantilla: %v", err)
-			http.Error(w, "Error interno: No se encontró la plantilla HTML", http.StatusInternalServerError)
-			return
-		}
+	// Ruta principal (Landing Page Pública)
+	mux.HandleFunc("/", landingHandler.MostrarLanding)
 
-		tmpl.Execute(w, map[string]string{"Title": "Planillas RGM - Panel Admin"})
+	// Ruta de Solicitud de Demo Institucional
+	mux.HandleFunc("/solicitar-demo", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			landingHandler.MostrarSolicitudDemo(w, r)
+		case http.MethodPost:
+			landingHandler.ProcesarSolicitudDemo(w, r)
+		default:
+			http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		}
 	})
 
 	// 2. Rutas Públicas (Sin protección)

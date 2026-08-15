@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Demo - Planilla RGM</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Pico.css v2 Base CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    
+    <!-- Planilla RGM System Styles -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%236a42bd%22><path d=%22M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-5.45 9-12V5l-9-4z%22/></svg>">
+    <link rel="stylesheet" href="/static/css/custom.css">
+    <link rel="stylesheet" href="/static/css/landing.css">
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body class="landing-theme solicitud-body">
+
+    <!-- 1. TOP BAR SIMPLIFICADO -->
+    <header class="solicitud-header">
+        <div class="solicitud-nav-container">
+            <a href="/" class="landing-brand">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-5.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8Z" />
+                </svg>
+                <span>Planilla RGM</span>
+            </a>
+            
+            <a href="/" class="btn-nav-outline">
+                <span>← Volver al Inicio</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- 2. MAIN CONTENT -->
+    <main class="solicitud-main">
+        <div class="solicitud-grid">
+            
+            <!-- Columna Izquierda: Indicadores de Confianza Institucional -->
+            <div class="solicitud-info-col">
+                <div class="solicitud-badge">
+                    <span>🛡️</span>
+                    <span>Modernización de Gobiernos Locales</span>
+                </div>
+
+                <h1 class="solicitud-title">
+                    Optimice la gestión del talento en su entidad pública.
+                </h1>
+                
+                <p class="solicitud-desc">
+                    Descubra cómo <strong>Planilla RGM</strong> moderniza el procesamiento de planillas, asegurando el cumplimiento normativo con precisión milimétrica ante Servir, SUNAT y el MEF.
+                </p>
+
+                <div class="trust-indicators-list">
+                    <!-- Indicador 1 -->
+                    <div class="trust-item">
+                        <div class="trust-icon-box bg-purple">☁️</div>
+                        <div>
+                            <h4>100% Cloud SaaS</h4>
+                            <p>Acceso seguro desde cualquier navegador, sin requerir servidores locales complejos.</p>
+                        </div>
+                    </div>
+
+                    <!-- Indicador 2 -->
+                    <div class="trust-item">
+                        <div class="trust-icon-box bg-blue">🏢</div>
+                        <div>
+                            <h4>Soporte Especializado DL 276 / 728 / CAS</h4>
+                            <p>Reglas de negocio preconfiguradas para los regímenes del sector público peruano.</p>
+                        </div>
+                    </div>
+
+                    <!-- Indicador 3 -->
+                    <div class="trust-item">
+                        <div class="trust-icon-box bg-green">🔄</div>
+                        <div>
+                            <h4>Integración AIRHSP / PLAME / SIAF</h4>
+                            <p>Exportación nativa de archivos planos oficializados para SUNAT, MEF y bancos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Formulario de Solicitud -->
+            <div class="solicitud-form-col">
+                <div class="solicitud-card" id="form-contenedor">
+                    <div class="form-header">
+                        <h2>Solicitar Demostración Institucional</h2>
+                        <p>Complete el formulario y un especialista en gestión pública se pondrá en contacto con su equipo.</p>
+                    </div>
+
+                    <form hx-post="/solicitar-demo" hx-target="#form-contenedor" hx-swap="outerHTML" class="solicitud-form">
+                        
+                        <div class="form-grid-2">
+                            <!-- Nombre Completo -->
+                            <div>
+                                <label for="nombre">Nombre Completo *</label>
+                                <input type="text" id="nombre" name="nombre" placeholder="Ej. Juan Pérez García" required>
+                            </div>
+
+                            <!-- Cargo / Función -->
+                            <div>
+                                <label for="cargo">Cargo / Función *</label>
+                                <input type="text" id="cargo" name="cargo" placeholder="Ej. Gerente de RRHH" required>
+                            </div>
+                        </div>
+
+                        <!-- Municipalidad / Entidad Pública -->
+                        <div>
+                            <label for="entidad">Municipalidad / Entidad Pública *</label>
+                            <input type="text" id="entidad" name="entidad" placeholder="Ej. Municipalidad Distrital de San Isidro" required>
+                        </div>
+
+                        <div class="form-grid-2">
+                            <!-- Correo Electrónico Institucional -->
+                            <div>
+                                <label for="email">Correo Electrónico Institucional *</label>
+                                <input type="email" id="email" name="email" placeholder="nombre@entidad.gob.pe" required>
+                            </div>
+
+                            <!-- Teléfono de Contacto -->
+                            <div>
+                                <label for="telefono">Teléfono de Contacto *</label>
+                                <input type="tel" id="telefono" name="telefono" placeholder="+51 999 999 999" required>
+                            </div>
+                        </div>
+
+                        <!-- Región -->
+                        <div>
+                            <label for="region">Región *</label>
+                            <select id="region" name="region" required>
+                                <option value="" disabled selected>Seleccione una región</option>
+                                <option value="Amazonas">Amazonas</option>
+                                <option value="Áncash">Áncash</option>
+                                <option value="Apurímac">Apurímac</option>
+                                <option value="Arequipa">Arequipa</option>
+                                <option value="Ayacucho">Ayacucho</option>
+                                <option value="Cajamarca">Cajamarca</option>
+                                <option value="Callao">Callao</option>
+                                <option value="Cusco">Cusco</option>
+                                <option value="Huancavelica">Huancavelica</option>
+                                <option value="Huánuco">Huánuco</option>
+                                <option value="Ica">Ica</option>
+                                <option value="Junín">Junín</option>
+                                <option value="La Libertad">La Libertad</option>
+                                <option value="Lambayeque">Lambayeque</option>
+                                <option value="Lima">Lima</option>
+                                <option value="Loreto">Loreto</option>
+                                <option value="Madre de Dios">Madre de Dios</option>
+                                <option value="Moquegua">Moquegua</option>
+                                <option value="Pasco">Pasco</option>
+                                <option value="Piura">Piura</option>
+                                <option value="Puno">Puno</option>
+                                <option value="San Martín">San Martín</option>
+                                <option value="Tacna">Tacna</option>
+                                <option value="Tumbes">Tumbes</option>
+                                <option value="Ucayali">Ucayali</option>
+                            </select>
+                        </div>
+
+                        <!-- Comentarios u Observaciones Adicionales -->
+                        <div>
+                            <label for="mensaje">Detalles o requerimientos específicos (opcional)</label>
+                            <textarea id="mensaje" name="mensaje" rows="2" placeholder="Ej. Requiere integración con marcador biométrico o análisis de planilla CAS."></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-hero-primary w-full">
+                                <span>Agendar Presentación Ejecutiva</span>
+                                <span>→</span>
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 3. FOOTER SIMPLIFICADO -->
+    <footer class="solicitud-footer">
+        <div class="solicitud-footer-container">
+            <div>
+                <strong>Planilla RGM</strong> — Diseñado para el sector público peruano.
+            </div>
+            <div>
+                © 2026 Planilla RGM. Todos los derechos reservados.
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Solicitar Demo - SISPAP Municipal</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "text-main": "#131b2e",
+                        "surface-container-high": "#e6e8ea",
+                        "on-primary-container": "#decdff",
+                        "secondary": "#076396",
+                        "primary-fixed": "#eaddff",
+                        "surface-variant": "#e0e3e5",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-container": "#006948",
+                        "on-secondary-fixed": "#001d31",
+                        "error": "#ba1a1a",
+                        "status-danger-text": "#991b1b",
+                        "surface-container": "#eceef0",
+                        "secondary-fixed-dim": "#93ccff",
+                        "status-special-text": "#6b21a8",
+                        "on-background": "#191c1e",
+                        "on-primary-fixed": "#24005b",
+                        "surface-dim": "#d8dadc",
+                        "surface": "#f7f9fb",
+                        "on-secondary-fixed-variant": "#004b73",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "text-variant": "#3f4850",
+                        "background": "#f7f9fb",
+                        "on-tertiary-container": "#8fe6bb",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary-container": "#82c5fd",
+                        "surface-tint": "#6d45c0",
+                        "on-tertiary-fixed": "#002114",
+                        "surface-container-low": "#f2f4f6",
+                        "outline-variant": "#cbc3d5",
+                        "on-primary-fixed-variant": "#5429a6",
+                        "error-container": "#ffdad6",
+                        "status-warning-text": "#92400e",
+                        "status-danger-bg": "#fee2e2",
+                        "status-success-bg": "#d1fae5",
+                        "on-tertiary-fixed-variant": "#005237",
+                        "tertiary-fixed": "#9df4c9",
+                        "on-surface": "#191c1e",
+                        "primary": "#5226a4",
+                        "primary-container": "#6a42bd",
+                        "status-special-bg": "#f3e8ff",
+                        "outline": "#7b7484",
+                        "secondary-fixed": "#cce5ff",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#d1bcff",
+                        "inverse-on-surface": "#eff1f3",
+                        "status-warning-bg": "#fef3c7",
+                        "surface-bright": "#f7f9fb",
+                        "tertiary-fixed-dim": "#81d8ae",
+                        "on-secondary-container": "#00517d",
+                        "on-secondary": "#ffffff",
+                        "surface-border": "#cbd5e1",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#d1bcff",
+                        "on-surface-variant": "#4a4453",
+                        "status-success-text": "#065f46",
+                        "tertiary": "#004f35",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "base": "4px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "gutter": "16px",
+                        "xs": "4px",
+                        "sidebar-width": "260px",
+                        "lg": "24px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "display-lg": [
+                            "Inter"
+                        ],
+                        "stat-mono": [
+                            "JetBrains Mono"
+                        ],
+                        "headline-sm": [
+                            "Inter"
+                        ],
+                        "headline-md": [
+                            "Inter"
+                        ],
+                        "body-bold": [
+                            "Inter"
+                        ],
+                        "label-caps": [
+                            "Inter"
+                        ],
+                        "body-base": [
+                            "Inter"
+                        ]
+                    },
+                    "fontSize": {
+                        "display-lg": [
+                            "24.5px",
+                            {
+                                "lineHeight": "30px",
+                                "fontWeight": "700"
+                            }
+                        ],
+                        "stat-mono": [
+                            "14px",
+                            {
+                                "lineHeight": "20px",
+                                "fontWeight": "600"
+                            }
+                        ],
+                        "headline-sm": [
+                            "16.1px",
+                            {
+                                "lineHeight": "22px",
+                                "fontWeight": "600"
+                            }
+                        ],
+                        "headline-md": [
+                            "18.9px",
+                            {
+                                "lineHeight": "24px",
+                                "fontWeight": "700"
+                            }
+                        ],
+                        "body-bold": [
+                            "14px",
+                            {
+                                "lineHeight": "20px",
+                                "fontWeight": "600"
+                            }
+                        ],
+                        "label-caps": [
+                            "11px",
+                            {
+                                "lineHeight": "14px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "700"
+                            }
+                        ],
+                        "body-base": [
+                            "14px",
+                            {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                            }
+                        ]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background text-on-background font-body-base antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen flex flex-col">
+    <!-- TopNavBar (Suppressed due to Linear/Transactional intent, but requested in prompt. Providing a minimal version focused on returning to main site) -->
+    <header
+        class="bg-surface dark:bg-inverse-surface border-b border-surface-border dark:border-outline-variant w-full fixed top-0 z-50">
+        <div class="flex justify-between items-center w-full px-lg py-md max-w-7xl mx-auto">
+            <div class="flex items-center gap-sm">
+                <a class="font-display-lg text-display-lg text-primary dark:text-inverse-primary tracking-tight"
+                    href="#">SISPAP Municipal</a>
+            </div>
+            <!-- Navigation links hidden on transactional page to focus on form submission -->
+            <div class="flex items-center gap-sm">
+                <a class="font-body-bold text-body-bold text-text-variant dark:text-surface-variant hover:text-primary transition-colors duration-200"
+                    href="#">Volver al inicio</a>
+            </div>
+        </div>
+    </header>
+    <!-- Main Content -->
+    <main class="flex-grow flex items-center justify-center pt-24 pb-xl px-4 sm:px-lg w-full max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-xl w-full">
+            <!-- Trust Indicators Column -->
+            <div class="lg:col-span-4 flex flex-col justify-center space-y-xl pr-0 lg:pr-lg">
+                <div>
+                    <h1 class="font-display-lg text-display-lg text-text-main mb-sm">Optimice la gestión del talento en
+                        su entidad pública.</h1>
+                    <p class="font-body-base text-body-base text-text-variant">Descubra cómo SISPAP Municipal moderniza
+                        el procesamiento de planillas, asegurando el cumplimiento normativo con precisión milimétrica.
+                    </p>
+                </div>
+                <div class="space-y-md">
+                    <!-- Trust Indicator 1 -->
+                    <div class="flex items-start gap-md">
+                        <div
+                            class="w-10 h-10 rounded-full bg-status-special-bg flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-status-special-text"
+                                data-icon="cloud">cloud</span>
+                        </div>
+                        <div>
+                            <h3 class="font-body-bold text-body-bold text-text-main">100% Cloud SaaS</h3>
+                            <p class="font-body-base text-body-base text-text-variant text-sm mt-1">Acceso seguro desde
+                                cualquier lugar, sin infraestructura local compleja.</p>
+                        </div>
+                    </div>
+                    <!-- Trust Indicator 2 -->
+                    <div class="flex items-start gap-md">
+                        <div
+                            class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-secondary"
+                                data-icon="support_agent">support_agent</span>
+                        </div>
+                        <div>
+                            <h3 class="font-body-bold text-body-bold text-text-main">Soporte Especializado DL
+                                276/728/CAS</h3>
+                            <p class="font-body-base text-body-base text-text-variant text-sm mt-1">Reglas de negocio
+                                preconfiguradas para los regímenes del sector público.</p>
+                        </div>
+                    </div>
+                    <!-- Trust Indicator 3 -->
+                    <div class="flex items-start gap-md">
+                        <div
+                            class="w-10 h-10 rounded-full bg-status-success-bg flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-status-success-text"
+                                data-icon="sync_alt">sync_alt</span>
+                        </div>
+                        <div>
+                            <h3 class="font-body-bold text-body-bold text-text-main">Integración SIAF/PLAME</h3>
+                            <p class="font-body-base text-body-base text-text-variant text-sm mt-1">Exportación nativa
+                                de interfaces para los sistemas transversales del estado.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-xl hidden lg:block">
+                    <img class="w-full h-auto rounded-lg object-cover border border-surface-border opacity-90"
+                        data-alt="A modern, abstract digital illustration showing interconnected nodes and servers representing a secure cloud infrastructure for government data. The style is institutional and authoritative, using deep violet and ocean blue tones against a clean white background, conveying stability and technological advancement."
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0KR6ZHMuKy7Eu0Gq0dII5UgVMB5UdZXKFTKtxVkaQ_-m_F1_vvI3Nol7RmN8V1G3mnvYiTBbDdjkqVqkUmJ2ZIy1J6thhMiacVTI0liKJi67k-pzzbz6JBVE4HFXTDxL_VCBpSU-gY3Z-heG08bwfD9YvyuXYbLOPE1wKT3_3JNMj-6Tkb6xMos_bZBTL8uNxCebjytR2ERiehYflH-YI3egnpABoxfR2tH_5NMbW76ob6zjd8Xis" />
+                </div>
+            </div>
+            <!-- Form Column -->
+            <div class="lg:col-span-8">
+                <div
+                    class="bg-surface-container-lowest border border-surface-border rounded-xl shadow-[0_20px_25px_-5px_rgba(0,0,0,0.05)] p-lg md:p-xl w-full">
+                    <div class="border-b border-surface-border pb-md mb-lg">
+                        <h2 class="font-headline-md text-headline-md text-text-main">Solicitar Demostración
+                            Institucional</h2>
+                        <p class="font-body-base text-body-base text-text-variant mt-sm">Complete el formulario y un
+                            especialista en gestión pública se pondrá en contacto con usted.</p>
+                    </div>
+                    <form action="#" class="space-y-md" method="POST">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+                            <!-- Nombre Completo -->
+                            <div class="space-y-xs">
+                                <label class="block font-body-bold text-body-bold text-text-main" for="nombre">Nombre
+                                    Completo</label>
+                                <input
+                                    class="w-full h-9 px-3 bg-surface-container-lowest border border-surface-border rounded text-text-main font-body-base text-body-base focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors"
+                                    id="nombre" name="nombre" placeholder="Ej. Juan Pérez" required="" type="text" />
+                            </div>
+                            <!-- Cargo / Función -->
+                            <div class="space-y-xs">
+                                <label class="block font-body-bold text-body-bold text-text-main" for="cargo">Cargo /
+                                    Función</label>
+                                <input
+                                    class="w-full h-9 px-3 bg-surface-container-lowest border border-surface-border rounded text-text-main font-body-base text-body-base focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors"
+                                    id="cargo" name="cargo" placeholder="Ej. Gerente de RRHH" required="" type="text" />
+                            </div>
+                            <!-- Municipalidad / Entidad Pública -->
+                            <div class="space-y-xs md:col-span-2">
+                                <label class="block font-body-bold text-body-bold text-text-main"
+                                    for="entidad">Municipalidad / Entidad Pública</label>
+                                <input
+                                    class="w-full h-9 px-3 bg-surface-container-lowest border border-surface-border rounded text-text-main font-body-base text-body-base focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors"
+                                    id="entidad" name="entidad" placeholder="Ej. Municipalidad Distrital de..."
+                                    required="" type="text" />
+                            </div>
+                            <!-- Correo Electrónico Institucional -->
+                            <div class="space-y-xs">
+                                <label class="block font-body-bold text-body-bold text-text-main" for="email">Correo
+                                    Electrónico Institucional</label>
+                                <input
+                                    class="w-full h-9 px-3 bg-surface-container-lowest border border-surface-border rounded text-text-main font-body-base text-body-base focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors"
+                                    id="email" name="email" placeholder="nombre@entidad.gob.pe" required=""
+                                    type="email" />
+                            </div>
+                            <!-- Teléfono de Contacto -->
+                            <div class="space-y-xs">
+                                <label class="block font-body-bold text-body-bold text-text-main"
+                                    for="telefono">Teléfono de Contacto</label>
+                                <input
+                                    class="w-full h-9 px-3 bg-surface-container-lowest border border-surface-border rounded text-text-main font-body-base text-body-base focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors"
+                                    id="telefono" name="telefono" placeholder="+51 999 999 999" required=""
+                                    type="tel" />
+                            </div>
+                            <!-- Región -->
+                            <div class="space-y-xs md:col-span-2">
+                                <label class="block font-body-bold text-body-bold text-text-main"
+                                    for="region">Región</label>
+                                <select
+                                    class="w-full h-9 px-3 bg-surface-container-lowest border border-surface-border rounded text-text-main font-body-base text-body-base focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors"
+                                    id="region" name="region" required="">
+                                    <option disabled="" selected="" value="">Seleccione una región</option>
+                                    <option value="amazonas">Amazonas</option>
+                                    <option value="ancash">Áncash</option>
+                                    <option value="apurimac">Apurímac</option>
+                                    <option value="arequipa">Arequipa</option>
+                                    <option value="ayacucho">Ayacucho</option>
+                                    <option value="cajamarca">Cajamarca</option>
+                                    <option value="callao">Callao</option>
+                                    <option value="cusco">Cusco</option>
+                                    <option value="huancavelica">Huancavelica</option>
+                                    <option value="huanuco">Huánuco</option>
+                                    <option value="ica">Ica</option>
+                                    <option value="junin">Junín</option>
+                                    <option value="la_libertad">La Libertad</option>
+                                    <option value="lambayeque">Lambayeque</option>
+                                    <option value="lima">Lima</option>
+                                    <option value="loreto">Loreto</option>
+                                    <option value="madre_de_dios">Madre de Dios</option>
+                                    <option value="moquegua">Moquegua</option>
+                                    <option value="pasco">Pasco</option>
+                                    <option value="piura">Piura</option>
+                                    <option value="puno">Puno</option>
+                                    <option value="san_martin">San Martín</option>
+                                    <option value="tacna">Tacna</option>
+                                    <option value="tumbes">Tumbes</option>
+                                    <option value="ucayali">Ucayali</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="pt-md mt-lg border-t border-surface-border flex justify-end">
+                            <button
+                                class="bg-primary-container text-on-primary-container font-body-bold text-body-bold h-9 px-xl rounded hover:bg-primary transition-colors flex items-center justify-center gap-2"
+                                type="submit">
+                                Agendar Presentación Ejecutiva
+                                <span class="material-symbols-outlined text-sm"
+                                    data-icon="arrow_forward">arrow_forward</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Footer -->
+    <footer
+        class="bg-surface-container-low dark:bg-inverse-surface border-t border-surface-border dark:border-outline-variant w-full mt-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center w-full px-lg py-xl max-w-7xl mx-auto">
+            <div class="mb-md md:mb-0 text-center md:text-left">
+                <p class="font-headline-sm text-headline-sm text-text-main dark:text-surface-bright mb-1">SISPAP
+                    Municipal</p>
+                <p class="font-body-base text-body-base text-secondary dark:text-secondary-fixed">© 2024 SISPAP
+                    Municipal. Diseñado para el sector público peruano.</p>
+            </div>
+            <nav>
+                <ul class="flex flex-wrap justify-center gap-md">
+                    <li><a class="font-body-base text-body-base text-text-variant dark:text-surface-variant hover:underline hover:text-secondary transition-opacity duration-200"
+                            href="#">Privacidad</a></li>
+                    <li><a class="font-body-base text-body-base text-text-variant dark:text-surface-variant hover:underline hover:text-secondary transition-opacity duration-200"
+                            href="#">Términos</a></li>
+                    <li><a class="font-body-base text-body-base text-text-variant dark:text-surface-variant hover:underline hover:text-secondary transition-opacity duration-200"
+                            href="#">Transparencia</a></li>
+                    <li><a class="font-body-base text-body-base text-text-variant dark:text-surface-variant hover:underline hover:text-secondary transition-opacity duration-200"
+                            href="#">Contacto</a></li>
+                </ul>
+            </nav>
+        </div>
+    </footer>
+</body>
+
+</html>
