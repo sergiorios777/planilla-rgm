@@ -108,19 +108,31 @@ func (h *ConceptoModeloHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		clasificadorID = &cID
 	}
 
+	modalidad := r.FormValue("modalidad_entrega")
+	if modalidad == "" {
+		if r.FormValue("es_ocasional") == "true" {
+			modalidad = models.ModalidadEntregaOcasional
+		} else if r.FormValue("es_extraordinario") == "true" {
+			modalidad = models.ModalidadEntregaExcepcional
+		} else {
+			modalidad = models.ModalidadEntregaPermanente
+		}
+	}
+
 	nuevo := models.ConceptoModelo{
 		ConceptoID:               0,
 		NombrePersonalizado:      r.FormValue("nombre_personalizado"),
 		FrecuenciaMeses:          r.FormValue("frecuencia_meses"),
 		ClasificadorID:           clasificadorID,
-		EsExtraordinario:         r.FormValue("es_extraordinario") == "true",
+		EsExtraordinario:         r.FormValue("es_extraordinario") == "true" || modalidad == models.ModalidadEntregaExcepcional,
 		RequiereMonto:            r.FormValue("requiere_monto") == "true",
 		EsPensionable:            r.FormValue("es_pensionable") == "true",
 		EsRemunerativa:           r.FormValue("es_remunerativa") == "true",
 		EsBaseCts:                r.FormValue("es_base_cts") == "true",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "true",
-		EsOcasional:              r.FormValue("es_ocasional") == "true",
+		EsOcasional:              modalidad == models.ModalidadEntregaOcasional,
 		EsAfectoCargasSociales:   r.FormValue("es_afecto_cargas_sociales") == "true",
+		ModalidadEntrega:         modalidad,
 		RegimenesIDs:             ids,
 	}
 	nuevo.ConceptoID, _ = strconv.Atoi(r.FormValue("concepto_id"))
@@ -188,6 +200,17 @@ func (h *ConceptoModeloHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		clasificadorID = &cID
 	}
 
+	modalidadEdit := r.FormValue("modalidad_entrega")
+	if modalidadEdit == "" {
+		if r.FormValue("es_ocasional") == "true" {
+			modalidadEdit = models.ModalidadEntregaOcasional
+		} else if r.FormValue("es_extraordinario") == "true" {
+			modalidadEdit = models.ModalidadEntregaExcepcional
+		} else {
+			modalidadEdit = models.ModalidadEntregaPermanente
+		}
+	}
+
 	cMaestroID, _ := strconv.Atoi(r.FormValue("concepto_id"))
 	editado := models.ConceptoModelo{
 		ID:                       conceptoIDReal,
@@ -195,14 +218,15 @@ func (h *ConceptoModeloHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		NombrePersonalizado:      r.FormValue("nombre_personalizado"),
 		FrecuenciaMeses:          r.FormValue("frecuencia_meses"),
 		ClasificadorID:           clasificadorID,
-		EsExtraordinario:         r.FormValue("es_extraordinario") == "true",
+		EsExtraordinario:         r.FormValue("es_extraordinario") == "true" || modalidadEdit == models.ModalidadEntregaExcepcional,
 		RequiereMonto:            r.FormValue("requiere_monto") == "true",
 		EsPensionable:            r.FormValue("es_pensionable") == "true",
 		EsRemunerativa:           r.FormValue("es_remunerativa") == "true",
 		EsBaseCts:                r.FormValue("es_base_cts") == "true",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "true",
-		EsOcasional:              r.FormValue("es_ocasional") == "true",
+		EsOcasional:              modalidadEdit == models.ModalidadEntregaOcasional,
 		EsAfectoCargasSociales:   r.FormValue("es_afecto_cargas_sociales") == "true",
+		ModalidadEntrega:         modalidadEdit,
 		RegimenesIDs:             idsRegimen,
 	}
 

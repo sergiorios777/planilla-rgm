@@ -57,6 +57,7 @@ type ConceptoFormulacionEspecial struct {
 	ClasificadorCodigo  string  `json:"clasificador_codigo"`
 	EsOcasional         bool    `json:"es_ocasional"`
 	EsExtraordinario    bool    `json:"es_extraordinario"`
+	ModalidadEntrega    string  `json:"modalidad_entrega"`
 	EsPensionable       bool    `json:"es_pensionable"`
 	EsRemunerativa      bool    `json:"es_remunerativa"`
 	MontoBase           float64 `json:"monto_base"`

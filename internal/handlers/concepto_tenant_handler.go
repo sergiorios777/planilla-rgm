@@ -38,6 +38,7 @@ func (h *ConceptoTenantHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	paginaStr := r.URL.Query().Get("pagina")
 	limiteStr := r.URL.Query().Get("limite")
 	regimenIDStr := r.URL.Query().Get("regimen_id")
+	estado := r.URL.Query().Get("estado")
 
 	regimenID, _ := strconv.Atoi(regimenIDStr)
 
@@ -53,7 +54,7 @@ func (h *ConceptoTenantHandler) Listar(w http.ResponseWriter, r *http.Request) {
 
 	offset := (pagina - 1) * limite
 
-	conceptos, totalRegistros, err := h.Repo.ObtenerTodosPaginacion(tenantID, busqueda, regimenID, limite, offset)
+	conceptos, totalRegistros, err := h.Repo.ObtenerTodosPaginacion(tenantID, busqueda, regimenID, estado, limite, offset)
 	if err != nil {
 		http.Error(w, "Error al obtener los conceptos", http.StatusInternalServerError)
 		return
@@ -107,6 +108,17 @@ func (h *ConceptoTenantHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	modalidad := r.FormValue("modalidad_entrega")
+	if modalidad == "" {
+		if r.FormValue("es_ocasional") == "on" {
+			modalidad = models.ModalidadEntregaOcasional
+		} else if r.FormValue("es_extraordinario") == "on" {
+			modalidad = models.ModalidadEntregaExcepcional
+		} else {
+			modalidad = models.ModalidadEntregaPermanente
+		}
+	}
+
 	nuevoConcepto := models.ConceptoTenant{
 		TenantID:                 tenantID,
 		ConceptoID:               cID,
@@ -114,13 +126,14 @@ func (h *ConceptoTenantHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		FrecuenciaMeses:          r.FormValue("frecuencia_meses"),
 		ClasificadorID:           clasifID,
 		Activo:                   r.FormValue("activo") == "on",
-		EsExtraordinario:         r.FormValue("es_extraordinario") == "on",
+		EsExtraordinario:         r.FormValue("es_extraordinario") == "on" || modalidad == models.ModalidadEntregaExcepcional,
 		EsPensionable:            r.FormValue("es_pensionable") == "on",
 		EsRemunerativa:           r.FormValue("es_remunerativa") == "on",
 		EsBaseCts:                r.FormValue("es_base_cts") == "on",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "on",
-		EsOcasional:              r.FormValue("es_ocasional") == "on",
+		EsOcasional:              modalidad == models.ModalidadEntregaOcasional,
 		EsAfectoCargasSociales:   r.FormValue("es_afecto_cargas_sociales") == "on",
+		ModalidadEntrega:         modalidad,
 		RegimenesIDs:             regimenesIDs,
 	}
 
@@ -238,6 +251,14 @@ func (h *ConceptoTenantHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	modalidadTenant := existente.ModalidadEntrega
+	if m := r.FormValue("modalidad_entrega"); m != "" {
+		modalidadTenant = m
+	}
+	if modalidadTenant == "" {
+		modalidadTenant = models.ModalidadEntregaPermanente
+	}
+
 	editado := models.ConceptoTenant{
 		ID:                       id,
 		TenantID:                 tenantID,
@@ -246,13 +267,14 @@ func (h *ConceptoTenantHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		FrecuenciaMeses:          frecuencia,
 		ClasificadorID:           clasificadorID,
 		Activo:                   activo,
-		EsExtraordinario:         r.FormValue("es_extraordinario") == "on",
+		EsExtraordinario:         r.FormValue("es_extraordinario") == "on" || modalidadTenant == models.ModalidadEntregaExcepcional,
 		EsPensionable:            r.FormValue("es_pensionable") == "on",
 		EsRemunerativa:           r.FormValue("es_remunerativa") == "on",
 		EsBaseCts:                r.FormValue("es_base_cts") == "on",
 		EsBaseBeneficiosSociales: r.FormValue("es_base_beneficios_sociales") == "on",
-		EsOcasional:              existente.EsOcasional, // Se mantiene el valor centralizado del catálogo
+		EsOcasional:              modalidadTenant == models.ModalidadEntregaOcasional,
 		EsAfectoCargasSociales:   r.FormValue("es_afecto_cargas_sociales") == "on",
+		ModalidadEntrega:         modalidadTenant,
 		RegimenesIDs:             regimenesIDs,
 	}
 
@@ -264,11 +286,6 @@ func (h *ConceptoTenantHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// 2. Le decimos a HTMX: "Por favor, dispara el evento que recarga la tabla"
-	w.Header().Set("HX-Trigger", "recargarTablaConceptos")
-
-	// 3. Devolvemos el formulario de CREAR para dejar la pantalla limpia
-	h.FormularioCrearUI(w, r)
 }
 
 // FormularioCrearUI devuelve el fragmento HTML del formulario de creación limpio
@@ -306,9 +323,20 @@ func (h *ConceptoTenantHandler) FilaUI(w http.ResponseWriter, r *http.Request) {
 		badgeTipo = `<mark style="background-color: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">RETENCIÓN</mark>`
 	}
 
-	badgeOcasional := ""
-	if c.EsOcasional {
-		badgeOcasional = ` <mark style="background-color: #eceff1; color: #37474f; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #cfd8dc;">OCAS</mark>`
+	badgeModalidad := ""
+	switch c.ModalidadEntrega {
+	case models.ModalidadEntregaPermanente:
+		badgeModalidad = ` <mark style="background-color: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #bbdefb;">PERM</mark>`
+	case models.ModalidadEntregaPeriodico:
+		badgeModalidad = ` <mark style="background-color: #fff3e0; color: #e65100; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #ffe0b2;">PERIÓD</mark>`
+	case models.ModalidadEntregaExcepcional:
+		badgeModalidad = ` <mark style="background-color: #f3e5f5; color: #6a1b9a; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #e1bee7;">EXCEP</mark>`
+	case models.ModalidadEntregaOcasional:
+		badgeModalidad = ` <mark style="background-color: #eceff1; color: #37474f; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #cfd8dc;">OCAS</mark>`
+	default:
+		if c.EsOcasional {
+			badgeModalidad = ` <mark style="background-color: #eceff1; color: #37474f; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid #cfd8dc;">OCAS</mark>`
+		}
 	}
 
 	textoEstado := `<span style="color: #b71c1c; font-size: 0.8rem; font-weight: bold;">Inactivo</span>`
@@ -325,7 +353,7 @@ func (h *ConceptoTenantHandler) FilaUI(w http.ResponseWriter, r *http.Request) {
 	<tr id="concepto-` + strconv.Itoa(c.ID) + `">
 		<td>
 			<strong>` + c.NombrePersonalizado + `</strong><br>
-			` + badgeTipo + badgeOcasional + `
+			` + badgeTipo + badgeModalidad + `
 		</td>
 		<td><small>Cód: ` + c.ConceptoCodigo + `</small></td>
 		<td>

@@ -109,7 +109,15 @@
                         {{if .EsBaseBeneficiosSociales}}
                         <mark class="badge badge-purple badge-xs">BEN_SOC</mark>
                         {{end}}
-                        {{if .EsOcasional}}
+                        {{if eq .ModalidadEntrega "PERMANENTE"}}
+                        <mark class="badge badge-info badge-xs">PERM</mark>
+                        {{else if eq .ModalidadEntrega "PERIODICO"}}
+                        <mark class="badge badge-warning badge-xs">PERIÓD</mark>
+                        {{else if eq .ModalidadEntrega "EXCEPCIONAL"}}
+                        <mark class="badge badge-purple badge-xs">EXCEP</mark>
+                        {{else if eq .ModalidadEntrega "OCASIONAL"}}
+                        <mark class="badge badge-secondary badge-xs">OCAS</mark>
+                        {{else if .EsOcasional}}
                         <mark class="badge badge-secondary badge-xs">OCAS</mark>
                         {{end}}
                         {{if .EsAfectoCargasSociales}}
@@ -222,11 +230,19 @@
             </div>
 
             <div class="grid">
+                <label>Modalidad de Entrega (Oportunidad)
+                    <select name="modalidad_entrega" onchange="actualizarBasesOcasional(this)">
+                        <option value="PERMANENTE">PERMANENTE (Todos los meses)</option>
+                        <option value="PERIODICO">PERIODICO (Meses específicos del año)</option>
+                        <option value="EXCEPCIONAL">EXCEPCIONAL (Por norma legal / decreto)</option>
+                        <option value="OCASIONAL">OCASIONAL (Por cumplimiento de condición)</option>
+                    </select>
+                </label>
                 <label><input type="checkbox" role="switch" name="requiere_monto" value="true"> ¿Monto manual?</label>
-                <label><input type="checkbox" role="switch" name="es_extraordinario" value="true"> ¿Extraordinario?</label>
             </div>
             
             <div class="grid">
+                <label><input type="checkbox" role="switch" name="es_extraordinario" value="true"> ¿Extraordinario?</label>
                 <label><input type="checkbox" role="switch" name="es_pensionable" value="true"> ¿Es Pensionable?</label>
                 <label><input type="checkbox" role="switch" name="es_remunerativa" value="true"> ¿Es Remunerativa?</label>
             </div>
@@ -234,7 +250,6 @@
             <div class="grid">
                 <label><input type="checkbox" role="switch" name="es_base_cts" value="true"> ¿Base CTS?</label>
                 <label><input type="checkbox" role="switch" name="es_base_beneficios_sociales" value="true"> ¿Base Beneficios Sociales?</label>
-                <label><input type="checkbox" role="switch" name="es_ocasional" value="true" onchange="actualizarBasesOcasional(this)"> ¿Es Ocasional?</label>
                 <label><input type="checkbox" role="switch" name="es_afecto_cargas_sociales" value="true"> ¿Afecto Cargas Soc.?</label>
             </div>
             <footer><button type="submit">Guardar en Plantilla</button></footer>
@@ -295,13 +310,21 @@
         </div>
 
         <div class="grid">
+            <label>Modalidad de Entrega (Oportunidad)
+                <select name="modalidad_entrega" onchange="actualizarBasesOcasional(this)">
+                    <option value="PERMANENTE" {{if eq .Concepto.ModalidadEntrega "PERMANENTE"}}selected{{end}}>PERMANENTE (Todos los meses)</option>
+                    <option value="PERIODICO" {{if eq .Concepto.ModalidadEntrega "PERIODICO"}}selected{{end}}>PERIODICO (Meses específicos del año)</option>
+                    <option value="EXCEPCIONAL" {{if eq .Concepto.ModalidadEntrega "EXCEPCIONAL"}}selected{{end}}>EXCEPCIONAL (Por norma legal / decreto)</option>
+                    <option value="OCASIONAL" {{if eq .Concepto.ModalidadEntrega "OCASIONAL"}}selected{{end}}>OCASIONAL (Por cumplimiento de condición)</option>
+                </select>
+            </label>
             <label><input type="checkbox" role="switch" name="requiere_monto" value="true" {{if
                     .Concepto.RequiereMonto}}checked{{end}}> Requiere Monto Manual</label>
-            <label><input type="checkbox" role="switch" name="es_extraordinario" value="true" {{if
-                    .Concepto.EsExtraordinario}}checked{{end}}> Es Extraordinario</label>
         </div>
 
         <div class="grid">
+            <label><input type="checkbox" role="switch" name="es_extraordinario" value="true" {{if
+                    .Concepto.EsExtraordinario}}checked{{end}}> Es Extraordinario</label>
             <label><input type="checkbox" role="switch" name="es_pensionable" value="true" {{if
                     .Concepto.EsPensionable}}checked{{end}}> Es Pensionable</label>
             <label><input type="checkbox" role="switch" name="es_remunerativa" value="true" {{if
@@ -313,8 +336,6 @@
                     .Concepto.EsBaseCts}}checked{{end}}> Base CTS</label>
             <label><input type="checkbox" role="switch" name="es_base_beneficios_sociales" value="true" {{if
                     .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> Base Beneficios Sociales</label>
-            <label><input type="checkbox" role="switch" name="es_ocasional" value="true" {{if
-                    .Concepto.EsOcasional}}checked{{end}} onchange="actualizarBasesOcasional(this)"> ¿Es Ocasional?</label>
             <label><input type="checkbox" role="switch" name="es_afecto_cargas_sociales" value="true" {{if
                     .Concepto.EsAfectoCargasSociales}}checked{{end}}> Afecto Cargas Soc.</label>
         </div>
@@ -512,7 +533,8 @@
     }
 
     function actualizarBasesOcasional(el) {
-        if (el.checked) {
+        const isOcasional = el.tagName === 'SELECT' ? el.value === 'OCASIONAL' : el.checked;
+        if (isOcasional) {
             const form = el.closest('form');
             const baseCts = form.querySelector('input[name="es_base_cts"]');
             const baseBen = form.querySelector('input[name="es_base_beneficios_sociales"]');

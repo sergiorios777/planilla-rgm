@@ -47,7 +47,9 @@ func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 		// 4. Token válido: Extraemos los datos (Claims) y los pasamos a la siguiente ruta
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			ctx := context.WithValue(r.Context(), UsuarioIDKey, claims["usuario_id"])
+			ctx = context.WithValue(ctx, "usuario_id", claims["usuario_id"])
 			ctx = context.WithValue(ctx, RolKey, claims["rol"])
+			ctx = context.WithValue(ctx, "rol", claims["rol"])
 
 			if tid, exists := claims["tenant_id"]; exists {
 				ctx = context.WithValue(ctx, "tenant_id", tid)

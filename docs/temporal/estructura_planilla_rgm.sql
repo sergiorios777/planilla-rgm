@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 3DBwQ5zbdfZvIuBK0Q25CP68aHjXWx1j6ICFqfHIXgUvJMdjN4qpTAckuei1Mxx
+\restrict BeDrnEhlicukCKTNy34eaqfXWym4Jq8aQNrLrLBjLGhwdRWM2rsED9eEVk0Wlp2
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -396,7 +396,8 @@ CREATE TABLE public.conceptos_modelo (
     es_base_cts boolean DEFAULT false,
     es_base_beneficios_sociales boolean DEFAULT false,
     es_ocasional boolean DEFAULT false NOT NULL,
-    es_afecto_cargas_sociales boolean DEFAULT false NOT NULL
+    es_afecto_cargas_sociales boolean DEFAULT false NOT NULL,
+    modalidad_entrega character varying(20) DEFAULT 'PERMANENTE'::character varying NOT NULL
 );
 
 
@@ -446,7 +447,8 @@ CREATE TABLE public.conceptos_tenant (
     es_base_cts boolean DEFAULT false,
     es_base_beneficios_sociales boolean DEFAULT false,
     es_ocasional boolean DEFAULT false NOT NULL,
-    es_afecto_cargas_sociales boolean DEFAULT false NOT NULL
+    es_afecto_cargas_sociales boolean DEFAULT false NOT NULL,
+    modalidad_entrega character varying(20) DEFAULT 'PERMANENTE'::character varying NOT NULL
 );
 
 
@@ -674,6 +676,47 @@ ALTER SEQUENCE public.liquidaciones_cese_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.liquidaciones_cese_id_seq OWNED BY public.liquidaciones_cese.id;
+
+
+--
+-- Name: mef_muc_valores; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.mef_muc_valores (
+    id integer NOT NULL,
+    norma_legal character varying(150) NOT NULL,
+    fecha_norma date NOT NULL,
+    grupo_ocupacional character varying(50) NOT NULL,
+    nivel_remunerativo character varying(20) NOT NULL,
+    monto_muc numeric(12,2) DEFAULT 0.00 NOT NULL,
+    activo boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.mef_muc_valores OWNER TO postgres;
+
+--
+-- Name: mef_muc_valores_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.mef_muc_valores_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.mef_muc_valores_id_seq OWNER TO postgres;
+
+--
+-- Name: mef_muc_valores_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.mef_muc_valores_id_seq OWNED BY public.mef_muc_valores.id;
 
 
 --
@@ -1113,7 +1156,8 @@ CREATE TABLE public.planillas (
     descripcion character varying(255) NOT NULL,
     estado character varying(20) DEFAULT 'BORRADOR'::character varying,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    es_extraordinaria boolean DEFAULT false NOT NULL
 );
 
 
@@ -1363,6 +1407,46 @@ ALTER SEQUENCE public.reglas_financiamiento_concepto_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.reglas_financiamiento_concepto_id_seq OWNED BY public.reglas_financiamiento_concepto.id;
+
+
+--
+-- Name: reglas_financiamiento_modelo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.reglas_financiamiento_modelo (
+    id integer NOT NULL,
+    concepto_modelo_id integer NOT NULL,
+    regimen_id integer,
+    meta_id integer,
+    fuente_rubro_id integer,
+    activo boolean DEFAULT true,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.reglas_financiamiento_modelo OWNER TO postgres;
+
+--
+-- Name: reglas_financiamiento_modelo_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.reglas_financiamiento_modelo_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.reglas_financiamiento_modelo_id_seq OWNER TO postgres;
+
+--
+-- Name: reglas_financiamiento_modelo_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.reglas_financiamiento_modelo_id_seq OWNED BY public.reglas_financiamiento_modelo.id;
 
 
 --
@@ -1647,6 +1731,13 @@ ALTER TABLE ONLY public.liquidaciones_cese ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
+-- Name: mef_muc_valores id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mef_muc_valores ALTER COLUMN id SET DEFAULT nextval('public.mef_muc_valores_id_seq'::regclass);
+
+
+--
 -- Name: metas_presupuestales id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -1756,6 +1847,13 @@ ALTER TABLE ONLY public.regimenes_laborales ALTER COLUMN id SET DEFAULT nextval(
 --
 
 ALTER TABLE ONLY public.reglas_financiamiento_concepto ALTER COLUMN id SET DEFAULT nextval('public.reglas_financiamiento_concepto_id_seq'::regclass);
+
+
+--
+-- Name: reglas_financiamiento_modelo id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_modelo ALTER COLUMN id SET DEFAULT nextval('public.reglas_financiamiento_modelo_id_seq'::regclass);
 
 
 --
@@ -1971,6 +2069,14 @@ ALTER TABLE ONLY public.liquidaciones_cese
 
 
 --
+-- Name: mef_muc_valores mef_muc_valores_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mef_muc_valores
+    ADD CONSTRAINT mef_muc_valores_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: metas_presupuestales metas_presupuestales_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2120,6 +2226,14 @@ ALTER TABLE ONLY public.regimenes_laborales
 
 ALTER TABLE ONLY public.reglas_financiamiento_concepto
     ADD CONSTRAINT reglas_financiamiento_concepto_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reglas_financiamiento_modelo reglas_financiamiento_modelo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_modelo
+    ADD CONSTRAINT reglas_financiamiento_modelo_pkey PRIMARY KEY (id);
 
 
 --
@@ -2348,6 +2462,20 @@ CREATE INDEX idx_contratos_trabajador ON public.contratos USING btree (trabajado
 
 
 --
+-- Name: idx_mef_muc_grupo_nivel; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_mef_muc_grupo_nivel ON public.mef_muc_valores USING btree (grupo_ocupacional, nivel_remunerativo);
+
+
+--
+-- Name: idx_mef_muc_norma; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_mef_muc_norma ON public.mef_muc_valores USING btree (norma_legal);
+
+
+--
 -- Name: idx_metas_tenant_anio; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2422,6 +2550,13 @@ CREATE INDEX idx_regimen_concepto_tenant_lookup ON public.regimen_concepto_tenan
 --
 
 CREATE INDEX idx_reglas_financiamiento_concepto ON public.reglas_financiamiento_concepto USING btree (concepto_tenant_id);
+
+
+--
+-- Name: idx_reglas_financiamiento_modelo_concepto; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_reglas_financiamiento_modelo_concepto ON public.reglas_financiamiento_modelo USING btree (concepto_modelo_id);
 
 
 --
@@ -2902,6 +3037,38 @@ ALTER TABLE ONLY public.reglas_financiamiento_concepto
 
 
 --
+-- Name: reglas_financiamiento_modelo reglas_financiamiento_modelo_concepto_modelo_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_modelo
+    ADD CONSTRAINT reglas_financiamiento_modelo_concepto_modelo_id_fkey FOREIGN KEY (concepto_modelo_id) REFERENCES public.conceptos_modelo(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reglas_financiamiento_modelo reglas_financiamiento_modelo_fuente_rubro_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_modelo
+    ADD CONSTRAINT reglas_financiamiento_modelo_fuente_rubro_id_fkey FOREIGN KEY (fuente_rubro_id) REFERENCES public.fuentes_rubros(id);
+
+
+--
+-- Name: reglas_financiamiento_modelo reglas_financiamiento_modelo_meta_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_modelo
+    ADD CONSTRAINT reglas_financiamiento_modelo_meta_id_fkey FOREIGN KEY (meta_id) REFERENCES public.metas_presupuestales(id);
+
+
+--
+-- Name: reglas_financiamiento_modelo reglas_financiamiento_modelo_regimen_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reglas_financiamiento_modelo
+    ADD CONSTRAINT reglas_financiamiento_modelo_regimen_id_fkey FOREIGN KEY (regimen_id) REFERENCES public.regimenes_laborales(id);
+
+
+--
 -- Name: trabajadores trabajadores_afp_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2953,5 +3120,5 @@ ALTER TABLE ONLY public.usuarios
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 3DBwQ5zbdfZvIuBK0Q25CP68aHjXWx1j6ICFqfHIXgUvJMdjN4qpTAckuei1Mxx
+\unrestrict BeDrnEhlicukCKTNy34eaqfXWym4Jq8aQNrLrLBjLGhwdRWM2rsED9eEVk0Wlp2
 

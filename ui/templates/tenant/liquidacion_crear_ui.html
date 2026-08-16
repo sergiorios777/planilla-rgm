@@ -1,0 +1,369 @@
+<article class="card-section mb-md">
+    <header class="flex-row-between">
+        <div class="flex-items-center flex-gap-sm">
+            <button type="button" class="secondary outline btn-compact mb-0" hx-get="/tenant/ui/liquidaciones" hx-target="#contenido-tenant">
+                <svg class="icono-menu">
+                    <use href="#icono-chevron-left"></use>
+                </svg>
+                Volver a Liquidaciones
+            </button>
+            <h3 class="mb-0 flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-source-environment"></use>
+                </svg>
+                Nueva Liquidación de Cese (Beneficios Sociales)
+            </h3>
+        </div>
+    </header>
+    <p><small class="text-muted">Formulario estructurado para el cálculo de liquidación laboral desglosado en 4 secciones según régimen legal (DL 276, DL 728, Ley 30057 y CAS - DL 1057).</small></p>
+</article>
+
+<div id="alerta-liq"></div>
+
+<form id="form-liquidacion" hx-post="/tenant/liquidaciones/guardar" hx-target="#contenido-tenant">
+    
+    <!-- Header de Selección del Colaborador -->
+    <article class="card-section mb-md">
+        <header>
+            <h4 class="mb-0 flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-account"></use>
+                </svg>
+                Datos del Colaborador y Cese Laboral
+            </h4>
+        </header>
+
+        <label>Colaborador / Contrato
+            <select name="contrato_id" id="contrato_id" class="select-con-buscador" required>
+                <option value="" disabled selected>Seleccione un colaborador cesado...</option>
+                {{range .}}
+                <option value="{{.ID}}" 
+                    data-motivo="{{if .MotivoBaja}}{{.MotivoBaja}}{{end}}"
+                    data-fecha-inicio="{{.FechaInicio}}" 
+                    data-fecha-fin="{{if .FechaFin}}{{.FechaFin}}{{end}}">
+                    {{.TrabajadorNombre}} - {{.PuestoNombre}} ({{.RegimenDesc}})
+                </option>
+                {{else}}
+                <option value="" disabled>No hay colaboradores con contrato vencido o cesado al día de hoy</option>
+                {{end}}
+            </select>
+        </label>
+
+        <div class="grid">
+            <label>Fecha de Inicio Computable (Manual)
+                <input type="date" name="fecha_inicio" required>
+            </label>
+            <label>Fecha de Cese / Fin (Manual)
+                <input type="date" name="fecha_cese" required>
+            </label>
+            <label>Motivo de Cese
+                <input type="text" name="motivo" readonly placeholder="Seleccione un colaborador">
+            </label>
+        </div>
+    </article>
+
+    <!-- SECCIÓN 1: REMUNERACIÓN COMPUTABLE -->
+    <article class="card-section mb-md border-left-primary">
+        <header class="flex-row-between">
+            <h4 class="mb-0 text-primary flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-cash-multiple"></use>
+                </svg>
+                1. Remuneración Computable
+            </h4>
+            <span class="badge badge-info font-xs">Base Imponible / Remunerativa</span>
+        </header>
+
+        <p class="font-xs text-muted mb-sm">
+            ℹ️ Base salarial tomada para el cálculo de CTS, vacaciones y gratificaciones truncas según el régimen laboral aplicable.
+        </p>
+
+        <div class="grid">
+            <label class="font-xs">Remuneración Computable Estimada (S/.)
+                <input type="number" step="0.01" name="remuneracion_computable_override" placeholder="Calculado automáticamente al previsualizar" class="h-35 font-xs" readonly>
+            </label>
+            <div>
+                <small class="font-xs text-muted"><strong>Criterios por Régimen:</strong></small>
+                <ul class="font-xs mb-0 pl-md text-muted">
+                    <li><strong>DL 276:</strong> Conceptos permanentes percibidos 12 meses.</li>
+                    <li><strong>DL 728:</strong> Sueldo básico + Asignación Familiar + Promedios.</li>
+                    <li><strong>Ley 30057 (SERVIR):</strong> Promedio de los últimos 36 meses.</li>
+                    <li><strong>CAS (DL 1057):</strong> Retribución mensual (Ley 32563 / DS 142-2026-EF).</li>
+                </ul>
+            </div>
+        </div>
+    </article>
+
+    <!-- SECCIÓN 2: COMPENSACIÓN POR TIEMPO DE SERVICIO (CTS) -->
+    <article class="card-section mb-md border-left-primary">
+        <header class="flex-row-between">
+            <h4 class="mb-0 text-primary flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-bank"></use>
+                </svg>
+                2. Compensación por Tiempo de Servicio (CTS)
+            </h4>
+            <label class="mb-0 font-sm cursor-pointer">
+                <input type="checkbox" name="calcular_cts" checked>
+                <strong>Calcular CTS Trunca</strong>
+            </label>
+        </header>
+
+        <p class="font-xs text-muted mb-sm">
+            ℹ️ Depósito de CTS acumulado desde el último periodo de depósito semestral hasta la fecha de cese.
+        </p>
+    </article>
+
+    <!-- SECCIÓN 3: VACACIONES TRUNCAS Y PENDIENTES DE PAGO -->
+    <article class="card-section mb-md border-left-primary">
+        <header class="flex-row-between">
+            <h4 class="mb-0 text-primary flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-calendar-clock"></use>
+                </svg>
+                3. Vacaciones Truncas y Pendientes de Pago
+            </h4>
+            <label class="mb-0 font-sm cursor-pointer">
+                <input type="checkbox" name="calcular_vacaciones" checked>
+                <strong>Calcular Vacaciones</strong>
+            </label>
+        </header>
+
+        <p class="font-xs text-muted mb-sm">
+            ℹ️ Incluye vacaciones truncas del periodo vigente y periodos vacacionales ganados no gozados de años anteriores.
+        </p>
+
+        <details class="mb-0">
+            <summary class="font-bold cursor-pointer py-sm font-sm">🏖️ Periodos Vacacionales Históricos Ganados</summary>
+            <div class="alert-box alert-warning mt-sm mb-sm">
+                <p class="font-xs mt-0 mb-sm text-muted">
+                    ℹ️ <em>Los meses y días truncos del año vigente se calcularán automáticamente. Solo indique periodos completos ganados en años anteriores.</em>
+                </p>
+                <div class="grid">
+                    <label class="font-xs"
+                        data-tooltip="Años completos ganados y no gozados que ya vencieron en su plazo legal. Genera indemnización (doble pago) en el régimen DL 728.">
+                        Periodos Vencidos (Indemnizables DL 728) ❓
+                        <input type="number" name="periodos_vencidos_vacaciones" value="0" min="0" step="1"
+                            class="h-35 font-xs">
+                    </label>
+                    <label class="font-xs"
+                        data-tooltip="Años completos ganados que no se gozaron pero que aún están dentro del plazo regular para su descanso (sin indemnización).">
+                        Periodos No Vencidos (Pendientes Simples) ❓
+                        <input type="number" name="periodos_no_vencidos_vacaciones" value="0" min="0" step="1"
+                            class="h-35 font-xs">
+                    </label>
+                </div>
+            </div>
+        </details>
+    </article>
+
+    <!-- SECCIÓN 4: GRATIFICACIONES TRUNCAS Y BONIFICACIÓN EXTRAORDINARIA -->
+    <article class="card-section mb-md border-left-primary">
+        <header class="flex-row-between">
+            <h4 class="mb-0 text-primary flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-gift"></use>
+                </svg>
+                4. Gratificaciones Truncas y Bonificación Extraordinaria
+            </h4>
+            <label class="mb-0 font-sm cursor-pointer">
+                <input type="checkbox" name="calcular_grati_trunca" checked>
+                <strong>Calcular Gratificación Trunca</strong>
+            </label>
+        </header>
+
+        <p class="font-xs text-muted mb-0">
+            ℹ️ Calculado por los meses calendarios completos laborados en el semestre de cese (Enero-Junio o Julio-Diciembre). Incluye la Bonificación Extraordinaria de Ley (9% EsSalud / 6.75% EPS) conforme a la Ley 29351 / Ley 30334.
+        </p>
+    </article>
+
+    <!-- CONCEPTOS ADICIONALES OPCIONALES -->
+    <details class="mb-md">
+        <summary class="font-bold cursor-pointer py-sm font-sm">➕ Conceptos Adicionales de Liquidación (Opcional)</summary>
+        <div class="pt-sm">
+            <div class="grid-2-1">
+                <label class="font-xs">Concepto Adicional 1
+                    <input type="text" name="nombre_concepto_liquidacion_1" placeholder="Ej. Indemnización por despido arbitrario" class="h-35 font-xs">
+                </label>
+                <label class="font-xs">Monto Adicional 1 (S/.)
+                    <input type="number" step="0.01" name="monto_concepto_liquidacion_1" value="0.00" min="0" class="h-35 font-xs">
+                </label>
+            </div>
+            <div class="grid-2-1">
+                <label class="font-xs">Concepto Adicional 2
+                    <input type="text" name="nombre_concepto_liquidacion_2" placeholder="Ej. Devolución de retención / Incentivo" class="h-35 font-xs">
+                </label>
+                <label class="font-xs">Monto Adicional 2 (S/.)
+                    <input type="number" step="0.01" name="monto_concepto_liquidacion_2" value="0.00" min="0" class="h-35 font-xs">
+                </label>
+            </div>
+        </div>
+    </details>
+
+    <!-- BOTÓN CÁLCULO VISTA PREVIA -->
+    <div class="text-center mt-lg mb-lg">
+        <button type="button" class="outline" hx-post="/tenant/liquidaciones/calcular"
+            hx-target="#resultado-previa-liq" hx-include="#form-liquidacion">
+            <svg class="icono-menu">
+                <use href="#icono-home-storage-gear"></use>
+            </svg>
+            Calcular Vista Previa de Liquidación
+        </button>
+    </div>
+
+    <!-- RESULTADOS DE CÁLCULO EN TIEMPO REAL -->
+    <div id="resultado-previa-liq">
+        <p class="text-muted text-center font-italic"><small>Selecciona el colaborador y haz clic en 'Calcular Vista Previa de Liquidación' para visualizar el desglose en las 4 secciones.</small></p>
+    </div>
+
+    <!-- PIE Y ACCIONES DE FORMULARIO -->
+    <div class="flex-row-end mt-lg border-top pt-md flex-gap-sm">
+        <button type="button" class="secondary outline btn-compact" hx-get="/tenant/ui/liquidaciones" hx-target="#contenido-tenant">Cancelar</button>
+        <button type="submit" id="btn-guardar-liq" class="btn-compact" disabled>
+            <svg class="icono-menu">
+                <use href="#icono-check"></use>
+            </svg>
+            Confirmar y Registrar Liquidación
+        </button>
+    </div>
+</form>
+
+{{define "vista_previa_liquidacion"}}
+<div class="card-section alert-success mb-md">
+    <h5 class="mt-0 text-success flex-items-center flex-gap-sm border-bottom pb-xs">
+        <svg class="icono-menu">
+            <use href="#icono-mystery"></use>
+        </svg>
+        Resumen Detallado de Liquidación de Beneficios Sociales
+    </h5>
+
+    <div class="grid mb-md font-sm">
+        <div>
+            <strong>Trabajador:</strong> {{.TrabajadorNombre}}<br>
+            <strong>Documento (DNI):</strong> {{.TrabajadorDocumento}}<br>
+            <strong>Puesto / Cargo:</strong> {{.PuestoNombre}}
+        </div>
+        <div>
+            <strong>Régimen Laboral:</strong> DL {{.Regimen}}<br>
+            <strong>Tiempo de Servicio Computable:</strong> {{.AnosServicios}} años, {{.MesesServicios}} meses, {{.DiasServicios}} días<br>
+            <strong>Motivo de Cese:</strong> {{.Motivo}}
+        </div>
+    </div>
+
+    <table class="striped font-sm mb-md w-full">
+        <thead>
+            <tr class="bg-light">
+                <th>Sección / Concepto de Liquidación</th>
+                <th class="text-right w-180">Monto Calculado (S/.)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- SECCIÓN 1 -->
+            <tr class="table-group-header font-bold text-primary">
+                <td colspan="2">1. Remuneración Computable Base</td>
+            </tr>
+            <tr>
+                <td class="pl-md">Base imponible calculada para el régimen DL {{.Regimen}}</td>
+                <td class="text-right stat-mono">S/ {{printf "%.2f" .RemuneracionComputable}}</td>
+            </tr>
+
+            <!-- SECCIÓN 2 -->
+            <tr class="table-group-header font-bold text-primary">
+                <td colspan="2">2. Compensación por Tiempo de Servicio (CTS)</td>
+            </tr>
+            <tr>
+                <td class="pl-md">Monto CTS Trunca acumulada al cese</td>
+                <td class="text-right stat-mono">S/ {{printf "%.2f" .MontoCts}}</td>
+            </tr>
+
+            <!-- SECCIÓN 3 -->
+            <tr class="table-group-header font-bold text-primary">
+                <td colspan="2">3. Vacaciones Truncas y Pendientes de Pago</td>
+            </tr>
+            <tr>
+                <td class="pl-md">Vacaciones Truncas (periodo trunco vigente)</td>
+                <td class="text-right stat-mono">S/ {{printf "%.2f" .MontoVacacionesTruncas}}</td>
+            </tr>
+            <tr>
+                <td class="pl-md">Vacaciones No Gozadas (periodos completos pendientes)</td>
+                <td class="text-right stat-mono">S/ {{printf "%.2f" .MontoVacacionesNoGozadas}}</td>
+            </tr>
+            <tr>
+                <td class="pl-md">Indemnización Vacacional (periodos vencidos - DL 728)</td>
+                <td class="text-right stat-mono">S/ {{printf "%.2f" .MontoIndemnizacionVacacional}}</td>
+            </tr>
+
+            <!-- SECCIÓN 4 -->
+            <tr class="table-group-header font-bold text-primary">
+                <td colspan="2">4. Gratificaciones Truncas y Bonificación Extraordinaria</td>
+            </tr>
+            <tr>
+                <td class="pl-md">Gratificación Trunca por meses laborados en el semestre</td>
+                <td class="text-right stat-mono">S/ {{printf "%.2f" .MontoGratiTrunca}}</td>
+            </tr>
+
+            <!-- TOTAL CONSOLIDADO -->
+            <tr class="total-row font-md alert-success">
+                <td><strong>TOTAL BENEFICIOS SOCIALES A LIQUIDAR:</strong></td>
+                <td class="text-right text-success stat-mono"><strong>S/ {{printf "%.2f" .TotalLiquidacion}}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        // Habilitar botón de guardado y actualizar campo de remuneración computable si existe
+        document.getElementById('btn-guardar-liq').disabled = false;
+        const remInput = document.querySelector('input[name="remuneracion_computable_override"]');
+        if (remInput) {
+            remInput.value = "{{printf "%.2f" .RemuneracionComputable}}";
+        }
+    </script>
+</div>
+{{end}}
+
+<script>
+    function inicializarBuscadores(contenedor) {
+        if (!contenedor) return;
+        contenedor.querySelectorAll('.select-con-buscador').forEach((el) => {
+            if (!el.tomselect) {
+                new TomSelect(el, {
+                    create: false,
+                    maxItems: 1,
+                    plugins: ['dropdown_input']
+                });
+            }
+        });
+    }
+
+    inicializarBuscadores(document.body);
+
+    document.body.addEventListener('htmx:afterSettle', (event) => {
+        inicializarBuscadores(event.detail.target);
+    });
+
+    document.body.addEventListener('change', (event) => {
+        if (event.target && event.target.name === 'contrato_id') {
+            const select = event.target;
+            const selectedOption = select.options[select.selectedIndex];
+            if (selectedOption) {
+                const motivo = selectedOption.getAttribute('data-motivo') || '';
+                const motivoInput = select.closest('form').querySelector('input[name="motivo"]');
+                if (motivoInput) {
+                    motivoInput.value = motivo;
+                }
+
+                const fechaInicio = selectedOption.getAttribute('data-fecha-inicio') || '';
+                const fechaInicioInput = select.closest('form').querySelector('input[name="fecha_inicio"]');
+                if (fechaInicioInput && fechaInicio) {
+                    fechaInicioInput.value = fechaInicio.substring(0, 10);
+                }
+
+                const fechaFin = selectedOption.getAttribute('data-fecha-fin') || '';
+                const fechaCeseInput = select.closest('form').querySelector('input[name="fecha_cese"]');
+                if (fechaCeseInput) {
+                    fechaCeseInput.value = fechaFin ? fechaFin.substring(0, 10) : '';
+                }
+            }
+        }
+    });
+</script>

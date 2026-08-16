@@ -4,6 +4,13 @@ import (
 	"time"
 )
 
+const (
+	ModalidadEntregaPermanente  = "PERMANENTE"
+	ModalidadEntregaPeriodico   = "PERIODICO"
+	ModalidadEntregaExcepcional = "EXCEPCIONAL"
+	ModalidadEntregaOcasional   = "OCASIONAL"
+)
+
 // Tenant representa a las entidades/inquilinos que usan tu SaaS
 type Tenant struct {
 	ID           int       `json:"id"`
@@ -82,6 +89,7 @@ type ConceptoTenant struct {
 	EsBaseBeneficiosSociales bool   `json:"es_base_beneficios_sociales"`
 	EsOcasional              bool   `json:"es_ocasional"`
 	EsAfectoCargasSociales   bool   `json:"es_afecto_cargas_sociales"`
+	ModalidadEntrega         string `json:"modalidad_entrega"`
 
 	// Campos Auxiliares (JOINs desde la tabla conceptos_maestros)
 	RegimenesIDs       []int  `json:"regimenes_ids"` // Para los checkboxes (POST/PUT)
@@ -489,6 +497,7 @@ type ConceptoModelo struct {
 	EsBaseBeneficiosSociales bool       `json:"es_base_beneficios_sociales"`
 	EsOcasional              bool       `json:"es_ocasional"`
 	EsAfectoCargasSociales   bool       `json:"es_afecto_cargas_sociales"`
+	ModalidadEntrega         string     `json:"modalidad_entrega"`
 	CreatedAt                string     `json:"created_at"`
 	UpdatedAt                *time.Time `json:"updated_at,omitempty"`
 
@@ -618,4 +627,42 @@ type TrabajadorEspecialItem struct {
 	MetaDescripcion      string `json:"meta_descripcion"`
 	UnidadOrganicaID     int    `json:"unidad_organica_id"`
 	UnidadOrganicaNombre string `json:"unidad_organica_nombre"`
+}
+
+// DatosReporteLiquidacion representa la estructura completa para la generación del PDF de Liquidación
+type DatosReporteLiquidacion struct {
+	TenantNombre           string
+	TenantRUC              string
+	TenantLogoURL          string
+	Liquidacion            LiquidacionCese
+	FechaIngreso           time.Time
+	SueldoBasico           float64
+	AsignacionFamiliar     float64
+	PromedioGratificacion  float64
+	RemuneracionComputable float64
+	CtsPeriodoInicio       string
+	CtsPeriodoFin          string
+	CtsMeses               int
+	CtsDias                int
+	MontoCtsMeses          float64
+	MontoCtsDias           float64
+	VacacionesMeses        int
+	VacacionesDias         int
+	MontoVacacionesMeses   float64
+	MontoVacacionesDias    float64
+	VacacionesBrutas       float64
+	DescuentoPensionNombre string
+	MontoDescuentoPension  float64
+	VacacionesNetas        float64
+	GratiSemestreTipo      string
+	GratiPeriodoInicio     string
+	GratiPeriodoFin        string
+	GratiMeses             int
+	GratiDias              int
+	MontoGratiMeses        float64
+	MontoGratiDias         float64
+	BonificacionEspecial   float64
+	TotalLiquidacion       float64
+	MontoEnLetras          string
+	FechaEmisionTexto      string
 }

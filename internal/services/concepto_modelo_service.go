@@ -136,20 +136,32 @@ func (s *ConceptoModeloService) ImportarDesdeCSV(file io.Reader) (exitosos int, 
 			clasificadorID = &cID
 		}
 
+		esOcasional := parseBoolHelper(fila[10])
+		esExtraordinario := parseBoolHelper(fila[4])
+		modalidad := models.ModalidadEntregaPermanente
+		if esOcasional {
+			modalidad = models.ModalidadEntregaOcasional
+		} else if esExtraordinario {
+			modalidad = models.ModalidadEntregaExcepcional
+		} else if frecuencia != "1,2,3,4,5,6,7,8,9,10,11,12" && frecuencia != "" {
+			modalidad = models.ModalidadEntregaPeriodico
+		}
+
 		// Construir modelo
 		modelo := models.ConceptoModelo{
 			ConceptoID:               conceptoID,
 			NombrePersonalizado:      nombrePersonalizado,
 			FrecuenciaMeses:          frecuencia,
 			ClasificadorID:           clasificadorID,
-			EsExtraordinario:         parseBoolHelper(fila[4]),
+			EsExtraordinario:         esExtraordinario,
 			RequiereMonto:            parseBoolHelper(fila[5]),
 			EsPensionable:            parseBoolHelper(fila[6]),
 			EsRemunerativa:           parseBoolHelper(fila[7]),
 			EsBaseCts:                parseBoolHelper(fila[8]),
 			EsBaseBeneficiosSociales: parseBoolHelper(fila[9]),
-			EsOcasional:              parseBoolHelper(fila[10]),
+			EsOcasional:              esOcasional,
 			EsAfectoCargasSociales:   parseBoolHelper(fila[11]),
+			ModalidadEntrega:         modalidad,
 		}
 
 		// Mapeo de regímenes

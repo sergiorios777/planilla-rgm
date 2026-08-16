@@ -20,7 +20,7 @@ Los principales archivos y artefactos de código fuente que componen este módul
 Maneja las peticiones HTTP y la interacción con la vista (HTMX).
 
 *   `VistaUI(w http.ResponseWriter, r *http.Request)`: Carga la página base y provee a los formularios las listas de Conceptos Maestros y Clasificadores MEF.
-*   `Listar(w http.ResponseWriter, r *http.Request)`: Obtiene los parámetros de búsqueda y paginación (`buscar`, `pagina`, `limite`), extrae el ID del tenant de la sesión, obtiene los registros paginados y renderiza el fragmento HTMX `tabla_conceptos_tenant`.
+*   `Listar(w http.ResponseWriter, r *http.Request)`: Obtiene los parámetros de búsqueda y paginación (`buscar`, `regimen_id`, `estado`, `pagina`, `limite`), extrae el ID del tenant de la sesión, obtiene los registros paginados y renderiza el fragmento HTMX `tabla_conceptos_tenant`.
 *   `Crear(w http.ResponseWriter, r *http.Request)`: Procesa el formulario de creación. Valida errores (como restricciones UNIQUE en base de datos si ya existe el "Nombre Personalizado") e inyecta alertas HTML en caso de error, o recarga la tabla en caso de éxito.
 *   `EditarUI(w http.ResponseWriter, r *http.Request)`: Busca un concepto específico por ID (`?id=X`) junto con las opciones de catálogos y renderiza el formulario de edición.
 *   `Actualizar(w http.ResponseWriter, r *http.Request)`: Recibe los datos de edición, actualiza el registro en base de datos, dispara el header `HX-Trigger: recargarTablaConceptos` para recargar la vista, y devuelve el formulario limpio de creación.
@@ -33,7 +33,7 @@ Gestiona la capa de acceso a base de datos PostgreSQL.
 
 *   `NewConceptoTenantRepository(db *sql.DB) *ConceptoTenantRepository`: Función constructora.
 *   `ObtenerMaestros()`: Trae el catálogo SUNAT base (`conceptos_maestros`) para cargar selects.
-*   `ObtenerTodos(tenantID int)` / `ObtenerTodosPaginacion(...)`: Ejecuta sentencias `SELECT` con `JOIN` hacia `conceptos_maestros` y `clasificadores_mef`, filtrando estrictamente por `tenant_id`. La versión paginada retorna la lista, el total de registros y permite filtros por nombre/código.
+*   `ObtenerTodos(tenantID int)` / `ObtenerTodosPaginacion(...)`: Ejecuta sentencias `SELECT` con `JOIN` hacia `conceptos_maestros` y `clasificadores_mef`, filtrando estrictamente por `tenant_id`. La versión paginada retorna la lista, el total de registros y permite filtros por nombre/código, régimen laboral y estado (activo/inactivo).
 *   `Crear(ct *models.ConceptoTenant)`: Inserta una nueva configuración local, retornando el ID generado.
 *   `Actualizar(ct *models.ConceptoTenant)` / `ActualizarCompleto(...)`: Ejecuta `UPDATE` para cambiar los datos permitidos del concepto local.
 *   `ObtenerClasificadores()`: Trae del MEF solo clasificadores con `nivel = 6` (detalle) y de transacciones específicas (`2.1.%`, `2.3.%`, `2.6.%`) que están activos.

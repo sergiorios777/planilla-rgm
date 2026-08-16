@@ -465,6 +465,213 @@ func (s *PdfService) dibujarBoleta(pdf *gofpdf.Fpdf, tr func(string) string, b *
 	pdf.CellFormat(95, 4, tr("Firma del Trabajador"), "", 1, "C", false, 0, "")
 }
 
+// GenerarReporteLiquidacionPDF crea el documento oficial de liquidación de beneficios en PDF A4 vertical
+func (s *PdfService) GenerarReporteLiquidacionPDF(datos *models.DatosReporteLiquidacion) ([]byte, error) {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.SetMargins(10, 10, 10)
+	tr := pdf.UnicodeTranslatorFromDescriptor("")
+
+	pdf.AddPage()
+
+	// 1. Logotipo de la Municipalidad/Tenant (si está disponible)
+	if rutaLogo := obtenerRutaLogo(datos.TenantLogoURL); rutaLogo != "" {
+		pdf.ImageOptions(rutaLogo, 10, 8, 24, 0, false, gofpdf.ImageOptions{ReadDpi: true}, 0, "")
+	}
+
+	// 2. Encabezado Institucional y Título Principal
+	pdf.SetFillColor(0, 112, 192) // Azul corporativo #0070C0
+	pdf.SetTextColor(255, 255, 255)
+	pdf.SetFont("Arial", "B", 14)
+	pdf.CellFormat(190, 9, tr("LIQUIDACIÓN DE BENEFICIOS SOCIALES"), "1", 1, "C", true, 0, "")
+
+	pdf.SetTextColor(0, 0, 0)
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(190, 5, tr(datos.TenantNombre), "", 1, "C", false, 0, "")
+	pdf.SetFont("Arial", "", 8.5)
+	pdf.CellFormat(190, 4, tr(fmt.Sprintf("RUC: %s", datos.TenantRUC)), "", 1, "C", false, 0, "")
+	pdf.Ln(3)
+
+	// 3. Bloque de Datos del Colaborador
+	pdf.SetFillColor(240, 244, 248)
+	pdf.SetFont("Arial", "B", 8)
+
+	l := datos.Liquidacion
+	fechaIngresoStr := datos.FechaIngreso.Format("02/01/2006")
+	fechaCeseStr := l.FechaCese.Format("02/01/2006")
+	tiempoServicioStr := fmt.Sprintf("%d años, %d meses, %d días", l.AnosServicios, l.MesesServicios, l.DiasServicios)
+
+	pdf.CellFormat(40, 5, tr("  TRABAJADOR:"), "LT", 0, "L", true, 0, "")
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(150, 5, tr(fmt.Sprintf("%s (DNI: %s)", l.TrabajadorNombre, l.TrabajadorDocumento)), "TR", 1, "L", true, 0, "")
+
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(40, 5, tr("  CARGO / PUESTO:"), "L", 0, "L", true, 0, "")
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(150, 5, tr(fmt.Sprintf("%s | RÉGIMEN: D.L. %s", l.PuestoNombre, l.Regimen)), "R", 1, "L", true, 0, "")
+
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(40, 5, tr("  FECHA INGRESO:"), "L", 0, "L", true, 0, "")
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(55, 5, fechaIngresoStr, "", 0, "L", true, 0, "")
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(40, 5, tr("FECHA CESE:"), "", 0, "L", true, 0, "")
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(55, 5, fechaCeseStr, "R", 1, "L", true, 0, "")
+
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(40, 5, tr("  MOTIVO CESE:"), "LB", 0, "L", true, 0, "")
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(55, 5, tr(l.Motivo), "B", 0, "L", true, 0, "")
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(40, 5, tr("TIEMPO LABORADO:"), "B", 0, "L", true, 0, "")
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(55, 5, tr(tiempoServicioStr), "RB", 1, "L", true, 0, "")
+
+	pdf.Ln(4)
+
+	// Helper para secciones
+	dibujarEncabezadoSeccion := func(num string, titulo string) {
+		pdf.SetFillColor(0, 112, 192)
+		pdf.SetTextColor(255, 255, 255)
+		pdf.SetFont("Arial", "B", 8.5)
+		pdf.CellFormat(150, 5, tr(fmt.Sprintf(" %s.- %s", num, titulo)), "1", 0, "L", true, 0, "")
+		pdf.CellFormat(40, 5, "MONTO S/", "1", 1, "C", true, 0, "")
+		pdf.SetTextColor(0, 0, 0)
+	}
+
+	// 1. Remuneración Computable
+	dibujarEncabezadoSeccion("1", "REMUNERACIÓN COMPUTABLE")
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(150, 4.5, tr("   • Sueldo Básico Presupuestado"), "L", 0, "L", false, 0, "")
+	pdf.CellFormat(40, 4.5, formatearMonto(datos.SueldoBasico), "R", 1, "R", false, 0, "")
+
+	if datos.AsignacionFamiliar > 0 {
+		pdf.CellFormat(150, 4.5, tr("   • Asignación Familiar"), "L", 0, "L", false, 0, "")
+		pdf.CellFormat(40, 4.5, formatearMonto(datos.AsignacionFamiliar), "R", 1, "R", false, 0, "")
+	}
+	if datos.PromedioGratificacion > 0 {
+		pdf.CellFormat(150, 4.5, tr("   • Promedio Gratificación (1/6)"), "L", 0, "L", false, 0, "")
+		pdf.CellFormat(40, 4.5, formatearMonto(datos.PromedioGratificacion), "R", 1, "R", false, 0, "")
+	}
+
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(150, 5, tr("   TOTAL REMUNERACIÓN COMPUTABLE"), "LBT", 0, "L", false, 0, "")
+	pdf.CellFormat(40, 5, formatearMonto(datos.RemuneracionComputable), "RBT", 1, "R", false, 0, "")
+	pdf.Ln(3)
+
+	// 2. Cálculo de CTS
+	dibujarEncabezadoSeccion("2", "CÁLCULO DE COMPENSACIÓN POR TIEMPO DE SERVICIOS (CTS)")
+	pdf.SetFont("Arial", "I", 7.5)
+	pdf.CellFormat(190, 4, tr(fmt.Sprintf("   Periodo computable: %s al %s", datos.CtsPeriodoInicio, datos.CtsPeriodoFin)), "LR", 1, "L", false, 0, "")
+
+	pdf.SetFont("Arial", "", 8)
+	labelMesesCts := fmt.Sprintf("   • Por %d mes(es) computables (Rem. / 12 x %d)", datos.CtsMeses, datos.CtsMeses)
+	pdf.CellFormat(150, 4.5, tr(labelMesesCts), "L", 0, "L", false, 0, "")
+	pdf.CellFormat(40, 4.5, formatearMonto(datos.MontoCtsMeses), "R", 1, "R", false, 0, "")
+
+	if datos.CtsDias > 0 {
+		labelDiasCts := fmt.Sprintf("   • Por %d día(s) computables (Rem. / 12 / 30 x %d)", datos.CtsDias, datos.CtsDias)
+		pdf.CellFormat(150, 4.5, tr(labelDiasCts), "L", 0, "L", false, 0, "")
+		pdf.CellFormat(40, 4.5, formatearMonto(datos.MontoCtsDias), "R", 1, "R", false, 0, "")
+	}
+
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(150, 5, tr("   CTS A PAGAR"), "LBT", 0, "L", false, 0, "")
+	pdf.CellFormat(40, 5, formatearMonto(l.MontoCts), "RBT", 1, "R", false, 0, "")
+	pdf.Ln(3)
+
+	// 3. Vacaciones Truncas y No Gozadas
+	dibujarEncabezadoSeccion("3", "VACACIONES TRUNCAS Y PENDIENTES DE GOCE")
+	pdf.SetFont("Arial", "", 8)
+
+	labelMesesVac := fmt.Sprintf("   • Vacaciones truncas por %d mes(es)", datos.VacacionesMeses)
+	pdf.CellFormat(150, 4.5, tr(labelMesesVac), "L", 0, "L", false, 0, "")
+	pdf.CellFormat(40, 4.5, formatearMonto(l.MontoVacacionesTruncas), "R", 1, "R", false, 0, "")
+
+	if l.MontoVacacionesNoGozadas > 0 {
+		pdf.CellFormat(150, 4.5, tr("   • Vacaciones no gozadas (Periodos acumulados)"), "L", 0, "L", false, 0, "")
+		pdf.CellFormat(40, 4.5, formatearMonto(l.MontoVacacionesNoGozadas), "R", 1, "R", false, 0, "")
+	}
+	if l.MontoIndemnizacionVacacional > 0 {
+		pdf.CellFormat(150, 4.5, tr("   • Indemnización vacacional (DL 728)"), "L", 0, "L", false, 0, "")
+		pdf.CellFormat(40, 4.5, formatearMonto(l.MontoIndemnizacionVacacional), "R", 1, "R", false, 0, "")
+	}
+
+	pdf.SetFont("Arial", "I", 7.5)
+	labelDescuento := fmt.Sprintf("   • Descuento previsional (%s sobre vacaciones brutas)", datos.DescuentoPensionNombre)
+	pdf.CellFormat(150, 4.5, tr(labelDescuento), "L", 0, "L", false, 0, "")
+	pdf.CellFormat(40, 4.5, fmt.Sprintf("(%s)", formatearMonto(datos.MontoDescuentoPension)), "R", 1, "R", false, 0, "")
+
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(150, 5, tr("   VACACIONES NETAS A PAGAR"), "LBT", 0, "L", false, 0, "")
+	pdf.CellFormat(40, 5, formatearMonto(datos.VacacionesNetas), "RBT", 1, "R", false, 0, "")
+	pdf.Ln(3)
+
+	// 4. Gratificaciones Truncas y Bonificación Especial
+	dibujarEncabezadoSeccion("4", "GRATIFICACIONES TRUNCAS Y BONIFICACIÓN EXTRAORDINARIA")
+	pdf.SetFont("Arial", "I", 7.5)
+	pdf.CellFormat(190, 4, tr(fmt.Sprintf("   Semestre: %s (%s al %s)", datos.GratiSemestreTipo, datos.GratiPeriodoInicio, datos.GratiPeriodoFin)), "LR", 1, "L", false, 0, "")
+
+	pdf.SetFont("Arial", "", 8)
+	labelGrati := fmt.Sprintf("   • Gratificación trunca (%d mes/es, %d día/s)", datos.GratiMeses, datos.GratiDias)
+	pdf.CellFormat(150, 4.5, tr(labelGrati), "L", 0, "L", false, 0, "")
+	pdf.CellFormat(40, 4.5, formatearMonto(l.MontoGratiTrunca), "R", 1, "R", false, 0, "")
+
+	if datos.BonificacionEspecial > 0 {
+		pdf.CellFormat(150, 4.5, tr("   • Bonificación extraordinaria (9% Ley 29351/30334)"), "L", 0, "L", false, 0, "")
+		pdf.CellFormat(40, 4.5, formatearMonto(datos.BonificacionEspecial), "R", 1, "R", false, 0, "")
+	}
+
+	montoGratiTotal := l.MontoGratiTrunca + datos.BonificacionEspecial
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(150, 5, tr("   GRATIFICACIÓN Y BONIFICACIÓN A PAGAR"), "LBT", 0, "L", false, 0, "")
+	pdf.CellFormat(40, 5, formatearMonto(montoGratiTotal), "RBT", 1, "R", false, 0, "")
+	pdf.Ln(4)
+
+	// 5. Total General de la Liquidación
+	pdf.SetFillColor(0, 32, 96) // Azul Oscuro #002060
+	pdf.SetTextColor(255, 255, 255)
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(150, 7, tr("   TOTAL NETO A RECIBIR POR LIQUIDACIÓN DE BENEFICIOS"), "1", 0, "L", true, 0, "")
+	pdf.SetFont("Arial", "B", 11)
+	pdf.CellFormat(40, 7, fmt.Sprintf("S/ %s", formatearMonto(datos.TotalLiquidacion)), "1", 1, "R", true, 0, "")
+	pdf.SetTextColor(0, 0, 0)
+
+	// Monto en letras
+	pdf.SetFont("Arial", "B", 8.5)
+	pdf.SetTextColor(192, 0, 0)
+	pdf.CellFormat(190, 6, tr(datos.MontoEnLetras), "LBR", 1, "C", false, 0, "")
+	pdf.SetTextColor(0, 0, 0)
+	pdf.Ln(4)
+
+	// 6. Declaración de Conformidad y Espacio de Firmas
+	pdf.SetFont("Arial", "", 7.5)
+	declText := "FIRMO LA PRESENTE COMO CONSTANCIA DE HABER RECIBIDO LA INTEGRIDAD DE MI LIQUIDACIÓN DE BENEFICIOS SOCIALES DE CONFORMIDAD AL D.LEG. Nº 650 Y NO TENIENDO NADA QUE RECLAMAR."
+	pdf.MultiCell(190, 3.5, tr(declText), "", "J", false)
+	pdf.Ln(8)
+
+	pdf.SetFont("Arial", "", 8)
+	fechaEmisionStr := fmt.Sprintf("Fecha de emisión: %s", datos.FechaEmisionTexto)
+	pdf.CellFormat(190, 4, tr(fechaEmisionStr), "", 1, "L", false, 0, "")
+	pdf.Ln(18)
+
+	// Firmas
+	pdf.CellFormat(95, 4, "_________________________________", "", 0, "C", false, 0, "")
+	pdf.CellFormat(95, 4, "_________________________________", "", 1, "C", false, 0, "")
+
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(95, 4, tr(datos.TenantNombre), "", 0, "C", false, 0, "")
+	pdf.CellFormat(95, 4, tr(l.TrabajadorNombre), "", 1, "C", false, 0, "")
+
+	pdf.SetFont("Arial", "", 7.5)
+	pdf.CellFormat(95, 4, "EMPLEADOR", "", 0, "C", false, 0, "")
+	pdf.CellFormat(95, 4, tr(fmt.Sprintf("DNI: %s", l.TrabajadorDocumento)), "", 1, "C", false, 0, "")
+
+	var buf bytes.Buffer
+	err := pdf.Output(&buf)
+	return buf.Bytes(), err
+}
+
 // formatearMonto convierte un float64 a string con separador de miles (coma) y 2 decimales.
 // Ejemplo: 13345.34 -> 13,345.34
 func formatearMonto(n float64) string {

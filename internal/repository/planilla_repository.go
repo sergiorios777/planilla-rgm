@@ -2183,6 +2183,7 @@ func (r *PlanillaRepository) ObtenerFormulacionEspecial(planillaID int, tenantID
 			COALESCE(cr.codigo, 'N/A') as clasificador,
 			COALESCE(ct.es_ocasional, false),
 			COALESCE(ct.es_extraordinario, false),
+			COALESCE(ct.modalidad_entrega, 'PERMANENTE') as modalidad_entrega,
 			COALESCE(ct.es_pensionable, false),
 			COALESCE(ct.es_remunerativa, false),
 			pc.monto,
@@ -2208,7 +2209,7 @@ func (r *PlanillaRepository) ObtenerFormulacionEspecial(planillaID int, tenantID
 		var pcID int
 		err := rowsConc.Scan(
 			&c.ID, &c.NombrePersonalizado, &c.CodigoSunat, &c.ClasificadorCodigo,
-			&c.EsOcasional, &c.EsExtraordinario, &c.EsPensionable, &c.EsRemunerativa,
+			&c.EsOcasional, &c.EsExtraordinario, &c.ModalidadEntrega, &c.EsPensionable, &c.EsRemunerativa,
 			&c.MontoBase, &pcID,
 		)
 		if err == nil {

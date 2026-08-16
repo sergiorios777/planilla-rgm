@@ -1,0 +1,394 @@
+<article>
+    <!-- SECCIÓN 0: TÍTULO Y BOTONES -->
+    <header class="flex-row-between">
+        <h3 class="mb-0 flex-items-center flex-gap-sm">
+            <svg class="icono-menu">
+                <use href="#icono-banknotes"></use>
+            </svg>
+            Valores Históricos MUC (Monto Único Consolidado - MEF)
+        </h3>
+        <div class="flex-row-end flex-gap-sm">
+            <button class="secondary outline btn-compact mb-0"
+                onclick="document.getElementById('modal-importar-csv-muc').showModal()">
+                <svg class="icono-menu">
+                    <use href="#icono-importar"></use>
+                </svg>
+                Importar CSV
+            </button>
+            <button class="primary btn-compact mb-0" onclick="document.getElementById('modal-crear-muc').showModal()">
+                <svg class="icono-menu">
+                    <use href="#icono-plus"></use>
+                </svg>
+                Nuevo Registro MUC
+            </button>
+        </div>
+    </header>
+    <p><small class="text-muted">Gestión y registro histórico de los valores aprobados por el MEF para el Monto Único
+            Consolidado (MUC) por grupo ocupacional y nivel remunerativo.</small></p>
+
+    <!-- SECCIÓN 1: FILTROS DE BÚSQUEDA -->
+    <div class="card-section mb-md bg-light p-md border-radius-sm">
+        <form id="form-filtros-mef-muc" hx-get="/admin/mef-muc/lista" hx-target="#contenedor-tabla-mef-muc"
+            hx-trigger="change from:select, change from:input[type=date], keyup delay:300ms from:#buscar-mef-muc">
+            <div class="grid">
+                <label class="font-xs">Norma Legal
+                    <select name="norma_legal" class="h-35 font-xs">
+                        <option value="">-- Todas las normas --</option>
+                        {{range .NormasLegales}}
+                        <option value="{{.}}" {{if eq . $.Filtros.NormaLegal}}selected{{end}}>{{.}}</option>
+                        {{end}}
+                    </select>
+                </label>
+                <label class="font-xs">Fecha de la Norma Legal
+                    <input type="date" name="fecha_norma" value="{{.Filtros.FechaNorma}}" class="h-35 font-xs">
+                </label>
+                <label class="font-xs">Estado
+                    <select name="activo" class="h-35 font-xs">
+                        <option value="todos" {{if eq .Filtros.Activo "todos" }}selected{{end}}>Todos los Estados
+                        </option>
+                        <option value="activos" {{if or (eq .Filtros.Activo "activos" ) (eq .Filtros.Activo ""
+                            )}}selected{{end}}>Solo Activos</option>
+                        <option value="inactivos" {{if eq .Filtros.Activo "inactivos" }}selected{{end}}>Solo Inactivos
+                        </option>
+                    </select>
+                </label>
+                <label class="font-xs">Buscar (Grupo / Nivel Remunerativo)
+                    <input type="search" id="buscar-mef-muc" name="buscar" value="{{.Filtros.Buscar}}"
+                        placeholder="Ej. PROFESIONAL, SPA, F-1..." class="h-35 font-xs">
+                </label>
+            </div>
+        </form>
+    </div>
+
+    <!-- SECCIÓN 2: TABLA DE VALORES MUC CON PAGINACIÓN -->
+    <div id="contenedor-tabla-mef-muc" hx-get="/admin/mef-muc/lista" hx-trigger="recargarTablaMuc from:body"
+        hx-include="#form-filtros-mef-muc">
+        {{template "tabla_mef_muc" .}}
+    </div>
+</article>
+
+<!-- TEMPLATE CONTENEDOR DE LA TABLA Y PAGINADOR -->
+{{define "tabla_mef_muc"}}
+<div class="overflow-x-auto">
+    <table class="striped condensed w-full font-sm mb-md">
+        <thead>
+            <tr>
+                <th>Norma Legal</th>
+                <th>Fecha Norma</th>
+                <th>Grupo Ocupacional</th>
+                <th>Nivel Remunerativo</th>
+                <th class="text-right">Monto MUC (S/.)</th>
+                <th class="text-center">Estado</th>
+                <th class="text-right">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Valores}}
+            <tr>
+                <td><strong>{{.NormaLegal}}</strong></td>
+                <td>{{.FechaNorma.Format "02/01/2006"}}</td>
+                <td>
+                    <span class="badge {{if eq .GrupoOcupacional " FUNCIONARIO"}}badge-purple{{else if eq
+                        .GrupoOcupacional "PROFESIONAL" }}badge-info{{else if eq .GrupoOcupacional "TECNICO"
+                        }}badge-warning{{else}}badge-secondary{{end}}">
+                        {{.GrupoOcupacional}}
+                    </span>
+                </td>
+                <td><strong>{{.NivelRemunerativo}}</strong></td>
+                <td class="text-right stat-mono text-success">
+                    <strong>S/ {{.MontoMucFormato}}</strong>
+                </td>
+                <td class="text-center">
+                    {{if .Activo}}
+                    <span class="badge badge-success">Activo</span>
+                    {{else}}
+                    <span class="badge badge-danger">Inactivo</span>
+                    {{end}}
+                </td>
+                <td class="text-right">
+                    <div class="flex-row-end flex-gap-xs">
+                        <button class="btn-icon" hx-get="/admin/mef-muc/formulario-editar?id={{.ID}}"
+                            hx-target="#contenido-modal-editar-muc"
+                            onclick="document.getElementById('modal-editar-muc').showModal()"
+                            data-tooltip="Editar valor MUC" data-placement="top">
+                            <svg class="icono-menu">
+                                <use href="#icono-edit"></use>
+                            </svg>
+                        </button>
+                        <button class="btn-icon {{if .Activo}}btn-danger-icon{{end}}"
+                            hx-post="/admin/mef-muc/toggle-estado?id={{.ID}}&activo={{if .Activo}}false{{else}}true{{end}}"
+                            hx-target="#contenedor-tabla-mef-muc"
+                            data-tooltip="{{if .Activo}}Desactivar{{else}}Activar{{end}}" data-placement="top">
+                            <svg class="icono-menu">
+                                <use href="{{if .Activo}}#icono-eye-off{{else}}#icono-check{{end}}"></use>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="7" class="text-center text-muted font-italic py-md">No se encontraron registros de valores
+                    MUC que coincidan con los filtros.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<!-- PAGINADOR REUTILIZABLE -->
+{{template "componente_paginacion" .Paginacion}}
+{{end}}
+
+<!-- MODAL CREAR REGISTRO MUC -->
+<dialog id="modal-crear-muc">
+    <article class="modal-card-md">
+        <header>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-crear-muc').close()"></a>
+            <h4 class="mb-0 flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-plus"></use>
+                </svg>
+                Nuevo Registro de Valor MUC (MEF)
+            </h4>
+        </header>
+
+        <div id="alerta-crear-muc"></div>
+
+        <form id="form-crear-muc" hx-post="/admin/mef-muc/crear" hx-target="#contenedor-tabla-mef-muc">
+            <div class="grid">
+                <label>Norma Legal *
+                    <input type="text" name="norma_legal" required
+                        placeholder="Ej. D.U. N° 038-2019 / D.S. N° 261-2019-EF">
+                </label>
+                <label>Fecha de la Norma Legal *
+                    <input type="date" name="fecha_norma" required>
+                </label>
+            </div>
+
+            <div class="grid">
+                <label>Grupo Ocupacional *
+                    <select name="grupo_ocupacional" id="crear-grupo-ocupacional" required
+                        onchange="actualizarNivelesMuc('crear-grupo-ocupacional', 'crear-nivel-remunerativo')">
+                        <option value="" disabled selected>Seleccione un grupo...</option>
+                        <option value="FUNCIONARIO">FUNCIONARIO</option>
+                        <option value="PROFESIONAL">PROFESIONAL</option>
+                        <option value="TECNICO">TÉCNICO</option>
+                        <option value="AUXILIAR">AUXILIAR</option>
+                    </select>
+                </label>
+                <label>Nivel Remunerativo *
+                    <select name="nivel_remunerativo" id="crear-nivel-remunerativo" required>
+                        <option value="" disabled selected>Seleccione grupo primero...</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="grid">
+                <label>Monto del MUC (S/.) *
+                    <input type="number" step="0.01" name="monto_muc" required placeholder="0.00 (Ej: 1250.00)">
+                </label>
+                <label class="flex-items-end mb-md">
+                    <input type="checkbox" name="activo" checked>
+                    <strong>Estado Activo</strong>
+                </label>
+            </div>
+
+            <footer class="flex-row-end flex-gap-sm border-top pt-md">
+                <button type="button" class="secondary outline btn-compact"
+                    onclick="document.getElementById('modal-crear-muc').close()">Cancelar</button>
+                <button type="submit" class="btn-compact">
+                    <svg class="icono-menu">
+                        <use href="#icono-check"></use>
+                    </svg>
+                    Guardar Registro MUC
+                </button>
+            </footer>
+        </form>
+    </article>
+</dialog>
+
+<!-- MODAL EDITAR REGISTRO MUC -->
+<dialog id="modal-editar-muc">
+    <article class="modal-card-md">
+        <header>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-editar-muc').close()"></a>
+            <h4 class="mb-0 flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-edit"></use>
+                </svg>
+                Editar Registro de Valor MUC (MEF)
+            </h4>
+        </header>
+        <div id="contenido-modal-editar-muc">
+            <p aria-busy="true" class="text-center">Cargando datos del registro...</p>
+        </div>
+    </article>
+</dialog>
+
+<!-- TEMPLATE DE FORMULARIO DE EDICIÓN -->
+{{define "formulario_editar_muc"}}
+<form id="form-editar-muc" hx-post="/admin/mef-muc/actualizar" hx-target="#contenedor-tabla-mef-muc">
+    <input type="hidden" name="id" value="{{.ID}}">
+
+    <div class="grid">
+        <label>Norma Legal *
+            <input type="text" name="norma_legal" value="{{.NormaLegal}}" required>
+        </label>
+        <label>Fecha de la Norma Legal *
+            <input type="date" name="fecha_norma" value="{{.FechaNormaFormato}}" required>
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>Grupo Ocupacional *
+            <select name="grupo_ocupacional" id="editar-grupo-ocupacional" required
+                onchange="actualizarNivelesMuc('editar-grupo-ocupacional', 'editar-nivel-remunerativo')">
+                <option value="FUNCIONARIO" {{if eq .GrupoOcupacional "FUNCIONARIO" }}selected{{end}}>FUNCIONARIO
+                </option>
+                <option value="PROFESIONAL" {{if eq .GrupoOcupacional "PROFESIONAL" }}selected{{end}}>PROFESIONAL
+                </option>
+                <option value="TECNICO" {{if eq .GrupoOcupacional "TECNICO" }}selected{{end}}>TÉCNICO</option>
+                <option value="AUXILIAR" {{if eq .GrupoOcupacional "AUXILIAR" }}selected{{end}}>AUXILIAR</option>
+            </select>
+        </label>
+        <label>Nivel Remunerativo *
+            <select name="nivel_remunerativo" id="editar-nivel-remunerativo" data-actual="{{.NivelRemunerativo}}"
+                required>
+            </select>
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>Monto del MUC (S/.) *
+            <input type="number" step="0.01" name="monto_muc" value="{{printf " %.2f" .MontoMuc}}" required>
+        </label>
+        <label class="flex-items-end mb-md">
+            <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}>
+            <strong>Estado Activo</strong>
+        </label>
+    </div>
+
+    <footer class="flex-row-end flex-gap-sm border-top pt-md">
+        <button type="button" class="secondary outline btn-compact"
+            onclick="document.getElementById('modal-editar-muc').close()">Cancelar</button>
+        <button type="submit" class="btn-compact">
+            <svg class="icono-menu">
+                <use href="#icono-check"></use>
+            </svg>
+            Actualizar Registro MUC
+        </button>
+    </footer>
+</form>
+<script>
+    actualizarNivelesMuc('editar-grupo-ocupacional', 'editar-nivel-remunerativo');
+</script>
+{{end}}
+
+<!-- MODAL IMPORTAR CSV MUC -->
+<dialog id="modal-importar-csv-muc">
+    <article class="modal-card-md">
+        <header>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-importar-csv-muc').close()"></a>
+            <h4 class="mb-0 flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-importar"></use>
+                </svg>
+                Importar Valores MUC desde Archivo CSV
+            </h4>
+        </header>
+
+        <div id="resultado-importar-csv"></div>
+
+        <p class="font-xs text-muted">
+            Permite la carga masiva de valores MUC vigentes e históricos aprobados por el MEF. El archivo debe incluir
+            los encabezados:
+            <code>norma_legal, fecha_norma, grupo_ocupacional, nivel_remunerativo, monto_muc, activo</code>.
+        </p>
+
+        <div class="mb-md">
+            <a href="/admin/mef-muc/plantilla-csv" download="plantilla_valores_muc_mef.csv"
+                class="button secondary outline btn-compact">
+                <svg class="icono-menu">
+                    <use href="#icono-document-arrow-down"></use>
+                </svg>
+                Descargar Archivo CSV de Ejemplo
+            </a>
+        </div>
+
+        <form id="form-importar-csv-muc" hx-post="/admin/mef-muc/importar-csv" hx-encoding="multipart/form-data"
+            hx-target="#resultado-importar-csv">
+            <label>Seleccionar archivo .CSV
+                <input type="file" name="archivo_csv" accept=".csv,text/csv" required>
+            </label>
+
+            <footer class="flex-row-end flex-gap-sm border-top pt-md">
+                <button type="button" class="secondary outline btn-compact"
+                    onclick="document.getElementById('modal-importar-csv-muc').close()">Cerrar</button>
+                <button type="submit" class="btn-compact">
+                    <svg class="icono-menu">
+                        <use href="#icono-upload"></use>
+                    </svg>
+                    Iniciar Importación CSV
+                </button>
+            </footer>
+        </form>
+    </article>
+</dialog>
+
+<script>
+    const NIVELES_MUC = {
+        'FUNCIONARIO': ['F-1', 'F-2', 'F-3', 'F-4', 'F-5', 'F-6', 'F-7', 'F-8'],
+        'PROFESIONAL': ['SPA', 'SPB', 'SPC', 'SPD', 'SPE', 'SPF'],
+        'TECNICO': ['STA', 'STB', 'STC', 'STD', 'STE', 'STF'],
+        'AUXILIAR': ['SAA', 'SAB', 'SAC', 'SAD', 'SAE', 'SAF']
+    };
+
+    function actualizarNivelesMuc(idGrupoSelect, idNivelSelect) {
+        const grupoSelect = document.getElementById(idGrupoSelect);
+        const nivelSelect = document.getElementById(idNivelSelect);
+        if (!grupoSelect || !nivelSelect) return;
+
+        const grupoVal = grupoSelect.value;
+        const actualVal = nivelSelect.getAttribute('data-actual') || nivelSelect.value;
+
+        nivelSelect.innerHTML = '';
+
+        const opciones = NIVELES_MUC[grupoVal] || [];
+        if (opciones.length === 0) {
+            const optDefault = document.createElement('option');
+            optDefault.value = '';
+            optDefault.innerText = 'Seleccione un grupo ocupacional';
+            nivelSelect.appendChild(optDefault);
+            return;
+        }
+
+        opciones.forEach(niv => {
+            const opt = document.createElement('option');
+            opt.value = niv;
+            opt.innerText = niv;
+            if (niv === actualVal) opt.selected = true;
+            nivelSelect.appendChild(opt);
+        });
+    }
+
+    document.body.addEventListener('cerrarModalCrearMuc', function () {
+        const modal = document.getElementById('modal-crear-muc');
+        if (modal && modal.open) modal.close();
+        const form = document.getElementById('form-crear-muc');
+        if (form) form.reset();
+    });
+
+    document.body.addEventListener('cerrarModalEditarMuc', function () {
+        const modal = document.getElementById('modal-editar-muc');
+        if (modal && modal.open) modal.close();
+    });
+
+    document.body.addEventListener('cerrarModalImportarMuc', function () {
+        const modal = document.getElementById('modal-importar-csv-muc');
+        if (modal && modal.open) modal.close();
+    });
+</script>

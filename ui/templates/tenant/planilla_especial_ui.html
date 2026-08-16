@@ -86,9 +86,12 @@
                             </td>
                             <td>
                                 <div class="flex-gap-xs flex-wrap">
-                                    {{if .EsOcasional}}<mark
-                                        class="badge badge-gray font-xs font-bold">OCASIONAL</mark>{{end}}
-                                    {{if .EsExtraordinario}}<mark
+                                    {{if eq .ModalidadEntrega "PERMANENTE"}}<mark class="badge badge-info font-xs font-bold">PERMANENTE</mark>
+                                    {{else if eq .ModalidadEntrega "PERIODICO"}}<mark class="badge badge-warning font-xs font-bold">PERIÓDICO</mark>
+                                    {{else if eq .ModalidadEntrega "EXCEPCIONAL"}}<mark class="badge badge-purple font-xs font-bold">EXCEPCIONAL</mark>
+                                    {{else if eq .ModalidadEntrega "OCASIONAL"}}<mark class="badge badge-gray font-xs font-bold">OCASIONAL</mark>
+                                    {{else if .EsOcasional}}<mark class="badge badge-gray font-xs font-bold">OCASIONAL</mark>{{end}}
+                                    {{if and .EsExtraordinario (ne .ModalidadEntrega "EXCEPCIONAL")}}<mark
                                         class="badge badge-purple font-xs font-bold">EXTRAORDINARIO</mark>{{end}}
                                     {{if .EsPensionable}}<mark
                                         class="badge badge-success font-xs font-bold">PENSIONABLE</mark>{{end}}

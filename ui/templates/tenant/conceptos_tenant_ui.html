@@ -276,52 +276,53 @@
         </div>
     </fieldset>
 
-    <label>Nombre Personalizado (Máscara para la Boleta)
-        <input type="text" name="nombre_personalizado" placeholder="Ej. Remuneración CAS, Bono Frontera..." required>
-    </label>
-
     <div class="grid">
+        <label>Nombre Personalizado (Máscara para la Boleta)
+            <input type="text" name="nombre_personalizado" placeholder="Ej. Remuneración CAS, Bono Frontera..." required>
+        </label>
         <label>Frecuencia de Pago (Meses)
             <input type="text" name="frecuencia_meses" value="1,2,3,4,5,6,7,8,9,10,11,12" required>
             <small>Ej. Todos = 1,2..12 | Aguinaldo = 7,12 | Escolaridad = 1</small>
         </label>
-        <label>Clasificador Presupuestal (SIAF)
-            <select name="clasificador_id" class="select-con-buscador">
-                <option value="">-- Sin Clasificador --</option>
-                {{range .Clasificadores}}
-                <option value="{{.ID}}">{{.CodigoLimpio}} - {{.Descripcion}}</option>
-                {{end}}
-            </select>
-        </label>
     </div>
 
-    <label>
-        <input type="checkbox" name="activo" role="switch" checked> Concepto Activo
-    </label>
-
-    <label>
-        <input type="checkbox" name="es_extraordinario" role="switch"> Concepto Extraordinario
+    <label>Clasificador Presupuestal (SIAF)
+        <select name="clasificador_id" class="select-con-buscador">
+            <option value="">-- Sin Clasificador --</option>
+            {{range .Clasificadores}}
+            <option value="{{.ID}}">{{.CodigoLimpio}} - {{.Descripcion}}</option>
+            {{end}}
+        </select>
     </label>
 
     <div class="grid">
-        <label>
-            <input type="checkbox" name="es_pensionable" role="switch"> ¿Es Pensionable?
-        </label>
-        <label>
-            <input type="checkbox" name="es_remunerativa" role="switch"> ¿Es Remunerativa?
-        </label>
-    </div>
-
-    <div class="grid">
-        <label>
-            <input type="checkbox" name="es_base_cts" role="switch"> ¿Base CTS?
-        </label>
-        <label>
-            <input type="checkbox" name="es_base_beneficios_sociales" role="switch"> ¿Base Beneficios Sociales?
-        </label>
-        <label>
-            <input type="checkbox" name="es_afecto_cargas_sociales" role="switch"> ¿Afecto Cargas Soc.?
-        </label>
+        <div>
+            <label>
+                <input type="checkbox" name="activo" role="switch" checked> Concepto Activo
+            </label>
+            <label>
+                <input type="checkbox" name="es_remunerativa" role="switch"> ¿Es Remunerativa?
+            </label>
+            <label>
+                <input type="checkbox" name="es_pensionable" role="switch"> ¿Es Pensionable?
+            </label>
+        </div>
+        <div>
+            <label>
+                <input type="checkbox" name="es_base_cts" role="switch"> ¿Base CTS?
+            </label>
+            <label>
+                <input type="checkbox" name="es_base_beneficios_sociales" role="switch"> ¿Base Beneficios Sociales?
+            </label>
+            <label>
+                <input type="checkbox" name="es_afecto_cargas_sociales" role="switch"> ¿Afecto Cargas Soc.?
+            </label>
+        </div>
+        <div>
+            <label>
+                <input type="checkbox" name="es_extraordinario" role="switch"> Concepto Extraordinario
+            </label>
+        </div>
     </div>
 
     <div class="flex-row-end mt-lg">
@@ -366,63 +367,59 @@
         </div>
     </fieldset>
 
-    <label>Nombre Local en Boleta
-        <input type="text" name="nombre_personalizado" value="{{.Concepto.NombrePersonalizado}}" required>
-    </label>
-
     <div class="grid">
-
-        <label>Frecuencia (Meses ej: 1,2,3...12)
+        <label>Nombre Local en Boleta
+            <input type="text" name="nombre_personalizado" value="{{.Concepto.NombrePersonalizado}}" required>
+        </label>
+        <label>Frecuencia de Pago (Meses)
             <input type="text" name="frecuencia_meses" value="{{.Concepto.FrecuenciaMeses}}" required>
-        </label>
-
-        <label>Clasificador SIAF (Opcional)
-            <select name="clasificador_id" class="select-con-buscador">
-                <option value="">-- Sin Clasificador SIAF --</option>
-                {{range .Clasificadores}}
-                <option value="{{.ID}}" {{if eq .ID $.ClasificadorIDSeleccionado}}selected{{end}}>
-                    {{.CodigoLimpio}} - {{.Descripcion}}
-                </option>
-                {{end}}
-            </select>
+            <small>Ej. Todos = 1,2..12 | Aguinaldo = 7,12 | Escolaridad = 1</small>
         </label>
     </div>
 
-    <label>
-        <input type="checkbox" role="switch" name="activo" {{if .Concepto.Activo}}checked{{end}}> Concepto Activo
-    </label>
-    <label>
-        <input type="checkbox" role="switch" name="es_extraordinario" {{if .Concepto.EsExtraordinario}}checked{{end}}>
-        Concepto Extraordinario
+    <label>Clasificador SIAF (Opcional)
+        <select name="clasificador_id" class="select-con-buscador">
+            <option value="">-- Sin Clasificador SIAF --</option>
+            {{range .Clasificadores}}
+            <option value="{{.ID}}" {{if eq .ID $.ClasificadorIDSeleccionado}}selected{{end}}>
+                {{.CodigoLimpio}} - {{.Descripcion}}
+            </option>
+            {{end}}
+        </select>
     </label>
 
     <div class="grid">
-        <label>
-            <input type="checkbox" role="switch" name="es_pensionable" {{if .Concepto.EsPensionable}}checked{{end}}> Es
-            Pensionable
-        </label>
-        <label>
-            <input type="checkbox" role="switch" name="es_remunerativa" {{if .Concepto.EsRemunerativa}}checked{{end}}>
-            Es Remunerativa
-        </label>
-    </div>
-
-    <div class="grid">
-        <label>
-            <input type="checkbox" role="switch" name="es_base_cts" {{if .Concepto.EsBaseCts}}checked{{end}}> Base CTS
-        </label>
-        <label>
-            <input type="checkbox" role="switch" name="es_base_beneficios_sociales" {{if
-                .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> Base Beneficios Sociales
-        </label>
-        <label>
-            <input type="checkbox" role="switch" name="es_afecto_cargas_sociales" {{if
-                .Concepto.EsAfectoCargasSociales}}checked{{end}}> Afecto Cargas Soc.
-        </label>
-        <label>
-            <input type="checkbox" role="switch" name="es_ocasional" {{if .Concepto.EsOcasional}}checked{{end}}
-                disabled> ¿Es Ocasional? (Configuración Centralizada)
-        </label>
+        <div>
+            <label>
+                <input type="checkbox" role="switch" name="activo" {{if .Concepto.Activo}}checked{{end}}> Concepto Activo
+            </label>
+            <label>
+                <input type="checkbox" role="switch" name="es_remunerativa" {{if .Concepto.EsRemunerativa}}checked{{end}}> ¿Es Remunerativa?
+            </label>
+            <label>
+                <input type="checkbox" role="switch" name="es_pensionable" {{if .Concepto.EsPensionable}}checked{{end}}> ¿Es Pensionable?
+            </label>
+        </div>
+        <div>
+            <label>
+                <input type="checkbox" role="switch" name="es_base_cts" {{if .Concepto.EsBaseCts}}checked{{end}}> ¿Base CTS?
+            </label>
+            <label>
+                <input type="checkbox" role="switch" name="es_base_beneficios_sociales" {{if .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> ¿Base Beneficios Sociales?
+            </label>
+            <label>
+                <input type="checkbox" role="switch" name="es_afecto_cargas_sociales" {{if .Concepto.EsAfectoCargasSociales}}checked{{end}}> ¿Afecto Cargas Soc.?
+            </label>
+        </div>
+        <div>
+            <label>
+                <input type="checkbox" role="switch" name="es_extraordinario" {{if .Concepto.EsExtraordinario}}checked{{end}}> Concepto Extraordinario
+            </label>
+            <label>
+                Modalidad de Entrega (Centralizada)
+                <input type="text" value="{{if .Concepto.ModalidadEntrega}}{{.Concepto.ModalidadEntrega}}{{else if .Concepto.EsOcasional}}OCASIONAL{{else}}PERMANENTE{{end}}" readonly disabled>
+            </label>
+        </div>
     </div>
 
     <div class="flex-row-between mt-lg">

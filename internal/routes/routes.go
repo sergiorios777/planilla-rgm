@@ -202,6 +202,18 @@ func registrarRutasAdmin(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/admin/tareas/crear", middleware.RequireRole("super_admin", tareah.Crear))
 	mux.HandleFunc("/admin/tareas/editar_ui", middleware.RequireRole("super_admin", tareah.EditarUI))
 	mux.HandleFunc("/admin/tareas/actualizar", middleware.RequireRole("super_admin", tareah.Actualizar))
+
+	// Rutas de Valores Históricos MUC (MEF)
+	mefMucRepo := repository.NewMefMucRepository(db)
+	mefMucHandler := handlers.NewMefMucHandler(mefMucRepo)
+	mux.HandleFunc("/admin/ui/mef-muc", middleware.RequireRole("super_admin", mefMucHandler.VistaUI))
+	mux.HandleFunc("/admin/mef-muc/lista", middleware.RequireRole("super_admin", mefMucHandler.Listar))
+	mux.HandleFunc("/admin/mef-muc/crear", middleware.RequireRole("super_admin", mefMucHandler.Crear))
+	mux.HandleFunc("/admin/mef-muc/formulario-editar", middleware.RequireRole("super_admin", mefMucHandler.EditarForm))
+	mux.HandleFunc("/admin/mef-muc/actualizar", middleware.RequireRole("super_admin", mefMucHandler.Actualizar))
+	mux.HandleFunc("/admin/mef-muc/toggle-estado", middleware.RequireRole("super_admin", mefMucHandler.ToggleEstado))
+	mux.HandleFunc("/admin/mef-muc/importar-csv", middleware.RequireRole("super_admin", mefMucHandler.ImportarCSV))
+	mux.HandleFunc("/admin/mef-muc/plantilla-csv", middleware.RequireRole("super_admin", mefMucHandler.DescargarPlantillaCSV))
 }
 
 // --- SECCIÓN TENANT (MUNICIPALIDADES) ---
@@ -449,10 +461,11 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	}
 
 	// Módulo de Liquidaciones de Cese y Vacaciones
+	pdfService := services.NewPdfService()
 	vacService := services.NewVacacionesService(repository.NewBaseRegimenRepository(db))
 	liquidacionRepo := repository.NewLiquidacionRepository(db)
 	liquidacionService := services.NewLiquidacionService(db, vacService)
-	liquidacionHandler := handlers.NewLiquidacionHandler(liquidacionRepo, liquidacionService, contratoRepo)
+	liquidacionHandler := handlers.NewLiquidacionHandler(liquidacionRepo, liquidacionService, contratoRepo, pdfService)
 
 	// Rutas de CTS Semestral
 	mux.HandleFunc("/tenant/ui/cts", middleware.RequireAuth(ctsHandler.CtsVistaUI))
@@ -465,9 +478,11 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 
 	// Rutas de Liquidaciones de Cese
 	mux.HandleFunc("/tenant/ui/liquidaciones", middleware.RequireAuth(liquidacionHandler.LiquidacionesVistaUI))
+	mux.HandleFunc("/tenant/ui/liquidaciones/nueva", middleware.RequireAuth(liquidacionHandler.FormularioNuevaLiquidacionUI))
 	mux.HandleFunc("/tenant/liquidaciones/lista", middleware.RequireAuth(liquidacionHandler.ListarLiquidacionesCese))
 	mux.HandleFunc("/tenant/liquidaciones/formulario-crear", middleware.RequireAuth(liquidacionHandler.FormularioCrearUI))
 	mux.HandleFunc("/tenant/liquidaciones/calcular", middleware.RequireAuth(liquidacionHandler.CalcularLiquidacionCese))
 	mux.HandleFunc("/tenant/liquidaciones/guardar", middleware.RequireAuth(liquidacionHandler.GuardarLiquidacionCese))
 	mux.HandleFunc("/tenant/liquidaciones/eliminar", middleware.RequireAuth(liquidacionHandler.EliminarLiquidacionCese))
+	mux.HandleFunc("/tenant/liquidaciones/reporte-pdf", middleware.RequireAuth(liquidacionHandler.DescargarReportePDF))
 }

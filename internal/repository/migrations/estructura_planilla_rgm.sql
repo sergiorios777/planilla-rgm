@@ -396,7 +396,8 @@ CREATE TABLE public.conceptos_modelo (
     es_base_cts boolean DEFAULT false,
     es_base_beneficios_sociales boolean DEFAULT false,
     es_ocasional boolean DEFAULT false NOT NULL,
-    es_afecto_cargas_sociales boolean DEFAULT false NOT NULL
+    es_afecto_cargas_sociales boolean DEFAULT false NOT NULL,
+    modalidad_entrega character varying(20) DEFAULT 'PERMANENTE'::character varying NOT NULL
 );
 
 
@@ -446,7 +447,8 @@ CREATE TABLE public.conceptos_tenant (
     es_base_cts boolean DEFAULT false,
     es_base_beneficios_sociales boolean DEFAULT false,
     es_ocasional boolean DEFAULT false NOT NULL,
-    es_afecto_cargas_sociales boolean DEFAULT false NOT NULL
+    es_afecto_cargas_sociales boolean DEFAULT false NOT NULL,
+    modalidad_entrega character varying(20) DEFAULT 'PERMANENTE'::character varying NOT NULL
 );
 
 

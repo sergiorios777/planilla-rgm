@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -16,13 +17,15 @@ type LiquidacionHandler struct {
 	LiquidacionRepo    *repository.LiquidacionRepository
 	LiquidacionService *services.LiquidacionService
 	ContratoRepo       *repository.ContratoRepository
+	PdfService         *services.PdfService
 }
 
-func NewLiquidacionHandler(repo *repository.LiquidacionRepository, service *services.LiquidacionService, contratoRepo *repository.ContratoRepository) *LiquidacionHandler {
+func NewLiquidacionHandler(repo *repository.LiquidacionRepository, service *services.LiquidacionService, contratoRepo *repository.ContratoRepository, pdfService *services.PdfService) *LiquidacionHandler {
 	return &LiquidacionHandler{
 		LiquidacionRepo:    repo,
 		LiquidacionService: service,
 		ContratoRepo:       contratoRepo,
+		PdfService:         pdfService,
 	}
 }
 
@@ -51,7 +54,7 @@ func (h *LiquidacionHandler) ListarLiquidacionesCese(w http.ResponseWriter, r *h
 	tmpl.ExecuteTemplate(w, "tabla_liquidaciones", liquidaciones)
 }
 
-func (h *LiquidacionHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Request) {
+func (h *LiquidacionHandler) FormularioNuevaLiquidacionUI(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
 	contratos, err := h.ContratoRepo.ObtenerTodos(tenantID)
 	if err != nil {
@@ -67,12 +70,16 @@ func (h *LiquidacionHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	tmpl, err := template.ParseFiles("ui/templates/tenant/liquidaciones_ui.html")
+	tmpl, err := template.ParseFiles("ui/templates/tenant/liquidacion_crear_ui.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	tmpl.ExecuteTemplate(w, "formulario_crear_liq", filtrados)
+	tmpl.Execute(w, filtrados)
+}
+
+func (h *LiquidacionHandler) FormularioCrearUI(w http.ResponseWriter, r *http.Request) {
+	h.FormularioNuevaLiquidacionUI(w, r)
 }
 
 func (h *LiquidacionHandler) CalcularLiquidacionCese(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +139,7 @@ func (h *LiquidacionHandler) CalcularLiquidacionCese(w http.ResponseWriter, r *h
 
 	liq.TotalLiquidacion = liq.MontoCts + liq.MontoVacacionesTruncas + liq.MontoVacacionesNoGozadas + liq.MontoIndemnizacionVacacional + liq.MontoGratiTrunca
 
-	tmpl, err := template.ParseFiles("ui/templates/tenant/liquidaciones_ui.html")
+	tmpl, err := template.ParseFiles("ui/templates/tenant/liquidacion_crear_ui.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -217,8 +224,7 @@ func (h *LiquidacionHandler) GuardarLiquidacionCese(w http.ResponseWriter, r *ht
 		return
 	}
 
-	w.Header().Set("HX-Trigger", "cerrarModalLiq")
-	h.ListarLiquidacionesCese(w, r)
+	h.LiquidacionesVistaUI(w, r)
 }
 
 func (h *LiquidacionHandler) EliminarLiquidacionCese(w http.ResponseWriter, r *http.Request) {
@@ -232,4 +238,35 @@ func (h *LiquidacionHandler) EliminarLiquidacionCese(w http.ResponseWriter, r *h
 	}
 
 	h.ListarLiquidacionesCese(w, r)
+}
+
+func (h *LiquidacionHandler) DescargarReportePDF(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	if id <= 0 {
+		http.Error(w, "ID de liquidación no válido", http.StatusBadRequest)
+		return
+	}
+
+	datos, err := h.LiquidacionRepo.ObtenerDatosReporteLiquidacion(id, tenantID)
+	if err != nil {
+		http.Error(w, "Error al recuperar la liquidación: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if h.PdfService == nil {
+		h.PdfService = services.NewPdfService()
+	}
+
+	pdfBytes, err := h.PdfService.GenerarReporteLiquidacionPDF(datos)
+	if err != nil {
+		http.Error(w, "Error al generar el reporte PDF: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filename := fmt.Sprintf("Liquidacion_Cese_%d.pdf", id)
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", filename))
+	w.Header().Set("Content-Length", strconv.Itoa(len(pdfBytes)))
+	w.Write(pdfBytes)
 }

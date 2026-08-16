@@ -4,6 +4,8 @@ import (
 	"html/template"
 	"net/http"
 
+	"planilla-rgm/internal/helpers"
+	"planilla-rgm/internal/middleware"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
 	"planilla-rgm/internal/services"
@@ -26,11 +28,32 @@ func NewResumenHandler(service *services.ResumenService, tenantRepo *repository.
 // IndexTenant renderiza tenant_index.html con los KPIs procesados por el servicio
 func (h *ResumenHandler) IndexTenant(w http.ResponseWriter, r *http.Request) {
 	var uID, tID int
-	if val, ok := r.Context().Value("usuario_id").(float64); ok {
-		uID = int(val)
+
+	// Extraer usuario_id (soporta contextKey y string)
+	if val := r.Context().Value(middleware.UsuarioIDKey); val != nil {
+		if fVal, ok := val.(float64); ok {
+			uID = int(fVal)
+		} else if iVal, ok := val.(int); ok {
+			uID = iVal
+		}
 	}
-	if val, ok := r.Context().Value("tenant_id").(float64); ok {
-		tID = int(val)
+	if uID == 0 {
+		if val := r.Context().Value("usuario_id"); val != nil {
+			if fVal, ok := val.(float64); ok {
+				uID = int(fVal)
+			} else if iVal, ok := val.(int); ok {
+				uID = iVal
+			}
+		}
+	}
+
+	// Extraer tenant_id
+	if val := r.Context().Value("tenant_id"); val != nil {
+		if fVal, ok := val.(float64); ok {
+			tID = int(fVal)
+		} else if iVal, ok := val.(int); ok {
+			tID = iVal
+		}
 	}
 
 	var tenantNombre string
@@ -46,15 +69,14 @@ func (h *ResumenHandler) IndexTenant(w http.ResponseWriter, r *http.Request) {
 		u, err := h.UsuarioRepo.ObtenerPorID(uID)
 		if err == nil && u != nil {
 			usuarioNombre = u.Nombre
-			switch u.Rol {
-			case "tenant_admin":
-				usuarioRol = "Administrador"
-			case "tenant_operator":
-				usuarioRol = "Operador"
-			case "super_admin":
-				usuarioRol = "Súper Admin"
-			default:
-				usuarioRol = u.Rol
+			usuarioRol = helpers.FormatearRol(u.Rol)
+		}
+	}
+
+	if usuarioRol == "" {
+		if rVal := r.Context().Value(middleware.RolKey); rVal != nil {
+			if rStr, ok := rVal.(string); ok && rStr != "" {
+				usuarioRol = helpers.FormatearRol(rStr)
 			}
 		}
 	}
