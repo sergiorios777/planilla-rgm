@@ -1,69 +1,89 @@
 <article>
     <header class="flex-row-between">
         <div>
-            <h3 class="m-0"><svg class="icono-menu"><use href="#icono-red"></use></svg> Estructura Orgánica (Organigrama)</h3>
-            <p class="m-0"><small>Gestión de versiones de organigramas y asignación de puestos.</small></p>
+            <h3 class="m-0 flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-red"></use>
+                </svg> Estructura Orgánica (Organigrama)
+            </h3>
+            <p class="m-0"><small class="text-muted">Gestión de versiones de organigramas y asignación de puestos.</small></p>
         </div>
-        
+
         <div role="group" class="mb-0">
-            <select name="organigrama_id" 
-                    hx-get="/tenant/organigrama/arbol" 
-                    hx-target="#contenedor-arbol-organico"
-                    class="mb-0 max-w-250"
-                    {{if not .Organigramas}}disabled{{end}}>
+            <select name="organigrama_id" hx-get="/tenant/organigrama/arbol" hx-target="#contenedor-arbol-organico"
+                class="mb-0 max-w-250 select-compact" {{if not .Organigramas}}disabled{{end}}>
                 {{if not .Organigramas}}
-                    <option value="">Sin versiones creadas</option>
+                <option value="">Sin versiones creadas</option>
                 {{else}}
-                    {{range .Organigramas}}
-                        <option value="{{.ID}}" {{if .Activo}}selected{{end}}>
-                            {{.DocumentoAprobacion}} {{if .Activo}}(Activo){{end}}
-                        </option>
-                    {{end}}
+                {{range .Organigramas}}
+                <option value="{{.ID}}" {{if .Activo}}selected{{end}}>
+                    {{.DocumentoAprobacion}} {{if .Activo}}(Activo){{end}}
+                </option>
+                {{end}}
                 {{end}}
             </select>
-            <button class="outline" onclick="abrirModalClonacion()">
-                ✨ Nueva Versión (Clonar)
+            <button class="outline secondary btn-compact" onclick="abrirModalClonacion()">
+                <svg class="icono-menu">
+                    <use href="#icono-flujo-trabajo"></use>
+                </svg> Nueva Versión
             </button>
-            <button class="outline primary" onclick="abrirModalImportacion()" {{if not .Organigramas}}disabled{{end}}>
-                📥 Importar Excel
+            <button class="outline primary btn-compact" onclick="abrirModalImportacion()" {{if not .Organigramas}}disabled{{end}}>
+                <svg class="icono-menu">
+                    <use href="#icono-importar"></use>
+                </svg> Importar Excel
             </button>
         </div>
     </header>
 
     <div id="contenedor-arbol-organico" hx-get="/tenant/organigrama/arbol" hx-trigger="load, reloadArbol from:body">
-        <div aria-busy="true" class="text-center">Cargando estructura orgánica...</div>
+        <div aria-busy="true" class="text-center p-md">Cargando estructura orgánica...</div>
     </div>
 </article>
 
 <!-- Modal de Unidad (Crear/Editar) -->
 <dialog id="modal-unidad-global">
-    <article id="modal-unidad-contenido">
+    <article id="modal-unidad-contenido" class="modal-card-md">
         <!-- Rellenado dinámicamente por HTMX -->
     </article>
 </dialog>
 
 <!-- Modal para Nueva Versión (Clonar) -->
 <dialog id="modal-clonar-organigrama">
-    <article>
+    <article class="modal-card-md">
         <header>
-            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-clonar-organigrama').close()"></a>
-            <h3>✨ Crear Nueva Versión (Clonar Actual)</h3>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-clonar-organigrama').close()"></a>
+            <h4 class="m-0 flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-flujo-trabajo"></use>
+                </svg> Crear Nueva Versión (Clonar Actual)
+            </h4>
         </header>
         <form hx-post="/tenant/organigrama/clonar" hx-target="body">
             <input type="hidden" name="origen_id" id="clonar-origen-id">
-            
-            <label for="documento_aprobacion">Documento de Aprobación (Ordenanza / Resolución):</label>
-            <input type="text" id="documento_aprobacion" name="documento_aprobacion" placeholder="Ej: Ordenanza Municipal N° 120-2026" required>
 
-            <label for="descripcion">Descripción adicional:</label>
-            <input type="text" id="descripcion" name="descripcion" placeholder="Ej: Nueva estructura organica modificatoria">
+            <label for="documento_aprobacion">Documento de Aprobación (Ordenanza / Resolución):
+                <input type="text" id="documento_aprobacion" name="documento_aprobacion"
+                    placeholder="Ej: Ordenanza Municipal N° 120-2026" required>
+            </label>
 
-            <label for="fecha_vigencia">Fecha de Vigencia:</label>
-            <input type="date" id="fecha_vigencia" name="fecha_vigencia" required>
+            <div class="grid">
+                <label for="descripcion">Descripción adicional:
+                    <input type="text" id="descripcion" name="descripcion"
+                        placeholder="Ej: Nueva estructura orgánica modificatoria">
+                </label>
+
+                <label for="fecha_vigencia">Fecha de Vigencia:
+                    <input type="date" id="fecha_vigencia" name="fecha_vigencia" required>
+                </label>
+            </div>
 
             <footer>
-                <button type="button" class="secondary outline" onclick="document.getElementById('modal-clonar-organigrama').close()">Cancelar</button>
-                <button type="submit">Iniciar Transición (Clonar)</button>
+                <button type="button" class="secondary outline btn-compact"
+                    onclick="document.getElementById('modal-clonar-organigrama').close()">Cancelar</button>
+                <button type="submit" class="primary btn-compact">
+                    <svg class="icono-menu"><use href="#icono-guardar"></use></svg> Iniciar Transición (Clonar)
+                </button>
             </footer>
         </form>
     </article>
@@ -71,27 +91,36 @@
 
 <!-- Modal para Importar de Excel -->
 <dialog id="modal-importar-organigrama">
-    <article>
+    <article class="modal-card-md">
         <header>
-            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-importar-organigrama').close()"></a>
-            <h3>📥 Importar Estructura Orgánica</h3>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-importar-organigrama').close()"></a>
+            <h4 class="m-0 flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-importar"></use>
+                </svg> Importar Estructura Orgánica
+            </h4>
         </header>
         <div class="card-section alert-warning mb-md">
             <strong>⚠️ ADVERTENCIA CRÍTICA:</strong>
             <p class="mb-sm font-sm">
-                Esta acción borrará todas las unidades orgánicas del organigrama seleccionado y cargará la nueva estructura desde el archivo.
+                Esta acción borrará todas las unidades orgánicas del organigrama seleccionado y cargará la nueva
+                estructura desde el archivo.
             </p>
             <p class="mb-0 font-sm">
-                <strong>Todos los puestos vinculados a la estructura actual serán DESVINCULADOS automáticamente</strong> y deberán ser reasignados manualmente a las nuevas unidades. Asegúrese de tener identificados los puestos afectados antes de proceder, mucho mejor con su código AIRHSP.
+                <strong>Todos los puestos vinculados a la estructura actual serán DESVINCULADOS automáticamente</strong>
+                y deberán ser reasignados manualmente a las nuevas unidades (utilizando el código AIRHSP).
             </p>
         </div>
-        
-        <form hx-post="/tenant/organigrama/importar" hx-target="#resultado-importacion-organigrama" enctype="multipart/form-data" hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-importar-organigrama').close(); document.getElementById('archivo_excel').value = ''; document.getElementById('resultado-importacion-organigrama').innerHTML = ''; }">
+
+        <form hx-post="/tenant/organigrama/importar" hx-target="#resultado-importacion-organigrama"
+            enctype="multipart/form-data"
+            hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-importar-organigrama').close(); document.getElementById('archivo_excel').value = ''; document.getElementById('resultado-importacion-organigrama').innerHTML = ''; }">
             <input type="hidden" name="organigrama_id" id="importar-organigrama-id">
-            
-            <p>
-                <a href="/tenant/organigrama/plantilla" target="_blank" class="text-underline">
-                    📄 Descargar Plantilla Excel de Ejemplo
+
+            <p class="mb-sm">
+                <a href="/tenant/organigrama/plantilla" target="_blank" class="text-underline flex-items-center flex-gap-xs">
+                    <svg class="icono-menu"><use href="#icono-bloc-notas"></use></svg> Descargar Plantilla Excel de Ejemplo
                 </a>
             </p>
 
@@ -101,8 +130,11 @@
             <div id="resultado-importacion-organigrama" class="mt-md"></div>
 
             <footer>
-                <button type="button" class="secondary outline" onclick="document.getElementById('modal-importar-organigrama').close()">Cancelar</button>
-                <button type="submit" class="btn-danger-fill">Confirmar e Importar</button>
+                <button type="button" class="secondary outline btn-compact"
+                    onclick="document.getElementById('modal-importar-organigrama').close()">Cancelar</button>
+                <button type="submit" class="btn-danger btn-compact">
+                    <svg class="icono-menu"><use href="#icono-importar"></use></svg> Confirmar e Importar
+                </button>
             </footer>
         </form>
     </article>
@@ -130,128 +162,168 @@
 </script>
 
 {{define "arbol_parcial"}}
-    {{if .}}
-        {{template "nodo_organigrama" .}}
-    {{else}}
-        <div class="text-center p-md">
-            <p>No hay unidades orgánicas creadas en esta versión.</p>
-            <button class="outline" hx-get="/tenant/organigrama/unidad/agregar_hijo_ui?parent_id=0" hx-include="[name='organigrama_id']" hx-target="#modal-unidad-contenido" onclick="document.getElementById('modal-unidad-global').showModal()">
-                ➕ Crear Primera Unidad Raíz
-            </button>
-        </div>
-    {{end}}
+{{if .}}
+{{template "nodo_organigrama" .}}
+{{else}}
+<div class="text-center p-lg">
+    <p class="text-muted mb-md">No hay unidades orgánicas creadas en esta versión.</p>
+    <button class="outline primary btn-compact" hx-get="/tenant/organigrama/unidad/agregar_hijo_ui?parent_id=0"
+        hx-include="[name='organigrama_id']" hx-target="#modal-unidad-contenido"
+        onclick="document.getElementById('modal-unidad-global').showModal()">
+        <svg class="icono-menu"><use href="#icono-plus"></use></svg> Crear Primera Unidad Raíz
+    </button>
+</div>
+{{end}}
 {{end}}
 
 {{define "nodo_organigrama"}}
-    <ul class="list-none pl-md">
-        {{range .}}
-        <li>
-            <details open class="mb-sm pb-sm border-bottom-dashed">
-                <summary class="font-bold cursor-pointer">
-                    📁 [{{.Tipo}}] {{.Nombre}} 
-                    <small class="text-muted font-normal ml-2">
-                        (Código MEF: {{if .CodigoMef}}{{.CodigoMef}}{{else}}N/A{{end}})
-                        {{if .Hijos}}
-                            | 👤 Directas: {{.PuestosPropios}} | 🏢 Totales: {{.TotalPuestos}}
-                        {{else}}
-                            | 👤 Plazas: {{.PuestosPropios}}
-                        {{end}}
+<ul class="list-none pl-md">
+    {{range .}}
+    <li>
+        <details open class="mb-sm pb-sm border-bottom-dashed">
+            <summary class="font-bold cursor-pointer flex-row-between">
+                <span class="flex-items-center flex-gap-xs">
+                    <mark class="badge badge-info badge-xs">{{.Tipo}}</mark>
+                    <strong>{{.Nombre}}</strong>
+                    <small class="text-muted font-normal stat-mono ml-xs">
+                        (MEF: {{if .CodigoMef}}{{.CodigoMef}}{{else}}N/A{{end}})
                     </small>
-                    <span class="float-right font-normal font-xs">
-                        <a href="#" hx-get="/tenant/organigrama/unidad/editar_ui?id={{.ID}}" hx-target="#modal-unidad-contenido" onclick="document.getElementById('modal-unidad-global').showModal()" class="mr-2">✏️ Editar</a>
-                        <a href="#" hx-get="/tenant/organigrama/unidad/agregar_hijo_ui?parent_id={{.ID}}" hx-include="[name='organigrama_id']" hx-target="#modal-unidad-contenido" onclick="document.getElementById('modal-unidad-global').showModal()" class="text-success">➕ Subunidad</a>
+                    <span class="text-muted font-normal font-xs ml-sm">
+                        {{if .Hijos}}
+                        | Plazas Directas: <strong class="stat-mono">{{.PuestosPropios}}</strong> | Total Plazas: <strong class="stat-mono">{{.TotalPuestos}}</strong>
+                        {{else}}
+                        | Plazas: <strong class="stat-mono">{{.PuestosPropios}}</strong>
+                        {{end}}
                     </span>
-                </summary>
-                
-                {{if .Hijos}}
-                    {{template "nodo_organigrama" .Hijos}}
-                {{else}}
-                    <p class="ml-lg mb-0 font-italic text-muted d-none">
-                        <small>📍 Sin subunidades.</small>
-                    </p>
-                {{end}}
-            </details>
-        </li>
-        {{end}}
-    </ul>
+                </span>
+                <span class="font-normal font-xs flex-gap-xs">
+                    <button class="outline secondary btn-compact py-xs px-sm" 
+                        hx-get="/tenant/organigrama/unidad/editar_ui?id={{.ID}}"
+                        hx-target="#modal-unidad-contenido"
+                        onclick="document.getElementById('modal-unidad-global').showModal()">
+                        <svg class="icono-menu"><use href="#icono-lapiz-cuadrado"></use></svg> Editar
+                    </button>
+                    <button class="outline primary btn-compact py-xs px-sm" 
+                        hx-get="/tenant/organigrama/unidad/agregar_hijo_ui?parent_id={{.ID}}"
+                        hx-include="[name='organigrama_id']" hx-target="#modal-unidad-contenido"
+                        onclick="document.getElementById('modal-unidad-global').showModal()">
+                        <svg class="icono-menu"><use href="#icono-plus"></use></svg> Subunidad
+                    </button>
+                </span>
+            </summary>
+
+            {{if .Hijos}}
+            {{template "nodo_organigrama" .Hijos}}
+            {{else}}
+            <p class="ml-lg mb-0 font-italic text-muted d-none">
+                <small>📍 Sin subunidades.</small>
+            </p>
+            {{end}}
+        </details>
+    </li>
+    {{end}}
+</ul>
 {{end}}
 
 {{define "modal_unidad_crear"}}
-    <header>
-        <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-unidad-global').close()"></a>
-        <h3>➕ Añadir Subunidad</h3>
-    </header>
-    <form hx-post="/tenant/organigrama/unidad/guardar" hx-swap="none" hx-on::after-request="document.getElementById('modal-unidad-global').close()">
-        <input type="hidden" name="parent_id" value="{{.ParentID}}">
-        <input type="hidden" name="organigrama_id" value="{{.OrganigramaID}}">
+<header>
+    <a href="#close" aria-label="Close" class="close"
+        onclick="document.getElementById('modal-unidad-global').close()"></a>
+    <h4 class="m-0 flex-items-center flex-gap-xs">
+        <svg class="icono-menu"><use href="#icono-plus"></use></svg> Añadir Subunidad
+    </h4>
+</header>
+<form hx-post="/tenant/organigrama/unidad/guardar" hx-swap="none"
+    hx-on::after-request="document.getElementById('modal-unidad-global').close()">
+    <input type="hidden" name="parent_id" value="{{.ParentID}}">
+    <input type="hidden" name="organigrama_id" value="{{.OrganigramaID}}">
 
-        {{if .Parent}}
-            <p><small>Dependiente de: <strong>[{{.Parent.Tipo}}] {{.Parent.Nombre}}</strong></small></p>
-        {{end}}
+    {{if .Parent}}
+    <p><small class="text-muted">Dependiente de: <strong>[{{.Parent.Tipo}}] {{.Parent.Nombre}}</strong></small></p>
+    {{end}}
 
-        <label for="nombre">Nombre de la Unidad:</label>
-        <input type="text" id="nombre" name="nombre" placeholder="Ej: Subgerencia de Modernización Institucional" required>
+    <div class="grid">
+        <label for="nombre">Nombre de la Unidad:
+            <input type="text" id="nombre" name="nombre" placeholder="Ej: Subgerencia de Modernización Institucional" required>
+        </label>
 
-        <label for="tipo">Tipo:</label>
-        <select id="tipo" name="tipo" required>
-            <option value="Alta_Dirección">Alta Dirección</option>
-            <option value="Gerencia">Gerencia</option>
-            <option value="Subgerencia">Subgerencia</option>
-            <option value="Oficina">Oficina</option>
-            <option value="Unidad">Unidad</option>
-            <option value="Dirección">Dirección</option>
-            <option value="Departamento">Departamento</option>
-        </select>
+        <label for="tipo">Tipo:
+            <select id="tipo" name="tipo" required>
+                <option value="Alta_Dirección">Alta Dirección</option>
+                <option value="Gerencia">Gerencia</option>
+                <option value="Subgerencia">Subgerencia</option>
+                <option value="Oficina">Oficina</option>
+                <option value="Unidad">Unidad</option>
+                <option value="Dirección">Dirección</option>
+                <option value="Departamento">Departamento</option>
+            </select>
+        </label>
+    </div>
 
-        <label for="codigo_mef">Código MEF (opcional):</label>
+    <label for="codigo_mef">Código MEF (opcional):
         <input type="text" id="codigo_mef" name="codigo_mef" placeholder="Ej: 300150">
+    </label>
 
-        <footer>
-            <button type="button" class="secondary outline" onclick="document.getElementById('modal-unidad-global').close()">Cancelar</button>
-            <button type="submit">Guardar</button>
-        </footer>
-    </form>
+    <footer>
+        <button type="button" class="secondary outline btn-compact"
+            onclick="document.getElementById('modal-unidad-global').close()">Cancelar</button>
+        <button type="submit" class="primary btn-compact">
+            <svg class="icono-menu"><use href="#icono-guardar"></use></svg> Guardar
+        </button>
+    </footer>
+</form>
 {{end}}
 
 {{define "modal_unidad_editar"}}
-    <header>
-        <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-unidad-global').close()"></a>
-        <h3>✏️ Editar Unidad</h3>
-    </header>
-    <form hx-post="/tenant/organigrama/unidad/guardar" hx-swap="none" hx-on::after-request="document.getElementById('modal-unidad-global').close()">
-        <input type="hidden" name="id" value="{{.ID}}">
-        <input type="hidden" name="parent_id" value="{{if .ParentID}}{{.ParentID}}{{else}}0{{end}}">
+<header>
+    <a href="#close" aria-label="Close" class="close"
+        onclick="document.getElementById('modal-unidad-global').close()"></a>
+    <h4 class="m-0 flex-items-center flex-gap-xs">
+        <svg class="icono-menu"><use href="#icono-lapiz-cuadrado"></use></svg> Editar Unidad
+    </h4>
+</header>
+<form hx-post="/tenant/organigrama/unidad/guardar" hx-swap="none"
+    hx-on::after-request="document.getElementById('modal-unidad-global').close()">
+    <input type="hidden" name="id" value="{{.ID}}">
+    <input type="hidden" name="parent_id" value="{{if .ParentID}}{{.ParentID}}{{else}}0{{end}}">
 
-        <label for="nombre">Nombre de la Unidad:</label>
-        <input type="text" id="nombre" name="nombre" value="{{.Nombre}}" required>
+    <div class="grid">
+        <label for="nombre">Nombre de la Unidad:
+            <input type="text" id="nombre" name="nombre" value="{{.Nombre}}" required>
+        </label>
 
-        <label for="tipo">Tipo:</label>
-        <select id="tipo" name="tipo" required>
-            <option value="Alta_Dirección" {{if eq .Tipo "Alta_Dirección"}}selected{{end}}>Alta Dirección</option>
-            <option value="Gerencia" {{if eq .Tipo "Gerencia"}}selected{{end}}>Gerencia</option>
-            <option value="Subgerencia" {{if eq .Tipo "Subgerencia"}}selected{{end}}>Subgerencia</option>
-            <option value="Oficina" {{if eq .Tipo "Oficina"}}selected{{end}}>Oficina</option>
-            <option value="Unidad" {{if eq .Tipo "Unidad"}}selected{{end}}>Unidad</option>
-            <option value="Dirección" {{if eq .Tipo "Dirección"}}selected{{end}}>Dirección</option>
-            <option value="Departamento" {{if eq .Tipo "Departamento"}}selected{{end}}>Departamento</option>
-        </select>
+        <label for="tipo">Tipo:
+            <select id="tipo" name="tipo" required>
+                <option value="Alta_Dirección" {{if eq .Tipo "Alta_Dirección" }}selected{{end}}>Alta Dirección</option>
+                <option value="Gerencia" {{if eq .Tipo "Gerencia" }}selected{{end}}>Gerencia</option>
+                <option value="Subgerencia" {{if eq .Tipo "Subgerencia" }}selected{{end}}>Subgerencia</option>
+                <option value="Oficina" {{if eq .Tipo "Oficina" }}selected{{end}}>Oficina</option>
+                <option value="Unidad" {{if eq .Tipo "Unidad" }}selected{{end}}>Unidad</option>
+                <option value="Dirección" {{if eq .Tipo "Dirección" }}selected{{end}}>Dirección</option>
+                <option value="Departamento" {{if eq .Tipo "Departamento" }}selected{{end}}>Departamento</option>
+            </select>
+        </label>
+    </div>
 
-        <label for="codigo_mef">Código MEF (opcional):</label>
+    <label for="codigo_mef">Código MEF (opcional):
         <input type="text" id="codigo_mef" name="codigo_mef" value="{{.CodigoMef}}">
+    </label>
 
-        <footer>
-            <div class="flex-row-between w-full">
-                <button type="button" class="contrast outline btn-danger" 
-                    hx-delete="/tenant/organigrama/unidad/eliminar?id={{.ID}}" 
-                    hx-swap="none" 
-                    hx-on::after-request="document.getElementById('modal-unidad-global').close()">
-                    🗑️ Eliminar
+    <footer>
+        <div class="flex-row-between w-full">
+            <button type="button" class="btn-danger btn-compact"
+                hx-delete="/tenant/organigrama/unidad/eliminar?id={{.ID}}" hx-swap="none"
+                hx-on::after-request="document.getElementById('modal-unidad-global').close()">
+                <svg class="icono-menu"><use href="#icono-trash"></use></svg> Eliminar
+            </button>
+            <div class="flex-gap-sm">
+                <button type="button" class="secondary outline btn-compact"
+                    onclick="document.getElementById('modal-unidad-global').close()">Cancelar</button>
+                <button type="submit" class="primary btn-compact">
+                    <svg class="icono-menu"><use href="#icono-guardar"></use></svg> Actualizar
                 </button>
-                <div class="flex-gap-sm">
-                    <button type="button" class="secondary outline" onclick="document.getElementById('modal-unidad-global').close()">Cancelar</button>
-                    <button type="submit">Actualizar</button>
-                </div>
             </div>
-        </footer>
-    </form>
+        </div>
+    </footer>
+</form>
 {{end}}

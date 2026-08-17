@@ -430,7 +430,7 @@ func (h *MefMucHandler) ImportarCSV(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("HX-Trigger", "cerrarModalImportarMuc, recargarTablaMuc")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf(`<div class="alert alert-success mb-md">✅ Importación exitosa: Se registraron %d valores de MUC.</div>`, insertados)))
+	w.Write(fmt.Appendf(nil, `<div class="alert alert-success mb-md">✅ Importación exitosa: Se registraron %d valores de MUC.</div>`, insertados))
 }
 
 // DescargarPlantillaCSV genera y envía al navegador un archivo CSV de ejemplo

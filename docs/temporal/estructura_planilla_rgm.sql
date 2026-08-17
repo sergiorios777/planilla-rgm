@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict BeDrnEhlicukCKTNy34eaqfXWym4Jq8aQNrLrLBjLGhwdRWM2rsED9eEVk0Wlp2
+\restrict 2rAKLehgvPceHJz9Mof0u5VAdJ5TD92Zh3gloFE0FCyUpNYK7hHAIk7ygmdwzXu
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -397,7 +397,8 @@ CREATE TABLE public.conceptos_modelo (
     es_base_beneficios_sociales boolean DEFAULT false,
     es_ocasional boolean DEFAULT false NOT NULL,
     es_afecto_cargas_sociales boolean DEFAULT false NOT NULL,
-    modalidad_entrega character varying(20) DEFAULT 'PERMANENTE'::character varying NOT NULL
+    modalidad_entrega character varying(20) DEFAULT 'PERMANENTE'::character varying NOT NULL,
+    CONSTRAINT conceptos_modelo_modalidad_entrega_check CHECK (((modalidad_entrega)::text = ANY ((ARRAY['PERMANENTE'::character varying, 'PERIODICO'::character varying, 'EXCEPCIONAL'::character varying, 'OCASIONAL'::character varying])::text[])))
 );
 
 
@@ -448,7 +449,8 @@ CREATE TABLE public.conceptos_tenant (
     es_base_beneficios_sociales boolean DEFAULT false,
     es_ocasional boolean DEFAULT false NOT NULL,
     es_afecto_cargas_sociales boolean DEFAULT false NOT NULL,
-    modalidad_entrega character varying(20) DEFAULT 'PERMANENTE'::character varying NOT NULL
+    modalidad_entrega character varying(20) DEFAULT 'PERMANENTE'::character varying NOT NULL,
+    CONSTRAINT conceptos_tenant_modalidad_entrega_check CHECK (((modalidad_entrega)::text = ANY ((ARRAY['PERMANENTE'::character varying, 'PERIODICO'::character varying, 'EXCEPCIONAL'::character varying, 'OCASIONAL'::character varying])::text[])))
 );
 
 
@@ -3120,5 +3122,5 @@ ALTER TABLE ONLY public.usuarios
 -- PostgreSQL database dump complete
 --
 
-\unrestrict BeDrnEhlicukCKTNy34eaqfXWym4Jq8aQNrLrLBjLGhwdRWM2rsED9eEVk0Wlp2
+\unrestrict 2rAKLehgvPceHJz9Mof0u5VAdJ5TD92Zh3gloFE0FCyUpNYK7hHAIk7ygmdwzXu
 

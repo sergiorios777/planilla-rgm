@@ -19,7 +19,7 @@ func (h *LandingHandler) MostrarLanding(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	tmpl, err := template.ParseFiles("ui/templates/landing/index.html")
+	tmpl, err := template.ParseFiles("ui/templates/landing/index.html", "ui/templates/layouts/iconos_sprite.html")
 	if err != nil {
 		log.Printf("Error cargando plantilla de la landing page: %v", err)
 		http.Error(w, "Error interno del servidor al cargar la vista de bienvenida", http.StatusInternalServerError)

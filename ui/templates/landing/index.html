@@ -151,7 +151,11 @@
                         </div>
 
                         <div class="floating-tech-spec">
-                            <span style="font-size:1.2rem;">🚀</span>
+                            <span style="font-size:1.2rem;">
+                                <svg class="icono-menu">
+                                    <use href="#icono-memory"></use>
+                                </svg>
+                            </span>
                             <div>
                                 <span
                                     style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.05em; color:#94a3b8; display:block;">Motor
@@ -382,9 +386,8 @@
                     Solicite una demostración guiada en vivo para su alcalde, gerente municipal y equipo de recursos
                     humanos.
                 </p>
-                <div style="display:flex; justify-center; gap:1rem; flex-wrap:wrap; justify-content:center;">
-                    <a href="/solicitar-demo"
-                        class="btn-hero-primary">
+                <div style="display:flex; gap:1rem; flex-wrap:wrap; justify-content:center;">
+                    <a href="/solicitar-demo" class="btn-hero-primary">
                         <span>Solicitar Demostración en Vivo</span>
                         <span>✉️</span>
                     </a>
@@ -456,6 +459,7 @@
         </div>
     </footer>
 
+    {{template "svg_sprite" .}}
 </body>
 
 </html>
