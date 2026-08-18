@@ -19,10 +19,17 @@ func (r *ResumenRepository) ObtenerKPIsTenant(tenantID int, anio int, mes int) (
 			(SELECT COUNT(*) FROM trabajadores WHERE tenant_id = $1 AND activo = true) AS total_trabajadores,
 			(SELECT COUNT(*) FROM planillas WHERE tenant_id = $1 AND anio = $2 AND estado != 'BORRADOR') AS total_planillas_anno,
 			(SELECT COUNT(*) FROM planillas WHERE tenant_id = $1 AND estado = 'BORRADOR') AS planillas_borrador,
-			(SELECT COALESCE(SUM(pd.total_ingresos), 0.00) 
+			(SELECT COALESCE(SUM(pd.total_ingresos + pd.total_aportes), 0.00) 
 			 FROM planilla_detalles pd 
 			 JOIN planillas p ON pd.planilla_id = p.id 
-			 WHERE p.tenant_id = $1 AND p.anio = $2 AND p.mes = $3) AS monto_total_mes
+			 WHERE p.tenant_id = $1 
+			   AND (p.anio, p.mes) = (
+			       SELECT p2.anio, p2.mes 
+			       FROM planillas p2 
+			       WHERE p2.tenant_id = $1 
+			       ORDER BY (CASE WHEN p2.anio = $2 AND p2.mes = $3 THEN 999999 ELSE p2.anio * 100 + p2.mes END) DESC, p2.id DESC 
+			       LIMIT 1
+			   )) AS monto_total_mes
 	`
 	err = r.db.QueryRow(query, tenantID, anio, mes).Scan(&totalTrab, &planillasAnno, &planillasBorrador, &montoMes)
 	return

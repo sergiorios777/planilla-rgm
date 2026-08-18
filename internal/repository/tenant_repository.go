@@ -19,7 +19,7 @@ func NewTenantRepository(db *sql.DB) *TenantRepository {
 func (r *TenantRepository) ObtenerTodos(busqueda string) ([]models.Tenant, error) {
 	// Escribimos la consulta SQL
 	query := `
-		SELECT id, nombre, ruc, direccion, frase_gestion, logo_url, slug, activo, created_at 
+		SELECT id, nombre, ruc, direccion, frase_gestion, logo_url, slug, activo, COALESCE(tipo_entidad, 'GOBIERNO_LOCAL') AS tipo_entidad, created_at 
 		FROM tenants 
 		WHERE nombre ILIKE '%' || $1 || '%' OR ruc ILIKE '%' || $1 || '%' 
 		ORDER BY id DESC`
@@ -37,7 +37,7 @@ func (r *TenantRepository) ObtenerTodos(busqueda string) ([]models.Tenant, error
 	for rows.Next() {
 		var t models.Tenant
 		// Escaneamos los datos de la fila de PostgreSQL hacia nuestra estructura de Go
-		if err := rows.Scan(&t.ID, &t.Nombre, &t.Ruc, &t.Direccion, &t.FraseGestion, &t.LogoURL, &t.Slug, &t.Activo, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Nombre, &t.Ruc, &t.Direccion, &t.FraseGestion, &t.LogoURL, &t.Slug, &t.Activo, &t.TipoEntidad, &t.CreatedAt); err != nil {
 			return nil, err
 		}
 		lista = append(lista, t)
@@ -51,13 +51,16 @@ func (r *TenantRepository) ObtenerTodos(busqueda string) ([]models.Tenant, error
 
 // Crear inserta un nuevo inquilino en la base de datos
 func (r *TenantRepository) Crear(t *models.Tenant) error {
+	if t.TipoEntidad == "" {
+		t.TipoEntidad = "GOBIERNO_LOCAL"
+	}
 	// Escribimos la consulta SQL. RETURNING nos devuelve el ID y la fecha generados.
-	query := `INSERT INTO tenants (nombre, ruc, direccion, frase_gestion, logo_url, slug, activo) 
-	          VALUES ($1, $2, $3, $4, $5, $6, $7) 
+	query := `INSERT INTO tenants (nombre, ruc, direccion, frase_gestion, logo_url, slug, activo, tipo_entidad) 
+	          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
 	          RETURNING id, created_at`
 
 	// Ejecutamos la consulta y guardamos el ID y la fecha devueltos en nuestra estructura
-	err := r.db.QueryRow(query, t.Nombre, t.Ruc, t.Direccion, t.FraseGestion, t.LogoURL, t.Slug, t.Activo).Scan(&t.ID, &t.CreatedAt)
+	err := r.db.QueryRow(query, t.Nombre, t.Ruc, t.Direccion, t.FraseGestion, t.LogoURL, t.Slug, t.Activo, t.TipoEntidad).Scan(&t.ID, &t.CreatedAt)
 	if err != nil {
 		return err
 	}
@@ -68,8 +71,8 @@ func (r *TenantRepository) Crear(t *models.Tenant) error {
 // ObtenerPorID busca un inquilino específico
 func (r *TenantRepository) ObtenerPorID(id int) (*models.Tenant, error) {
 	var t models.Tenant
-	query := `SELECT id, nombre, ruc, direccion, frase_gestion, logo_url, slug, activo, created_at FROM tenants WHERE id = $1`
-	err := r.db.QueryRow(query, id).Scan(&t.ID, &t.Nombre, &t.Ruc, &t.Direccion, &t.FraseGestion, &t.LogoURL, &t.Slug, &t.Activo, &t.CreatedAt)
+	query := `SELECT id, nombre, ruc, direccion, frase_gestion, logo_url, slug, activo, COALESCE(tipo_entidad, 'GOBIERNO_LOCAL') AS tipo_entidad, created_at FROM tenants WHERE id = $1`
+	err := r.db.QueryRow(query, id).Scan(&t.ID, &t.Nombre, &t.Ruc, &t.Direccion, &t.FraseGestion, &t.LogoURL, &t.Slug, &t.Activo, &t.TipoEntidad, &t.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +81,10 @@ func (r *TenantRepository) ObtenerPorID(id int) (*models.Tenant, error) {
 
 // Actualizar guarda los cambios de un inquilino existente
 func (r *TenantRepository) Actualizar(t *models.Tenant) error {
-	query := `UPDATE tenants SET nombre = $1, ruc = $2, direccion = $3, frase_gestion = $4, logo_url = $5, slug = $6, activo = $7, updated_at = CURRENT_TIMESTAMP WHERE id = $8`
-	_, err := r.db.Exec(query, t.Nombre, t.Ruc, t.Direccion, t.FraseGestion, t.LogoURL, t.Slug, t.Activo, t.ID)
+	if t.TipoEntidad == "" {
+		t.TipoEntidad = "GOBIERNO_LOCAL"
+	}
+	query := `UPDATE tenants SET nombre = $1, ruc = $2, direccion = $3, frase_gestion = $4, logo_url = $5, slug = $6, activo = $7, tipo_entidad = $8, updated_at = CURRENT_TIMESTAMP WHERE id = $9`
+	_, err := r.db.Exec(query, t.Nombre, t.Ruc, t.Direccion, t.FraseGestion, t.LogoURL, t.Slug, t.Activo, t.TipoEntidad, t.ID)
 	return err
 }

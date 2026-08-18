@@ -61,12 +61,17 @@ func (h *AdminHandler) CrearInquilino(w http.ResponseWriter, r *http.Request) {
 	nombre := r.FormValue("nombre")
 	ruc := r.FormValue("ruc")
 	activo := r.FormValue("activo") == "on"
+	tipoEntidad := r.FormValue("tipo_entidad")
+	if tipoEntidad == "" {
+		tipoEntidad = "GOBIERNO_LOCAL"
+	}
 
 	// 2. Preparamos nuestro modelo de Go
 	nuevoTenant := models.Tenant{
-		Nombre: nombre,
-		Ruc:    ruc,
-		Activo: activo,
+		Nombre:      nombre,
+		Ruc:         ruc,
+		Activo:      activo,
+		TipoEntidad: tipoEntidad,
 	}
 
 	// 3. Le pedimos al repositorio que lo guarde en PostgreSQL
@@ -128,12 +133,17 @@ func (h *AdminHandler) ActualizarInquilino(w http.ResponseWriter, r *http.Reques
 	r.ParseForm()
 
 	id, _ := strconv.Atoi(r.FormValue("id"))
+	tipoEntidad := r.FormValue("tipo_entidad")
+	if tipoEntidad == "" {
+		tipoEntidad = "GOBIERNO_LOCAL"
+	}
 
 	inquilino := models.Tenant{
-		ID:     id,
-		Nombre: r.FormValue("nombre"),
-		Ruc:    r.FormValue("ruc"),
-		Activo: r.FormValue("activo") == "on",
+		ID:          id,
+		Nombre:      r.FormValue("nombre"),
+		Ruc:         r.FormValue("ruc"),
+		Activo:      r.FormValue("activo") == "on",
+		TipoEntidad: tipoEntidad,
 	}
 
 	err := h.Repo.Actualizar(&inquilino)

@@ -6,6 +6,8 @@ import (
 	"log"
 	"planilla-rgm/internal/models"
 	"strings"
+
+	"github.com/lib/pq"
 )
 
 type ConceptoTenantRepository struct {
@@ -49,6 +51,7 @@ func (r *ConceptoTenantRepository) ObtenerTodos(tenantID int) ([]models.Concepto
 		SELECT ct.id, ct.concepto_id, ct.modelo_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
 		       ct.es_extraordinario, ct.es_pensionable, ct.es_remunerativa, ct.es_base_cts, ct.es_base_beneficios_sociales, ct.es_ocasional, ct.es_afecto_cargas_sociales,
 		       COALESCE(ct.modalidad_entrega, 'PERMANENTE') AS modalidad_entrega,
+		       COALESCE(ct.base_calculo_para, '{}') AS base_calculo_para,
 		       cm.codigo, cm.tipo, 
 			   mef.codigo AS clasificador_codigo,
 			   COALESCE(STRING_AGG(rl.codigo, ', '), 'Sin régimen') AS regimenes_codigos
@@ -77,7 +80,7 @@ func (r *ConceptoTenantRepository) ObtenerTodos(tenantID int) ([]models.Concepto
 
 		err := rows.Scan(&ct.ID, &ct.ConceptoID, &modeloID, &ct.NombrePersonalizado, &ct.FrecuenciaMeses, &clasifID, &ct.Activo,
 			&ct.EsExtraordinario, &ct.EsPensionable, &ct.EsRemunerativa, &ct.EsBaseCts, &ct.EsBaseBeneficiosSociales, &ct.EsOcasional, &ct.EsAfectoCargasSociales,
-			&ct.ModalidadEntrega,
+			&ct.ModalidadEntrega, pq.Array(&ct.BaseCalculoPara),
 			&ct.ConceptoCodigo, &ct.ConceptoTipo, &clasifCod, &regimenesCodigos)
 		if err == nil {
 			if clasifID.Valid {
@@ -154,6 +157,7 @@ func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda
 		SELECT ct.id, ct.concepto_id, ct.modelo_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
 		       ct.es_extraordinario, ct.es_pensionable, ct.es_remunerativa, ct.es_base_cts, ct.es_base_beneficios_sociales, ct.es_ocasional, ct.es_afecto_cargas_sociales,
 		       COALESCE(ct.modalidad_entrega, 'PERMANENTE') AS modalidad_entrega,
+		       COALESCE(ct.base_calculo_para, '{}') AS base_calculo_para,
 		       cm.codigo, cm.tipo, 
 			   mef.codigo AS clasificador_codigo,
 			   COALESCE(STRING_AGG(rl.codigo, ', '), 'Sin régimen') AS regimenes_codigos
@@ -191,7 +195,7 @@ func (r *ConceptoTenantRepository) ObtenerTodosPaginacion(tenantID int, busqueda
 
 		err := rows.Scan(&ct.ID, &ct.ConceptoID, &modeloID, &ct.NombrePersonalizado, &ct.FrecuenciaMeses, &clasifID, &ct.Activo,
 			&ct.EsExtraordinario, &ct.EsPensionable, &ct.EsRemunerativa, &ct.EsBaseCts, &ct.EsBaseBeneficiosSociales, &ct.EsOcasional, &ct.EsAfectoCargasSociales,
-			&ct.ModalidadEntrega,
+			&ct.ModalidadEntrega, pq.Array(&ct.BaseCalculoPara),
 			&ct.ConceptoCodigo, &ct.ConceptoTipo, &clasifCod, &regimenesCodigos)
 		if err == nil {
 			if clasifID.Valid {
@@ -229,10 +233,10 @@ func (r *ConceptoTenantRepository) Crear(ct *models.ConceptoTenant) error {
 	}
 
 	query := `
-		INSERT INTO conceptos_tenant (tenant_id, concepto_id, modelo_id, nombre_personalizado, frecuencia_meses, clasificador_id, activo, es_extraordinario, es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, modalidad_entrega)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id
+		INSERT INTO conceptos_tenant (tenant_id, concepto_id, modelo_id, nombre_personalizado, frecuencia_meses, clasificador_id, activo, es_extraordinario, es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, modalidad_entrega, base_calculo_para)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id
 	`
-	err = tx.QueryRow(query, ct.TenantID, ct.ConceptoID, ct.ModeloID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario, ct.EsPensionable, ct.EsRemunerativa, ct.EsBaseCts, ct.EsBaseBeneficiosSociales, ct.EsOcasional, ct.EsAfectoCargasSociales, ct.ModalidadEntrega).Scan(&ct.ID)
+	err = tx.QueryRow(query, ct.TenantID, ct.ConceptoID, ct.ModeloID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario, ct.EsPensionable, ct.EsRemunerativa, ct.EsBaseCts, ct.EsBaseBeneficiosSociales, ct.EsOcasional, ct.EsAfectoCargasSociales, ct.ModalidadEntrega, pq.Array(ct.BaseCalculoPara)).Scan(&ct.ID)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -268,11 +272,11 @@ func (r *ConceptoTenantRepository) Actualizar(ct *models.ConceptoTenant) error {
 	query := `
 		UPDATE conceptos_tenant 
 		SET concepto_id = $2, nombre_personalizado = $3, frecuencia_meses = $4, clasificador_id = $5, activo = $6, es_extraordinario = $7,
-		    es_pensionable = $8, es_remunerativa = $9, es_base_cts = $10, es_base_beneficios_sociales = $11, es_ocasional = $12, es_afecto_cargas_sociales = $13, modalidad_entrega = $14, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $1 AND tenant_id = $15
+		    es_pensionable = $8, es_remunerativa = $9, es_base_cts = $10, es_base_beneficios_sociales = $11, es_ocasional = $12, es_afecto_cargas_sociales = $13, modalidad_entrega = $14, base_calculo_para = $15, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1 AND tenant_id = $16
 	`
 	_, err = tx.Exec(query, ct.ID, ct.ConceptoID, ct.NombrePersonalizado, ct.FrecuenciaMeses, ct.ClasificadorID, ct.Activo, ct.EsExtraordinario,
-		ct.EsPensionable, ct.EsRemunerativa, ct.EsBaseCts, ct.EsBaseBeneficiosSociales, ct.EsOcasional, ct.EsAfectoCargasSociales, ct.ModalidadEntrega, ct.TenantID)
+		ct.EsPensionable, ct.EsRemunerativa, ct.EsBaseCts, ct.EsBaseBeneficiosSociales, ct.EsOcasional, ct.EsAfectoCargasSociales, ct.ModalidadEntrega, pq.Array(ct.BaseCalculoPara), ct.TenantID)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -302,10 +306,8 @@ func (r *ConceptoTenantRepository) Actualizar(ct *models.ConceptoTenant) error {
 	return tx.Commit()
 }
 
-// 1. NUEVA FUNCIÓN: Para llenar el menú desplegable en el formulario
+// ObtenerClasificadores obtiene clasificadores MEF para selects
 func (r *ConceptoTenantRepository) ObtenerClasificadores() ([]models.ClasificadorMEF, error) {
-	// Filtramos solo los que son nivel detalle (los que no tienen hijos) o por transacción
-	// Ajusta la consulta según tu necesidad, aquí traemos todos los activos
 	query := `
 	        SELECT id, codigo_limpio, descripcion 
 	        FROM clasificadores_mef 
@@ -345,6 +347,7 @@ func (r *ConceptoTenantRepository) ObtenerPorID(id int, tenantID int) (models.Co
 		SELECT ct.id, ct.concepto_id, ct.modelo_id, ct.nombre_personalizado, ct.frecuencia_meses, ct.clasificador_id, ct.activo,
 		       ct.es_extraordinario, ct.es_pensionable, ct.es_remunerativa, ct.es_base_cts, ct.es_base_beneficios_sociales, ct.es_ocasional, ct.es_afecto_cargas_sociales,
 		       COALESCE(ct.modalidad_entrega, 'PERMANENTE') AS modalidad_entrega,
+		       COALESCE(ct.base_calculo_para, '{}') AS base_calculo_para,
 		       cm.codigo, cm.tipo, 
 			   mef.codigo AS clasificador_codigo
 		FROM conceptos_tenant ct
@@ -355,7 +358,7 @@ func (r *ConceptoTenantRepository) ObtenerPorID(id int, tenantID int) (models.Co
 	err := r.db.QueryRow(query, id, tenantID).Scan(
 		&c.ID, &c.ConceptoID, &modeloID, &c.NombrePersonalizado, &c.FrecuenciaMeses, &c.ClasificadorID, &c.Activo,
 		&c.EsExtraordinario, &c.EsPensionable, &c.EsRemunerativa, &c.EsBaseCts, &c.EsBaseBeneficiosSociales, &c.EsOcasional, &c.EsAfectoCargasSociales,
-		&c.ModalidadEntrega,
+		&c.ModalidadEntrega, pq.Array(&c.BaseCalculoPara),
 		&c.ConceptoCodigo, &c.ConceptoTipo, &c.ClasificadorCodigo)
 	if err == nil && modeloID.Valid {
 		mID := int(modeloID.Int64)
@@ -387,15 +390,14 @@ func (r *ConceptoTenantRepository) ActualizarCompleto(id int, tenantID int, conc
 }
 
 // ClonarDesdeModelo copia todos los conceptos base a un nuevo tenant.
-// También sirve como función "Restaurar", ya que ignora los conceptos que ya existen.
 func (r *ConceptoTenantRepository) ClonarDesdeModelo(tenantID int) error {
 	query := `
 		INSERT INTO conceptos_tenant 
 		(tenant_id, concepto_id, modelo_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, activo,
-		 es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, modalidad_entrega)
+		 es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, modalidad_entrega, base_calculo_para)
 		SELECT 
 			$1, concepto_id, id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, true,
-			es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, COALESCE(modalidad_entrega, 'PERMANENTE')
+			es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, COALESCE(modalidad_entrega, 'PERMANENTE'), COALESCE(base_calculo_para, '{}')
 		FROM conceptos_modelo
 		ON CONFLICT (tenant_id, modelo_id) DO NOTHING;
 	`
@@ -486,10 +488,10 @@ func (r *ConceptoTenantRepository) SincronizarDesdeModeloAvanzado(tenantID int, 
 	queryInsert := `
 		INSERT INTO conceptos_tenant 
 		(tenant_id, concepto_id, modelo_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, activo,
-		 es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, modalidad_entrega)
+		 es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, modalidad_entrega, base_calculo_para)
 		SELECT 
 			$1, concepto_id, id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, true,
-			es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, COALESCE(modalidad_entrega, 'PERMANENTE')
+			es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, COALESCE(modalidad_entrega, 'PERMANENTE'), COALESCE(base_calculo_para, '{}')
 		FROM conceptos_modelo
 		WHERE 1=1
 	`
@@ -575,6 +577,7 @@ func (r *ConceptoTenantRepository) ObtenerModelosDisponibles(tenantID int) ([]mo
 			cm.es_extraordinario, cm.requiere_monto, cm.es_pensionable, cm.es_remunerativa, 
 			cm.es_base_cts, cm.es_base_beneficios_sociales, cm.es_ocasional, cm.es_afecto_cargas_sociales,
 			COALESCE(cm.modalidad_entrega, 'PERMANENTE') AS modalidad_entrega,
+			COALESCE(cm.base_calculo_para, '{}') AS base_calculo_para,
 			cma.codigo AS concepto_codigo, cma.tipo AS concepto_tipo, cma.descripcion AS concepto_descripcion,
 			mef.codigo AS clasificador_codigo,
 			COALESCE(STRING_AGG(rl.codigo, ', '), 'Sin régimen') AS regimenes_nombres
@@ -591,6 +594,7 @@ func (r *ConceptoTenantRepository) ObtenerModelosDisponibles(tenantID int) ([]mo
 		GROUP BY cm.id, cm.concepto_id, cm.nombre_personalizado, cm.frecuencia_meses, cm.clasificador_id,
 		         cm.es_extraordinario, cm.requiere_monto, cm.es_pensionable, cm.es_remunerativa, 
 		         cm.es_base_cts, cm.es_base_beneficios_sociales, cm.es_ocasional, cm.es_afecto_cargas_sociales, cm.modalidad_entrega,
+		         cm.base_calculo_para,
 		         cma.codigo, cma.tipo, cma.descripcion, mef.codigo
 		ORDER BY cma.tipo ASC, cm.nombre_personalizado ASC
 	`
@@ -611,7 +615,7 @@ func (r *ConceptoTenantRepository) ObtenerModelosDisponibles(tenantID int) ([]mo
 			&cm.ID, &cm.ConceptoID, &cm.NombrePersonalizado, &cm.FrecuenciaMeses, &clasifID,
 			&cm.EsExtraordinario, &cm.RequiereMonto, &cm.EsPensionable, &cm.EsRemunerativa,
 			&cm.EsBaseCts, &cm.EsBaseBeneficiosSociales, &cm.EsOcasional, &cm.EsAfectoCargasSociales,
-			&cm.ModalidadEntrega,
+			&cm.ModalidadEntrega, pq.Array(&cm.BaseCalculoPara),
 			&cm.ConceptoCodigo, &cm.ConceptoTipo, &cm.ConceptoDescripcion,
 			&clasifCod, &regimenesNombres,
 		)
@@ -646,10 +650,10 @@ func (r *ConceptoTenantRepository) AgregarDesdeModelo(tenantID int, modeloID int
 	queryInsertConcepto := `
 		INSERT INTO conceptos_tenant 
 		(tenant_id, concepto_id, modelo_id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, activo,
-		 es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, modalidad_entrega)
+		 es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, modalidad_entrega, base_calculo_para)
 		SELECT 
 			$1, concepto_id, id, nombre_personalizado, frecuencia_meses, clasificador_id, es_extraordinario, requiere_monto, true,
-			es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, COALESCE(modalidad_entrega, 'PERMANENTE')
+			es_pensionable, es_remunerativa, es_base_cts, es_base_beneficios_sociales, es_ocasional, es_afecto_cargas_sociales, COALESCE(modalidad_entrega, 'PERMANENTE'), COALESCE(base_calculo_para, '{}')
 		FROM conceptos_modelo
 		WHERE id = $2
 		ON CONFLICT (tenant_id, modelo_id) DO NOTHING;
@@ -735,6 +739,7 @@ func (r *ConceptoTenantRepository) SincronizarConceptoModelo(tenantID int, id in
 		    es_ocasional = cm.es_ocasional,
 		    es_afecto_cargas_sociales = cm.es_afecto_cargas_sociales,
 		    modalidad_entrega = COALESCE(cm.modalidad_entrega, 'PERMANENTE'),
+		    base_calculo_para = COALESCE(cm.base_calculo_para, '{}'),
 		    updated_at = CURRENT_TIMESTAMP
 		FROM conceptos_modelo cm
 		WHERE ct.modelo_id = cm.id AND ct.id = $1 AND ct.tenant_id = $2;
@@ -846,5 +851,3 @@ func (r *ConceptoTenantRepository) SincronizarReglasFinanciamientoDesdeModelo(te
 
 	return tx.Commit()
 }
-
-

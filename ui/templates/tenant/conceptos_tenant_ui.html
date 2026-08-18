@@ -266,7 +266,7 @@
 
     <fieldset>
         <legend><strong>Asignar a Regímenes Laborales:</strong></legend>
-        <div class="grid-auto-fill card-section mb-md">
+        <div class="grid-2-cols card-section mb-sm">
             {{range .Regimenes}}
             <label>
                 <input type="checkbox" name="regimenes_ids" value="{{.ID}}">
@@ -278,7 +278,8 @@
 
     <div class="grid">
         <label>Nombre Personalizado (Máscara para la Boleta)
-            <input type="text" name="nombre_personalizado" placeholder="Ej. Remuneración CAS, Bono Frontera..." required>
+            <input type="text" name="nombre_personalizado" placeholder="Ej. Remuneración CAS, Bono Frontera..."
+                required>
         </label>
         <label>Frecuencia de Pago (Meses)
             <input type="text" name="frecuencia_meses" value="1,2,3,4,5,6,7,8,9,10,11,12" required>
@@ -325,6 +326,25 @@
         </div>
     </div>
 
+    <fieldset class="mt-sm">
+        <legend><strong>Afectaciones y Bases de Cálculo (Remuneración Computable):</strong></legend>
+        <div class="grid-3-cols card-section mb-sm">
+            <div>
+                <label><input type="checkbox" name="base_calculo_para" value="CTS"> CTS</label>
+                <label><input type="checkbox" name="base_calculo_para" value="GRATIFICACION"> Gratificación</label>
+                <label><input type="checkbox" name="base_calculo_para" value="VACACIONES"> Vacaciones</label>
+            </div>
+            <div>
+                <label><input type="checkbox" name="base_calculo_para" value="ASIG_25_30"> Asig. 25 y 30 años (276)</label>
+                <label><input type="checkbox" name="base_calculo_para" value="SUBSIDIO_SEPELIO"> Subsidio Luto/Sepelio</label>
+            </div>
+            <div>
+                <label><input type="checkbox" name="base_calculo_para" value="PENSIONES"> Pensiones (ONP/AFP)</label>
+                <label><input type="checkbox" name="base_calculo_para" value="ESSALUD"> EsSalud (9%)</label>
+            </div>
+        </div>
+    </fieldset>
+
     <div class="flex-row-end mt-lg">
         <button type="button" class="secondary outline btn-compact"
             onclick="document.getElementById('modal-crear-concepto').close()">
@@ -356,7 +376,7 @@
 
     <fieldset>
         <legend><strong>Regímenes Laborales donde aplica:</strong></legend>
-        <div class="grid-auto-fill card-section mb-md">
+        <div class="grid-2-cols card-section mb-sm">
             {{range .Regimenes}}
             <label>
                 <input type="checkbox" name="regimenes_ids" value="{{.ID}}" {{if index $.RegimenesMarcados
@@ -391,36 +411,64 @@
     <div class="grid">
         <div>
             <label>
-                <input type="checkbox" role="switch" name="activo" {{if .Concepto.Activo}}checked{{end}}> Concepto Activo
+                <input type="checkbox" role="switch" name="activo" {{if .Concepto.Activo}}checked{{end}}> Concepto
+                Activo
             </label>
             <label>
-                <input type="checkbox" role="switch" name="es_remunerativa" {{if .Concepto.EsRemunerativa}}checked{{end}}> ¿Es Remunerativa?
+                <input type="checkbox" role="switch" name="es_remunerativa" {{if
+                    .Concepto.EsRemunerativa}}checked{{end}}> ¿Es Remunerativa?
             </label>
             <label>
-                <input type="checkbox" role="switch" name="es_pensionable" {{if .Concepto.EsPensionable}}checked{{end}}> ¿Es Pensionable?
-            </label>
-        </div>
-        <div>
-            <label>
-                <input type="checkbox" role="switch" name="es_base_cts" {{if .Concepto.EsBaseCts}}checked{{end}}> ¿Base CTS?
-            </label>
-            <label>
-                <input type="checkbox" role="switch" name="es_base_beneficios_sociales" {{if .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> ¿Base Beneficios Sociales?
-            </label>
-            <label>
-                <input type="checkbox" role="switch" name="es_afecto_cargas_sociales" {{if .Concepto.EsAfectoCargasSociales}}checked{{end}}> ¿Afecto Cargas Soc.?
+                <input type="checkbox" role="switch" name="es_pensionable" {{if .Concepto.EsPensionable}}checked{{end}}>
+                ¿Es Pensionable?
             </label>
         </div>
         <div>
             <label>
-                <input type="checkbox" role="switch" name="es_extraordinario" {{if .Concepto.EsExtraordinario}}checked{{end}}> Concepto Extraordinario
+                <input type="checkbox" role="switch" name="es_base_cts" {{if .Concepto.EsBaseCts}}checked{{end}}> ¿Base
+                CTS?
+            </label>
+            <label>
+                <input type="checkbox" role="switch" name="es_base_beneficios_sociales" {{if
+                    .Concepto.EsBaseBeneficiosSociales}}checked{{end}}> ¿Base Beneficios Sociales?
+            </label>
+            <label>
+                <input type="checkbox" role="switch" name="es_afecto_cargas_sociales" {{if
+                    .Concepto.EsAfectoCargasSociales}}checked{{end}}> ¿Afecto Cargas Soc.?
+            </label>
+        </div>
+        <div>
+            <label>
+                <input type="checkbox" role="switch" name="es_extraordinario" {{if
+                    .Concepto.EsExtraordinario}}checked{{end}}> Concepto Extraordinario
             </label>
             <label>
                 Modalidad de Entrega (Centralizada)
-                <input type="text" value="{{if .Concepto.ModalidadEntrega}}{{.Concepto.ModalidadEntrega}}{{else if .Concepto.EsOcasional}}OCASIONAL{{else}}PERMANENTE{{end}}" readonly disabled>
+                <input type="text"
+                    value="{{if .Concepto.ModalidadEntrega}}{{.Concepto.ModalidadEntrega}}{{else if .Concepto.EsOcasional}}OCASIONAL{{else}}PERMANENTE{{end}}"
+                    readonly disabled>
             </label>
         </div>
     </div>
+
+    <fieldset class="mt-sm">
+        <legend><strong>Afectaciones y Bases de Cálculo (Remuneración Computable):</strong></legend>
+        <div class="grid-3-cols card-section mb-sm">
+            <div>
+                <label><input type="checkbox" name="base_calculo_para" value="CTS" {{if index $.BaseCalculoMarcados "CTS"}}checked{{end}}> CTS</label>
+                <label><input type="checkbox" name="base_calculo_para" value="GRATIFICACION" {{if index $.BaseCalculoMarcados "GRATIFICACION"}}checked{{end}}> Gratificación</label>
+                <label><input type="checkbox" name="base_calculo_para" value="VACACIONES" {{if index $.BaseCalculoMarcados "VACACIONES"}}checked{{end}}> Vacaciones</label>
+            </div>
+            <div>
+                <label><input type="checkbox" name="base_calculo_para" value="ASIG_25_30" {{if index $.BaseCalculoMarcados "ASIG_25_30"}}checked{{end}}> Asig. 25 y 30 años (276)</label>
+                <label><input type="checkbox" name="base_calculo_para" value="SUBSIDIO_SEPELIO" {{if index $.BaseCalculoMarcados "SUBSIDIO_SEPELIO"}}checked{{end}}> Subsidio Luto/Sepelio</label>
+            </div>
+            <div>
+                <label><input type="checkbox" name="base_calculo_para" value="PENSIONES" {{if index $.BaseCalculoMarcados "PENSIONES"}}checked{{end}}> Pensiones (ONP/AFP)</label>
+                <label><input type="checkbox" name="base_calculo_para" value="ESSALUD" {{if index $.BaseCalculoMarcados "ESSALUD"}}checked{{end}}> EsSalud (9%)</label>
+            </div>
+        </div>
+    </fieldset>
 
     <div class="flex-row-between mt-lg">
         <div>

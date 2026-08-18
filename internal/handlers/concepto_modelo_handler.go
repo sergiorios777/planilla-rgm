@@ -133,6 +133,7 @@ func (h *ConceptoModeloHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		EsOcasional:              modalidad == models.ModalidadEntregaOcasional,
 		EsAfectoCargasSociales:   r.FormValue("es_afecto_cargas_sociales") == "true",
 		ModalidadEntrega:         modalidad,
+		BaseCalculoPara:          r.Form["base_calculo_para"],
 		RegimenesIDs:             ids,
 	}
 	nuevo.ConceptoID, _ = strconv.Atoi(r.FormValue("concepto_id"))
@@ -165,13 +166,19 @@ func (h *ConceptoModeloHandler) EditarUI(w http.ResponseWriter, r *http.Request)
 		marcados[rid] = true
 	}
 
+	baseCalculoMarcados := make(map[string]bool)
+	for _, b := range concepto.BaseCalculoPara {
+		baseCalculoMarcados[b] = true
+	}
+
 	data := map[string]interface{}{
-		"Concepto":           concepto,
-		"Regimenes":          regimenes,
-		"RegimenesMarcados":  marcados,
-		"Conceptos":          maestros,
-		"Clasificadores":     clasificadores,
-		"ClasifSeleccionado": 0,
+		"Concepto":            concepto,
+		"Regimenes":           regimenes,
+		"RegimenesMarcados":   marcados,
+		"BaseCalculoMarcados": baseCalculoMarcados,
+		"Conceptos":           maestros,
+		"Clasificadores":      clasificadores,
+		"ClasifSeleccionado":  0,
 	}
 	if concepto.ClasificadorID != nil {
 		data["ClasifSeleccionado"] = *concepto.ClasificadorID
@@ -227,6 +234,7 @@ func (h *ConceptoModeloHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		EsOcasional:              modalidadEdit == models.ModalidadEntregaOcasional,
 		EsAfectoCargasSociales:   r.FormValue("es_afecto_cargas_sociales") == "true",
 		ModalidadEntrega:         modalidadEdit,
+		BaseCalculoPara:          r.Form["base_calculo_para"],
 		RegimenesIDs:             idsRegimen,
 	}
 

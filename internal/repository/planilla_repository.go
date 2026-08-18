@@ -31,13 +31,19 @@ func NewPlanillaRepository(db *sql.DB) *PlanillaRepository {
 	return &PlanillaRepository{db: db}
 }
 
-// ObtenerTodos trae el historial de planillas de la entidad
+// ObtenerTodos trae el historial de planillas de la entidad con acumulados financieros
 func (r *PlanillaRepository) ObtenerTodos(tenantID int) ([]models.Planilla, error) {
 	query := `
-		SELECT id, tenant_id, anio, mes, descripcion, estado, es_extraordinaria 
-		FROM planillas 
-		WHERE tenant_id = $1 
-		ORDER BY anio DESC, mes DESC, id DESC
+		SELECT 
+			p.id, p.tenant_id, p.anio, p.mes, p.descripcion, p.estado, p.es_extraordinaria,
+			COALESCE(SUM(pd.total_ingresos), 0.00) AS total_ingresos,
+			COALESCE(SUM(pd.total_aportes), 0.00) AS total_aportes,
+			COALESCE(SUM(pd.total_ingresos + pd.total_aportes), 0.00) AS costo_total
+		FROM planillas p
+		LEFT JOIN planilla_detalles pd ON p.id = pd.planilla_id
+		WHERE p.tenant_id = $1 
+		GROUP BY p.id, p.tenant_id, p.anio, p.mes, p.descripcion, p.estado, p.es_extraordinaria
+		ORDER BY p.anio DESC, p.mes DESC, p.id DESC
 	`
 	rows, err := r.db.Query(query, tenantID)
 	if err != nil {
@@ -48,7 +54,10 @@ func (r *PlanillaRepository) ObtenerTodos(tenantID int) ([]models.Planilla, erro
 	var lista []models.Planilla
 	for rows.Next() {
 		var p models.Planilla
-		err := rows.Scan(&p.ID, &p.TenantID, &p.Anio, &p.Mes, &p.Descripcion, &p.Estado, &p.EsExtraordinaria)
+		err := rows.Scan(
+			&p.ID, &p.TenantID, &p.Anio, &p.Mes, &p.Descripcion, &p.Estado, &p.EsExtraordinaria,
+			&p.TotalIngresos, &p.TotalAportes, &p.CostoTotal,
+		)
 		if err == nil {
 			lista = append(lista, p)
 		}

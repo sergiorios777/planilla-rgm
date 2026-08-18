@@ -21,6 +21,7 @@ type Tenant struct {
 	LogoURL      *string   `json:"logo_url"`
 	Slug         *string   `json:"slug"`
 	Activo       bool      `json:"activo"`
+	TipoEntidad  string    `json:"tipo_entidad"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 
@@ -87,9 +88,10 @@ type ConceptoTenant struct {
 	EsRemunerativa           bool   `json:"es_remunerativa"`
 	EsBaseCts                bool   `json:"es_base_cts"`
 	EsBaseBeneficiosSociales bool   `json:"es_base_beneficios_sociales"`
-	EsOcasional              bool   `json:"es_ocasional"`
-	EsAfectoCargasSociales   bool   `json:"es_afecto_cargas_sociales"`
-	ModalidadEntrega         string `json:"modalidad_entrega"`
+	EsOcasional              bool     `json:"es_ocasional"`
+	EsAfectoCargasSociales   bool     `json:"es_afecto_cargas_sociales"`
+	ModalidadEntrega         string   `json:"modalidad_entrega"`
+	BaseCalculoPara          []string `json:"base_calculo_para"`
 
 	// Campos Auxiliares (JOINs desde la tabla conceptos_maestros)
 	RegimenesIDs       []int  `json:"regimenes_ids"` // Para los checkboxes (POST/PUT)
@@ -412,13 +414,16 @@ type ReglaFinanciamientoModelo struct {
 
 // Planilla representa la cabecera mensual de cálculos
 type Planilla struct {
-	ID               int    `json:"id"`
-	TenantID         int    `json:"tenant_id"`
-	Anio             int    `json:"anio"`
-	Mes              int    `json:"mes"`
-	Descripcion      string `json:"descripcion"`
-	Estado           string `json:"estado"` // BORRADOR, CERRADA
-	EsExtraordinaria bool   `json:"es_extraordinaria"`
+	ID               int     `json:"id"`
+	TenantID         int     `json:"tenant_id"`
+	Anio             int     `json:"anio"`
+	Mes              int     `json:"mes"`
+	Descripcion      string  `json:"descripcion"`
+	Estado           string  `json:"estado"` // BORRADOR, CERRADA
+	EsExtraordinaria bool    `json:"es_extraordinaria"`
+	TotalIngresos    float64 `json:"total_ingresos"`
+	TotalAportes     float64 `json:"total_aportes"`
+	CostoTotal       float64 `json:"costo_total"`
 }
 
 // PlanillaDetalle representa la boleta consolidada de un trabajador
@@ -498,6 +503,7 @@ type ConceptoModelo struct {
 	EsOcasional              bool       `json:"es_ocasional"`
 	EsAfectoCargasSociales   bool       `json:"es_afecto_cargas_sociales"`
 	ModalidadEntrega         string     `json:"modalidad_entrega"`
+	BaseCalculoPara          []string   `json:"base_calculo_para"`
 	CreatedAt                string     `json:"created_at"`
 	UpdatedAt                *time.Time `json:"updated_at,omitempty"`
 

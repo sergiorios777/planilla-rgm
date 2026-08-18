@@ -33,11 +33,24 @@
             <h3 class="m-0">➕ Registrar Nueva Entidad</h3>
         </header>
         <form hx-post="/admin/inquilinos/crear" hx-target="#lista-inquilinos" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('modal-crear-inquilino').removeAttribute('open'); }">
-            <label for="nombre">Nombre de la Municipalidad</label>
+            <label for="nombre">Nombre de la Entidad</label>
             <input type="text" id="nombre" name="nombre" placeholder="Ej: Municipalidad Provincial de..." required>
 
-            <label for="ruc">Número de RUC</label>
-            <input type="text" id="ruc" name="ruc" maxlength="11" placeholder="Ej: 20123456789" required>
+            <div class="grid">
+                <div>
+                    <label for="ruc">Número de RUC</label>
+                    <input type="text" id="ruc" name="ruc" maxlength="11" placeholder="Ej: 20123456789" required>
+                </div>
+                <div>
+                    <label for="tipo_entidad">Tipo de Entidad</label>
+                    <select id="tipo_entidad" name="tipo_entidad" required>
+                        <option value="GOBIERNO_LOCAL" selected>Gobierno Local (Municipalidad)</option>
+                        <option value="GOBIERNO_REGIONAL">Gobierno Regional</option>
+                        <option value="GOBIERNO_NACIONAL">Gobierno Nacional</option>
+                        <option value="OTRO">Otro Organismo Público</option>
+                    </select>
+                </div>
+            </div>
 
             <label class="mb-lg">
                 <input type="checkbox" name="activo" checked> Entidad Activa
@@ -61,11 +74,24 @@
         <form hx-post="/admin/inquilinos/actualizar" hx-target="#contenido-principal" hx-swap="innerHTML">
             <input type="hidden" name="id" value="{{.ID}}">
 
-            <label for="nombre">Nombre de la Municipalidad</label>
+            <label for="nombre">Nombre de la Entidad</label>
             <input type="text" id="nombre" name="nombre" value="{{.Nombre}}" required>
 
-            <label for="ruc">Número de RUC</label>
-            <input type="text" id="ruc" name="ruc" maxlength="11" value="{{.Ruc}}" required>
+            <div class="grid">
+                <div>
+                    <label for="ruc">Número de RUC</label>
+                    <input type="text" id="ruc" name="ruc" maxlength="11" value="{{.Ruc}}" required>
+                </div>
+                <div>
+                    <label for="tipo_entidad">Tipo de Entidad</label>
+                    <select id="tipo_entidad" name="tipo_entidad" required>
+                        <option value="GOBIERNO_LOCAL" {{if eq .TipoEntidad "GOBIERNO_LOCAL"}}selected{{end}}>Gobierno Local (Municipalidad)</option>
+                        <option value="GOBIERNO_REGIONAL" {{if eq .TipoEntidad "GOBIERNO_REGIONAL"}}selected{{end}}>Gobierno Regional</option>
+                        <option value="GOBIERNO_NACIONAL" {{if eq .TipoEntidad "GOBIERNO_NACIONAL"}}selected{{end}}>Gobierno Nacional</option>
+                        <option value="OTRO" {{if eq .TipoEntidad "OTRO"}}selected{{end}}>Otro Organismo Público</option>
+                    </select>
+                </div>
+            </div>
 
             <label class="mb-lg">
                 <input type="checkbox" name="activo" {{if .Activo}}checked{{end}}> Entidad Activa
@@ -85,8 +111,9 @@
     <thead>
         <tr>
             <th>ID</th>
-            <th>Municipalidad</th>
+            <th>Entidad</th>
             <th>RUC</th>
+            <th>Tipo</th>
             <th>Estado</th>
             <th>Acciones</th>
         </tr>
@@ -104,6 +131,9 @@
     <td><strong>{{.Nombre}}</strong></td>
     <td>{{.Ruc}}</td>
     <td>
+        <small class="badge badge-info">{{.TipoEntidad}}</small>
+    </td>
+    <td>
         {{if .Activo}}
         <mark class="badge badge-success">Activo</mark>
         {{else}}
@@ -119,7 +149,7 @@
 </tr>
 {{else}}
 <tr>
-    <td colspan="5" class="text-center">No hay inquilinos registrados.</td>
+    <td colspan="6" class="text-center">No hay inquilinos registrados.</td>
 </tr>
 {{end}}
 {{end}}

@@ -252,6 +252,20 @@
                 <label><input type="checkbox" role="switch" name="es_base_beneficios_sociales" value="true"> ¿Base Beneficios Sociales?</label>
                 <label><input type="checkbox" role="switch" name="es_afecto_cargas_sociales" value="true"> ¿Afecto Cargas Soc.?</label>
             </div>
+
+            <fieldset class="mt-sm">
+                <legend><strong>Afectaciones y Bases de Cálculo (Remuneración Computable):</strong></legend>
+                <div class="grid-checkbox-list">
+                    <label><input type="checkbox" name="base_calculo_para" value="CTS"> CTS</label>
+                    <label><input type="checkbox" name="base_calculo_para" value="GRATIFICACION"> Gratificación</label>
+                    <label><input type="checkbox" name="base_calculo_para" value="VACACIONES"> Vacaciones</label>
+                    <label><input type="checkbox" name="base_calculo_para" value="ASIG_25_30"> Asig. 25 y 30 años (276)</label>
+                    <label><input type="checkbox" name="base_calculo_para" value="SUBSIDIO_SEPELIO"> Subsidio Luto/Sepelio</label>
+                    <label><input type="checkbox" name="base_calculo_para" value="ESSALUD"> EsSalud (9%)</label>
+                    <label><input type="checkbox" name="base_calculo_para" value="PENSIONES"> Pensiones (ONP/AFP)</label>
+                </div>
+            </fieldset>
+
             <footer><button type="submit">Guardar en Plantilla</button></footer>
         </form>
     </article>
@@ -339,6 +353,19 @@
             <label><input type="checkbox" role="switch" name="es_afecto_cargas_sociales" value="true" {{if
                     .Concepto.EsAfectoCargasSociales}}checked{{end}}> Afecto Cargas Soc.</label>
         </div>
+
+        <fieldset class="mt-sm">
+            <legend><strong>Afectaciones y Bases de Cálculo (Remuneración Computable):</strong></legend>
+            <div class="grid-checkbox-list">
+                <label><input type="checkbox" name="base_calculo_para" value="CTS" {{if index $.BaseCalculoMarcados "CTS"}}checked{{end}}> CTS</label>
+                <label><input type="checkbox" name="base_calculo_para" value="GRATIFICACION" {{if index $.BaseCalculoMarcados "GRATIFICACION"}}checked{{end}}> Gratificación</label>
+                <label><input type="checkbox" name="base_calculo_para" value="VACACIONES" {{if index $.BaseCalculoMarcados "VACACIONES"}}checked{{end}}> Vacaciones</label>
+                <label><input type="checkbox" name="base_calculo_para" value="ASIG_25_30" {{if index $.BaseCalculoMarcados "ASIG_25_30"}}checked{{end}}> Asig. 25 y 30 años (276)</label>
+                <label><input type="checkbox" name="base_calculo_para" value="SUBSIDIO_SEPELIO" {{if index $.BaseCalculoMarcados "SUBSIDIO_SEPELIO"}}checked{{end}}> Subsidio Luto/Sepelio</label>
+                <label><input type="checkbox" name="base_calculo_para" value="ESSALUD" {{if index $.BaseCalculoMarcados "ESSALUD"}}checked{{end}}> EsSalud (9%)</label>
+                <label><input type="checkbox" name="base_calculo_para" value="PENSIONES" {{if index $.BaseCalculoMarcados "PENSIONES"}}checked{{end}}> Pensiones (ONP/AFP)</label>
+            </div>
+        </fieldset>
 
         <footer><button type="submit">Actualizar Catálogo</button></footer>
     </form>

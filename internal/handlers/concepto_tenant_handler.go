@@ -134,6 +134,7 @@ func (h *ConceptoTenantHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		EsOcasional:              modalidad == models.ModalidadEntregaOcasional,
 		EsAfectoCargasSociales:   r.FormValue("es_afecto_cargas_sociales") == "on",
 		ModalidadEntrega:         modalidad,
+		BaseCalculoPara:          r.Form["base_calculo_para"],
 		RegimenesIDs:             regimenesIDs,
 	}
 
@@ -193,6 +194,11 @@ func (h *ConceptoTenantHandler) EditarUI(w http.ResponseWriter, r *http.Request)
 		marcados[rid] = true
 	}
 
+	baseCalculoMarcados := make(map[string]bool)
+	for _, b := range c.BaseCalculoPara {
+		baseCalculoMarcados[b] = true
+	}
+
 	// 3. Enviar todo a la plantilla
 	data := map[string]interface{}{
 		"Concepto":                   c,
@@ -201,6 +207,7 @@ func (h *ConceptoTenantHandler) EditarUI(w http.ResponseWriter, r *http.Request)
 		"Clasificadores":             clasificadores,
 		"Regimenes":                  regimenes,
 		"RegimenesMarcados":          marcados,
+		"BaseCalculoMarcados":        baseCalculoMarcados,
 	}
 
 	tmpl, err := template.ParseFiles("ui/templates/tenant/conceptos_tenant_ui.html")
@@ -275,6 +282,7 @@ func (h *ConceptoTenantHandler) Actualizar(w http.ResponseWriter, r *http.Reques
 		EsOcasional:              modalidadTenant == models.ModalidadEntregaOcasional,
 		EsAfectoCargasSociales:   r.FormValue("es_afecto_cargas_sociales") == "on",
 		ModalidadEntrega:         modalidadTenant,
+		BaseCalculoPara:          r.Form["base_calculo_para"],
 		RegimenesIDs:             regimenesIDs,
 	}
 

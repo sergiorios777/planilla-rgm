@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 2rAKLehgvPceHJz9Mof0u5VAdJ5TD92Zh3gloFE0FCyUpNYK7hHAIk7ygmdwzXu
+\restrict WSDYLNwgPRW6ZEr1WxF7tFHZMAQadfZLWhakLds2bla2gD6P7LS4ER1k9X6rGgu
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -151,7 +151,7 @@ CREATE TABLE public.base_regimen_default (
     regimen_id integer NOT NULL,
     concepto_modelo_id integer NOT NULL,
     variable_calculo character varying(50) NOT NULL,
-    CONSTRAINT chk_variable_calculo_default CHECK (((variable_calculo)::text = ANY ((ARRAY['REMUNERACION_BASICA'::character varying, 'ASIGNACION_FAMILIAR'::character varying, 'SEXTO_GRATIFICACION'::character varying, 'REMUNERACION_VARIABLE'::character varying, 'REMUNERACION_COMPUTABLE'::character varying, 'MUC'::character varying, 'BET'::character varying, 'RETRIBUCION_MENSUAL'::character varying, 'VALORIZACION_PRINCIPAL'::character varying, 'VALORIZACION_AJUSTADA'::character varying])::text[])))
+    CONSTRAINT chk_variable_calculo_default CHECK (((variable_calculo)::text = ANY ((ARRAY['REMUNERACION_BASICA'::character varying, 'ASIGNACION_FAMILIAR'::character varying, 'SEXTO_GRATIFICACION'::character varying, 'REMUNERACION_VARIABLE'::character varying, 'REMUNERACION_COMPUTABLE'::character varying, 'MUC'::character varying, 'BET'::character varying, 'BET_FIJO'::character varying, 'BET_VARIABLE'::character varying, 'RETRIBUCION_MENSUAL'::character varying, 'VALORIZACION_PRINCIPAL'::character varying, 'VALORIZACION_AJUSTADA'::character varying])::text[])))
 );
 
 
@@ -191,7 +191,7 @@ CREATE TABLE public.base_regimen_tenant (
     concepto_tenant_id integer NOT NULL,
     variable_calculo character varying(50) NOT NULL,
     activo boolean DEFAULT true NOT NULL,
-    CONSTRAINT chk_variable_calculo_tenant CHECK (((variable_calculo)::text = ANY ((ARRAY['REMUNERACION_BASICA'::character varying, 'ASIGNACION_FAMILIAR'::character varying, 'SEXTO_GRATIFICACION'::character varying, 'REMUNERACION_VARIABLE'::character varying, 'REMUNERACION_COMPUTABLE'::character varying, 'MUC'::character varying, 'BET'::character varying, 'RETRIBUCION_MENSUAL'::character varying, 'VALORIZACION_PRINCIPAL'::character varying, 'VALORIZACION_AJUSTADA'::character varying])::text[])))
+    CONSTRAINT chk_variable_calculo_tenant CHECK (((variable_calculo)::text = ANY ((ARRAY['REMUNERACION_BASICA'::character varying, 'ASIGNACION_FAMILIAR'::character varying, 'SEXTO_GRATIFICACION'::character varying, 'REMUNERACION_VARIABLE'::character varying, 'REMUNERACION_COMPUTABLE'::character varying, 'MUC'::character varying, 'BET'::character varying, 'BET_FIJO'::character varying, 'BET_VARIABLE'::character varying, 'RETRIBUCION_MENSUAL'::character varying, 'VALORIZACION_PRINCIPAL'::character varying, 'VALORIZACION_AJUSTADA'::character varying])::text[])))
 );
 
 
@@ -398,6 +398,7 @@ CREATE TABLE public.conceptos_modelo (
     es_ocasional boolean DEFAULT false NOT NULL,
     es_afecto_cargas_sociales boolean DEFAULT false NOT NULL,
     modalidad_entrega character varying(20) DEFAULT 'PERMANENTE'::character varying NOT NULL,
+    base_calculo_para text[] DEFAULT '{}'::text[],
     CONSTRAINT conceptos_modelo_modalidad_entrega_check CHECK (((modalidad_entrega)::text = ANY ((ARRAY['PERMANENTE'::character varying, 'PERIODICO'::character varying, 'EXCEPCIONAL'::character varying, 'OCASIONAL'::character varying])::text[])))
 );
 
@@ -450,6 +451,7 @@ CREATE TABLE public.conceptos_tenant (
     es_ocasional boolean DEFAULT false NOT NULL,
     es_afecto_cargas_sociales boolean DEFAULT false NOT NULL,
     modalidad_entrega character varying(20) DEFAULT 'PERMANENTE'::character varying NOT NULL,
+    base_calculo_para text[] DEFAULT '{}'::text[],
     CONSTRAINT conceptos_tenant_modalidad_entrega_check CHECK (((modalidad_entrega)::text = ANY ((ARRAY['PERMANENTE'::character varying, 'PERIODICO'::character varying, 'EXCEPCIONAL'::character varying, 'OCASIONAL'::character varying])::text[])))
 );
 
@@ -1465,7 +1467,9 @@ CREATE TABLE public.tenants (
     frase_gestion character varying(255),
     logo_url character varying(255),
     slug character varying(100),
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    tipo_entidad character varying(50) DEFAULT 'GOBIERNO_LOCAL'::character varying NOT NULL,
+    CONSTRAINT chk_tenants_tipo_entidad CHECK (((tipo_entidad)::text = ANY ((ARRAY['GOBIERNO_LOCAL'::character varying, 'GOBIERNO_REGIONAL'::character varying, 'GOBIERNO_NACIONAL'::character varying, 'OTRO'::character varying])::text[])))
 );
 
 
@@ -3122,5 +3126,5 @@ ALTER TABLE ONLY public.usuarios
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 2rAKLehgvPceHJz9Mof0u5VAdJ5TD92Zh3gloFE0FCyUpNYK7hHAIk7ygmdwzXu
+\unrestrict WSDYLNwgPRW6ZEr1WxF7tFHZMAQadfZLWhakLds2bla2gD6P7LS4ER1k9X6rGgu
 

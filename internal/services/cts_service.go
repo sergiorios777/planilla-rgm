@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"planilla-rgm/internal/calculadoras"
-	"planilla-rgm/internal/config"
 	"planilla-rgm/internal/helpers"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/repository"
@@ -24,6 +23,7 @@ type CtsService struct {
 	Repo            *repository.CtsRepository
 	db              *sql.DB
 	BaseRegimenRepo *repository.BaseRegimenRepository
+	BaseComputable  *BaseComputableService
 }
 
 func NewCtsService(repo *repository.CtsRepository, db *sql.DB) *CtsService {
@@ -31,6 +31,7 @@ func NewCtsService(repo *repository.CtsRepository, db *sql.DB) *CtsService {
 		Repo:            repo,
 		db:              db,
 		BaseRegimenRepo: repository.NewBaseRegimenRepository(db),
+		BaseComputable:  NewBaseComputableService(db),
 	}
 }
 
@@ -38,8 +39,6 @@ func NewCtsService(repo *repository.CtsRepository, db *sql.DB) *CtsService {
 func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string) (int, error) {
 	// 1. Determinar el rango de fechas del semestre
 	var desde, hasta time.Time
-	var anio1, anio2 int
-	var meses1, meses2 []int
 
 	periodoUpper := strings.ToUpper(periodo)
 	switch periodoUpper {
@@ -47,18 +46,10 @@ func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string
 		// Periodo: Noviembre (anio-1) a Abril (anio)
 		desde = time.Date(anio-1, time.November, 1, 0, 0, 0, 0, time.UTC)
 		hasta = time.Date(anio, time.April, 30, 23, 59, 59, 0, time.UTC)
-		anio1 = anio - 1
-		meses1 = []int{11, 12}
-		anio2 = anio
-		meses2 = []int{1, 2, 3, 4}
 	case "NOVIEMBRE":
 		// Periodo: Mayo (anio) a Octubre (anio)
 		desde = time.Date(anio, time.May, 1, 0, 0, 0, 0, time.UTC)
 		hasta = time.Date(anio, time.October, 31, 23, 59, 59, 0, time.UTC)
-		anio1 = anio
-		meses1 = []int{5, 6, 7, 8, 9, 10}
-		anio2 = anio // Se busca en el mismo año
-		meses2 = []int{}
 	default:
 		return 0, errors.New("periodo no válido, debe ser MAYO o NOVIEMBRE")
 	}
@@ -83,54 +74,28 @@ func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string
 
 	var detalles []models.PlanillaCtsDetalle
 
-	// Cargar llaves y conceptos del catálogo
-	codigosSueldo := config.ConceptosMestrosCTS["DL 728"]["remuneracion"]
-	codigosAsigFam := config.ConceptosMestrosCTS["DL 728"]["asignacion_familiar"]
-	codigosGrati := config.ConceptosMestrosCTS["DL 728"]["gratificacion"]
-
-	// Preparar exclusión para variables
-	var codigosExcluidos []string
-	codigosExcluidos = append(codigosExcluidos, codigosSueldo...)
-	codigosExcluidos = append(codigosExcluidos, codigosAsigFam...)
-
-	// 4. Calcular para cada trabajador
+	// 4. Calcular para cada trabajador usando BaseComputableService
 	for _, c := range contratos {
-		// Obtener sueldo básico oficial de puesto_conceptos o fallback al presupuestado
-		sueldo, err := s.Repo.ObtenerSueldoBasicoActivo(c.PuestoID, codigosSueldo)
-		if err != nil || sueldo <= 0 {
-			sueldo = c.SueldoBasicoHistorico
-		}
-		if sueldo <= 0 {
-			sueldo = 1025.00 // Sueldo mínimo referencial
-		}
-
-		// Asignación familiar dinámica basada en config
-		familiar, _ := s.Repo.ObtenerRemuneracionFamiliarActiva(c.PuestoID, codigosAsigFam)
-
-		// 1/6 de Gratificación anterior basada en config
-		var grati float64
-		if periodoUpper == "MAYO" {
-			grati, _ = s.Repo.ObtenerGratificacionHistorica(c.ID, anio-1, 12, codigosGrati) // Diciembre
+		desglose, err := s.BaseComputable.ResolverBaseComputable(tenantID, c.ID, c.PuestoID, c.RegimenID, "728", BeneficioCTS, hasta)
+		
+		var sueldo, familiar, sextoGrati, promVariables, remComputable float64
+		if err == nil && desglose != nil && desglose.TotalComputable > 0 {
+			sueldo = desglose.SueldoBasico
+			familiar = desglose.AsigFamiliar
+			sextoGrati = desglose.SextoGrati
+			promVariables = desglose.PromedioVar
+			remComputable = desglose.TotalComputable
 		} else {
-			grati, _ = s.Repo.ObtenerGratificacionHistorica(c.ID, anio, 7, codigosGrati) // Julio
+			// Fallback de seguridad
+			sueldo = c.SueldoBasicoHistorico
+			if sueldo <= 0 {
+				sueldo = 1025.00
+			}
+			remComputable = sueldo
 		}
-		sextoGrati := grati / 6.0
 
-		// Promedio de variables excluyendo sueldo y asignación familiar
-		promVariables := 0.0
-		vars, err := s.Repo.ObtenerVariablesSemestre(c.ID, anio1, meses1, anio2, meses2, codigosExcluidos)
-		if err == nil && len(vars) > 0 {
-			conceptosSum := make(map[int]float64)
-			conceptosCount := make(map[int]int)
-			for _, v := range vars {
-				conceptosSum[v.MaestroID] += v.Monto
-				conceptosCount[v.MaestroID]++
-			}
-			for maestroID, count := range conceptosCount {
-				if count >= 3 { // Regla de regularidad
-					promVariables += conceptosSum[maestroID] / 6.0
-				}
-			}
+		if sueldo <= 0 {
+			sueldo = 1025.00
 		}
 
 		// Calcular meses laborados en el semestre
@@ -140,7 +105,6 @@ func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string
 		faltas, _ := s.Repo.ObtenerInasistenciasSemestre(c.ID, desde, hasta)
 
 		// Calcular CTS
-		remComputable := sueldo + familiar + sextoGrati + promVariables
 		_, desc, neto := calculadoras.CalcularCtsSemestralDL728(remComputable, mesesLaborados, faltas)
 
 		d := models.PlanillaCtsDetalle{
@@ -238,5 +202,3 @@ func (s *CtsService) ProcesarExcelGratificaciones(planillaCtsID int, file io.Rea
 
 	return procesados, nil
 }
-
-

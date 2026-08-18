@@ -1366,3 +1366,44 @@ details.dropdown-kebab ul li a.text-danger:hover {
     display: grid;
     grid-template-columns: 2fr 1fr;
 }
+
+.grid-2-cols {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.35rem 1rem;
+    font-size: 0.85rem;
+}
+
+.grid-2-cols label {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.grid-2-cols.card-section {
+    padding-top: 0.65rem;
+    padding-bottom: 0.5rem;
+}
+
+.grid-3-cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem 1rem;
+    font-size: 0.85rem;
+}
+
+.grid-3-cols label {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.grid-3-cols.card-section {
+    padding-top: 0.65rem;
+    padding-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .grid-2-cols,
+    .grid-3-cols {
+        grid-template-columns: 1fr;
+    }
+}
