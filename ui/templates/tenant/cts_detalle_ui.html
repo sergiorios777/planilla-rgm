@@ -11,6 +11,15 @@
             <h3 class="mb-0">Detalle de Planilla CTS Semestral: {{.Planilla.Anio}} - {{.Planilla.Periodo}}</h3>
         </div>
         <div>
+            {{if .Planilla.PlanillaID}}
+            <button class="outline secondary btn-compact p-sm mr-2"
+                hx-get="/tenant/ui/planillas/rubros-metas?id={{.Planilla.PlanillaID}}" hx-target="#contenido-tenant">
+                <svg class="icono-menu">
+                    <use href="#icono-objetivo"></use>
+                </svg>
+                Asignar Rubros y Metas
+            </button>
+            {{end}}
             {{if eq .Planilla.Estado "BORRADOR"}}
             <mark class="badge badge-warning p-sm font-bold">Borrador</mark>
             <button class="outline btn-compact p-sm ml-2"

@@ -6,8 +6,7 @@
             </svg>
             Apertura de Planillas Mensuales
         </h3>
-        <button class="primary btn-compact"
-            onclick="document.getElementById('modal-nuevo-planilla').showModal()">
+        <button class="primary btn-compact" onclick="document.getElementById('modal-nuevo-planilla').showModal()">
             <svg class="icono-menu">
                 <use href="#icono-plus"></use>
             </svg>
@@ -123,8 +122,12 @@
         <tr>
             <td>
                 <strong class="stat-mono">{{.Anio}} - {{printf "%02d" .Mes}}</strong><br>
-                {{if .EsExtraordinaria}}
+                {{if eq .Tipo "EXTRAORDINARIA"}}
                 <mark class="badge badge-purple">⭐ EXTRAORDINARIA</mark>
+                {{else if eq .Tipo "CTS"}}
+                <mark class="badge badge-warning">💼 CTS</mark>
+                {{else if eq .Tipo "CESE"}}
+                <mark class="badge badge-danger">🚪 CESE</mark>
                 {{else}}
                 <mark class="badge badge-info">📅 ORDINARIA</mark>
                 {{end}}
@@ -144,16 +147,16 @@
                 <div class="flex-row-end flex-gap-xs flex-items-center">
                     {{if eq .Estado "BORRADOR"}}
                     {{if .EsExtraordinaria}}
-                    <button class="outline primary btn-sm btn-compact"
-                        hx-get="/tenant/planillas/especial/ui?id={{.ID}}" hx-target="#contenido-tenant">
+                    <button class="outline primary btn-sm btn-compact" hx-get="/tenant/planillas/especial/ui?id={{.ID}}"
+                        hx-target="#contenido-tenant">
                         <svg class="icono-menu">
                             <use href="#icono-wysiwyg"></use>
                         </svg>
                         Formular
                     </button>
                     {{else}}
-                    <button class="primary btn-sm btn-compact"
-                        hx-post="/tenant/planillas/procesar?id={{.ID}}" hx-target="#contenido-tenant" hx-indicator="this">
+                    <button class="primary btn-sm btn-compact" hx-post="/tenant/planillas/procesar?id={{.ID}}"
+                        hx-target="#contenido-tenant" hx-indicator="this">
                         <svg class="icono-menu">
                             <use href="#icono-manufacturing"></use>
                         </svg>
@@ -180,25 +183,41 @@
                             {{if eq .Estado "BORRADOR"}}
                             <li>
                                 <a hx-get="/tenant/planillas/detalle/ui?id={{.ID}}" hx-target="#contenido-tenant">
-                                    <svg class="icono-menu"><use href="#icono-eye"></use></svg> Ver Detalles
+                                    <svg class="icono-menu">
+                                        <use href="#icono-eye"></use>
+                                    </svg> Ver Detalles
                                 </a>
                             </li>
                             {{end}}
                             <li>
                                 <a hx-get="/tenant/ui/planillas/rubros-metas?id={{.ID}}" hx-target="#contenido-tenant">
-                                    <svg class="icono-menu"><use href="#icono-money-range"></use></svg> Rubros y Metas
+                                    <svg class="icono-menu">
+                                        <use href="#icono-money-range"></use>
+                                    </svg> Rubros y Metas
+                                </a>
+                            </li>
+                            <li>
+                                <a hx-get="/tenant/planillas/sunat-codigos?id={{.ID}}" hx-target="#contenido-tenant">
+                                    <svg class="icono-menu">
+                                        <use href="#icono-qrcode"></use>
+                                    </svg> Auditoría Códigos SUNAT
                                 </a>
                             </li>
                             <li>
                                 <a hx-get="/tenant/planillas/anexos/ui?id={{.ID}}" hx-target="#contenido-tenant">
-                                    <svg class="icono-menu"><use href="#icono-docs-add-on"></use></svg> Anexos (PDT/PLAME)
+                                    <svg class="icono-menu">
+                                        <use href="#icono-docs-add-on"></use>
+                                    </svg> Anexos (PDT/PLAME)
                                 </a>
                             </li>
                             {{if eq .Estado "BORRADOR"}}
                             <li class="border-top">
-                                <a class="text-danger" hx-delete="/tenant/planillas/eliminar?id={{.ID}}" hx-target="#lista-planillas"
+                                <a class="text-danger" hx-delete="/tenant/planillas/eliminar?id={{.ID}}"
+                                    hx-target="#lista-planillas"
                                     hx-confirm="¿Está seguro de que desea eliminar esta planilla? Se borrarán todos los cálculos asociados y se revertirá el estado de la asistencia.">
-                                    <svg class="icono-menu"><use href="#icono-trash"></use></svg> Eliminar Planilla
+                                    <svg class="icono-menu">
+                                        <use href="#icono-trash"></use>
+                                    </svg> Eliminar Planilla
                                 </a>
                             </li>
                             {{end}}

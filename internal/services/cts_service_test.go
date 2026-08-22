@@ -15,6 +15,7 @@ import (
 )
 
 func TestCtsService(t *testing.T) {
+	_ = godotenv.Load("../../.env")
 	db, err := config.InitDB()
 	if err != nil {
 		t.Skip("Saltando test de base de datos local:", err)
@@ -74,6 +75,84 @@ func TestCtsService(t *testing.T) {
 
 	if count != 1 {
 		t.Errorf("got %d trabajadores procesados; want 1", count)
+	}
+
+	// 5. Verificar que se creó la planilla espejo en 'planillas' con tipo 'CTS'
+	planillasCts, err := repo.ListarPlanillasCts(tenantID)
+	if err != nil || len(planillasCts) == 0 {
+		t.Fatalf("Error listando planillas CTS: %v", err)
+	}
+	if planillasCts[0].PlanillaID == nil {
+		t.Fatalf("PlanillaCts no tiene PlanillaID espejo vinculado")
+	}
+
+	planillaID := *planillasCts[0].PlanillaID
+
+	var tipoPlanilla, estadoPlanilla string
+	err = db.QueryRow("SELECT tipo, estado FROM planillas WHERE id = $1", planillaID).Scan(&tipoPlanilla, &estadoPlanilla)
+	if err != nil {
+		t.Fatalf("Error consultando planilla espejo: %v", err)
+	}
+
+	var totalIngresos float64
+	err = db.QueryRow("SELECT COALESCE(SUM(total_ingresos), 0) FROM planilla_detalles WHERE planilla_id = $1", planillaID).Scan(&totalIngresos)
+	if err != nil {
+		t.Fatalf("Error consultando total_ingresos de planilla espejo: %v", err)
+	}
+
+	if tipoPlanilla != "CTS" {
+		t.Errorf("got tipo %s; want CTS", tipoPlanilla)
+	}
+	if estadoPlanilla != "BORRADOR" {
+		t.Errorf("got estado %s; want BORRADOR", estadoPlanilla)
+	}
+	if totalIngresos <= 0 {
+		t.Errorf("got total_ingresos %f; want > 0", totalIngresos)
+	}
+
+	// 6. Verificar que existe el concepto en planilla_conceptos
+	var countConceptos int
+	err = db.QueryRow(`
+		SELECT COUNT(*) 
+		FROM planilla_conceptos pc
+		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
+		WHERE pd.planilla_id = $1
+	`, planillaID).Scan(&countConceptos)
+	if err != nil || countConceptos != 1 {
+		t.Errorf("got %d conceptos en planilla_conceptos; want 1 (err: %v)", countConceptos, err)
+	}
+
+	// 7. Verificar que ObtenerTodos de PlanillaRepository NO lista la planilla de CTS
+	pRepo := repository.NewPlanillaRepository(db)
+	planillasRegulares, err := pRepo.ObtenerTodos(tenantID)
+	if err != nil {
+		t.Fatalf("Error al obtener planillas regulares: %v", err)
+	}
+	for _, pr := range planillasRegulares {
+		if pr.ID == planillaID {
+			t.Errorf("La planilla CTS (ID %d) fue retornada indebidamente por ObtenerTodos", planillaID)
+		}
+	}
+
+	// 8. Verificar sincronización de cierre
+	err = repo.CambiarEstadoCts(planillasCts[0].ID, tenantID, "CERRADO")
+	if err != nil {
+		t.Fatalf("Error cerrando planilla CTS: %v", err)
+	}
+	_ = db.QueryRow("SELECT estado FROM planillas WHERE id = $1", planillaID).Scan(&estadoPlanilla)
+	if estadoPlanilla != "CERRADA" {
+		t.Errorf("got estadoPlanilla %s; want CERRADA tras cerrar CTS", estadoPlanilla)
+	}
+
+	// 9. Verificar eliminación en cascada
+	err = repo.EliminarPlanillaCts(planillasCts[0].ID, tenantID)
+	if err != nil {
+		t.Fatalf("Error eliminando planilla CTS: %v", err)
+	}
+	var countRestantes int
+	_ = db.QueryRow("SELECT COUNT(*) FROM planillas WHERE id = $1", planillaID).Scan(&countRestantes)
+	if countRestantes != 0 {
+		t.Errorf("La planilla espejo no fue eliminada tras borrar planillas_cts")
 	}
 }
 

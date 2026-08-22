@@ -31,18 +31,18 @@ func NewPlanillaRepository(db *sql.DB) *PlanillaRepository {
 	return &PlanillaRepository{db: db}
 }
 
-// ObtenerTodos trae el historial de planillas de la entidad con acumulados financieros
+// ObtenerTodos trae el historial de planillas de la entidad con acumulados financieros (exclusivo para planillas mensuales Ordinarias y Extraordinarias)
 func (r *PlanillaRepository) ObtenerTodos(tenantID int) ([]models.Planilla, error) {
 	query := `
 		SELECT 
-			p.id, p.tenant_id, p.anio, p.mes, p.descripcion, p.estado, p.es_extraordinaria,
+			p.id, p.tenant_id, p.anio, p.mes, p.descripcion, p.estado, p.es_extraordinaria, p.tipo,
 			COALESCE(SUM(pd.total_ingresos), 0.00) AS total_ingresos,
 			COALESCE(SUM(pd.total_aportes), 0.00) AS total_aportes,
 			COALESCE(SUM(pd.total_ingresos + pd.total_aportes), 0.00) AS costo_total
 		FROM planillas p
 		LEFT JOIN planilla_detalles pd ON p.id = pd.planilla_id
-		WHERE p.tenant_id = $1 
-		GROUP BY p.id, p.tenant_id, p.anio, p.mes, p.descripcion, p.estado, p.es_extraordinaria
+		WHERE p.tenant_id = $1 AND p.tipo IN ('ORDINARIA', 'EXTRAORDINARIA')
+		GROUP BY p.id, p.tenant_id, p.anio, p.mes, p.descripcion, p.estado, p.es_extraordinaria, p.tipo
 		ORDER BY p.anio DESC, p.mes DESC, p.id DESC
 	`
 	rows, err := r.db.Query(query, tenantID)
@@ -55,7 +55,7 @@ func (r *PlanillaRepository) ObtenerTodos(tenantID int) ([]models.Planilla, erro
 	for rows.Next() {
 		var p models.Planilla
 		err := rows.Scan(
-			&p.ID, &p.TenantID, &p.Anio, &p.Mes, &p.Descripcion, &p.Estado, &p.EsExtraordinaria,
+			&p.ID, &p.TenantID, &p.Anio, &p.Mes, &p.Descripcion, &p.Estado, &p.EsExtraordinaria, &p.Tipo,
 			&p.TotalIngresos, &p.TotalAportes, &p.CostoTotal,
 		)
 		if err == nil {
@@ -70,11 +70,20 @@ func (r *PlanillaRepository) ObtenerTodos(tenantID int) ([]models.Planilla, erro
 
 // Crear inserta una nueva cabecera mensual
 func (r *PlanillaRepository) Crear(p *models.Planilla) error {
+	tipo := p.Tipo
+	if tipo == "" {
+		if p.EsExtraordinaria {
+			tipo = "EXTRAORDINARIA"
+		} else {
+			tipo = "ORDINARIA"
+		}
+	}
+
 	query := `
-		INSERT INTO planillas (tenant_id, anio, mes, descripcion, estado, es_extraordinaria)
-		VALUES ($1, $2, $3, $4, 'BORRADOR', $5) RETURNING id
+		INSERT INTO planillas (tenant_id, anio, mes, descripcion, estado, es_extraordinaria, tipo)
+		VALUES ($1, $2, $3, $4, 'BORRADOR', $5, $6) RETURNING id
 	`
-	return r.db.QueryRow(query, p.TenantID, p.Anio, p.Mes, p.Descripcion, p.EsExtraordinaria).Scan(&p.ID)
+	return r.db.QueryRow(query, p.TenantID, p.Anio, p.Mes, p.Descripcion, p.EsExtraordinaria, tipo).Scan(&p.ID)
 }
 
 // ObtenerPeriodoPlanilla extrae el año y mes a procesar
@@ -904,12 +913,28 @@ func (r *PlanillaRepository) ObtenerEstado(planillaID int, tenantID int) (string
 // ObtenerPorID obtiene una planilla por su ID y TenantID
 func (r *PlanillaRepository) ObtenerPorID(planillaID int, tenantID int) (*models.Planilla, error) {
 	var p models.Planilla
-	query := `SELECT id, tenant_id, anio, mes, descripcion, estado, es_extraordinaria FROM planillas WHERE id = $1 AND tenant_id = $2`
-	err := r.db.QueryRow(query, planillaID, tenantID).Scan(&p.ID, &p.TenantID, &p.Anio, &p.Mes, &p.Descripcion, &p.Estado, &p.EsExtraordinaria)
+	query := `SELECT id, tenant_id, anio, mes, descripcion, estado, es_extraordinaria, tipo FROM planillas WHERE id = $1 AND tenant_id = $2`
+	err := r.db.QueryRow(query, planillaID, tenantID).Scan(&p.ID, &p.TenantID, &p.Anio, &p.Mes, &p.Descripcion, &p.Estado, &p.EsExtraordinaria, &p.Tipo)
 	if err != nil {
 		return nil, err
 	}
 	return &p, nil
+}
+
+// ObtenerTipo obtiene el tipo de una planilla (ORDINARIA, EXTRAORDINARIA, CTS, CESE)
+func (r *PlanillaRepository) ObtenerTipo(planillaID int, tenantID int) (string, error) {
+	var tipo string
+	query := `SELECT tipo FROM planillas WHERE id = $1 AND tenant_id = $2`
+	err := r.db.QueryRow(query, planillaID, tenantID).Scan(&tipo)
+	return tipo, err
+}
+
+// ObtenerCtsIDPorPlanillaID obtiene el ID de la planilla CTS asociada a una planilla espejo
+func (r *PlanillaRepository) ObtenerCtsIDPorPlanillaID(planillaID int, tenantID int) (int, error) {
+	var ctsID int
+	query := `SELECT id FROM planillas_cts WHERE planilla_id = $1 AND tenant_id = $2`
+	err := r.db.QueryRow(query, planillaID, tenantID).Scan(&ctsID)
+	return ctsID, err
 }
 
 // ObtenerRucTenant obtiene el RUC de un tenant
@@ -956,15 +981,17 @@ func (r *PlanillaRepository) ObtenerDatosPlameJornada(planillaID int, tenantID i
 // ObtenerDatosPlameRemuneraciones obtiene los datos de remuneraciones para exportar a PLAME (.rem)
 func (r *PlanillaRepository) ObtenerDatosPlameRemuneraciones(planillaID int, tenantID int) ([]models.PlameRemuneracion, error) {
 	query := `
-		SELECT t.tipo_documento, t.numero_documento, cm.codigo, pc.monto
+		SELECT t.tipo_documento, t.numero_documento, COALESCE(NULLIF(pc.codigo_sunat, ''), cm.codigo) AS codigo, pc.monto
 		FROM planilla_conceptos pc
 		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
 		INNER JOIN contratos c ON pd.contrato_id = c.id
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
-		INNER JOIN conceptos_maestros cm ON pc.maestro_id = cm.id
+		LEFT JOIN conceptos_maestros cm ON pc.maestro_id = cm.id
 		INNER JOIN planillas pl ON pd.planilla_id = pl.id
-		WHERE pd.planilla_id = $1 AND pl.tenant_id = $2 AND cm.origen = 'sunat' AND pc.monto > 0
-		ORDER BY t.numero_documento, cm.codigo
+		WHERE pd.planilla_id = $1 AND pl.tenant_id = $2 
+		  AND (cm.origen = 'sunat' OR pc.codigo_sunat IS NOT NULL) 
+		  AND pc.monto > 0
+		ORDER BY t.numero_documento, codigo
 	`
 	rows, err := r.db.Query(query, planillaID, tenantID)
 	if err != nil {
@@ -2301,4 +2328,190 @@ func (r *PlanillaRepository) ObtenerFormulacionEspecial(planillaID int, tenantID
 	}
 
 	return conceptos, trabajadores, nil
+}
+
+// ObtenerConceptosSunatAgrupados obtiene la lista agrupada de conceptos para auditar códigos SUNAT en una planilla
+func (r *PlanillaRepository) ObtenerConceptosSunatAgrupados(planillaID int, tenantID int) ([]models.ConceptoSunatAgrupado, error) {
+	query := `
+		SELECT 
+			pc.concepto_tenant_id,
+			COALESCE(pc.maestro_id, 0) AS maestro_id,
+			COALESCE(NULLIF(pc.codigo_sunat, ''), cm.codigo, '') AS codigo_sunat_actual,
+			COALESCE(pc.nombre_en_boleta, ct.nombre_personalizado, 'CONCEPTO SIN NOMBRE') AS nombre_concepto,
+			pc.tipo_concepto,
+			COUNT(DISTINCT pd.id) AS total_trabajadores,
+			COALESCE(SUM(pc.monto), 0.00) AS total_monto,
+			COALESCE(ct.concepto_id, 0) AS maestro_id_original
+		FROM planilla_conceptos pc
+		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
+		INNER JOIN planillas p ON pd.planilla_id = p.id
+		LEFT JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+		LEFT JOIN conceptos_maestros cm ON pc.maestro_id = cm.id
+		WHERE p.id = $1 AND p.tenant_id = $2
+		GROUP BY 
+			pc.concepto_tenant_id, 
+			pc.maestro_id, 
+			pc.codigo_sunat, 
+			cm.codigo, 
+			pc.nombre_en_boleta, 
+			ct.nombre_personalizado, 
+			pc.tipo_concepto, 
+			ct.concepto_id
+		ORDER BY 
+			CASE pc.tipo_concepto 
+				WHEN 'INGRESO' THEN 1 
+				WHEN 'RETENCION' THEN 2 
+				WHEN 'APORTE' THEN 3 
+				ELSE 4 
+			END, 
+			nombre_concepto ASC
+	`
+	rows, err := r.db.Query(query, planillaID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.ConceptoSunatAgrupado
+	for rows.Next() {
+		var item models.ConceptoSunatAgrupado
+		var cTenantID sql.NullInt64
+		err := rows.Scan(
+			&cTenantID,
+			&item.MaestroID,
+			&item.CodigoSunatActual,
+			&item.NombreConcepto,
+			&item.TipoConcepto,
+			&item.TotalTrabajadores,
+			&item.TotalMonto,
+			&item.MaestroIDOriginal,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if cTenantID.Valid {
+			idVal := int(cTenantID.Int64)
+			item.ConceptoTenantID = &idVal
+		}
+		lista = append(lista, item)
+	}
+	return lista, nil
+}
+
+// ObtenerMaestrosSunat obtiene todos los conceptos oficiales de la Tabla 22 de SUNAT
+func (r *PlanillaRepository) ObtenerMaestrosSunat() ([]models.ConceptoMaestro, error) {
+	query := `
+		SELECT id, parent_id, codigo, codigo_interno, descripcion, tipo, activo, origen
+		FROM conceptos_maestros
+		WHERE origen = 'sunat' AND activo = true
+		ORDER BY 
+			CASE tipo 
+				WHEN 'INGRESO' THEN 1 
+				WHEN 'DESCUENTO' THEN 2 
+				WHEN 'APORTE_TRABAJADOR' THEN 3 
+				WHEN 'APORTE_EMPLEADOR' THEN 4 
+				ELSE 5 
+			END, 
+			codigo ASC
+	`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []models.ConceptoMaestro
+	for rows.Next() {
+		var m models.ConceptoMaestro
+		var parentID sql.NullInt64
+		err := rows.Scan(
+			&m.ID,
+			&parentID,
+			&m.Codigo,
+			&m.CodigoInterno,
+			&m.Descripcion,
+			&m.Tipo,
+			&m.Activo,
+			&m.Origen,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if parentID.Valid {
+			pID := int(parentID.Int64)
+			m.ParentID = &pID
+		}
+		lista = append(lista, m)
+	}
+	return lista, nil
+}
+
+// ActualizarCodigoSunatConceptoMasivo actualiza en lote el código SUNAT y maestro_id para un concepto dentro de una planilla
+func (r *PlanillaRepository) ActualizarCodigoSunatConceptoMasivo(planillaID int, tenantID int, conceptoTenantID *int, nombreEnBoleta string, nuevoMaestroID int, actualizarDefault bool) error {
+	// 1. Validar estado de la planilla
+	var estado string
+	err := r.db.QueryRow(`SELECT estado FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID).Scan(&estado)
+	if err != nil {
+		return fmt.Errorf("planilla no encontrada: %w", err)
+	}
+	if estado == "CERRADA" {
+		return fmt.Errorf("la planilla se encuentra CERRADA y no permite modificaciones")
+	}
+
+	// 2. Resolver código oficial del maestro SUNAT
+	var nuevoCodigoSunat string
+	err = r.db.QueryRow(`SELECT codigo FROM conceptos_maestros WHERE id = $1 AND origen = 'sunat'`, nuevoMaestroID).Scan(&nuevoCodigoSunat)
+	if err != nil {
+		return fmt.Errorf("código maestro SUNAT no válido: %w", err)
+	}
+
+	// 3. Ejecutar actualización transaccional
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if conceptoTenantID != nil && *conceptoTenantID > 0 {
+		_, err = tx.Exec(`
+			UPDATE planilla_conceptos pc
+			SET codigo_sunat = $1,
+			    maestro_id = $2
+			FROM planilla_detalles pd
+			WHERE pc.planilla_detalle_id = pd.id
+			  AND pd.planilla_id = $3
+			  AND pc.concepto_tenant_id = $4
+		`, nuevoCodigoSunat, nuevoMaestroID, planillaID, *conceptoTenantID)
+		if err != nil {
+			return fmt.Errorf("error actualizando conceptos de planilla: %w", err)
+		}
+
+		if actualizarDefault {
+			_, err = tx.Exec(`
+				UPDATE conceptos_tenant
+				SET concepto_id = $1,
+				    updated_at = CURRENT_TIMESTAMP
+				WHERE id = $2 AND tenant_id = $3
+			`, nuevoMaestroID, *conceptoTenantID, tenantID)
+			if err != nil {
+				return fmt.Errorf("error actualizando concepto predeterminado: %w", err)
+			}
+		}
+	} else {
+		_, err = tx.Exec(`
+			UPDATE planilla_conceptos pc
+			SET codigo_sunat = $1,
+			    maestro_id = $2
+			FROM planilla_detalles pd
+			WHERE pc.planilla_detalle_id = pd.id
+			  AND pd.planilla_id = $3
+			  AND pc.concepto_tenant_id IS NULL
+			  AND pc.nombre_en_boleta = $4
+		`, nuevoCodigoSunat, nuevoMaestroID, planillaID, nombreEnBoleta)
+		if err != nil {
+			return fmt.Errorf("error actualizando conceptos de planilla sin tenant: %w", err)
+		}
+	}
+
+	return tx.Commit()
 }

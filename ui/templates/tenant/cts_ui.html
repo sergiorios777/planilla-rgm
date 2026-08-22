@@ -42,8 +42,7 @@
 {{define "formulario_crear_cts"}}
 <div class="pt-md">
     <div id="alerta-cts"></div>
-    <form hx-post="/tenant/cts/crear" hx-target="#lista-cts" hx-swap="innerHTML"
-        hx-on::after-request="if (event.detail.successful && !event.detail.xhr.responseText.includes('<div id=\'alerta-cts\'')) { document.getElementById('modal-nueva-cts').close(); this.reset(); }">
+    <form hx-post="/tenant/cts/crear" hx-target="#lista-cts" hx-swap="innerHTML">
         <div class="grid">
             <label>Año de Cálculo
                 <input type="number" name="anio" value="2026" required min="2000" max="2100">
@@ -94,6 +93,15 @@
                     </svg>
                     Ver Detalle
                 </button>
+                {{if .PlanillaID}}
+                <button class="outline secondary btn-sm"
+                    hx-get="/tenant/ui/planillas/rubros-metas?id={{.PlanillaID}}" hx-target="#contenido-tenant">
+                    <svg class="icono-menu">
+                        <use href="#icono-objetivo"></use>
+                    </svg>
+                    Rubros y Metas
+                </button>
+                {{end}}
                 {{if eq .Estado "BORRADOR"}}
                 <button class="outline secondary btn-sm"
                     hx-delete="/tenant/cts/eliminar?id={{.ID}}" hx-target="#lista-cts"
@@ -118,6 +126,10 @@
 <script>
     document.body.addEventListener("cerrarModalCts", function () {
         const modal = document.getElementById('modal-nueva-cts');
-        if (modal && modal.open) modal.close();
+        if (modal && modal.open) {
+            modal.close();
+            const form = modal.querySelector('form');
+            if (form) form.reset();
+        }
     });
 </script>

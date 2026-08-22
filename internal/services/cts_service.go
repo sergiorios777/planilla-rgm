@@ -54,16 +54,10 @@ func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string
 		return 0, errors.New("periodo no válido, debe ser MAYO o NOVIEMBRE")
 	}
 
-	// 2. Crear la planilla cabecera
-	p := &models.PlanillaCts{
-		TenantID: tenantID,
-		Anio:     anio,
-		Periodo:  periodoUpper,
-		Estado:   "BORRADOR",
-	}
-	err := s.Repo.CrearPlanillaCts(p)
-	if err != nil {
-		return 0, fmt.Errorf("error al crear planilla cabecera de CTS: %w", err)
+	// 2. Determinar mes fiscal para el espejo
+	mesFiscal := 5
+	if periodoUpper == "NOVIEMBRE" {
+		mesFiscal = 11
 	}
 
 	// 3. Obtener contratos DL 728 elegibles
@@ -72,12 +66,16 @@ func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string
 		return 0, fmt.Errorf("error al obtener trabajadores elegibles de CTS: %w", err)
 	}
 
+	if len(contratos) == 0 {
+		return 0, errors.New("no se encontraron trabajadores activos bajo el régimen D.L. 728 para el periodo seleccionado")
+	}
+
 	var detalles []models.PlanillaCtsDetalle
 
 	// 4. Calcular para cada trabajador usando BaseComputableService
 	for _, c := range contratos {
 		desglose, err := s.BaseComputable.ResolverBaseComputable(tenantID, c.ID, c.PuestoID, c.RegimenID, "728", BeneficioCTS, hasta)
-		
+
 		var sueldo, familiar, sextoGrati, promVariables, remComputable float64
 		if err == nil && desglose != nil && desglose.TotalComputable > 0 {
 			sueldo = desglose.SueldoBasico
@@ -108,7 +106,6 @@ func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string
 		_, desc, neto := calculadoras.CalcularCtsSemestralDL728(remComputable, mesesLaborados, faltas)
 
 		d := models.PlanillaCtsDetalle{
-			PlanillaCtsID:          p.ID,
 			ContratoID:             c.ID,
 			SueldoBasico:           sueldo,
 			AsignacionFamilia:      familiar,
@@ -123,12 +120,10 @@ func (s *CtsService) ProcesarCtsSemestral(tenantID int, anio int, periodo string
 		detalles = append(detalles, d)
 	}
 
-	// 5. Guardar los detalles en la BD
-	if len(detalles) > 0 {
-		err = s.Repo.GuardarDetallesCts(detalles)
-		if err != nil {
-			return 0, fmt.Errorf("error al guardar los detalles de la CTS: %w", err)
-		}
+	// 5. Guardar cabeceras y detalles atómicamente en una sola transacción
+	_, err = s.Repo.CrearYGuardarCtsTransaccional(tenantID, anio, periodoUpper, mesFiscal, detalles, contratos)
+	if err != nil {
+		return 0, err
 	}
 
 	return len(detalles), nil

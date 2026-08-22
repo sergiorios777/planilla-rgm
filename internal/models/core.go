@@ -251,6 +251,18 @@ type PlanillaConcepto struct {
 	ClasificadorCodigo     string `json:"clasificador_codigo,omitempty"`
 }
 
+// ConceptoSunatAgrupado representa el consolidado de un concepto dentro de una planilla para auditoría SUNAT / PLAME
+type ConceptoSunatAgrupado struct {
+	ConceptoTenantID  *int    `json:"concepto_tenant_id"`
+	MaestroID         int     `json:"maestro_id"`
+	CodigoSunatActual string  `json:"codigo_sunat_actual"`
+	NombreConcepto    string  `json:"nombre_concepto"`
+	TipoConcepto      string  `json:"tipo_concepto"` // INGRESO, RETENCION, APORTE
+	TotalTrabajadores int     `json:"total_trabajadores"`
+	TotalMonto        float64 `json:"total_monto"`
+	MaestroIDOriginal int     `json:"maestro_id_original"`
+}
+
 // ReglaFinanciamientoConcepto representa una regla de excepción de financiamiento por concepto
 type ReglaFinanciamientoConcepto struct {
 	ID               int       `json:"id"`
@@ -421,6 +433,7 @@ type Planilla struct {
 	Descripcion      string  `json:"descripcion"`
 	Estado           string  `json:"estado"` // BORRADOR, CERRADA
 	EsExtraordinaria bool    `json:"es_extraordinaria"`
+	Tipo             string  `json:"tipo"` // ORDINARIA, EXTRAORDINARIA, CTS, CESE
 	TotalIngresos    float64 `json:"total_ingresos"`
 	TotalAportes     float64 `json:"total_aportes"`
 	CostoTotal       float64 `json:"costo_total"`
@@ -544,6 +557,7 @@ type ConceptoAsignacion struct {
 type PlanillaCts struct {
 	ID           int       `json:"id"`
 	TenantID     int       `json:"tenant_id"`
+	PlanillaID   *int      `json:"planilla_id,omitempty"`
 	Anio         int       `json:"anio"`
 	Periodo      string    `json:"periodo"` // 'MAYO' o 'NOVIEMBRE'
 	Estado       string    `json:"estado"`  // 'BORRADOR', 'PROCESADA'

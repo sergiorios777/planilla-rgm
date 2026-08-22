@@ -1,0 +1,264 @@
+<article>
+    <header class="flex-row-between">
+        <div>
+            <h3 class="mb-0 flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-qrcode"></use>
+                </svg> Auditoría y Reasignación de Códigos SUNAT (PLAME)
+            </h3>
+            <p><small>Verificación y reclasificación de la Tabla 22 de SUNAT para los conceptos calculados en esta
+                    planilla.</small></p>
+        </div>
+        <div class="flex-items-center flex-gap-sm">
+            <mark class="badge badge-info stat-mono">
+                📅 {{.Planilla.Anio}} - {{printf "%02d" .Planilla.Mes}}
+            </mark>
+            <span id="badge-estado-planilla">
+                {{if eq .Planilla.Estado "BORRADOR"}}
+                <mark class="badge badge-warning">
+                    📝 BORRADOR (Edición Permitida)
+                </mark>
+                {{else}}
+                <mark class="badge badge-success">
+                    🔒 CERRADA (Solo Lectura)
+                </mark>
+                {{end}}
+            </span>
+        </div>
+    </header>
+
+    <!-- Toolbar superior de navegación -->
+    <div class="flex-row-start mb-lg flex-wrap flex-gap-sm">
+        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Volver al Historial
+        </button>
+
+        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/planillas/detalle/ui?id={{.Planilla.ID}}" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-eye"></use>
+            </svg> Volver a Detalle
+        </button>
+
+        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/ui/planillas/rubros-metas?id={{.Planilla.ID}}" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-objetivo"></use>
+            </svg> Rubros y Metas
+        </button>
+
+        <button class="primary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/planillas/exportar-plame-modal?id={{.Planilla.ID}}" hx-target="#modal-plame-body"
+            onclick="document.getElementById('modal-plame').showModal()">
+            <svg class="icono-menu">
+                <use href="#icono-file-export"></use>
+            </svg> Exportar a PLAME (.rem / .jor)
+        </button>
+    </div>
+
+    <!-- Banner informativo -->
+    <div class="alert-box alert-info mb-md">
+        <div class="flex-row-start flex-gap-sm flex-items-center">
+            <svg class="icono-menu">
+                <use href="#icono-info"></use>
+            </svg>
+            <div>
+                <strong>Auditoría de Conceptos para PDT Planilla Electrónica:</strong>
+                Los cambios de código SUNAT realizados en esta vista se actualizan inmediatamente en todas las boletas
+                de esta planilla, garantizando que el archivo de exportación <code>.rem</code> refleje la clasificación
+                exacta requerida.
+            </div>
+        </div>
+    </div>
+
+    <!-- Buscador / Filtro Rápido en Cliente -->
+    <div class="flex-row-between mb-md flex-wrap flex-gap-sm">
+        <div style="flex: 1; min-width: 250px;">
+            <input type="search" id="filtro-concepto-sunat" placeholder="🔍 Filtrar por nombre de concepto o código..."
+                class="input-sm mb-0" oninput="filtrarTablaConceptosSunat()">
+        </div>
+        <div class="flex-row-end flex-gap-xs">
+            <button class="outline secondary btn-compact font-xs" onclick="filtrarTipoConcepto('')">Todos</button>
+            <button class="outline secondary btn-compact font-xs text-success"
+                onclick="filtrarTipoConcepto('INGRESO')">Ingresos</button>
+            <button class="outline secondary btn-compact font-xs text-danger"
+                onclick="filtrarTipoConcepto('RETENCION')">Retenciones</button>
+            <button class="outline secondary btn-compact font-xs text-info"
+                onclick="filtrarTipoConcepto('APORTE')">Aportes</button>
+        </div>
+    </div>
+
+    <!-- Tabla Agrupada de Conceptos -->
+    <div class="table-responsive">
+        <table class="striped condensed w-full" id="tabla-conceptos-sunat">
+            <thead>
+                <tr>
+                    <th style="width: 110px;">Tipo</th>
+                    <th>Concepto en Planilla</th>
+                    <th class="text-center" style="width: 100px;">Afectados</th>
+                    <th class="text-right" style="width: 130px;">Total Planilla</th>
+                    <th style="width: 120px;">Código Actual</th>
+                    <th style="min-width: 320px;">Reasignar Código SUNAT (Tabla 22)</th>
+                    <th class="text-center" style="width: 180px;">Guardar Predeterminado</th>
+                    <th style="width: 140px;">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{$planillaID := .Planilla.ID}}
+                {{$planillaEstado := .Planilla.Estado}}
+                {{$maestros := .Maestros}}
+                {{range $idx, $c := .Conceptos}}
+                <tr data-tipo="{{$c.TipoConcepto}}" data-nombre="{{$c.NombreConcepto}}"
+                    data-codigo="{{$c.CodigoSunatActual}}">
+                    <td>
+                        {{if eq $c.TipoConcepto "INGRESO"}}
+                        <mark class="badge badge-success font-xs">🟢 INGRESO</mark>
+                        {{else if eq $c.TipoConcepto "RETENCION"}}
+                        <mark class="badge badge-danger font-xs">🔴 RETENCIÓN</mark>
+                        {{else if eq $c.TipoConcepto "APORTE"}}
+                        <mark class="badge badge-info font-xs">🔵 APORTE</mark>
+                        {{else}}
+                        <mark class="badge font-xs">{{$c.TipoConcepto}}</mark>
+                        {{end}}
+                    </td>
+                    <td>
+                        <strong>{{$c.NombreConcepto}}</strong>
+                    </td>
+                    <td class="text-center font-sm">
+                        <span class="badge badge-secondary"
+                            title="{{$c.TotalTrabajadores}} colaboradores">{{$c.TotalTrabajadores}}</span>
+                    </td>
+                    <td class="text-right font-sm stat-mono">
+                        S/ {{printf "%.2f" $c.TotalMonto}}
+                    </td>
+                    <td>
+                        <mark class="badge badge-purple font-sm stat-mono" id="badge-cod-{{$idx}}">
+                            {{if $c.CodigoSunatActual}}{{$c.CodigoSunatActual}}{{else}}<em>(Sin código)</em>{{end}}
+                        </mark>
+                    </td>
+                    <td>
+                        <form id="form-sunat-{{$idx}}" class="mb-0 flex-row-start flex-gap-xs flex-items-center"
+                            hx-post="/tenant/planillas/sunat-codigos/actualizar" hx-target="#resultado-{{$idx}}"
+                            hx-swap="innerHTML" hx-indicator="#loading-{{$idx}}">
+                            <input type="hidden" name="planilla_id" value="{{$planillaID}}">
+                            <input type="hidden" name="concepto_tenant_id"
+                                value="{{if $c.ConceptoTenantID}}{{$c.ConceptoTenantID}}{{else}}0{{end}}">
+                            <input type="hidden" name="nombre_en_boleta" value="{{$c.NombreConcepto}}">
+
+                            <select name="nuevo_maestro_id" class="input-sm mb-0 select-sunat" {{if eq
+                                $planillaEstado "CERRADA" }}disabled{{end}} required
+                                style="width: 100%; max-width: 360px;"
+                                onchange="actualizarBadgeCodigoTemporal({{$idx}}, this)">
+                                {{$currentMaestroID := $c.MaestroID}}
+                                {{$currentSunatCode := $c.CodigoSunatActual}}
+                                {{range $maestros}}
+                                <option value="{{.ID}}" data-codigo="{{.Codigo}}" {{if or (eq .ID $currentMaestroID) (eq
+                                    .Codigo $currentSunatCode)}}selected{{end}}>
+                                    [{{.Codigo}}] {{.Descripcion}}
+                                </option>
+                                {{end}}
+                            </select>
+                    </td>
+                    <td class="text-center">
+                        {{if $c.ConceptoTenantID}}
+                        <label class="font-xs mb-0 flex-inline flex-items-center flex-gap-xs"
+                            title="Actualizar también en el catálogo local para futuras planillas">
+                            <input type="checkbox" name="actualizar_default" value="true" {{if eq
+                                $planillaEstado "CERRADA" }}disabled{{end}}>
+                            <small>A futuro</small>
+                        </label>
+                        {{else}}
+                        <small class="text-muted">-</small>
+                        {{end}}
+                    </td>
+                    <td>
+                        <div class="flex-row-start flex-items-center flex-gap-xs">
+                            {{if ne $planillaEstado "CERRADA"}}
+                            <button type="submit"
+                                class="primary btn-sm btn-compact flex-inline flex-items-center flex-gap-xs">
+                                <svg class="icono-menu">
+                                    <use href="#icono-save"></use>
+                                </svg>
+                                Guardar
+                            </button>
+                            {{end}}
+                            <span id="loading-{{$idx}}" class="htmx-indicator font-xs" aria-busy="true"></span>
+                            <span id="resultado-{{$idx}}"></span>
+                        </div>
+                        </form>
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="8" class="text-center text-muted p-lg">
+                        No hay conceptos calculados registrados para esta planilla.
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</article>
+
+<!-- Modal de Descarga de PLAME -->
+<dialog id="modal-plame">
+    <article class="modal-card-md">
+        <header>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-plame').close()"></a>
+            <h4 class="mb-0">
+                <svg class="icono-menu">
+                    <use href="#icono-descargar"></use>
+                </svg>
+                Exportar Archivos para PDT PLAME
+            </h4>
+        </header>
+        <div id="modal-plame-body">
+            <p aria-busy="true">Preparando archivos de importación...</p>
+        </div>
+    </article>
+</dialog>
+
+<script>
+    function filtrarTablaConceptosSunat() {
+        const input = document.getElementById('filtro-concepto-sunat');
+        const filter = input.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('#tabla-conceptos-sunat tbody tr');
+
+        rows.forEach(row => {
+            const nombre = (row.getAttribute('data-nombre') || '').toLowerCase();
+            const codigo = (row.getAttribute('data-codigo') || '').toLowerCase();
+            if (nombre.includes(filter) || codigo.includes(filter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function filtrarTipoConcepto(tipo) {
+        const rows = document.querySelectorAll('#tabla-conceptos-sunat tbody tr');
+        rows.forEach(row => {
+            const rowTipo = row.getAttribute('data-tipo') || '';
+            if (!tipo || rowTipo === tipo) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function actualizarBadgeCodigoTemporal(idx, selectEl) {
+        const badge = document.getElementById('badge-cod-' + idx);
+        const selectedOption = selectEl.options[selectEl.selectedIndex];
+        if (badge && selectedOption) {
+            const cod = selectedOption.getAttribute('data-codigo');
+            if (cod) {
+                badge.innerText = cod;
+            }
+        }
+    }
+</script>

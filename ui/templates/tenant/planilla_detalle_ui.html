@@ -36,6 +36,13 @@
             </svg> Rubros y Metas
         </button>
 
+        <button class="primary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/planillas/sunat-codigos?id={{.PlanillaID}}" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-file-text"></use>
+            </svg> Auditar SUNAT / PLAME
+        </button>
+
         {{if eq .PlanillaEstado "BORRADOR"}}
         {{if .EsExtraordinaria}}
         <button class="primary outline btn-compact flex-inline flex-items-center flex-gap-xs"

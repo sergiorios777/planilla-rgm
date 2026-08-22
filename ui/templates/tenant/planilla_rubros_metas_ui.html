@@ -25,6 +25,29 @@
 
     <!-- Toolbar superior de acciones -->
     <div class="flex-row-start mb-lg flex-wrap flex-gap-sm">
+        {{if eq .PlanillaTipo "CTS"}}
+        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/ui/cts" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Volver a CTS
+        </button>
+        {{if .PlanillaCtsID}}
+        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/cts/detalle?id={{.PlanillaCtsID}}" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Volver a Detalle CTS
+        </button>
+        {{end}}
+        {{else if eq .PlanillaTipo "CESE"}}
+        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/ui/liquidaciones" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg> Volver a Liquidaciones
+        </button>
+        {{else}}
         <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
             hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
             <svg class="icono-menu">
@@ -38,6 +61,14 @@
                 <use href="#icono-previo-cuadrado"></use>
             </svg> Volver a Detalle
         </button>
+
+        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/planillas/sunat-codigos?id={{.PlanillaID}}" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-file-text"></use>
+            </svg> Auditar Códigos SUNAT
+        </button>
+        {{end}}
 
         {{if eq .PlanillaEstado "BORRADOR"}}
         <button id="btn-bulk-asignar-meta" class="primary outline btn-compact flex-inline flex-items-center flex-gap-xs"

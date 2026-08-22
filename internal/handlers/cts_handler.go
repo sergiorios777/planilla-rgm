@@ -51,11 +51,12 @@ func (h *CtsHandler) CrearPlanillaCts(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`
 			<div id="alerta-cts" hx-swap-oob="true">
-				<article style="background-color: #ffcdd2; color: #b71c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
-					❌ Error al procesar CTS: ` + err.Error() + `
+				<article class="alert-box alert-danger">
+					❌ ` + err.Error() + `
 				</article>
 			</div>
 		`))
+		h.ListarPlanillasCts(w, r)
 		return
 	}
 

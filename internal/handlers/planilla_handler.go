@@ -767,11 +767,19 @@ func (h *PlanillaHandler) VistaRubrosMetas(w http.ResponseWriter, r *http.Reques
 
 	detalles, _ := h.Repo.ObtenerDetallesConConceptos(planillaID, tenantID)
 	planillaEstado, _ := h.Repo.ObtenerEstado(planillaID, tenantID)
+	planillaTipo, _ := h.Repo.ObtenerTipo(planillaID, tenantID)
+	var planillaCtsID int
+	if planillaTipo == "CTS" {
+		planillaCtsID, _ = h.Repo.ObtenerCtsIDPorPlanillaID(planillaID, tenantID)
+	}
+
 	metas, _ := h.Repo.ObtenerMetas(tenantID)
 	fuentesRubros, _ := h.Repo.ObtenerFuentesRubros()
 
 	datos := map[string]interface{}{
 		"PlanillaID":     planillaID,
+		"PlanillaTipo":   planillaTipo,
+		"PlanillaCtsID":  planillaCtsID,
 		"Detalles":       detalles,
 		"PlanillaEstado": planillaEstado,
 		"Metas":          metas,
@@ -1131,3 +1139,82 @@ func (h *PlanillaHandler) ProcesarEspecial(w http.ResponseWriter, r *http.Reques
 	r.URL.RawQuery = "id=" + strconv.Itoa(planillaID)
 	h.VistaDetalle(w, r)
 }
+
+// VistaAuditoriaSunat renderiza la vista de auditoría y reasignación de códigos SUNAT para PLAME
+func (h *PlanillaHandler) VistaAuditoriaSunat(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	if planillaID <= 0 {
+		planillaID, _ = strconv.Atoi(r.FormValue("planilla_id"))
+	}
+
+	planilla, err := h.Repo.ObtenerPorID(planillaID, tenantID)
+	if err != nil || planilla == nil {
+		http.Error(w, "Planilla no encontrada", http.StatusNotFound)
+		return
+	}
+
+	conceptos, err := h.Repo.ObtenerConceptosSunatAgrupados(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error obteniendo conceptos: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	maestros, err := h.Repo.ObtenerMaestrosSunat()
+	if err != nil {
+		http.Error(w, "Error obteniendo catálogo SUNAT: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	datos := map[string]interface{}{
+		"Planilla":  planilla,
+		"Conceptos": conceptos,
+		"Maestros":  maestros,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/tenant/planilla_sunat_codigos_ui.html")
+	if err != nil {
+		http.Error(w, "Error cargando plantilla: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tmpl.Execute(w, datos)
+}
+
+// ActualizarCodigoSunatHTMX procesa el cambio de código SUNAT para un concepto agrupado de una planilla
+func (h *PlanillaHandler) ActualizarCodigoSunatHTMX(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		return
+	}
+	r.ParseForm()
+	tenantID := obtenerTenantID(r)
+
+	planillaID, _ := strconv.Atoi(r.FormValue("planilla_id"))
+	nuevoMaestroID, _ := strconv.Atoi(r.FormValue("nuevo_maestro_id"))
+	nombreEnBoleta := r.FormValue("nombre_en_boleta")
+	actualizarDefault := r.FormValue("actualizar_default") == "true" || r.FormValue("actualizar_default") == "on" || r.FormValue("actualizar_default") == "1"
+
+	var conceptoTenantID *int
+	if ctStr := r.FormValue("concepto_tenant_id"); ctStr != "" && ctStr != "0" {
+		if idVal, err := strconv.Atoi(ctStr); err == nil && idVal > 0 {
+			conceptoTenantID = &idVal
+		}
+	}
+
+	if planillaID <= 0 || nuevoMaestroID <= 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`<span class="badge badge-danger font-sm">Parámetros inválidos</span>`))
+		return
+	}
+
+	err := h.Repo.ActualizarCodigoSunatConceptoMasivo(planillaID, tenantID, conceptoTenantID, nombreEnBoleta, nuevoMaestroID, actualizarDefault)
+	if err != nil {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fmt.Sprintf(`<span class="badge badge-danger font-sm" title="%s">❌ %s</span>`, err.Error(), err.Error())))
+		return
+	}
+
+	// Devolvemos indicador de éxito reactivo
+	w.Write([]byte(`<span class="badge badge-success font-sm">✅ Guardado</span>`))
+}
+
