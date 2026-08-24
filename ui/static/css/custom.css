@@ -463,10 +463,25 @@ textarea:focus {
 }
 
 .ts-dropdown .option {
-    padding: 0.4rem 0.75rem;
+    padding: 0.45rem 0.75rem;
     font-size: 0.85rem;
-    display: flex;
-    align-items: center;
+    line-height: 1.35;
+    display: block;
+    text-align: left;
+    white-space: normal;
+}
+
+.ts-dropdown .highlight {
+    background-color: rgba(254, 240, 138, 0.45);
+    color: inherit;
+    font-weight: 700;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+.ts-dropdown .active .highlight {
+    background-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
 }
 
 input:invalid:not(:placeholder-shown),

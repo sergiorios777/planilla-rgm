@@ -96,14 +96,16 @@
         <table class="striped condensed w-full" id="tabla-conceptos-sunat">
             <thead>
                 <tr>
-                    <th style="width: 110px;">Tipo</th>
-                    <th>Concepto en Planilla</th>
-                    <th class="text-center" style="width: 100px;">Afectados</th>
-                    <th class="text-right" style="width: 130px;">Total Planilla</th>
-                    <th style="width: 120px;">Código Actual</th>
-                    <th style="min-width: 320px;">Reasignar Código SUNAT (Tabla 22)</th>
-                    <th class="text-center" style="width: 180px;">Guardar Predeterminado</th>
-                    <th style="width: 140px;">Acción</th>
+                    <th style="width: 100px;">Tipo</th>
+                    <th style="min-width: 180px; max-width: 240px;">Concepto en Planilla</th>
+                    <th class="text-center" style="width: 75px;">Afectados</th>
+                    <th class="text-right" style="width: 115px;">Total Planilla</th>
+                    <th class="text-center" style="width: 95px;">Código Actual</th>
+                    <th style="min-width: 440px;">Reasignar Código SUNAT (Tabla 22)</th>
+                    <th class="text-center" style="width: 80px;"
+                        data-tooltip="Guardar como predeterminado para futuras planillas" data-placement="bottom">A
+                        Futuro</th>
+                    <th class="text-center" style="width: 60px;">Acción</th>
                 </tr>
             </thead>
             <tbody>
@@ -125,7 +127,7 @@
                         {{end}}
                     </td>
                     <td>
-                        <strong>{{$c.NombreConcepto}}</strong>
+                        <strong class="concepto-planilla-nombre">{{$c.NombreConcepto}}</strong>
                     </td>
                     <td class="text-center font-sm">
                         <span class="badge badge-secondary"
@@ -134,24 +136,22 @@
                     <td class="text-right font-sm stat-mono">
                         S/ {{printf "%.2f" $c.TotalMonto}}
                     </td>
-                    <td>
+                    <td class="text-center">
                         <mark class="badge badge-purple font-sm stat-mono" id="badge-cod-{{$idx}}">
                             {{if $c.CodigoSunatActual}}{{$c.CodigoSunatActual}}{{else}}<em>(Sin código)</em>{{end}}
                         </mark>
                     </td>
                     <td>
-                        <form id="form-sunat-{{$idx}}" class="mb-0 flex-row-start flex-gap-xs flex-items-center"
-                            hx-post="/tenant/planillas/sunat-codigos/actualizar" hx-target="#resultado-{{$idx}}"
-                            hx-swap="innerHTML" hx-indicator="#loading-{{$idx}}">
+                        <form id="form-sunat-{{$idx}}" class="mb-0" hx-post="/tenant/planillas/sunat-codigos/actualizar"
+                            hx-target="#resultado-{{$idx}}" hx-swap="innerHTML" hx-indicator="#loading-{{$idx}}">
                             <input type="hidden" name="planilla_id" value="{{$planillaID}}">
                             <input type="hidden" name="concepto_tenant_id"
                                 value="{{if $c.ConceptoTenantID}}{{$c.ConceptoTenantID}}{{else}}0{{end}}">
                             <input type="hidden" name="nombre_en_boleta" value="{{$c.NombreConcepto}}">
 
-                            <select name="nuevo_maestro_id" class="input-sm mb-0 select-sunat" {{if eq
-                                $planillaEstado "CERRADA" }}disabled{{end}} required
-                                style="width: 100%; max-width: 360px;"
-                                onchange="actualizarBadgeCodigoTemporal({{$idx}}, this)">
+                            <select name="nuevo_maestro_id" data-idx="{{$idx}}" class="input-sm mb-0 select-sunat" {{if
+                                eq $planillaEstado "CERRADA" }}disabled{{end}} required
+                                style="width: 100%; min-width: 440px; max-width: 580px;">
                                 {{$currentMaestroID := $c.MaestroID}}
                                 {{$currentSunatCode := $c.CodigoSunatActual}}
                                 {{range $maestros}}
@@ -161,34 +161,34 @@
                                 </option>
                                 {{end}}
                             </select>
+                        </form>
                     </td>
                     <td class="text-center">
                         {{if $c.ConceptoTenantID}}
-                        <label class="font-xs mb-0 flex-inline flex-items-center flex-gap-xs"
-                            title="Actualizar también en el catálogo local para futuras planillas">
-                            <input type="checkbox" name="actualizar_default" value="true" {{if eq
-                                $planillaEstado "CERRADA" }}disabled{{end}}>
-                            <small>A futuro</small>
+                        <label class="mb-0 flex-inline flex-items-center justify-center"
+                            data-tooltip="Guardar también en el catálogo para futuras planillas" data-placement="top">
+                            <input type="checkbox" name="actualizar_default" value="true" role="switch"
+                                form="form-sunat-{{$idx}}" class="mb-0" {{if eq $planillaEstado "CERRADA"
+                                }}disabled{{end}} aria-label="Guardar predeterminado para futuras planillas">
                         </label>
                         {{else}}
                         <small class="text-muted">-</small>
                         {{end}}
                     </td>
-                    <td>
-                        <div class="flex-row-start flex-items-center flex-gap-xs">
+                    <td class="text-center">
+                        <div class="flex-row-center flex-items-center flex-gap-xs justify-center">
                             {{if ne $planillaEstado "CERRADA"}}
-                            <button type="submit"
-                                class="primary btn-sm btn-compact flex-inline flex-items-center flex-gap-xs">
+                            <button type="submit" form="form-sunat-{{$idx}}" class="btn-icon"
+                                data-tooltip="Guardar cambios para este concepto" data-placement="left"
+                                aria-label="Guardar cambios">
                                 <svg class="icono-menu">
-                                    <use href="#icono-save"></use>
+                                    <use href="#icono-guardar"></use>
                                 </svg>
-                                Guardar
                             </button>
                             {{end}}
                             <span id="loading-{{$idx}}" class="htmx-indicator font-xs" aria-busy="true"></span>
                             <span id="resultado-{{$idx}}"></span>
                         </div>
-                        </form>
                     </td>
                 </tr>
                 {{else}}
@@ -211,7 +211,7 @@
                 onclick="document.getElementById('modal-plame').close()"></a>
             <h4 class="mb-0">
                 <svg class="icono-menu">
-                    <use href="#icono-descargar"></use>
+                    <use href="#icono-file-export"></use>
                 </svg>
                 Exportar Archivos para PDT PLAME
             </h4>
@@ -222,7 +222,66 @@
     </article>
 </dialog>
 
+<style>
+    #tabla-conceptos-sunat .ts-wrapper {
+        margin-bottom: 0;
+        width: 100%;
+        min-width: 440px;
+        max-width: 580px;
+    }
+
+    #tabla-conceptos-sunat .ts-control {
+        min-height: 2.1rem;
+        height: 2.1rem;
+        font-size: 0.82rem;
+        padding-top: 0;
+        padding-bottom: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #tabla-conceptos-sunat .ts-dropdown {
+        font-size: 0.82rem;
+        z-index: 1050;
+        min-width: 100%;
+    }
+
+    #tabla-conceptos-sunat .concepto-planilla-nombre {
+        line-height: 1.25;
+        word-break: break-word;
+        font-size: 0.85rem;
+    }
+</style>
+
 <script>
+    function inicializarBuscadoresSunat(contenedor) {
+        if (!contenedor) return;
+        contenedor.querySelectorAll('.select-sunat').forEach((el) => {
+            if (!el.tomselect) {
+                const idx = el.getAttribute('data-idx');
+                new TomSelect(el, {
+                    create: false,
+                    maxItems: 1,
+                    plugins: ['dropdown_input'],
+                    dropdownParent: 'body',
+                    onChange: function (val) {
+                        if (idx !== null) {
+                            const badge = document.getElementById('badge-cod-' + idx);
+                            const opt = el.querySelector(`option[value="${val}"]`);
+                            if (badge && opt) {
+                                const cod = opt.getAttribute('data-codigo');
+                                if (cod) {
+                                    badge.innerText = cod;
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
     function filtrarTablaConceptosSunat() {
         const input = document.getElementById('filtro-concepto-sunat');
         const filter = input.value.toLowerCase().trim();
@@ -251,14 +310,15 @@
         });
     }
 
-    function actualizarBadgeCodigoTemporal(idx, selectEl) {
-        const badge = document.getElementById('badge-cod-' + idx);
-        const selectedOption = selectEl.options[selectEl.selectedIndex];
-        if (badge && selectedOption) {
-            const cod = selectedOption.getAttribute('data-codigo');
-            if (cod) {
-                badge.innerText = cod;
-            }
-        }
-    }
+    // Inicialización al cargar la página o al inyectarse por HTMX
+    document.addEventListener('DOMContentLoaded', () => {
+        inicializarBuscadoresSunat(document.body);
+    });
+
+    document.body.addEventListener('htmx:afterSettle', (event) => {
+        inicializarBuscadoresSunat(event.detail.target);
+    });
+
+    // Inicialización inmediata por si el script se evalúa dinámicamente
+    inicializarBuscadoresSunat(document.getElementById('tabla-conceptos-sunat') || document.body);
 </script>
