@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"planilla-rgm/internal/config"
 )
 
@@ -32,5 +33,15 @@ func main() {
 		}
 	}
 
-	log.Println("✅ Columnas migradas exitosamente en PostgreSQL")
+	// Ejecutar migración del módulo de descuentos y retenciones
+	sqlBytes, err := os.ReadFile("internal/repository/migrations/20260825000000_modulo_descuentos_retenciones.sql")
+	if err != nil {
+		log.Fatalf("Error leyendo archivo de migración de descuentos: %v", err)
+	}
+	_, err = db.Exec(string(sqlBytes))
+	if err != nil {
+		log.Fatalf("Error ejecutando migración de descuentos: %v", err)
+	}
+
+	log.Println("✅ Tablas de entidades financieras, descuentos y descuento_conceptos migradas exitosamente")
 }

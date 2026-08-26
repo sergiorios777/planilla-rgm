@@ -487,4 +487,19 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/liquidaciones/guardar", middleware.RequireAuth(liquidacionHandler.GuardarLiquidacionCese))
 	mux.HandleFunc("/tenant/liquidaciones/eliminar", middleware.RequireAuth(liquidacionHandler.EliminarLiquidacionCese))
 	mux.HandleFunc("/tenant/liquidaciones/reporte-pdf", middleware.RequireAuth(liquidacionHandler.DescargarReportePDF))
+
+	// Módulo de Descuentos y Retenciones Judiciales
+	descuentoHandler := handlers.NewDescuentoHandler(db)
+	mux.HandleFunc("/tenant/ui/descuentos", middleware.RequireAuth(descuentoHandler.VistaUI))
+	mux.HandleFunc("/tenant/ui/descuentos/nuevo", middleware.RequireAuth(descuentoHandler.FormularioNuevoUI))
+	mux.HandleFunc("/tenant/ui/descuentos/editar", middleware.RequireAuth(descuentoHandler.FormularioEditarUI))
+	mux.HandleFunc("/tenant/descuentos/lista", middleware.RequireAuth(descuentoHandler.ListarHTMX))
+	mux.HandleFunc("/tenant/descuentos/modal-crear", middleware.RequireAuth(descuentoHandler.ModalCrear))
+	mux.HandleFunc("/tenant/descuentos/crear", middleware.RequireAuth(descuentoHandler.Crear))
+	mux.HandleFunc("/tenant/descuentos/modal-editar", middleware.RequireAuth(descuentoHandler.ModalEditar))
+	mux.HandleFunc("/tenant/descuentos/actualizar", middleware.RequireAuth(descuentoHandler.Actualizar))
+	mux.HandleFunc("/tenant/descuentos/toggle-activo", middleware.RequireAuth(descuentoHandler.ToggleActivo))
+	mux.HandleFunc("/tenant/descuentos/eliminar", middleware.RequireAuth(descuentoHandler.Eliminar))
+	mux.HandleFunc("/tenant/descuentos/conceptos-trabajador", middleware.RequireAuth(descuentoHandler.ConceptosPorTrabajadorHTMX))
+	mux.HandleFunc("/tenant/descuentos/info-trabajador", middleware.RequireAuth(descuentoHandler.InfoTrabajadorHTMX))
 }

@@ -1,0 +1,325 @@
+{{$d := .Descuento}}
+<article class="card-section mb-md">
+    <header class="flex-row-between flex-items-center">
+        <div class="flex-items-center flex-gap-sm">
+            <button type="button" class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs mb-0"
+                hx-get="/tenant/ui/descuentos" hx-target="#contenido-tenant">
+                <svg class="icono-menu">
+                    <use href="#icono-previo-cuadrado"></use>
+                </svg>
+                Volver a Descuentos
+            </button>
+            <h3 class="mb-0 flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-lapiz-cuadrado"></use>
+                </svg>
+                Editar Descuento / Retención #{{$d.ID}}
+            </h3>
+        </div>
+    </header>
+    <p class="font-sm text-muted mb-0">
+        Modifique las condiciones del mandato judicial, porcentajes, montos o conceptos remunerativos afectos.
+    </p>
+</article>
+
+<div id="form-descuento-error"></div>
+
+<form hx-post="/tenant/descuentos/actualizar" hx-target="#contenido-tenant" id="form-editar-descuento">
+    <input type="hidden" name="id" value="{{$d.ID}}">
+
+    <!-- 1. Colaborador y Concepto de Retención -->
+    <article class="card-section mb-md">
+        <header>
+            <h4 class="mb-0 font-bold text-primary font-sm">1. Colaborador y Concepto de Retención</h4>
+        </header>
+        <div class="grid">
+            <div>
+                <label>
+                    Trabajador
+                    <input type="text" disabled value="[{{$d.TrabajadorNumeroDocumento}}] {{$d.TrabajadorNombreCompleto}}">
+                </label>
+                {{if $.InfoTrabajador.TieneContrato}}
+                <div class="card p-xs bg-card-kpi border-radius mt-xs">
+                    <div class="flex-row-between flex-items-center flex-wrap flex-gap-sm">
+                        <div>
+                            <span class="text-muted font-xs text-uppercase">Puesto Asignado:</span>
+                            <strong class="font-sm text-primary block">{{$.InfoTrabajador.PuestoNombre}}</strong>
+                        </div>
+                        <div>
+                            <span class="text-muted font-xs text-uppercase">Régimen:</span>
+                            <div><mark class="badge badge-info font-xs">{{$.InfoTrabajador.RegimenCodigo}} - {{$.InfoTrabajador.RegimenNombre}}</mark></div>
+                        </div>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+
+            <div>
+                <label>
+                    Concepto de Salida en Boleta (PDT PLAME) *
+                    <select name="concepto_tenant_id" required class="select-con-buscador">
+                        {{range $.ConceptosRetencion}}
+                        <option value="{{.ID}}" {{if eq .ID $d.ConceptoTenantID}}selected{{end}}>[{{.ConceptoCodigo}}] {{.NombrePersonalizado}}</option>
+                        {{end}}
+                    </select>
+                </label>
+                <small class="text-muted font-xs">Concepto bajo el cual figurará la deducción en las boletas y reportes PLAME.</small>
+            </div>
+        </div>
+    </article>
+
+    <!-- 2. Mandato Legal y Clasificación -->
+    <article class="card-section mb-md">
+        <header>
+            <h4 class="mb-0 font-bold text-primary font-sm">2. Mandato Legal y Clasificación</h4>
+        </header>
+        <div class="grid">
+            <label>
+                Tipo de Descuento *
+                <select name="tipo_descuento" required id="select-tipo-descuento-edit" onchange="adaptarFormularioTipo(this.value)">
+                    <option value="JUDICIAL" {{if eq $d.TipoDescuento "JUDICIAL"}}selected{{end}}>⚖️ Retención Judicial (Alimentos/Deudas)</option>
+                    <option value="SINDICAL" {{if eq $d.TipoDescuento "SINDICAL"}}selected{{end}}>🏛️ Cuota Sindical</option>
+                    <option value="PRESTAMO" {{if eq $d.TipoDescuento "PRESTAMO"}}selected{{end}}>💳 Préstamo Entidad Financiera</option>
+                    <option value="CONVENIO" {{if eq $d.TipoDescuento "CONVENIO"}}selected{{end}}>🤝 Convenio / Cooperativa</option>
+                    <option value="OTROS" {{if eq $d.TipoDescuento "OTROS"}}selected{{end}}>📦 Otros Descuentos</option>
+                </select>
+            </label>
+
+            <label>
+                Documento Ordenador *
+                <select name="documento_ordenador" required>
+                    <option value="RESOLUCION" {{if eq $d.DocumentoOrdenador "RESOLUCION"}}selected{{end}}>Resolución Judicial / Mandato</option>
+                    <option value="SENTENCIA" {{if eq $d.DocumentoOrdenador "SENTENCIA"}}selected{{end}}>Sentencia Judicial Firme</option>
+                    <option value="CONTRATO" {{if eq $d.DocumentoOrdenador "CONTRATO"}}selected{{end}}>Contrato de Crédito / Mutuo</option>
+                    <option value="OTRO" {{if eq $d.DocumentoOrdenador "OTRO"}}selected{{end}}>Otro Documento</option>
+                </select>
+            </label>
+
+            <label>
+                N° de Expediente / Documento
+                <input type="text" name="detalle_documento" value="{{$d.DetalleDocumento}}" placeholder="Ej: Exp. 00452-2024">
+            </label>
+        </div>
+
+        <label>
+            Glosa / Descripción en Boleta *
+            <input type="text" name="descripcion" required value="{{$d.Descripcion}}">
+        </label>
+    </article>
+
+    <!-- 3. Regla de Cálculo y Vigencia -->
+    <article class="card-section mb-md">
+        <header>
+            <h4 class="mb-0 font-bold text-primary font-sm">3. Regla de Cálculo y Vigencia</h4>
+        </header>
+        <div class="grid">
+            <label>
+                Modalidad de Cálculo *
+                <select name="tipo_calculo" required id="select-tipo-calculo-edit" onchange="toggleTipoCalculo(this.value)">
+                    <option value="PORCENTAJE" {{if eq $d.TipoCalculo "PORCENTAJE"}}selected{{end}}>Porcentaje (%)</option>
+                    <option value="MONTO_FIJO" {{if eq $d.TipoCalculo "MONTO_FIJO"}}selected{{end}}>Monto Fijo Mensual (S/)</option>
+                </select>
+            </label>
+
+            <label id="contenedor-base-calculo-edit">
+                Base Imponible *
+                <select name="base_calculo" required>
+                    <option value="NETO_LEY" {{if eq $d.BaseCalculo "NETO_LEY"}}selected{{end}}>Neto de Ley (Haber menos AFP/ONP y Rta 5ta)</option>
+                    <option value="BRUTO_AFECTO" {{if eq $d.BaseCalculo "BRUTO_AFECTO"}}selected{{end}}>Bruto Afecto (Sin deducir aportes de ley)</option>
+                </select>
+            </label>
+
+            <label id="contenedor-porcentaje-edit" {{if eq $d.TipoCalculo "MONTO_FIJO"}}style="display: none;"{{end}}>
+                Porcentaje a Retener (%) *
+                <input type="number" name="porcentaje" step="0.01" min="0.01" max="100.00" value="{{if gt $d.Porcentaje 0.0}}{{$d.Porcentaje}}{{end}}">
+            </label>
+
+            <label id="contenedor-monto-fijo-edit" {{if eq $d.TipoCalculo "PORCENTAJE"}}style="display: none;"{{end}}>
+                Monto Fijo Mensual (S/) *
+                <input type="number" name="monto_fijo" step="0.01" min="0.01" value="{{if gt $d.MontoFijo 0.0}}{{$d.MontoFijo}}{{end}}">
+            </label>
+        </div>
+
+        <div class="grid" id="contenedor-deuda-cuotas-edit" {{if not (or (eq $d.TipoDescuento "PRESTAMO") (eq $d.TipoDescuento "CONVENIO"))}}style="display: none;"{{end}}>
+            <label>
+                Monto Total de Deuda (Límite S/)
+                <input type="number" name="monto_total_deuda" step="0.01" min="0" value="{{if gt $d.MontoTotalDeuda 0.0}}{{$d.MontoTotalDeuda}}{{end}}">
+            </label>
+            <label>
+                Monto Acumulado Amortizado (S/)
+                <input type="number" name="monto_acumulado" step="0.01" min="0" value="{{$d.MontoAcumulado}}">
+            </label>
+            <label>
+                Número Total de Cuotas
+                <input type="number" name="cuotas_totales" min="0" value="{{$d.CuotasTotales}}">
+            </label>
+            <label>
+                Cuota Actual
+                <input type="number" name="cuota_actual" min="0" value="{{$d.CuotaActual}}">
+            </label>
+        </div>
+
+        <div class="grid">
+            <label>
+                Inicio de Vigencia *
+                <input type="date" name="inicio_vigencia" required value="{{$d.InicioVigencia.Format "2006-01-02"}}">
+            </label>
+
+            <label>
+                Fin de Vigencia (Opcional)
+                <input type="date" name="fin_vigencia" value="{{if $d.FinVigencia}}{{$d.FinVigencia.Format "2006-01-02"}}{{end}}">
+            </label>
+        </div>
+
+        <!-- Switches interactivos de conceptos del puesto -->
+        <div id="contenedor-conceptos-afectos" class="mt-sm">
+            <div class="flex-row-between flex-items-center mb-xs">
+                <label class="font-bold text-primary font-sm mb-0">
+                    Conceptos de Ingreso Afectos (Base Computable del Puesto)
+                </label>
+                <div class="flex-gap-xs">
+                    <button type="button" class="secondary outline btn-compact font-xs" onclick="marcarTodosConceptos(true)">
+                        Marcar Todos
+                    </button>
+                    <button type="button" class="secondary outline btn-compact font-xs" onclick="marcarTodosConceptos(false)">
+                        Desmarcar Todos
+                    </button>
+                </div>
+            </div>
+            <p class="font-xs text-muted mb-xs">
+                Active los conceptos remunerativos que integran la base imponible del descuento. Si no selecciona ninguno, la retención se calculará sobre el total de haberes afectos de la boleta.
+            </p>
+            
+            <div class="grid-conceptos-switches">
+                {{range $.InfoTrabajador.Conceptos}}
+                <div class="card p-xs flex-row-between flex-items-center mb-0 border-light">
+                    <label class="flex-inline flex-items-center mb-0 font-sm cursor-pointer flex-gap-sm">
+                        <input type="checkbox" name="conceptos_afectos_ids" value="{{.ConceptoTenantID}}" role="switch" {{if .Seleccionado}}checked{{end}}>
+                        <span><strong class="stat-mono">[{{.ConceptoCodigo}}]</strong> {{.NombrePersonalizado}}</span>
+                    </label>
+                    {{if gt .Monto 0.0}}
+                    <span class="badge badge-secondary font-xs stat-mono">S/ {{printf "%.2f" .Monto}}</span>
+                    {{end}}
+                </div>
+                {{else}}
+                <p class="text-muted font-sm p-sm text-center">No se encontraron conceptos de ingreso configurados para este puesto.</p>
+                {{end}}
+            </div>
+        </div>
+
+        <div class="grid mt-md">
+            <label class="flex-inline flex-items-center">
+                <input type="checkbox" name="activo" value="true" role="switch" {{if $d.Activo}}checked{{end}}>
+                Descuento Activo
+            </label>
+            <label>
+                Motivo de Baja (si está inactivo)
+                <input type="text" name="motivo_baja" value="{{$d.MotivoBaja}}" placeholder="Motivo de suspensión o término">
+            </label>
+        </div>
+    </article>
+
+    <!-- 4. Beneficiario / Cuenta Bancaria de Destino -->
+    <article class="card-section mb-md">
+        <header>
+            <h4 class="mb-0 font-bold text-primary font-sm">4. Beneficiario / Cuenta Bancaria de Destino</h4>
+        </header>
+        <div class="grid">
+            <label>
+                Nombre del Beneficiario / Alimentista
+                <input type="text" name="beneficiario_nombre" value="{{$d.BeneficiarioNombre}}">
+            </label>
+
+            <label>
+                Entidad Financiera
+                <select name="entidad_financiera_id" class="select-con-buscador">
+                    <option value="">Ninguna / Pago Directo / Juzgado</option>
+                    {{range $.Entidades}}
+                    <option value="{{.ID}}" {{if eq .ID $d.GetEntidadFinancieraID}}selected{{end}}>[{{.Codigo}}] {{.Nombre}}</option>
+                    {{end}}
+                </select>
+            </label>
+        </div>
+
+        <div class="grid">
+            <label>
+                N° de Cuenta Bancaria
+                <input type="text" name="beneficiario_cuenta" value="{{$d.BeneficiarioCuenta}}">
+            </label>
+
+            <label>
+                Código de Cuenta Interbancario (CCI)
+                <input type="text" name="beneficiario_cci" value="{{$d.BeneficiarioCCI}}">
+            </label>
+        </div>
+    </article>
+
+    <!-- Botones de Acción -->
+    <div class="flex-row-between mt-lg mb-xl">
+        <button type="button" class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/ui/descuentos" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg>
+            Cancelar y Volver
+        </button>
+        <button type="submit" class="primary btn-compact flex-inline flex-items-center flex-gap-xs">
+            <svg class="icono-menu">
+                <use href="#icono-guardar"></use>
+            </svg>
+            Actualizar Descuento
+        </button>
+    </div>
+</form>
+
+<script>
+    function toggleTipoCalculo(tipo) {
+        const contPorc = document.getElementById('contenedor-porcentaje-edit');
+        const contFijo = document.getElementById('contenedor-monto-fijo-edit');
+        const contBase = document.getElementById('contenedor-base-calculo-edit');
+
+        if (tipo === 'PORCENTAJE') {
+            if (contPorc) contPorc.style.display = 'block';
+            if (contFijo) contFijo.style.display = 'none';
+            if (contBase) contBase.style.display = 'block';
+        } else {
+            if (contPorc) contPorc.style.display = 'none';
+            if (contFijo) contFijo.style.display = 'block';
+            if (contBase) contBase.style.display = 'none';
+        }
+    }
+
+    function adaptarFormularioTipo(tipo) {
+        const contDeuda = document.getElementById('contenedor-deuda-cuotas-edit');
+        if (contDeuda) {
+            if (tipo === 'PRESTAMO' || tipo === 'CONVENIO') {
+                contDeuda.style.display = 'grid';
+            } else {
+                contDeuda.style.display = 'none';
+            }
+        }
+    }
+
+    function marcarTodosConceptos(marcar) {
+        document.querySelectorAll('input[name="conceptos_afectos_ids"]').forEach(cb => {
+            cb.checked = marcar;
+        });
+    }
+
+    function inicializarBuscadores(contenedor) {
+        const root = contenedor || document;
+        root.querySelectorAll('.select-con-buscador').forEach(el => {
+            if (!el.tomselect) {
+                const isMulti = el.hasAttribute('multiple');
+                new TomSelect(el, {
+                    create: false,
+                    allowEmptyOption: true,
+                    plugins: isMulti ? ['remove_button'] : ['dropdown_input'],
+                    maxItems: isMulti ? null : 1
+                });
+            }
+        });
+    }
+
+    inicializarBuscadores(document.getElementById('form-editar-descuento') || document);
+</script>

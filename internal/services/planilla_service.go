@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"log"
+	"math"
 	"planilla-rgm/internal/calculadoras"
 	"planilla-rgm/internal/helpers"
 	"planilla-rgm/internal/models"
@@ -51,8 +52,10 @@ func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
 
 	// Masivos para evitar N+1
 	var contratoIDs []int
+	var trabajadorIDs []int
 	for _, c := range contratos {
 		contratoIDs = append(contratoIDs, c.ID)
+		trabajadorIDs = append(trabajadorIDs, c.TrabajadorID)
 	}
 	mapaConceptosContrato, _ := s.Repo.ObtenerConceptosPorContratoMasivo(contratoIDs)
 	// log.Println("Mapa Conceptos: ", mapaConceptosPuesto)
@@ -60,6 +63,9 @@ func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
 	// log.Println("Mapa 5ta Previas: ", mapa5taPrevias)
 	mapaIngresosPrevios, _ := s.Repo.ObtenerIngresosPreviosMasivo(contratoIDs, anio, mes)
 	reglasFinanciamiento, _ := s.Repo.ObtenerReglasFinanciamientoPorTenant(tenantID)
+
+	descRepo := repository.NewDescuentoRepository(s.Repo.GetDB())
+	mapaDescuentosTrabajador, _ := descRepo.ObtenerDescuentosActivosPorTrabajadorMasivo(tenantID, trabajadorIDs, anio, mes)
 
 	// =========================================================
 	// 2. INICIO DE LA CONCURRENCIA (WORKER POOL)
@@ -93,6 +99,7 @@ func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
 			MapaCodigos:            mapaCodigos,
 			MapaAfectacionesGlobal: mapaAfectacionesGlobal,
 			ReglasFinanciamiento:   reglasFinanciamiento,
+			DescuentosTrabajador:   mapaDescuentosTrabajador[contrato.TrabajadorID],
 		}
 	}
 	close(jobs) // Cerramos para que los workers sepan que no hay más
@@ -340,7 +347,10 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 		ctxTrabajador.IngresosProcesados[strconv.Itoa(cp.MaestroID)] = montoProporcional
 
 		var ctIDVal *int
-		if cp.TenantID > 0 {
+		if cp.ConceptoTenantID > 0 {
+			v := cp.ConceptoTenantID
+			ctIDVal = &v
+		} else if cp.TenantID > 0 {
 			v := cp.TenantID
 			ctIDVal = &v
 		}
@@ -443,7 +453,10 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 		}
 
 		var ctIDVal *int
-		if cp.TenantID > 0 {
+		if cp.ConceptoTenantID > 0 {
+			v := cp.ConceptoTenantID
+			ctIDVal = &v
+		} else if cp.TenantID > 0 {
 			v := cp.TenantID
 			ctIDVal = &v
 		}
@@ -460,8 +473,102 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 		})
 	}
 
+	// --- PASADA 3: DESCUENTOS Y RETENCIONES JUDICIALES / CONVENCIONALES ---
+	retencionesLegalesPrevias := boleta.TotalRetenciones // Suma de AFP/ONP, 5ta, faltas/tardanzas
+
+	for _, item := range job.DescuentosTrabajador {
+		desc := item.Descuento
+		afectosIDs := item.ConceptosTenantIDs
+
+		// 1. Determinar base imponible sumando los conceptos de la boleta presentes en afectosIDs
+		baseBruta := 0.0
+		if len(afectosIDs) > 0 {
+			mapaAfectos := make(map[int]bool)
+			for _, aid := range afectosIDs {
+				mapaAfectos[aid] = true
+			}
+			for _, linea := range boleta.LineasConceptos {
+				if linea.TipoConcepto == "INGRESO" && linea.ConceptoTenantID != nil && mapaAfectos[*linea.ConceptoTenantID] {
+					baseBruta += linea.Monto
+				}
+			}
+		} else {
+			// Si no tiene conceptos específicos seleccionados, aplica sobre el total de ingresos brutos
+			baseBruta = boleta.TotalIngresos
+		}
+
+		if baseBruta <= 0 {
+			continue
+		}
+
+		// 2. Determinar base según NETO_LEY o BRUTO_AFECTO
+		baseComputable := baseBruta
+		if strings.ToUpper(desc.BaseCalculo) == "NETO_LEY" && boleta.TotalIngresos > 0 {
+			// Deducción proporcional de las retenciones legales sobre esta base
+			deduccionLeyProporcional := retencionesLegalesPrevias * (baseBruta / boleta.TotalIngresos)
+			baseComputable = baseBruta - deduccionLeyProporcional
+			if baseComputable < 0 {
+				baseComputable = 0
+			}
+		}
+
+		// 3. Calcular monto a descontar
+		montoDescuento := 0.0
+		if strings.ToUpper(desc.TipoCalculo) == "PORCENTAJE" {
+			montoDescuento = baseComputable * (desc.Porcentaje / 100.0)
+		} else {
+			montoDescuento = desc.MontoFijo
+		}
+
+		// Redondear a 2 decimales
+		montoDescuento = math.Round(montoDescuento*100) / 100
+
+		// 4. Control de límite de deuda (si aplica amortización por saldo)
+		if desc.MontoTotalDeuda > 0 {
+			saldoPendiente := desc.MontoTotalDeuda - desc.MontoAcumulado
+			if saldoPendiente <= 0 {
+				continue // Ya se terminó de amortizar
+			}
+			if montoDescuento > saldoPendiente {
+				montoDescuento = saldoPendiente
+			}
+		}
+
+		if montoDescuento <= 0 {
+			continue
+		}
+
+		// 5. Inyectar línea de retención en boleta
+		var ctIDVal *int
+		if desc.ConceptoTenantID > 0 {
+			v := desc.ConceptoTenantID
+			ctIDVal = &v
+		}
+
+		nombreBoleta := desc.Descripcion
+		if nombreBoleta == "" {
+			nombreBoleta = desc.ConceptoNombre
+		}
+
+		boleta.TotalRetenciones += montoDescuento
+		boleta.LineasConceptos = append(boleta.LineasConceptos, models.PlanillaConcepto{
+			ConceptoTenantID: ctIDVal,
+			MetaID:           nil,
+			FuenteRubroID:    nil,
+			TipoConcepto:     "RETENCION",
+			Monto:            montoDescuento,
+			CodigoSunat:      desc.ConceptoCodigoSunat,
+			NombreEnBoleta:   nombreBoleta,
+		})
+	}
+
 	boleta.NetoPagar = boleta.TotalIngresos - boleta.TotalRetenciones
 	return boleta, nil
+}
+
+// CalcularBoletaContratoExposed expone el cálculo de una boleta para pruebas unitarias y simulaciones
+func (s *PlanillaService) CalcularBoletaContratoExposed(job models.JobPlanilla) (models.BoletaResultado, error) {
+	return s.calcularBoletaContrato(job)
 }
 
 // calcularDiasLaborados determina cuántos días del mes (base 30) se deben pagar

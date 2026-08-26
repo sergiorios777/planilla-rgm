@@ -127,7 +127,7 @@ func (r *PlanillaRepository) GetDB() *sql.DB {
 // ObtenerContratosActivosPlanilla busca a todos los que trabajaron en ese mes y trae su info de AFP desde el trabajador, así como los datos históricos para snapshot
 func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio int, mes int) ([]models.ContratoPlanilla, error) {
 	query := `
-		SELECT c.id, c.tenant_id, c.puesto_id, p.regimen_id, rl.codigo, 
+		SELECT c.id, c.tenant_id, c.trabajador_id, c.puesto_id, p.regimen_id, rl.codigo, 
 		       COALESCE(t.regimen_pensionario, 'ONP'), COALESCE(t.afp_id, 0), COALESCE(t.afp_tipo_comision, ''),
 		       c.fecha_inicio, c.fecha_fin,
 		       t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre_completo,
@@ -168,7 +168,7 @@ func (r *PlanillaRepository) ObtenerContratosActivosPlanilla(tenantID int, anio 
 	for rows.Next() {
 		var c models.ContratoPlanilla
 		var metaID, fuenteRubroID sql.NullInt64
-		err := rows.Scan(&c.ID, &c.TenantID, &c.PuestoID, &c.RegimenID, &c.Regimen, &c.RegimenPensionario, &c.AfpID, &c.AfpTipoComision, &c.FechaInicio, &c.FechaFin,
+		err := rows.Scan(&c.ID, &c.TenantID, &c.TrabajadorID, &c.PuestoID, &c.RegimenID, &c.Regimen, &c.RegimenPensionario, &c.AfpID, &c.AfpTipoComision, &c.FechaInicio, &c.FechaFin,
 			&c.TrabajadorNombreCompleto, &c.TrabajadorNumeroDocumento, &c.PuestoNombre, &c.PuestoCodigoAirhsp,
 			&c.OrganigramaDocumentoAprobacion, &c.UnidadOrganicaNombre, &c.UnidadOrganicaTipo, &c.SueldoBasicoHistorico,
 			&metaID, &fuenteRubroID)

@@ -1,0 +1,280 @@
+<article class="card-section mb-md">
+    <header class="flex-row-between flex-items-center">
+        <div class="flex-items-center flex-gap-sm">
+            <button type="button" class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs mb-0"
+                hx-get="/tenant/ui/descuentos" hx-target="#contenido-tenant">
+                <svg class="icono-menu">
+                    <use href="#icono-previo-cuadrado"></use>
+                </svg>
+                Volver a Descuentos
+            </button>
+            <h3 class="mb-0 flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-hand-coins"></use>
+                </svg>
+                Registrar Nuevo Descuento / Retención
+            </h3>
+        </div>
+    </header>
+    <p class="font-sm text-muted mb-0">
+        Configure mandatos judiciales (alimentos, deudas), retenciones convencionales (cuotas sindicales) o préstamos con reglas de cálculo sobre base bruta o neta de ley.
+    </p>
+</article>
+
+<div id="form-descuento-error"></div>
+
+<form hx-post="/tenant/descuentos/crear" hx-target="#contenido-tenant" id="form-crear-descuento">
+    <!-- 1. Colaborador y Concepto de Retención -->
+    <article class="card-section mb-md">
+        <header>
+            <h4 class="mb-0 font-bold text-primary font-sm">1. Colaborador y Concepto de Retención</h4>
+        </header>
+        <div class="grid">
+            <div>
+                <label>
+                    Trabajador *
+                    <select name="trabajador_id" id="select-trabajador-crear" required class="select-con-buscador"
+                        hx-get="/tenant/descuentos/info-trabajador"
+                        hx-target="#info-puesto-trabajador"
+                        hx-trigger="change">
+                        <option value="">Seleccione un trabajador...</option>
+                        {{range .Trabajadores}}
+                        <option value="{{.ID}}">[{{.NumeroDocumento}}] {{.ApellidoPaterno}} {{.ApellidoMaterno}}, {{.Nombres}}</option>
+                        {{end}}
+                    </select>
+                </label>
+                <div id="info-puesto-trabajador">
+                    <small class="text-muted">Seleccione un colaborador para consultar su puesto y régimen asignado.</small>
+                </div>
+            </div>
+
+            <div>
+                <label>
+                    Concepto de Salida en Boleta (PDT PLAME) *
+                    <select name="concepto_tenant_id" required class="select-con-buscador">
+                        <option value="">Seleccione concepto de retención...</option>
+                        {{range .ConceptosRetencion}}
+                        <option value="{{.ID}}">[{{.ConceptoCodigo}}] {{.NombrePersonalizado}}</option>
+                        {{end}}
+                    </select>
+                </label>
+                <small class="text-muted font-xs">Concepto bajo el cual figurará la deducción en las boletas y reportes PLAME.</small>
+            </div>
+        </div>
+    </article>
+
+    <!-- 2. Mandato Legal y Clasificación -->
+    <article class="card-section mb-md">
+        <header>
+            <h4 class="mb-0 font-bold text-primary font-sm">2. Mandato Legal y Clasificación</h4>
+        </header>
+        <div class="grid">
+            <label>
+                Tipo de Descuento *
+                <select name="tipo_descuento" required id="select-tipo-descuento" onchange="adaptarFormularioTipo(this.value)">
+                    <option value="JUDICIAL" selected>⚖️ Retención Judicial (Alimentos/Deudas)</option>
+                    <option value="SINDICAL">🏛️ Cuota Sindical</option>
+                    <option value="PRESTAMO">💳 Préstamo Entidad Financiera</option>
+                    <option value="CONVENIO">🤝 Convenio / Cooperativa</option>
+                    <option value="OTROS">📦 Otros Descuentos</option>
+                </select>
+            </label>
+
+            <label>
+                Documento Ordenador *
+                <select name="documento_ordenador" required>
+                    <option value="RESOLUCION" selected>Resolución Judicial / Mandato</option>
+                    <option value="SENTENCIA">Sentencia Judicial Firme</option>
+                    <option value="CONTRATO">Contrato de Crédito / Mutuo</option>
+                    <option value="OTRO">Otro Documento</option>
+                </select>
+            </label>
+
+            <label>
+                N° de Expediente / Documento
+                <input type="text" name="detalle_documento" placeholder="Ej: Exp. 00452-2024-0-1801-JP-FC-01">
+            </label>
+        </div>
+
+        <label>
+            Glosa / Descripción en Boleta *
+            <input type="text" name="descripcion" required placeholder="Ej: Retención Judicial Alimentos - Exp. 00452-2024">
+        </label>
+    </article>
+
+    <!-- 3. Regla de Cálculo y Vigencia -->
+    <article class="card-section mb-md">
+        <header>
+            <h4 class="mb-0 font-bold text-primary font-sm">3. Regla de Cálculo y Vigencia</h4>
+        </header>
+        <div class="grid">
+            <label>
+                Modalidad de Cálculo *
+                <select name="tipo_calculo" required id="select-tipo-calculo" onchange="toggleTipoCalculo(this.value)">
+                    <option value="PORCENTAJE" selected>Porcentaje (%)</option>
+                    <option value="MONTO_FIJO">Monto Fijo Mensual (S/)</option>
+                </select>
+            </label>
+
+            <label id="contenedor-base-calculo">
+                Base Imponible *
+                <select name="base_calculo" required>
+                    <option value="NETO_LEY" selected>Neto de Ley (Haber menos AFP/ONP y Rta 5ta)</option>
+                    <option value="BRUTO_AFECTO">Bruto Afecto (Sin deducir aportes de ley)</option>
+                </select>
+            </label>
+
+            <label id="contenedor-porcentaje">
+                Porcentaje a Retener (%) *
+                <input type="number" name="porcentaje" step="0.01" min="0.01" max="100.00" placeholder="Ej: 30.00">
+            </label>
+
+            <label id="contenedor-monto-fijo" style="display: none;">
+                Monto Fijo Mensual (S/) *
+                <input type="number" name="monto_fijo" step="0.01" min="0.01" placeholder="Ej: 500.00">
+            </label>
+        </div>
+
+        <div class="grid" id="contenedor-deuda-cuotas" style="display: none;">
+            <label>
+                Monto Total de Deuda (Límite S/)
+                <input type="number" name="monto_total_deuda" step="0.01" min="0" placeholder="Opcional para préstamos">
+            </label>
+            <label>
+                Número Total de Cuotas
+                <input type="number" name="cuotas_totales" min="0" placeholder="Ej: 24">
+            </label>
+        </div>
+
+        <div class="grid">
+            <label>
+                Inicio de Vigencia *
+                <input type="date" name="inicio_vigencia" required value="{{.FechaHoy}}">
+            </label>
+
+            <label>
+                Fin de Vigencia (Opcional)
+                <input type="date" name="fin_vigencia">
+            </label>
+        </div>
+
+        <!-- Conceptos de Ingreso Afectos con Switches interactivos -->
+        <div id="contenedor-conceptos-afectos" class="mt-sm">
+            <div class="flex-row-between flex-items-center mb-xs">
+                <label class="font-bold text-primary font-sm mb-0">
+                    Conceptos de Ingreso Afectos (Base Computable del Puesto)
+                </label>
+            </div>
+            <p class="font-xs text-muted mb-xs">
+                Seleccione primero un colaborador para consultar los conceptos remunerativos asignados a su puesto.
+            </p>
+            <div class="card p-sm bg-card-kpi text-center border-light">
+                <small class="text-muted">Esperando selección de colaborador...</small>
+            </div>
+        </div>
+    </article>
+
+    <!-- 4. Beneficiario / Cuenta Bancaria de Destino -->
+    <article class="card-section mb-md">
+        <header>
+            <h4 class="mb-0 font-bold text-primary font-sm">4. Beneficiario / Cuenta Bancaria de Destino</h4>
+        </header>
+        <div class="grid">
+            <label>
+                Nombre del Beneficiario / Alimentista
+                <input type="text" name="beneficiario_nombre" placeholder="Nombre completo del beneficiario o juzgado">
+            </label>
+
+            <label>
+                Entidad Financiera
+                <select name="entidad_financiera_id" class="select-con-buscador">
+                    <option value="">Ninguna / Pago Directo / Juzgado</option>
+                    {{range .Entidades}}
+                    <option value="{{.ID}}">[{{.Codigo}}] {{.Nombre}}</option>
+                    {{end}}
+                </select>
+            </label>
+        </div>
+
+        <div class="grid">
+            <label>
+                N° de Cuenta Bancaria
+                <input type="text" name="beneficiario_cuenta" placeholder="N° Cuenta de ahorros">
+            </label>
+
+            <label>
+                Código de Cuenta Interbancario (CCI)
+                <input type="text" name="beneficiario_cci" placeholder="20 dígitos CCI">
+            </label>
+        </div>
+    </article>
+
+    <!-- Botones de Acción -->
+    <div class="flex-row-between mt-lg mb-xl">
+        <button type="button" class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            hx-get="/tenant/ui/descuentos" hx-target="#contenido-tenant">
+            <svg class="icono-menu">
+                <use href="#icono-previo-cuadrado"></use>
+            </svg>
+            Cancelar y Volver
+        </button>
+        <button type="submit" class="primary btn-compact flex-inline flex-items-center flex-gap-xs">
+            <svg class="icono-menu">
+                <use href="#icono-guardar"></use>
+            </svg>
+            Guardar Descuento
+        </button>
+    </div>
+</form>
+
+<script>
+    function toggleTipoCalculo(tipo) {
+        const contPorc = document.getElementById('contenedor-porcentaje');
+        const contFijo = document.getElementById('contenedor-monto-fijo');
+        const contBase = document.getElementById('contenedor-base-calculo');
+
+        if (tipo === 'PORCENTAJE') {
+            if (contPorc) contPorc.style.display = 'block';
+            if (contFijo) contFijo.style.display = 'none';
+            if (contBase) contBase.style.display = 'block';
+        } else {
+            if (contPorc) contPorc.style.display = 'none';
+            if (contFijo) contFijo.style.display = 'block';
+            if (contBase) contBase.style.display = 'none';
+        }
+    }
+
+    function adaptarFormularioTipo(tipo) {
+        const contDeuda = document.getElementById('contenedor-deuda-cuotas');
+        if (contDeuda) {
+            if (tipo === 'PRESTAMO' || tipo === 'CONVENIO') {
+                contDeuda.style.display = 'grid';
+            } else {
+                contDeuda.style.display = 'none';
+            }
+        }
+    }
+
+    function marcarTodosConceptos(marcar) {
+        document.querySelectorAll('input[name="conceptos_afectos_ids"]').forEach(cb => {
+            cb.checked = marcar;
+        });
+    }
+
+    function inicializarBuscadores(contenedor) {
+        const root = contenedor || document;
+        root.querySelectorAll('.select-con-buscador').forEach(el => {
+            if (!el.tomselect) {
+                const isMulti = el.hasAttribute('multiple');
+                new TomSelect(el, {
+                    create: false,
+                    allowEmptyOption: true,
+                    plugins: isMulti ? ['remove_button'] : ['dropdown_input'],
+                    maxItems: isMulti ? null : 1
+                });
+            }
+        });
+    }
+
+    inicializarBuscadores(document.getElementById('form-crear-descuento') || document);
+</script>

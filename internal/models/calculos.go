@@ -96,6 +96,7 @@ type JobPlanilla struct {
 	MapaCodigos            map[string]int
 	MapaAfectacionesGlobal map[int][]int
 	ReglasFinanciamiento   []ReglaFinanciamientoConcepto
+	DescuentosTrabajador   []DescuentoConConceptos
 }
 
 // ResultPlanilla es lo que la Goroutine devuelve al terminar

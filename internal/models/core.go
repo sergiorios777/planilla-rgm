@@ -191,6 +191,7 @@ type Contrato struct {
 type ContratoPlanilla struct {
 	ID                             int
 	TenantID                       int
+	TrabajadorID                   int
 	PuestoID                       int
 	RegimenID                      int
 	Regimen                        string
@@ -282,6 +283,120 @@ type ReglaFinanciamientoConcepto struct {
 	MetaDescripcion        string `json:"meta_descripcion,omitempty"`
 	FuenteRubroCodigo      string `json:"fuente_rubro_codigo,omitempty"`
 	FuenteRubroDescripcion string `json:"fuente_rubro_descripcion,omitempty"`
+}
+
+// EntidadFinanciera representa el catálogo bancario oficial (Tabla 3 SUNAT)
+type EntidadFinanciera struct {
+	ID        int       `json:"id"`
+	Codigo    string    `json:"codigo"`
+	Nombre    string    `json:"nombre"`
+	Activo    bool      `json:"activo"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// Descuento representa un mandato judicial o descuento convencional/voluntario de un trabajador
+type Descuento struct {
+	ID                 int        `json:"id"`
+	TenantID           int        `json:"tenant_id"`
+	TrabajadorID       int        `json:"trabajador_id"`
+	ConceptoTenantID   int        `json:"concepto_tenant_id"`
+	TipoDescuento      string     `json:"tipo_descuento"`      // 'JUDICIAL', 'SINDICAL', 'PRESTAMO', 'CONVENIO', 'OTROS'
+	DocumentoOrdenador string     `json:"documento_ordenador"`  // 'SENTENCIA', 'RESOLUCION', 'CONTRATO', 'OTRO'
+	DetalleDocumento   string     `json:"detalle_documento"`   // Ej: "Expediente N° 00234-2024-0-1801-JP-FC-01"
+	Descripcion        string     `json:"descripcion"`         // Ej: "Retención de Alimentos a favor de Juanita Pérez"
+	TipoCalculo        string     `json:"tipo_calculo"`        // 'PORCENTAJE', 'MONTO_FIJO'
+	BaseCalculo        string     `json:"base_calculo"`        // 'NETO_LEY', 'BRUTO_AFECTO'
+	Porcentaje         float64    `json:"porcentaje"`
+	MontoFijo          float64    `json:"monto_fijo"`
+	MontoTotalDeuda    float64    `json:"monto_total_deuda"`
+	MontoAcumulado     float64    `json:"monto_acumulado"`
+	CuotasTotales      int        `json:"cuotas_totales"`
+	CuotaActual        int        `json:"cuota_actual"`
+	InicioVigencia     time.Time  `json:"inicio_vigencia"`
+	FinVigencia        *time.Time `json:"fin_vigencia"`
+	Activo             bool       `json:"activo"`
+	MotivoBaja         string     `json:"motivo_baja"`
+
+	// Beneficiario
+	BeneficiarioTipoDocumento   string `json:"beneficiario_tipo_documento"`
+	BeneficiarioNumeroDocumento string `json:"beneficiario_numero_documento"`
+	BeneficiarioNombre          string `json:"beneficiario_nombre"`
+	EntidadFinancieraID         *int   `json:"entidad_financiera_id"`
+	BeneficiarioCuenta          string `json:"beneficiario_cuenta"`
+	BeneficiarioCCI             string `json:"beneficiario_cci"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// Campos auxiliares para UI y cálculo (JOINs)
+	TrabajadorNombreCompleto  string `json:"trabajador_nombre_completo,omitempty"`
+	TrabajadorNumeroDocumento string `json:"trabajador_numero_documento,omitempty"`
+	ConceptoNombre            string `json:"concepto_nombre,omitempty"`
+	ConceptoCodigoSunat       string `json:"concepto_codigo_sunat,omitempty"`
+	EntidadFinancieraNombre   string `json:"entidad_financiera_nombre,omitempty"`
+	ConceptosAfectosIDs       []int  `json:"conceptos_afectos_ids,omitempty"`
+	ConceptosAfectosNombres   string `json:"conceptos_afectos_nombres,omitempty"`
+}
+
+// DescuentoConcepto representa un concepto de ingreso que integra la base computable de un descuento
+type DescuentoConcepto struct {
+	ID               int       `json:"id"`
+	DescuentoID      int       `json:"descuento_id"`
+	ConceptoTenantID int       `json:"concepto_tenant_id"`
+	CreatedAt        time.Time `json:"created_at"`
+}
+
+// DescuentoConConceptos agrupa el descuento y sus conceptos de base imponible para el motor de cálculo
+type DescuentoConConceptos struct {
+	Descuento          Descuento
+	ConceptosTenantIDs []int
+}
+
+// DescuentoFiltroDTO contiene parámetros de filtrado para el listado de descuentos
+type DescuentoFiltroDTO struct {
+	TrabajadorID  *int
+	TipoDescuento string
+	Estado        string // "TODOS", "ACTIVOS", "INACTIVOS"
+	Busqueda      string
+}
+
+// DescuentoResumenKPI contiene métricas para el encabezado Bento Grid
+type DescuentoResumenKPI struct {
+	TotalActivos      int
+	TotalJudiciales   int
+	TotalSindicales   int
+	TotalPrestamos    int
+	TotalTrabajadores int
+}
+
+// InfoTrabajadorPuesto contiene la información contractual, puesto, régimen y conceptos asignados de un colaborador
+type InfoTrabajadorPuesto struct {
+	TrabajadorID  int
+	ContratoID    int
+	PuestoID      int
+	PuestoNombre  string
+	RegimenID     int
+	RegimenCodigo string
+	RegimenNombre string
+	TieneContrato bool
+	Conceptos     []ConceptoPuestoDTO
+}
+
+// ConceptoPuestoDTO representa un concepto de ingreso asociado al puesto del trabajador
+type ConceptoPuestoDTO struct {
+	ConceptoTenantID    int
+	ConceptoID          int
+	ConceptoCodigo      string
+	NombrePersonalizado string
+	Monto               float64
+	Seleccionado        bool
+}
+
+func (d Descuento) GetEntidadFinancieraID() int {
+	if d.EntidadFinancieraID != nil {
+		return *d.EntidadFinancieraID
+	}
+	return 0
 }
 
 func (r ReglaFinanciamientoConcepto) GetMetaID() int {

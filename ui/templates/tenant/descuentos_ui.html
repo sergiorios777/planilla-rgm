@@ -1,0 +1,307 @@
+<article>
+    <header class="flex-row-between flex-items-center">
+        <h3 class="mb-0 flex-items-center flex-gap-sm">
+            <svg class="icono-menu">
+                <use href="#icono-hand-coins"></use>
+            </svg>
+            Descuentos y Retenciones Judiciales
+        </h3>
+        <div class="flex-gap-sm mb-0">
+            <button class="primary btn-compact flex-inline flex-items-center flex-gap-xs"
+                hx-get="/tenant/ui/descuentos/nuevo"
+                hx-target="#contenido-tenant">
+                <svg class="icono-menu">
+                    <use href="#icono-nuevo-1"></use>
+                </svg>
+                Nuevo Descuento / Retención
+            </button>
+        </div>
+    </header>
+
+    <!-- KPI Bento Grid Resumen -->
+    <div class="grid mb-md">
+        <div class="card p-sm flex-row-between flex-items-center bg-card-kpi">
+            <div>
+                <small class="text-muted text-uppercase font-xs">Total Activos</small>
+                <div class="font-lg stat-mono font-bold text-primary">{{.KPI.TotalActivos}}</div>
+            </div>
+            <div class="font-xl">📋</div>
+        </div>
+        <div class="card p-sm flex-row-between flex-items-center bg-card-kpi">
+            <div>
+                <small class="text-muted text-uppercase font-xs">Retenciones Judiciales</small>
+                <div class="font-lg stat-mono font-bold text-danger">{{.KPI.TotalJudiciales}}</div>
+            </div>
+            <div class="font-xl">⚖️</div>
+        </div>
+        <div class="card p-sm flex-row-between flex-items-center bg-card-kpi">
+            <div>
+                <small class="text-muted text-uppercase font-xs">Cuotas Sindicales</small>
+                <div class="font-lg stat-mono font-bold text-info">{{.KPI.TotalSindicales}}</div>
+            </div>
+            <div class="font-xl">🏛️</div>
+        </div>
+        <div class="card p-sm flex-row-between flex-items-center bg-card-kpi">
+            <div>
+                <small class="text-muted text-uppercase font-xs">Préstamos / Convenios</small>
+                <div class="font-lg stat-mono font-bold text-warning">{{.KPI.TotalPrestamos}}</div>
+            </div>
+            <div class="font-xl">💳</div>
+        </div>
+        <div class="card p-sm flex-row-between flex-items-center bg-card-kpi">
+            <div>
+                <small class="text-muted text-uppercase font-xs">Colaboradores Afectos</small>
+                <div class="font-lg stat-mono font-bold">{{.KPI.TotalTrabajadores}}</div>
+            </div>
+            <div class="font-xl">👥</div>
+        </div>
+    </div>
+
+    <!-- Barra de Búsqueda y Filtros -->
+    <div>
+        <form id="form-filtros-descuentos" class="grid mb-md">
+            <label>
+                Buscar
+                <input type="search" name="buscar" placeholder="Trabajador, DNI, Expediente o Beneficiario..."
+                    hx-get="/tenant/descuentos/lista" hx-trigger="keyup changed delay:500ms, search"
+                    hx-include="#form-filtros-descuentos" hx-target="#lista-descuentos">
+            </label>
+
+            <label>
+                Tipo de Descuento
+                <select name="tipo_descuento" hx-get="/tenant/descuentos/lista" hx-include="#form-filtros-descuentos"
+                    hx-target="#lista-descuentos">
+                    <option value="TODOS">Todos los tipos</option>
+                    <option value="JUDICIAL">Retención Judicial (Alimentos/Deudas)</option>
+                    <option value="SINDICAL">Cuota Sindical</option>
+                    <option value="PRESTAMO">Préstamo Entidad Financiera</option>
+                    <option value="CONVENIO">Convenio / Cooperativa</option>
+                    <option value="OTROS">Otros Descuentos</option>
+                </select>
+            </label>
+
+            <label>
+                Estado
+                <select name="estado" hx-get="/tenant/descuentos/lista" hx-include="#form-filtros-descuentos"
+                    hx-target="#lista-descuentos">
+                    <option value="TODOS">Todos los estados</option>
+                    <option value="ACTIVOS" selected>Solo Activos</option>
+                    <option value="INACTIVOS">Solo Inactivos / Dados de Baja</option>
+                </select>
+            </label>
+
+            <label class="w-120">
+                Mostrar
+                <select name="limite" hx-get="/tenant/descuentos/lista" hx-include="#form-filtros-descuentos"
+                    hx-target="#lista-descuentos">
+                    <option value="15">15 filas</option>
+                    <option value="30">30 filas</option>
+                    <option value="50">50 filas</option>
+                </select>
+            </label>
+        </form>
+
+        <div id="lista-descuentos" hx-get="/tenant/descuentos/lista"
+            hx-trigger="actualizarDescuentos from:body">
+            {{template "tabla_descuentos" .}}
+        </div>
+    </div>
+
+    <!-- Modal para Confirmación de Baja / Inactivación -->
+    <dialog id="modal-baja-descuento">
+        <article class="modal-card-sm">
+            <header>
+                <button aria-label="Close" rel="prev"
+                    onclick="document.getElementById('modal-baja-descuento').close()"></button>
+                <h4 class="mb-0 text-danger flex-items-center flex-gap-sm">
+                    <svg class="icono-menu">
+                        <use href="#icono-archive"></use>
+                    </svg>
+                    Dar de Baja Descuento
+                </h4>
+            </header>
+            <form id="form-baja-descuento" onsubmit="ejecutarBajaDescuento(event)">
+                <input type="hidden" id="baja-descuento-id" name="id">
+                <p class="font-sm mb-sm">Indique el motivo o resolución por el cual se deja sin efecto este descuento:</p>
+                <label>
+                    Motivo de Baja / Término de Obligación
+                    <input type="text" id="baja-descuento-motivo" name="motivo_baja" required
+                        placeholder="Ej: Cumplimiento de mayoría de edad / Levantamiento de medida cautelar / Cancelación total">
+                </label>
+                <footer class="flex-row-between mt-md">
+                    <button type="button" class="secondary outline btn-compact"
+                        onclick="document.getElementById('modal-baja-descuento').close()">Cancelar</button>
+                    <button type="submit" class="danger btn-compact">Confirmar Baja</button>
+                </footer>
+            </form>
+        </article>
+    </dialog>
+</article>
+
+{{define "tabla_descuentos"}}
+<div class="table-responsive">
+    <table class="striped condensed w-full" id="tabla-descuentos">
+        <thead>
+            <tr>
+                <th style="width: 75px;" class="text-center">Estado</th>
+                <th style="min-width: 180px;">Trabajador</th>
+                <th style="width: 110px;">Tipo</th>
+                <th style="min-width: 160px;">Concepto Boleta (SUNAT)</th>
+                <th style="min-width: 170px;">Regla de Cálculo</th>
+                <th style="min-width: 180px;">Beneficiario / Entidad</th>
+                <th style="width: 120px;" class="text-center">Vigencia</th>
+                <th style="width: 90px;" class="text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Descuentos}}
+            <tr>
+                <td class="text-center">
+                    {{if .Activo}}
+                    <mark class="badge badge-success font-xs">ACTIVO</mark>
+                    {{else}}
+                    <mark class="badge badge-danger font-xs" data-tooltip="{{if .MotivoBaja}}Baja: {{.MotivoBaja}}{{else}}Inactivo{{end}}" data-placement="right">BAJA</mark>
+                    {{end}}
+                </td>
+                <td>
+                    <div class="font-bold font-sm">{{.TrabajadorNombreCompleto}}</div>
+                    <small class="text-muted stat-mono">DNI: {{.TrabajadorNumeroDocumento}}</small>
+                </td>
+                <td>
+                    {{if eq .TipoDescuento "JUDICIAL"}}
+                    <mark class="badge badge-danger font-xs">⚖️ JUDICIAL</mark>
+                    {{else if eq .TipoDescuento "SINDICAL"}}
+                    <mark class="badge badge-info font-xs">🏛️ SINDICAL</mark>
+                    {{else if eq .TipoDescuento "PRESTAMO"}}
+                    <mark class="badge badge-warning font-xs">💳 PRÉSTAMO</mark>
+                    {{else if eq .TipoDescuento "CONVENIO"}}
+                    <mark class="badge badge-purple font-xs">🤝 CONVENIO</mark>
+                    {{else}}
+                    <mark class="badge font-xs">{{.TipoDescuento}}</mark>
+                    {{end}}
+                    {{if .DetalleDocumento}}
+                    <div class="font-xs text-muted mt-xs" title="{{.DetalleDocumento}}">
+                        <small>{{.DocumentoOrdenador}}: {{.DetalleDocumento}}</small>
+                    </div>
+                    {{end}}
+                </td>
+                <td>
+                    <div class="font-sm font-bold">{{.ConceptoNombre}}</div>
+                    <mark class="badge badge-secondary font-xs stat-mono">Cod. {{.ConceptoCodigoSunat}}</mark>
+                    {{if .Descripcion}}
+                    <div class="font-xs text-muted italic mt-xs">{{.Descripcion}}</div>
+                    {{end}}
+                </td>
+                <td>
+                    {{if eq .TipoCalculo "PORCENTAJE"}}
+                    <div class="font-sm font-bold text-primary stat-mono">{{printf "%.2f" .Porcentaje}}%</div>
+                    <small class="text-muted font-xs">
+                        {{if eq .BaseCalculo "NETO_LEY"}}
+                        (Sobre Neto de Ley)
+                        {{else}}
+                        (Sobre Bruto Afecto)
+                        {{end}}
+                    </small>
+                    {{else}}
+                    <div class="font-sm font-bold text-success stat-mono">S/ {{printf "%.2f" .MontoFijo}}</div>
+                    <small class="text-muted font-xs">(Monto Fijo Mensual)</small>
+                    {{end}}
+                    {{if gt .MontoTotalDeuda 0.0}}
+                    <div class="font-xs text-muted mt-xs stat-mono">
+                        Deuda: S/ {{printf "%.2f" .MontoAcumulado}} / {{printf "%.2f" .MontoTotalDeuda}}
+                    </div>
+                    {{end}}
+                </td>
+                <td>
+                    {{if .BeneficiarioNombre}}
+                    <div class="font-sm font-bold">{{.BeneficiarioNombre}}</div>
+                    {{end}}
+                    {{if .EntidadFinancieraNombre}}
+                    <small class="badge badge-secondary font-xs">{{.EntidadFinancieraNombre}}</small>
+                    {{end}}
+                    {{if .BeneficiarioCuenta}}
+                    <div class="font-xs text-muted stat-mono">Cta: {{.BeneficiarioCuenta}}</div>
+                    {{end}}
+                    {{if not .BeneficiarioNombre}}
+                    <small class="text-muted">-</small>
+                    {{end}}
+                </td>
+                <td class="text-center font-xs stat-mono">
+                    <div>{{.InicioVigencia.Format "02/01/2006"}}</div>
+                    {{if .FinVigencia}}
+                    <div class="text-muted">hasta {{.FinVigencia.Format "02/01/2006"}}</div>
+                    {{else}}
+                    <small class="text-muted"><em>(Indefinido)</em></small>
+                    {{end}}
+                </td>
+                <td class="text-center">
+                    <div class="flex-row-center flex-items-center flex-gap-xs justify-center">
+                        <button type="button" class="btn-icon" data-tooltip="Editar descuento" data-placement="left"
+                            hx-get="/tenant/ui/descuentos/editar?id={{.ID}}"
+                            hx-target="#contenido-tenant">
+                            <svg class="icono-menu">
+                                <use href="#icono-lapiz-cuadrado"></use>
+                            </svg>
+                        </button>
+                        {{if .Activo}}
+                        <button type="button" class="btn-icon text-danger" data-tooltip="Dar de baja este descuento" data-placement="left"
+                            onclick="abrirModalBaja({{.ID}})">
+                            <svg class="icono-menu">
+                                <use href="#icono-archive"></use>
+                            </svg>
+                        </button>
+                        {{else}}
+                        <button type="button" class="btn-icon text-success" data-tooltip="Reactivar descuento" data-placement="left"
+                            hx-post="/tenant/descuentos/toggle-activo?id={{.ID}}&activo=true"
+                            hx-target="#lista-descuentos">
+                            <svg class="icono-menu">
+                                <use href="#icono-archive-restore"></use>
+                            </svg>
+                        </button>
+                        {{end}}
+                        <button type="button" class="btn-icon text-danger" data-tooltip="Eliminar registro" data-placement="left"
+                            hx-delete="/tenant/descuentos/eliminar?id={{.ID}}"
+                            hx-confirm="¿Está seguro de eliminar definitivamente este descuento?"
+                            hx-target="#lista-descuentos">
+                            <svg class="icono-menu">
+                                <use href="#icono-trash"></use>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="8" class="text-center text-muted p-lg">
+                    No se encontraron descuentos o retenciones registrados con los filtros seleccionados.
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+{{if .Paginacion}}
+    {{template "componente_paginacion" .Paginacion}}
+{{end}}
+{{end}}
+
+<script>
+    function abrirModalBaja(id) {
+        document.getElementById('baja-descuento-id').value = id;
+        document.getElementById('baja-descuento-motivo').value = '';
+        document.getElementById('modal-baja-descuento').showModal();
+    }
+
+    function ejecutarBajaDescuento(event) {
+        event.preventDefault();
+        const id = document.getElementById('baja-descuento-id').value;
+        const motivo = encodeURIComponent(document.getElementById('baja-descuento-motivo').value);
+        htmx.ajax('POST', `/tenant/descuentos/toggle-activo?id=${id}&activo=false&motivo_baja=${motivo}`, {
+            target: '#lista-descuentos',
+            swap: 'innerHTML'
+        }).then(() => {
+            document.getElementById('modal-baja-descuento').close();
+        });
+    }
+</script>

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict WSDYLNwgPRW6ZEr1WxF7tFHZMAQadfZLWhakLds2bla2gD6P7LS4ER1k9X6rGgu
+\restrict jViGWwVj6DhLlg8bU5eL4XUPL5PUI7LfdpcHfOD9QfrsAoOtTIKnTPSawsuoW5p
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -560,6 +560,143 @@ ALTER SEQUENCE public.contratos_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.contratos_id_seq OWNED BY public.contratos.id;
+
+
+--
+-- Name: descuento_conceptos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.descuento_conceptos (
+    id integer NOT NULL,
+    descuento_id integer NOT NULL,
+    concepto_tenant_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.descuento_conceptos OWNER TO postgres;
+
+--
+-- Name: descuento_conceptos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.descuento_conceptos_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.descuento_conceptos_id_seq OWNER TO postgres;
+
+--
+-- Name: descuento_conceptos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.descuento_conceptos_id_seq OWNED BY public.descuento_conceptos.id;
+
+
+--
+-- Name: descuentos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.descuentos (
+    id integer NOT NULL,
+    tenant_id integer NOT NULL,
+    trabajador_id integer NOT NULL,
+    concepto_tenant_id integer NOT NULL,
+    tipo_descuento character varying(50) DEFAULT 'JUDICIAL'::character varying NOT NULL,
+    documento_ordenador character varying(50) DEFAULT 'RESOLUCION'::character varying NOT NULL,
+    detalle_documento character varying(255),
+    descripcion character varying(255) NOT NULL,
+    tipo_calculo character varying(20) DEFAULT 'PORCENTAJE'::character varying NOT NULL,
+    base_calculo character varying(20) DEFAULT 'NETO_LEY'::character varying NOT NULL,
+    porcentaje numeric(5,2) DEFAULT 0.00,
+    monto_fijo numeric(10,2) DEFAULT 0.00,
+    monto_total_deuda numeric(10,2) DEFAULT 0.00,
+    monto_acumulado numeric(10,2) DEFAULT 0.00,
+    cuotas_totales integer DEFAULT 0,
+    cuota_actual integer DEFAULT 0,
+    inicio_vigencia date NOT NULL,
+    fin_vigencia date,
+    activo boolean DEFAULT true NOT NULL,
+    motivo_baja character varying(255),
+    beneficiario_tipo_documento character varying(20) DEFAULT 'DNI'::character varying,
+    beneficiario_numero_documento character varying(20),
+    beneficiario_nombre character varying(200),
+    entidad_financiera_id integer,
+    beneficiario_cuenta character varying(50),
+    beneficiario_cci character varying(50),
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_base_calculo CHECK (((base_calculo)::text = ANY ((ARRAY['NETO_LEY'::character varying, 'BRUTO_AFECTO'::character varying])::text[]))),
+    CONSTRAINT chk_descuento_monto_porcentaje CHECK (((((tipo_calculo)::text = 'PORCENTAJE'::text) AND (porcentaje > (0)::numeric)) OR (((tipo_calculo)::text = 'MONTO_FIJO'::text) AND (monto_fijo > (0)::numeric)))),
+    CONSTRAINT chk_tipo_calculo CHECK (((tipo_calculo)::text = ANY ((ARRAY['PORCENTAJE'::character varying, 'MONTO_FIJO'::character varying])::text[]))),
+    CONSTRAINT chk_tipo_descuento CHECK (((tipo_descuento)::text = ANY ((ARRAY['JUDICIAL'::character varying, 'SINDICAL'::character varying, 'PRESTAMO'::character varying, 'CONVENIO'::character varying, 'OTROS'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.descuentos OWNER TO postgres;
+
+--
+-- Name: descuentos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.descuentos_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.descuentos_id_seq OWNER TO postgres;
+
+--
+-- Name: descuentos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.descuentos_id_seq OWNED BY public.descuentos.id;
+
+
+--
+-- Name: entidades_financieras; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.entidades_financieras (
+    id integer NOT NULL,
+    codigo character varying(10) NOT NULL,
+    nombre character varying(150) NOT NULL,
+    activo boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.entidades_financieras OWNER TO postgres;
+
+--
+-- Name: entidades_financieras_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.entidades_financieras_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.entidades_financieras_id_seq OWNER TO postgres;
+
+--
+-- Name: entidades_financieras_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.entidades_financieras_id_seq OWNED BY public.entidades_financieras.id;
 
 
 --
@@ -1161,7 +1298,8 @@ CREATE TABLE public.planillas (
     estado character varying(20) DEFAULT 'BORRADOR'::character varying,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    es_extraordinaria boolean DEFAULT false NOT NULL
+    es_extraordinaria boolean DEFAULT false NOT NULL,
+    tipo character varying(30) DEFAULT 'ORDINARIA'::character varying NOT NULL
 );
 
 
@@ -1179,7 +1317,8 @@ CREATE TABLE public.planillas_cts (
     estado character varying(20) DEFAULT 'BORRADOR'::character varying,
     fecha_calculo timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    planilla_id integer
 );
 
 
@@ -1723,6 +1862,27 @@ ALTER TABLE ONLY public.contratos ALTER COLUMN id SET DEFAULT nextval('public.co
 
 
 --
+-- Name: descuento_conceptos id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.descuento_conceptos ALTER COLUMN id SET DEFAULT nextval('public.descuento_conceptos_id_seq'::regclass);
+
+
+--
+-- Name: descuentos id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.descuentos ALTER COLUMN id SET DEFAULT nextval('public.descuentos_id_seq'::regclass);
+
+
+--
+-- Name: entidades_financieras id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.entidades_financieras ALTER COLUMN id SET DEFAULT nextval('public.entidades_financieras_id_seq'::regclass);
+
+
+--
 -- Name: fuentes_rubros id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2048,6 +2208,38 @@ ALTER TABLE ONLY public.contrato_conceptos_snapshot
 
 ALTER TABLE ONLY public.contratos
     ADD CONSTRAINT contratos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: descuento_conceptos descuento_conceptos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.descuento_conceptos
+    ADD CONSTRAINT descuento_conceptos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: descuentos descuentos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.descuentos
+    ADD CONSTRAINT descuentos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: entidades_financieras entidades_financieras_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.entidades_financieras
+    ADD CONSTRAINT entidades_financieras_codigo_key UNIQUE (codigo);
+
+
+--
+-- Name: entidades_financieras entidades_financieras_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.entidades_financieras
+    ADD CONSTRAINT entidades_financieras_pkey PRIMARY KEY (id);
 
 
 --
@@ -2395,6 +2587,14 @@ ALTER TABLE ONLY public.conceptos_tenant
 
 
 --
+-- Name: descuento_conceptos uq_descuento_concepto; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.descuento_conceptos
+    ADD CONSTRAINT uq_descuento_concepto UNIQUE (descuento_id, concepto_tenant_id);
+
+
+--
 -- Name: planillas_cts uq_planilla_cts_periodo; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2468,6 +2668,27 @@ CREATE INDEX idx_contratos_trabajador ON public.contratos USING btree (trabajado
 
 
 --
+-- Name: idx_descuento_conceptos_descuento; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_descuento_conceptos_descuento ON public.descuento_conceptos USING btree (descuento_id);
+
+
+--
+-- Name: idx_descuentos_tenant_trabajador; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_descuentos_tenant_trabajador ON public.descuentos USING btree (tenant_id, trabajador_id, activo);
+
+
+--
+-- Name: idx_descuentos_vigencia; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_descuentos_vigencia ON public.descuentos USING btree (tenant_id, inicio_vigencia, fin_vigencia);
+
+
+--
 -- Name: idx_mef_muc_grupo_nivel; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2524,10 +2745,24 @@ CREATE INDEX idx_planilla_conceptos_rubro ON public.planilla_conceptos USING btr
 
 
 --
+-- Name: idx_planillas_cts_planilla_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_planillas_cts_planilla_id ON public.planillas_cts USING btree (planilla_id);
+
+
+--
 -- Name: idx_planillas_tenant; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_planillas_tenant ON public.planillas USING btree (tenant_id, anio, mes);
+
+
+--
+-- Name: idx_planillas_tenant_tipo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_planillas_tenant_tipo ON public.planillas USING btree (tenant_id, tipo, anio, mes);
 
 
 --
@@ -2771,6 +3006,54 @@ ALTER TABLE ONLY public.contratos
 
 
 --
+-- Name: descuento_conceptos descuento_conceptos_concepto_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.descuento_conceptos
+    ADD CONSTRAINT descuento_conceptos_concepto_tenant_id_fkey FOREIGN KEY (concepto_tenant_id) REFERENCES public.conceptos_tenant(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: descuento_conceptos descuento_conceptos_descuento_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.descuento_conceptos
+    ADD CONSTRAINT descuento_conceptos_descuento_id_fkey FOREIGN KEY (descuento_id) REFERENCES public.descuentos(id) ON DELETE CASCADE;
+
+
+--
+-- Name: descuentos descuentos_concepto_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.descuentos
+    ADD CONSTRAINT descuentos_concepto_tenant_id_fkey FOREIGN KEY (concepto_tenant_id) REFERENCES public.conceptos_tenant(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: descuentos descuentos_entidad_financiera_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.descuentos
+    ADD CONSTRAINT descuentos_entidad_financiera_id_fkey FOREIGN KEY (entidad_financiera_id) REFERENCES public.entidades_financieras(id) ON DELETE SET NULL;
+
+
+--
+-- Name: descuentos descuentos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.descuentos
+    ADD CONSTRAINT descuentos_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
+
+
+--
+-- Name: descuentos descuentos_trabajador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.descuentos
+    ADD CONSTRAINT descuentos_trabajador_id_fkey FOREIGN KEY (trabajador_id) REFERENCES public.trabajadores(id) ON DELETE CASCADE;
+
+
+--
 -- Name: base_regimen_tenant fk_base_regimen_tenant_concepto; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2896,6 +3179,14 @@ ALTER TABLE ONLY public.planilla_detalles
 
 ALTER TABLE ONLY public.planilla_detalles
     ADD CONSTRAINT planilla_detalles_planilla_id_fkey FOREIGN KEY (planilla_id) REFERENCES public.planillas(id) ON DELETE CASCADE;
+
+
+--
+-- Name: planillas_cts planillas_cts_planilla_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planillas_cts
+    ADD CONSTRAINT planillas_cts_planilla_id_fkey FOREIGN KEY (planilla_id) REFERENCES public.planillas(id) ON DELETE CASCADE;
 
 
 --
@@ -3126,5 +3417,5 @@ ALTER TABLE ONLY public.usuarios
 -- PostgreSQL database dump complete
 --
 
-\unrestrict WSDYLNwgPRW6ZEr1WxF7tFHZMAQadfZLWhakLds2bla2gD6P7LS4ER1k9X6rGgu
+\unrestrict jViGWwVj6DhLlg8bU5eL4XUPL5PUI7LfdpcHfOD9QfrsAoOtTIKnTPSawsuoW5p
 
