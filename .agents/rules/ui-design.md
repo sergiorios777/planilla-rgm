@@ -67,3 +67,33 @@ Todas las vistas de la aplicación deben emplear obligatoriamente los siguientes
 4. **Acciones de Tabla (Botones Planos e Iconos SVG)**:
    - **Regla**: En las celdas de acciones de las tablas, usar **exclusivamente** botones planos de icono `<button class="btn-icon">` o menús `details.dropdown-kebab` con iconos del sprite SVG (`#icono-*`). Queda prohibido el uso de emoticonos de texto plano o `role="group"` en tablas.
 
+---
+
+## 6. Ciclo de Vida de Scripts en HTMX y Componentes de Terceros (TomSelect)
+
+Dado que la navegación en la plataforma opera como una Single Page Application (SPA) basada en intercambios parciales de HTMX (`hx-target="#contenido-tenant"`), se deben acatar estrictamente los siguientes estándares para prevenir fugas de memoria, event listeners "zombies" y conflictos de inicialización:
+
+1. **Prohibición de Listeners Globales en Plantillas Secundarias**:
+   - **Regla**: Queda **estrictamente prohibido** registrar listeners globales en `document.body`, `document` o `window` (como `document.body.addEventListener('htmx:afterSettle', ...)` o `document.addEventListener('DOMContentLoaded', ...)`) dentro de plantillas HTML inyectadas por HTMX.
+   - **Razón**: `document.body` nunca se descarga entre navegaciones HTMX; los listeners añadidos en vistas dinámicas se acumulan, persisten indefinidamente e interceptan de forma descontrolada los eventos de otras pantallas.
+
+2. **Centralización de Inicializadores Estándar en `app.js`**:
+   - **Regla**: Toda inicialización automática de componentes de uso masivo (como `.select-con-buscador` estándar) debe residir **exclusivamente en [`ui/static/js/app.js`](file:///c:/server/www/planilla-rgm/ui/static/js/app.js)**, ejecutándose una sola vez a nivel de aplicación.
+
+3. **Selectores con Lógica Interactiva Personalizada (`data-custom-tomselect`)**:
+   - **Regla**: Si un elemento `<select>` requiere un comportamiento interactivo propio (como callbacks `onChange`, inserción dinámica de filas, agregación aditiva en tiempo real o filtrado personalizado):
+     1. Debe declararse obligatoriamente con el atributo `data-custom-tomselect="true"` para que el auto-inicializador global de `app.js` lo ignore.
+     2. En su script local, debe validar y destruir explícitamente cualquier instancia previa antes de inicializar la nueva:
+        ```javascript
+        const el = document.getElementById('mi-select-personalizado');
+        if (el && typeof TomSelect !== 'undefined') {
+            if (el.tomselect) {
+                el.tomselect.destroy();
+            }
+            new TomSelect(el, {
+                // Configuración y callbacks personalizados
+            });
+        }
+        ```
+
+

@@ -4,7 +4,41 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     initHTMXConfirmModal();
+    initTomSelectAuto();
 });
+
+/**
+ * Inicialización centralizada y automática de componentes TomSelect
+ * Busca elementos .select-con-buscador excluyendo selectores personalizados (data-custom-tomselect="true" o #select-agregar-concepto)
+ */
+function initTomSelectAuto() {
+    const initSelectsInContainer = (container) => {
+        if (!container || typeof TomSelect === 'undefined') return;
+        const selects = container.querySelectorAll('.select-con-buscador:not([data-custom-tomselect]):not(#select-agregar-concepto)');
+        selects.forEach((el) => {
+            if (!el.tomselect) {
+                const isMulti = el.hasAttribute('multiple');
+                new TomSelect(el, {
+                    create: false,
+                    allowEmptyOption: true,
+                    plugins: isMulti ? ['remove_button'] : ['dropdown_input'],
+                    maxItems: isMulti ? null : 1
+                });
+            }
+        });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => initSelectsInContainer(document.body));
+    } else {
+        initSelectsInContainer(document.body);
+    }
+
+    document.body.addEventListener('htmx:afterSettle', (evt) => {
+        const target = evt.detail.target || document.body;
+        initSelectsInContainer(target);
+    });
+}
 
 /**
  * Intercepta el evento HTMX `htmx:confirm` para elementos con data-confirm-title o data-confirm-message

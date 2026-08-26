@@ -78,26 +78,3 @@
     </table>
 </div>
 {{end}}
-
-<script>
-    function inicializarBuscadores(contenedor) {
-        if (!contenedor) return;
-        contenedor.querySelectorAll('.select-con-buscador').forEach((el) => {
-            if (!el.tomselect) {
-                new TomSelect(el, {
-                    create: false,
-                    maxItems: 1,
-                    plugins: ['dropdown_input']
-                });
-            }
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        inicializarBuscadores(document.body);
-    });
-
-    document.body.addEventListener('htmx:afterSettle', (event) => {
-        inicializarBuscadores(event.detail.target);
-    });
-</script>

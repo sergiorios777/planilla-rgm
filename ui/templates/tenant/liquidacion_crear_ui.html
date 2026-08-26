@@ -322,25 +322,6 @@
 {{end}}
 
 <script>
-    function inicializarBuscadores(contenedor) {
-        if (!contenedor) return;
-        contenedor.querySelectorAll('.select-con-buscador').forEach((el) => {
-            if (!el.tomselect) {
-                new TomSelect(el, {
-                    create: false,
-                    maxItems: 1,
-                    plugins: ['dropdown_input']
-                });
-            }
-        });
-    }
-
-    inicializarBuscadores(document.body);
-
-    document.body.addEventListener('htmx:afterSettle', (event) => {
-        inicializarBuscadores(event.detail.target);
-    });
-
     document.body.addEventListener('change', (event) => {
         if (event.target && event.target.name === 'contrato_id') {
             const select = event.target;

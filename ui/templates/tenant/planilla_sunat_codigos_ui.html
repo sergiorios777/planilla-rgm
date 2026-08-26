@@ -310,15 +310,6 @@
         });
     }
 
-    // Inicialización al cargar la página o al inyectarse por HTMX
-    document.addEventListener('DOMContentLoaded', () => {
-        inicializarBuscadoresSunat(document.body);
-    });
-
-    document.body.addEventListener('htmx:afterSettle', (event) => {
-        inicializarBuscadoresSunat(event.detail.target);
-    });
-
     // Inicialización inmediata por si el script se evalúa dinámicamente
     inicializarBuscadoresSunat(document.getElementById('tabla-conceptos-sunat') || document.body);
 </script>

@@ -45,13 +45,14 @@
                     <span><strong>⚖️ Aplicar Retenciones Judiciales Vigentes (% Alimentos / Sentencias)</strong></span>
                 </label>
                 <small class="text-muted block font-xs mt-xs">
-                    Si está activo, el sistema deducirá automáticamente el porcentaje ordenado judicialmente a los colaboradores con mandato judicial sobre este bono.
+                    Si está activo, el sistema deducirá automáticamente el porcentaje ordenado judicialmente a los
+                    colaboradores con mandato judicial sobre este bono.
                 </small>
             </div>
 
             <!-- Selector TomSelect -->
             <div class="mb-md">
-                <select id="select-agregar-concepto" class="select-con-buscador"
+                <select id="select-agregar-concepto" class="select-con-buscador" data-custom-tomselect="true"
                     placeholder="🔍 Buscar y agregar un concepto a la planilla especial...">
                     <option value="">🔍 Buscar y agregar un concepto a la planilla especial...</option>
                     {{range .ConceptosTenant}}
@@ -96,11 +97,16 @@
                             </td>
                             <td>
                                 <div class="flex-gap-xs flex-wrap">
-                                    {{if eq .ModalidadEntrega "PERMANENTE"}}<mark class="badge badge-info font-xs font-bold">PERMANENTE</mark>
-                                    {{else if eq .ModalidadEntrega "PERIODICO"}}<mark class="badge badge-warning font-xs font-bold">PERIÓDICO</mark>
-                                    {{else if eq .ModalidadEntrega "EXCEPCIONAL"}}<mark class="badge badge-purple font-xs font-bold">EXCEPCIONAL</mark>
-                                    {{else if eq .ModalidadEntrega "OCASIONAL"}}<mark class="badge badge-gray font-xs font-bold">OCASIONAL</mark>
-                                    {{else if .EsOcasional}}<mark class="badge badge-gray font-xs font-bold">OCASIONAL</mark>{{end}}
+                                    {{if eq .ModalidadEntrega "PERMANENTE"}}<mark
+                                        class="badge badge-info font-xs font-bold">PERMANENTE</mark>
+                                    {{else if eq .ModalidadEntrega "PERIODICO"}}<mark
+                                        class="badge badge-warning font-xs font-bold">PERIÓDICO</mark>
+                                    {{else if eq .ModalidadEntrega "EXCEPCIONAL"}}<mark
+                                        class="badge badge-purple font-xs font-bold">EXCEPCIONAL</mark>
+                                    {{else if eq .ModalidadEntrega "OCASIONAL"}}<mark
+                                        class="badge badge-gray font-xs font-bold">OCASIONAL</mark>
+                                    {{else if .EsOcasional}}<mark
+                                        class="badge badge-gray font-xs font-bold">OCASIONAL</mark>{{end}}
                                     {{if and .EsExtraordinario (ne .ModalidadEntrega "EXCEPCIONAL")}}<mark
                                         class="badge badge-purple font-xs font-bold">EXTRAORDINARIO</mark>{{end}}
                                     {{if .EsPensionable}}<mark
@@ -351,7 +357,8 @@
                 <td>
                     <strong>{{.NombreCompleto}}</strong>
                     {{if .TieneRetencionJudicial}}
-                    <span class="badge badge-warning font-xs ml-xs" data-tooltip="{{if .DetalleRetencionJudicial}}{{.DetalleRetencionJudicial}}{{else}}Retención por Alimentos / Deuda{{end}}">
+                    <span class="badge badge-warning font-xs ml-xs"
+                        data-tooltip="{{if .DetalleRetencionJudicial}}{{.DetalleRetencionJudicial}}{{else}}Retención por Alimentos / Deuda{{end}}">
                         ⚖️ Retención Judicial {{if gt .PorcentajeJudicial 0.0}}({{.PorcentajeJudicial}}%){{end}}
                     </span>
                     {{end}}
@@ -603,7 +610,7 @@
 
                 const tr = document.createElement('tr');
                 tr.id = `row-beneficiario-${id}`;
-                
+
                 let badgeJudicial = '';
                 if (w.tiene_retencion_judicial) {
                     const porc = w.porcentaje_judicial ? ` (${w.porcentaje_judicial}%)` : '';
@@ -729,20 +736,24 @@
 
     function inicializarBuscadorConceptos() {
         const el = document.getElementById('select-agregar-concepto');
-        if (el && !el.tomselect) {
-            const ts = new TomSelect(el, {
-                create: false,
-                maxItems: 1,
-                plugins: ['dropdown_input'],
-                onChange: function (val) {
-                    if (val) {
-                        const opt = el.querySelector(`option[value="${val}"]`);
-                        if (opt) agregarConceptoAFormulario(opt);
-                        ts.clear(true);
-                    }
-                }
-            });
+        if (!el || typeof TomSelect === 'undefined') return;
+
+        if (el.tomselect) {
+            el.tomselect.destroy();
         }
+
+        const ts = new TomSelect(el, {
+            create: false,
+            maxItems: 1,
+            plugins: ['dropdown_input'],
+            onChange: function (val) {
+                if (val) {
+                    const opt = el.querySelector(`option[value="${val}"]`);
+                    if (opt) agregarConceptoAFormulario(opt);
+                    ts.clear(true);
+                }
+            }
+        });
     }
 
     // 2. Control de Modal y Acciones Aditivas
@@ -855,7 +866,11 @@
 
     // Inicializar TomSelect y Cargar Formulación Previa si existe
     function inicializarFormularioEspecial() {
+        if (!window.gestorBeneficiarios) {
+            window.gestorBeneficiarios = new GestorBeneficiariosEspecial();
+        }
         inicializarBuscadorConceptos();
+
         let datosInicialesTrabajadores = window.__datosInicialesTrabajadores || [];
         if (!Array.isArray(datosInicialesTrabajadores) || datosInicialesTrabajadores.length === 0) {
             const jsonText = document.getElementById('datos-trabajadores-json')?.textContent?.trim();
@@ -868,11 +883,7 @@
             }
         }
         if (Array.isArray(datosInicialesTrabajadores) && datosInicialesTrabajadores.length > 0) {
-            if (!window.gestorBeneficiarios) {
-                window.gestorBeneficiarios = new GestorBeneficiariosEspecial();
-            } else {
-                window.gestorBeneficiarios.limpiarTodos();
-            }
+            window.gestorBeneficiarios.limpiarTodos();
             gestorBeneficiarios.agregarTrabajadores(datosInicialesTrabajadores);
         }
     }
@@ -883,6 +894,8 @@
         }, 50);
     }
 
+    // Ejecutar inmediatamente y también con delay para contemplar swaps HTMX
+    inicializarFormularioEspecial();
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', ejecutarInicializacionConDelay);
     } else {

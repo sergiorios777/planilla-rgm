@@ -404,33 +404,7 @@
 </dialog>
 
 <script>
-    // Función maestra para inicializar TomSelect en un contenedor específico
-    function inicializarBuscadores(contenedor) {
-        if (!contenedor) return;
-        contenedor.querySelectorAll('.select-con-buscador').forEach((el) => {
-            // Evitamos duplicar la inicialización si el elemento ya tiene TomSelect activo
-            if (!el.tomselect) {
-                new TomSelect(el, {
-                    create: false,
-                    maxItems: 1,
-                    plugins: ['dropdown_input'] // Asegura una barra de entrada limpia
-                });
-            }
-        });
-    }
-
-    // 1. Ejecutar en la carga inicial de la página
-    document.addEventListener('DOMContentLoaded', () => {
-        inicializarBuscadores(document.body);
-    });
-
-    // 2. ¡MAGIA HTMX!: Ejecutar automáticamente cada vez que HTMX inyecte o reemplace HTML
-    document.body.addEventListener('htmx:afterSettle', (event) => {
-        // Inicializamos únicamente los elementos nuevos que acaban de caer en el target de HTMX
-        inicializarBuscadores(event.detail.target);
-    });
-
-    // 3. Funciones para controlar el modal de baja de contrato
+    // Funciones para controlar el modal de baja de contrato
     function abrirModalBaja(btn) {
         const id = btn.getAttribute('data-id');
         const nombre = btn.getAttribute('data-nombre');
