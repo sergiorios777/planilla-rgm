@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"planilla-rgm/internal/models"
 	"strconv"
 	"strings"
@@ -1508,13 +1509,22 @@ func (r *PlanillaRepository) ObtenerTrabajadoresEspecialPaginacion(tenantID int,
 		       COALESCE(m.codigo, '') AS meta_codigo,
 		       COALESCE(m.descripcion, '') AS meta_descripcion,
 		       COALESCE(uo.id, 0) AS unidad_organica_id,
-		       COALESCE(uo.nombre, '') AS unidad_organica_nombre
+		       COALESCE(uo.nombre, '') AS unidad_organica_nombre,
+		       CASE WHEN dj.trabajador_id IS NOT NULL THEN true ELSE false END AS tiene_retencion_judicial,
+		       COALESCE(dj.porcentaje, 0.0) AS porcentaje_judicial,
+		       COALESCE(dj.detalle_documento, dj.descripcion, '') AS detalle_retencion_judicial
 		FROM contratos c
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
 		LEFT JOIN puestos p ON c.puesto_id = p.id
 		LEFT JOIN regimenes_laborales rl ON p.regimen_id = rl.id
 		LEFT JOIN metas_presupuestales m ON p.meta_id = m.id
 		LEFT JOIN unidades_organicas uo ON p.unidad_organica_id = uo.id
+		LEFT JOIN (
+			SELECT DISTINCT ON (trabajador_id) trabajador_id, porcentaje, detalle_documento, descripcion
+			FROM descuentos
+			WHERE activo = true AND tipo_descuento = 'JUDICIAL' AND tenant_id = $1
+			ORDER BY trabajador_id, id DESC
+		) dj ON t.id = dj.trabajador_id
 		%s
 		ORDER BY t.apellido_paterno ASC, t.apellido_materno ASC, t.nombres ASC
 		LIMIT $%d OFFSET $%d
@@ -1536,6 +1546,7 @@ func (r *PlanillaRepository) ObtenerTrabajadoresEspecialPaginacion(tenantID int,
 			&item.PuestoNombre, &item.RegimenID, &item.RegimenNombre,
 			&item.MetaID, &item.MetaCodigo, &item.MetaDescripcion,
 			&item.UnidadOrganicaID, &item.UnidadOrganicaNombre,
+			&item.TieneRetencionJudicial, &item.PorcentajeJudicial, &item.DetalleRetencionJudicial,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -1584,13 +1595,22 @@ func (r *PlanillaRepository) ObtenerTrabajadoresEspecialTodos(tenantID int, busq
 		       COALESCE(m.codigo, '') AS meta_codigo,
 		       COALESCE(m.descripcion, '') AS meta_descripcion,
 		       COALESCE(uo.id, 0) AS unidad_organica_id,
-		       COALESCE(uo.nombre, '') AS unidad_organica_nombre
+		       COALESCE(uo.nombre, '') AS unidad_organica_nombre,
+		       CASE WHEN dj.trabajador_id IS NOT NULL THEN true ELSE false END AS tiene_retencion_judicial,
+		       COALESCE(dj.porcentaje, 0.0) AS porcentaje_judicial,
+		       COALESCE(dj.detalle_documento, dj.descripcion, '') AS detalle_retencion_judicial
 		FROM contratos c
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
 		LEFT JOIN puestos p ON c.puesto_id = p.id
 		LEFT JOIN regimenes_laborales rl ON p.regimen_id = rl.id
 		LEFT JOIN metas_presupuestales m ON p.meta_id = m.id
 		LEFT JOIN unidades_organicas uo ON p.unidad_organica_id = uo.id
+		LEFT JOIN (
+			SELECT DISTINCT ON (trabajador_id) trabajador_id, porcentaje, detalle_documento, descripcion
+			FROM descuentos
+			WHERE activo = true AND tipo_descuento = 'JUDICIAL' AND tenant_id = $1
+			ORDER BY trabajador_id, id DESC
+		) dj ON t.id = dj.trabajador_id
 		%s
 		ORDER BY t.apellido_paterno ASC, t.apellido_materno ASC, t.nombres ASC
 	`, whereClause)
@@ -1609,6 +1629,7 @@ func (r *PlanillaRepository) ObtenerTrabajadoresEspecialTodos(tenantID int, busq
 			&item.PuestoNombre, &item.RegimenID, &item.RegimenNombre,
 			&item.MetaID, &item.MetaCodigo, &item.MetaDescripcion,
 			&item.UnidadOrganicaID, &item.UnidadOrganicaNombre,
+			&item.TieneRetencionJudicial, &item.PorcentajeJudicial, &item.DetalleRetencionJudicial,
 		)
 		if err != nil {
 			return nil, err
@@ -1631,6 +1652,7 @@ func (r *PlanillaRepository) ProcesarPlanillaEspecial(
 	conceptosInput []PlanillaEspecialConceptoInput,
 	contratosIDs []int,
 	montosCustom map[string]float64,
+	aplicarRetencionesJudiciales bool,
 ) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -1641,7 +1663,8 @@ func (r *PlanillaRepository) ProcesarPlanillaEspecial(
 	// 1. Verificar estado de la planilla
 	var estado string
 	var esExtraordinaria bool
-	err = tx.QueryRowContext(ctx, `SELECT estado, es_extraordinaria FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID).Scan(&estado, &esExtraordinaria)
+	var anio, mes int
+	err = tx.QueryRowContext(ctx, `SELECT estado, es_extraordinaria, anio, mes FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID).Scan(&estado, &esExtraordinaria, &anio, &mes)
 	if err != nil {
 		return fmt.Errorf("no se encontró la planilla: %w", err)
 	}
@@ -1771,6 +1794,26 @@ func (r *PlanillaRepository) ProcesarPlanillaEspecial(
 		conceptosMap[cInput.ConceptoTenantID] = ci
 	}
 
+	// 5.5 Cargar descuentos activos si aplicarRetencionesJudiciales == true
+	descRepo := NewDescuentoRepository(r.db)
+	mapaDescuentos := make(map[int][]models.DescuentoConConceptos)
+	if aplicarRetencionesJudiciales && len(contratosIDs) > 0 {
+		var trabajadorIDs []int
+		rowsTrab, errT := tx.QueryContext(ctx, `SELECT DISTINCT trabajador_id FROM contratos WHERE id = ANY($1) AND tenant_id = $2`, pq.Array(contratosIDs), tenantID)
+		if errT == nil {
+			for rowsTrab.Next() {
+				var tid int
+				if err := rowsTrab.Scan(&tid); err == nil {
+					trabajadorIDs = append(trabajadorIDs, tid)
+				}
+			}
+			rowsTrab.Close()
+		}
+		if len(trabajadorIDs) > 0 {
+			mapaDescuentos, _ = descRepo.ObtenerDescuentosActivosPorTrabajadorMasivo(tenantID, trabajadorIDs, anio, mes)
+		}
+	}
+
 	// 6. Iterar por cada contrato/trabajador seleccionado
 	stmtDetalle, err := tx.PrepareContext(ctx, `
 		INSERT INTO planilla_detalles (
@@ -1795,13 +1838,14 @@ func (r *PlanillaRepository) ProcesarPlanillaEspecial(
 
 	for _, contratoID := range contratosIDs {
 		// Obtener plaza, régimen y defaults del contrato
+		var trabajadorID int
 		var puestoID sql.NullInt64
 		var regimenID int
 		var puestoMetaID, puestoRubroID sql.NullInt64
 		var trabajadorNombre, trabajadorDoc, puestoNombre string
 
 		queryContrato := `
-			SELECT c.puesto_id, COALESCE(p.regimen_id, 0), p.meta_id, p.fuente_rubro_id,
+			SELECT c.trabajador_id, c.puesto_id, COALESCE(p.regimen_id, 0), p.meta_id, p.fuente_rubro_id,
 			       COALESCE(TRIM(t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres), ''),
 			       COALESCE(t.numero_documento, ''),
 			       COALESCE(p.nombre, 'Sin Plaza Asignada')
@@ -1811,7 +1855,7 @@ func (r *PlanillaRepository) ProcesarPlanillaEspecial(
 			WHERE c.id = $1 AND c.tenant_id = $2
 		`
 		err := tx.QueryRowContext(ctx, queryContrato, contratoID, tenantID).Scan(
-			&puestoID, &regimenID, &puestoMetaID, &puestoRubroID,
+			&trabajadorID, &puestoID, &regimenID, &puestoMetaID, &puestoRubroID,
 			&trabajadorNombre, &trabajadorDoc, &puestoNombre,
 		)
 		if err != nil {
@@ -1913,13 +1957,132 @@ func (r *PlanillaRepository) ProcesarPlanillaEspecial(
 				totalAportes += montoEfectivo
 			}
 
+			if tipoUpper == "" {
+				tipoUpper = "INGRESO"
+			}
+
 			_, err = stmtConcepto.ExecContext(
-				ctx, detalleID, ci.id, ci.conceptoTipo, montoEfectivo,
+				ctx, detalleID, ci.id, tipoUpper, montoEfectivo,
 				ci.conceptoMaestroID, ci.codigoSunat, ci.nombrePersonalizado,
 				finalMetaID, finalRubroID,
 			)
 			if err != nil {
 				return fmt.Errorf("error al insertar concepto en boleta: %w", err)
+			}
+		}
+
+		// Evaluar Retenciones Judiciales en Planilla Extraordinaria
+		if aplicarRetencionesJudiciales && totalIngresos > 0 {
+			if descuentos, ok := mapaDescuentos[trabajadorID]; ok {
+				for _, item := range descuentos {
+					desc := item.Descuento
+					afectosIDs := item.ConceptosTenantIDs
+
+					esJudicialPorc := (desc.TipoDescuento == "JUDICIAL" && desc.TipoCalculo == "PORCENTAJE")
+					tieneConceptoEspecifico := false
+					if len(afectosIDs) > 0 {
+						for _, cid := range afectosIDs {
+							for _, cIn := range conceptosInput {
+								if cIn.ConceptoTenantID == cid {
+									tieneConceptoEspecifico = true
+									break
+								}
+							}
+						}
+					}
+
+					// Solo aplicamos si es mandato judicial porcentual o si afecta específicamente este bono
+					if !esJudicialPorc && !tieneConceptoEspecifico {
+						continue
+					}
+
+					baseBruta := 0.0
+					if tieneConceptoEspecifico {
+						mapaAfectos := make(map[int]bool)
+						for _, aid := range afectosIDs {
+							mapaAfectos[aid] = true
+						}
+						for _, cIn := range conceptosInput {
+							if mapaAfectos[cIn.ConceptoTenantID] {
+								m := cIn.Monto
+								if len(montosCustom) > 0 {
+									customKey := fmt.Sprintf("monto_custom_%d_%d", contratoID, cIn.ConceptoTenantID)
+									if val, ok := montosCustom[customKey]; ok {
+										m = val
+									}
+								}
+								baseBruta += m
+							}
+						}
+					} else if esJudicialPorc {
+						// En planilla extraordinaria, la retención judicial porcentual afecta el total de ingresos extraordinarios otorgados
+						baseBruta = totalIngresos
+					}
+
+					if baseBruta <= 0 {
+						continue
+					}
+
+					baseComputable := baseBruta
+					if strings.ToUpper(desc.BaseCalculo) == "NETO_LEY" && totalIngresos > 0 {
+						if totalRetenciones > 0 {
+							deduccion := totalRetenciones * (baseBruta / totalIngresos)
+							baseComputable -= deduccion
+							if baseComputable < 0 {
+								baseComputable = 0
+							}
+						}
+					}
+
+					montoDescuento := 0.0
+					if strings.ToUpper(desc.TipoCalculo) == "PORCENTAJE" {
+						montoDescuento = baseComputable * (desc.Porcentaje / 100.0)
+					} else {
+						montoDescuento = desc.MontoFijo
+					}
+					montoDescuento = math.Round(montoDescuento*100) / 100
+
+					if desc.MontoTotalDeuda > 0 {
+						saldo := desc.MontoTotalDeuda - desc.MontoAcumulado
+						if saldo <= 0 {
+							continue
+						}
+						if montoDescuento > saldo {
+							montoDescuento = saldo
+						}
+					}
+
+					if montoDescuento <= 0 {
+						continue
+					}
+
+					totalRetenciones += montoDescuento
+					nombreBoleta := desc.Descripcion
+					if nombreBoleta == "" {
+						nombreBoleta = desc.ConceptoNombre
+					}
+
+					var cTenantIDPtr *int
+					if desc.ConceptoTenantID > 0 {
+						v := desc.ConceptoTenantID
+						cTenantIDPtr = &v
+					}
+
+					var maestroIDPtr *int
+					if desc.ConceptoMaestroID > 0 {
+						v := desc.ConceptoMaestroID
+						maestroIDPtr = &v
+					}
+
+					_, err = stmtConcepto.ExecContext(
+						ctx, detalleID, cTenantIDPtr, "RETENCION", montoDescuento,
+						maestroIDPtr, desc.ConceptoCodigoSunat, nombreBoleta,
+						defaultMetaPtr, defaultRubroPtr,
+					)
+					if err != nil {
+						return fmt.Errorf("error al insertar retención judicial en boleta especial: %w", err)
+					}
+				}
 			}
 		}
 

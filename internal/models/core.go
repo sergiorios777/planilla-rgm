@@ -333,6 +333,7 @@ type Descuento struct {
 	TrabajadorNumeroDocumento string `json:"trabajador_numero_documento,omitempty"`
 	ConceptoNombre            string `json:"concepto_nombre,omitempty"`
 	ConceptoCodigoSunat       string `json:"concepto_codigo_sunat,omitempty"`
+	ConceptoMaestroID         int    `json:"concepto_maestro_id,omitempty"`
 	EntidadFinancieraNombre   string `json:"entidad_financiera_nombre,omitempty"`
 	ConceptosAfectosIDs       []int  `json:"conceptos_afectos_ids,omitempty"`
 	ConceptosAfectosNombres   string `json:"conceptos_afectos_nombres,omitempty"`
@@ -750,18 +751,21 @@ type PlameRemuneracion struct {
 
 // TrabajadorEspecialItem representa un trabajador activo y su plaza para la formulación especial
 type TrabajadorEspecialItem struct {
-	ContratoID           int    `json:"contrato_id"`
-	TrabajadorID         int    `json:"trabajador_id"`
-	NumeroDocumento      string `json:"numero_documento"`
-	NombreCompleto       string `json:"nombre_completo"`
-	PuestoNombre         string `json:"puesto_nombre"`
-	RegimenID            int    `json:"regimen_id"`
-	RegimenNombre        string `json:"regimen_nombre"`
-	MetaID               int    `json:"meta_id"`
-	MetaCodigo           string `json:"meta_codigo"`
-	MetaDescripcion      string `json:"meta_descripcion"`
-	UnidadOrganicaID     int    `json:"unidad_organica_id"`
-	UnidadOrganicaNombre string `json:"unidad_organica_nombre"`
+	ContratoID               int     `json:"contrato_id"`
+	TrabajadorID             int     `json:"trabajador_id"`
+	NumeroDocumento          string  `json:"numero_documento"`
+	NombreCompleto           string  `json:"nombre_completo"`
+	PuestoNombre             string  `json:"puesto_nombre"`
+	RegimenID                int     `json:"regimen_id"`
+	RegimenNombre            string  `json:"regimen_nombre"`
+	MetaID                   int     `json:"meta_id"`
+	MetaCodigo               string  `json:"meta_codigo"`
+	MetaDescripcion          string  `json:"meta_descripcion"`
+	UnidadOrganicaID         int     `json:"unidad_organica_id"`
+	UnidadOrganicaNombre     string  `json:"unidad_organica_nombre"`
+	TieneRetencionJudicial   bool    `json:"tiene_retencion_judicial"`
+	PorcentajeJudicial       float64 `json:"porcentaje_judicial"`
+	DetalleRetencionJudicial string  `json:"detalle_retencion_judicial"`
 }
 
 // DatosReporteLiquidacion representa la estructura completa para la generación del PDF de Liquidación

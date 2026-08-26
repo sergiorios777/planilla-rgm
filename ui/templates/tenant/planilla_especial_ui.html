@@ -39,6 +39,16 @@
             <p><small>Busca y añade los conceptos de la municipalidad que se otorgarán en esta planilla e ingresa el
                     monto fijo base para cada uno.</small></p>
 
+            <div class="mb-md p-xs bg-card-kpi border-radius border-light">
+                <label class="flex-inline flex-items-center mb-0 font-sm cursor-pointer flex-gap-sm">
+                    <input type="checkbox" name="aplicar_retenciones_judiciales" value="true" role="switch" checked>
+                    <span><strong>⚖️ Aplicar Retenciones Judiciales Vigentes (% Alimentos / Sentencias)</strong></span>
+                </label>
+                <small class="text-muted block font-xs mt-xs">
+                    Si está activo, el sistema deducirá automáticamente el porcentaje ordenado judicialmente a los colaboradores con mandato judicial sobre este bono.
+                </small>
+            </div>
+
             <!-- Selector TomSelect -->
             <div class="mb-md">
                 <select id="select-agregar-concepto" class="select-con-buscador"
@@ -336,10 +346,16 @@
             <tr>
                 <td>
                     <input type="checkbox" value="{{.ContratoID}}" class="chk-modal-trabajador"
-                        data-item='{"contrato_id": {{.ContratoID}}, "trabajador_id": {{.TrabajadorID}}, "numero_documento": "{{.NumeroDocumento}}", "nombre_completo": "{{.NombreCompleto}}", "puesto_nombre": "{{.PuestoNombre}}", "regimen_nombre": "{{.RegimenNombre}}", "meta_codigo": "{{.MetaCodigo}}", "meta_descripcion": "{{.MetaDescripcion}}", "unidad_organica_nombre": "{{.UnidadOrganicaNombre}}"}'>
+                        data-item='{"contrato_id": {{.ContratoID}}, "trabajador_id": {{.TrabajadorID}}, "numero_documento": "{{.NumeroDocumento}}", "nombre_completo": "{{.NombreCompleto}}", "puesto_nombre": "{{.PuestoNombre}}", "regimen_nombre": "{{.RegimenNombre}}", "meta_codigo": "{{.MetaCodigo}}", "meta_descripcion": "{{.MetaDescripcion}}", "unidad_organica_nombre": "{{.UnidadOrganicaNombre}}", "tiene_retencion_judicial": {{.TieneRetencionJudicial}}, "porcentaje_judicial": {{.PorcentajeJudicial}}, "detalle_retencion_judicial": "{{.DetalleRetencionJudicial}}"}'>
                 </td>
                 <td>
-                    <strong>{{.NombreCompleto}}</strong><br>
+                    <strong>{{.NombreCompleto}}</strong>
+                    {{if .TieneRetencionJudicial}}
+                    <span class="badge badge-warning font-xs ml-xs" data-tooltip="{{if .DetalleRetencionJudicial}}{{.DetalleRetencionJudicial}}{{else}}Retención por Alimentos / Deuda{{end}}">
+                        ⚖️ Retención Judicial {{if gt .PorcentajeJudicial 0.0}}({{.PorcentajeJudicial}}%){{end}}
+                    </span>
+                    {{end}}
+                    <br>
                     <small class="text-muted stat-mono">DNI/Doc: {{.NumeroDocumento}}</small>
                 </td>
                 <td><small>{{.PuestoNombre}}</small></td>
@@ -587,10 +603,17 @@
 
                 const tr = document.createElement('tr');
                 tr.id = `row-beneficiario-${id}`;
+                
+                let badgeJudicial = '';
+                if (w.tiene_retencion_judicial) {
+                    const porc = w.porcentaje_judicial ? ` (${w.porcentaje_judicial}%)` : '';
+                    badgeJudicial = `<span class="badge badge-warning font-xs ml-xs" data-tooltip="${w.detalle_retencion_judicial || 'Retención por Alimentos / Deuda'}">⚖️ Retención Judicial${porc}</span>`;
+                }
+
                 tr.innerHTML = `
                     <td><small>${idx++}</small></td>
                     <td>
-                        <strong>${w.nombre_completo}</strong><br>
+                        <strong>${w.nombre_completo}</strong>${badgeJudicial}<br>
                         <small class="text-muted stat-mono">DNI/Doc: ${w.numero_documento}</small>
                     </td>
                     <td>

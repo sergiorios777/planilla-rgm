@@ -425,7 +425,8 @@ func (r *DescuentoRepository) ObtenerDescuentosActivosPorTrabajadorMasivo(tenant
 			d.monto_total_deuda, d.monto_acumulado, d.cuotas_totales, d.cuota_actual,
 			d.inicio_vigencia, d.fin_vigencia, d.activo,
 			ct.nombre_personalizado AS concepto_nombre,
-			cm.codigo AS concepto_sunat
+			cm.codigo AS concepto_sunat,
+			cm.id AS concepto_maestro_id
 		FROM descuentos d
 		INNER JOIN conceptos_tenant ct ON d.concepto_tenant_id = ct.id
 		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
@@ -457,6 +458,7 @@ func (r *DescuentoRepository) ObtenerDescuentosActivosPorTrabajadorMasivo(tenant
 			&d.MontoTotalDeuda, &d.MontoAcumulado, &d.CuotasTotales, &d.CuotaActual,
 			&d.InicioVigencia, &finVig, &d.Activo,
 			&d.ConceptoNombre, &d.ConceptoCodigoSunat,
+			&d.ConceptoMaestroID,
 		)
 		if err != nil {
 			return nil, err

@@ -1117,8 +1117,13 @@ func (h *PlanillaHandler) ProcesarEspecial(w http.ResponseWriter, r *http.Reques
 
 	log.Println("Llegamos al final del parseo montos personalizados")
 
+	aplicarRetencionesJudiciales := (r.FormValue("aplicar_retenciones_judiciales") == "true" || r.FormValue("aplicar_retenciones_judiciales") == "on" || r.FormValue("aplicar_retenciones_judiciales") == "1")
+	if _, existe := r.Form["aplicar_retenciones_judiciales"]; !existe {
+		aplicarRetencionesJudiciales = true
+	}
+
 	// Ejecutar procesamiento en repositorio
-	err := h.Repo.ProcesarPlanillaEspecial(r.Context(), planillaID, tenantID, conceptosInput, contratosIDs, montosCustom)
+	err := h.Repo.ProcesarPlanillaEspecial(r.Context(), planillaID, tenantID, conceptosInput, contratosIDs, montosCustom, aplicarRetencionesJudiciales)
 	if err != nil {
 		log.Println("❌ ERROR EN ProcesarPlanillaEspecial:", err)
 		w.WriteHeader(http.StatusOK)
