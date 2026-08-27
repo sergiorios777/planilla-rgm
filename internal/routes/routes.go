@@ -358,6 +358,7 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	anexoRepo := repository.NewAnexoRepository(db)
 	tenantRepo = repository.NewTenantRepository(db)
 	anexoService := services.NewAnexoService(anexoRepo, planillaRepo, tenantRepo)
+	planillaService := services.NewPlanillaService(planillaRepo)
 
 	planillaHandler := handlers.PlanillaHandler{
 		Repo:               planillaRepo,
@@ -365,6 +366,7 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 		ConceptoTenantRepo: conceptoTenantRepo,
 		OrganigramaRepo:    organigramaRepo,
 		AnexoService:       anexoService,
+		Service:            planillaService,
 	}
 	mux.HandleFunc("/tenant/ui/planillas", middleware.RequireAuth(planillaHandler.VistaUI))
 	mux.HandleFunc("/tenant/planillas/lista", middleware.RequireAuth(planillaHandler.Listar))
@@ -372,7 +374,13 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/planillas/procesar", middleware.RequireAuth(planillaHandler.Procesar))
 	mux.HandleFunc("/tenant/planillas/especial/ui", middleware.RequireAuth(planillaHandler.VistaFormuladorEspecial))
 	mux.HandleFunc("/tenant/planillas/especial/trabajadores", middleware.RequireAuth(planillaHandler.BuscarTrabajadoresEspecial))
-	mux.HandleFunc("/tenant/planillas/especial/trabajadores-json", middleware.RequireAuth(planillaHandler.BuscarTrabajadoresEspecialJSON))
+	mux.HandleFunc("/tenant/planillas/especial/conceptos", middleware.RequireAuth(planillaHandler.AgregarConceptoEspecial))
+	mux.HandleFunc("/tenant/planillas/especial/conceptos/eliminar", middleware.RequireAuth(planillaHandler.QuitarConceptoEspecial))
+	mux.HandleFunc("/tenant/planillas/especial/beneficiarios/marcados", middleware.RequireAuth(planillaHandler.AgregarBeneficiariosMarcadosEspecial))
+	mux.HandleFunc("/tenant/planillas/especial/beneficiarios/filtro", middleware.RequireAuth(planillaHandler.AgregarBeneficiariosFiltroEspecial))
+	mux.HandleFunc("/tenant/planillas/especial/beneficiarios/eliminar", middleware.RequireAuth(planillaHandler.EliminarBeneficiarioEspecial))
+	mux.HandleFunc("/tenant/planillas/especial/beneficiarios/monto", middleware.RequireAuth(planillaHandler.ActualizarMontoBeneficiarioEspecial))
+	mux.HandleFunc("/tenant/planillas/especial/beneficiarios/limpiar", middleware.RequireAuth(planillaHandler.LimpiarBeneficiariosEspecial))
 	mux.HandleFunc("/tenant/planillas/especial/procesar", middleware.RequireAuth(planillaHandler.ProcesarEspecial))
 	mux.HandleFunc("/tenant/planillas/cerrar", middleware.RequireAuth(planillaHandler.CerrarPlanilla))
 	mux.HandleFunc("/tenant/planillas/eliminar", middleware.RequireAuth(planillaHandler.Eliminar))
@@ -425,7 +433,6 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/asistencia/actualizar", middleware.RequireAuth(asistenciaHandler.Actualizar))
 
 	// Rutas de presupuesto anual de las planillas
-	planillaService := services.NewPlanillaService(planillaRepo)
 	presupuestoRepo := repository.NewPresupuestoRepository(db)
 	presupuestoService := services.NewPresupuestoService(presupuestoRepo, puestoRepo, puestoConceptoRepo, planillaService)
 	presupuestoHandler := handlers.NewPresupuestoHandler(presupuestoService, planillaRepo)

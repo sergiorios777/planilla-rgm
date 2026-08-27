@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -30,7 +31,13 @@ func InitDB() (*sql.DB, error) {
 		return nil, fmt.Errorf("error al abrir la base de datos: %v", err)
 	}
 
-	// 4. Verificar que la conexión es exitosa
+	// 4. Configurar límites de pool para evitar conexiones zombis / timeouts
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(5 * time.Minute)
+	db.SetConnMaxIdleTime(2 * time.Minute)
+
+	// 5. Verificar que la conexión es exitosa
 	err = db.Ping()
 	if err != nil {
 		return nil, fmt.Errorf("error al conectar con la base de datos: %v", err)

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"log"
 	"math"
@@ -712,4 +713,63 @@ func (s *PlanillaService) resolverMetaYRubro(
 	}
 
 	return metaID, fuenteRubroID
+}
+
+// AgregarConceptoEspecial añade o actualiza un concepto en el borrador de planilla especial
+func (s *PlanillaService) AgregarConceptoEspecial(ctx context.Context, planillaID, tenantID, conceptoTenantID int, montoBase float64) error {
+	if montoBase < 0 {
+		return errors.New("el monto base no puede ser negativo")
+	}
+	return s.Repo.AgregarConceptoBorradorEspecial(ctx, planillaID, tenantID, conceptoTenantID, montoBase)
+}
+
+// QuitarConceptoEspecial retira un concepto del borrador especial y sus detalles
+func (s *PlanillaService) QuitarConceptoEspecial(ctx context.Context, planillaID, tenantID, conceptoTenantID int) error {
+	return s.Repo.QuitarConceptoBorradorEspecial(ctx, planillaID, tenantID, conceptoTenantID)
+}
+
+// AgregarBeneficiariosEspecialMarcados añade trabajadores seleccionados al borrador especial
+func (s *PlanillaService) AgregarBeneficiariosEspecialMarcados(ctx context.Context, planillaID, tenantID int, contratosIDs []int) (int, int, error) {
+	if len(contratosIDs) == 0 {
+		return 0, 0, errors.New("debe seleccionar al menos un trabajador")
+	}
+	return s.Repo.AgregarBeneficiariosBorrador(ctx, planillaID, tenantID, contratosIDs)
+}
+
+// AgregarBeneficiariosEspecialFiltro añade todos los trabajadores que coinciden con los filtros
+func (s *PlanillaService) AgregarBeneficiariosEspecialFiltro(ctx context.Context, planillaID, tenantID int, busqueda string, regimenID, metaID, unidadID int) (int, int, error) {
+	return s.Repo.AgregarBeneficiariosPorFiltroBorrador(ctx, planillaID, tenantID, busqueda, regimenID, metaID, unidadID)
+}
+
+// EliminarBeneficiarioEspecial quita a un trabajador del borrador especial
+func (s *PlanillaService) EliminarBeneficiarioEspecial(ctx context.Context, planillaID, tenantID, contratoID int) error {
+	return s.Repo.EliminarBeneficiarioBorrador(ctx, planillaID, tenantID, contratoID)
+}
+
+// ActualizarMontoBeneficiarioEspecial modifica el monto de un concepto para un trabajador
+func (s *PlanillaService) ActualizarMontoBeneficiarioEspecial(ctx context.Context, planillaID, tenantID, contratoID, conceptoTenantID int, nuevoMonto float64) (float64, float64, error) {
+	if nuevoMonto < 0 {
+		return 0, 0, errors.New("el monto no puede ser negativo")
+	}
+	return s.Repo.ActualizarMontoBeneficiarioBorrador(ctx, planillaID, tenantID, contratoID, conceptoTenantID, nuevoMonto)
+}
+
+// LimpiarBeneficiariosEspecial vacía la lista de trabajadores del borrador especial
+func (s *PlanillaService) LimpiarBeneficiariosEspecial(ctx context.Context, planillaID, tenantID int) error {
+	return s.Repo.LimpiarBeneficiariosBorrador(ctx, planillaID, tenantID)
+}
+
+// ObtenerFormulacionEspecial obtiene los conceptos, trabajadores y total presupuestal del borrador
+func (s *PlanillaService) ObtenerFormulacionEspecial(ctx context.Context, planillaID, tenantID int) ([]models.ConceptoFormulacionEspecial, []models.TrabajadorFormulacionEspecial, float64, error) {
+	conceptos, trabajadores, err := s.Repo.ObtenerFormulacionEspecial(planillaID, tenantID)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+
+	var totalPresupuesto float64
+	for _, t := range trabajadores {
+		totalPresupuesto += t.MontoTotal
+	}
+
+	return conceptos, trabajadores, totalPresupuesto, nil
 }

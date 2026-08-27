@@ -187,4 +187,66 @@ func TestProcesarPlanillaEspecial_ConRetencionesJudiciales(t *testing.T) {
 	if netoPagar != 500.00 {
 		t.Errorf("got neto_pagar = %v; want 500.00", netoPagar)
 	}
+
+	// CASO C: ObtenerFormulacionEspecial debe devolver los conceptos (solo ingresos) y trabajadores formulados
+	conceptosForm, trabsForm, errForm := repo.ObtenerFormulacionEspecial(planillaID, tenantID)
+	if errForm != nil {
+		t.Fatalf("Error en ObtenerFormulacionEspecial: %v", errForm)
+	}
+	if len(conceptosForm) != 1 {
+		t.Errorf("got %d conceptos; want 1", len(conceptosForm))
+	}
+	if len(trabsForm) != 1 {
+		t.Errorf("got %d trabajadores; want 1", len(trabsForm))
+	}
+	if len(trabsForm) > 0 {
+		if trabsForm[0].ContratoID != contratoID {
+			t.Errorf("got contratoID = %d; want %d", trabsForm[0].ContratoID, contratoID)
+		}
+		if !trabsForm[0].TieneRetencionJudicial {
+			t.Errorf("esperaba TieneRetencionJudicial = true")
+		}
+		if trabsForm[0].MontoRetencionJudicial <= 0 {
+			t.Errorf("esperaba MontoRetencionJudicial > 0, got %v", trabsForm[0].MontoRetencionJudicial)
+		}
+	}
+
+	// CASO D: AgregarBeneficiariosBorrador debe funcionar sin 'driver: bad connection'
+	var trabajador2ID, contrato2ID int
+	doc2 := fmt.Sprintf("%08d", (time.Now().UnixNano()+100)%100000000)
+	_ = db.QueryRow(`
+		INSERT INTO trabajadores (tenant_id, numero_documento, nombres, apellido_paterno, apellido_materno, activo)
+		VALUES ($1, $2, 'Maria', 'Lopez', 'Diaz', true) RETURNING id
+	`, tenantID, doc2).Scan(&trabajador2ID)
+	_ = db.QueryRow(`
+		INSERT INTO contratos (tenant_id, trabajador_id, puesto_id, fecha_inicio, activo)
+		VALUES ($1, $2, $3, '2026-01-01', true) RETURNING id
+	`, tenantID, trabajador2ID, puestoID).Scan(&contrato2ID)
+
+	agregados, omitidos, errAdd := repo.AgregarBeneficiariosBorrador(ctx, planillaID, tenantID, []int{contrato2ID})
+	if errAdd != nil {
+		t.Fatalf("Error en AgregarBeneficiariosBorrador: %v", errAdd)
+	}
+	if agregados != 1 {
+		t.Errorf("got agregados = %d; want 1 (omitidos=%d)", agregados, omitidos)
+	}
+
+	// Verificar que ahora hay 2 trabajadores y que el segundo no tiene retención judicial
+	_, trabsForm2, errForm2 := repo.ObtenerFormulacionEspecial(planillaID, tenantID)
+	if errForm2 != nil {
+		t.Fatalf("Error en ObtenerFormulacionEspecial (2): %v", errForm2)
+	}
+	if len(trabsForm2) != 2 {
+		t.Errorf("got %d trabajadores; want 2", len(trabsForm2))
+	}
+	for _, tr := range trabsForm2 {
+		if tr.ContratoID == contrato2ID {
+			if tr.TieneRetencionJudicial {
+				t.Errorf("el trabajador 2 no debería tener retención judicial")
+			}
+			if tr.MontoRetencionJudicial != 0 {
+				t.Errorf("el trabajador 2 debería tener MontoRetencionJudicial = 0, got %v", tr.MontoRetencionJudicial)
+			}
+		}
+	}
 }

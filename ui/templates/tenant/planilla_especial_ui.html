@@ -13,13 +13,18 @@
             </small>
         </div>
         <div class="flex-gap-sm flex-items-center">
-            <mark class="badge badge-purple p-sm font-bold">⭐ EXTRAORDINARIA</mark>
+            <mark class="badge badge-purple p-sm font-bold flex-inline flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-estrella"></use>
+                </svg>
+                EXTRAORDINARIA
+            </mark>
             <mark class="badge badge-warning p-sm font-bold">Borrador</mark>
         </div>
     </header>
 
     <!-- Toolbar superior de acciones -->
-    <div class="flex-row-start mb-lg">
+    <div class="flex-row-start mb-md">
         <button class="outline secondary btn-compact font-sm mb-0 flex-inline flex-items-center flex-gap-xs"
             hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
             <svg class="icono-menu">
@@ -30,19 +35,26 @@
 
     <div id="alerta-especial"></div>
 
+    <!-- KPIs Bento Grid (Regla de diseño §5.3) -->
+    <div id="contenedor-kpis-especial" class="grid grid-auto-fit-200 gap-md mb-lg">
+        {{template "contenido_kpis_especial" .}}
+    </div>
+
     <form id="form-procesar-especial" hx-post="/tenant/planillas/especial/procesar" hx-target="#contenido-tenant">
         <input type="hidden" name="planilla_id" value="{{.Planilla.ID}}">
 
         <!-- Bloque 1: Configuración de Conceptos y Montos con Buscador TomSelect -->
         <fieldset class="card-section">
             <legend><strong>1. Selección de Conceptos y Montos a Otorgar</strong></legend>
-            <p><small>Busca y añade los conceptos de la municipalidad que se otorgarán en esta planilla e ingresa el
-                    monto fijo base para cada uno.</small></p>
+            <p><small>Busca y añade los conceptos de ingreso de la municipalidad (bonos o asignaciones) que se otorgarán en esta planilla e ingresa el monto base.</small></p>
 
             <div class="mb-md p-xs bg-card-kpi border-radius border-light">
                 <label class="flex-inline flex-items-center mb-0 font-sm cursor-pointer flex-gap-sm">
                     <input type="checkbox" name="aplicar_retenciones_judiciales" value="true" role="switch" checked>
-                    <span><strong>⚖️ Aplicar Retenciones Judiciales Vigentes (% Alimentos / Sentencias)</strong></span>
+                    <svg class="icono-menu text-warning">
+                        <use href="#icono-balanza"></use>
+                    </svg>
+                    <span><strong>Aplicar Retenciones Judiciales Vigentes (% Alimentos / Sentencias)</strong></span>
                 </label>
                 <small class="text-muted block font-xs mt-xs">
                     Si está activo, el sistema deducirá automáticamente el porcentaje ordenado judicialmente a los
@@ -50,92 +62,24 @@
                 </small>
             </div>
 
-            <!-- Selector TomSelect -->
+            <!-- Selector TomSelect (Solo conceptos de ingreso) -->
             <div class="mb-md">
                 <select id="select-agregar-concepto" class="select-con-buscador" data-custom-tomselect="true"
-                    placeholder="🔍 Buscar y agregar un concepto a la planilla especial...">
-                    <option value="">🔍 Buscar y agregar un concepto a la planilla especial...</option>
+                    placeholder="Buscar y agregar un concepto a la planilla especial...">
+                    <option value="">Buscar y agregar un concepto a la planilla especial...</option>
                     {{range .ConceptosTenant}}
-                    <option value="{{.ID}}" data-nombre="{{.NombrePersonalizado}}" data-codigo="{{.ConceptoCodigo}}"
-                        data-clasificador="{{if .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}}"
-                        data-ocasional="{{if .EsOcasional}}1{{else}}0{{end}}"
-                        data-extraordinario="{{if .EsExtraordinario}}1{{else}}0{{end}}"
-                        data-pensionable="{{if .EsPensionable}}1{{else}}0{{end}}"
-                        data-remunerativa="{{if .EsRemunerativa}}1{{else}}0{{end}}">
-                        [{{.ConceptoCodigo}}] {{.NombrePersonalizado}} (Clasificador: {{if
-                        .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}})
+                    {{if or (eq .ConceptoTipo "INGRESO") (eq .ConceptoTipo "")}}
+                    <option value="{{.ID}}" data-nombre="{{.NombrePersonalizado}}" data-codigo="{{.ConceptoCodigo}}">
+                        [{{.ConceptoCodigo}}] {{.NombrePersonalizado}} (Clasificador: {{if .ClasificadorCodigo}}{{.ClasificadorCodigo}}{{else}}N/A{{end}})
                     </option>
+                    {{end}}
                     {{end}}
                 </select>
             </div>
 
-            <!-- Tabla de Conceptos Seleccionados -->
-            <div class="overflow-x-auto">
-                <table class="striped condensed mb-0">
-                    <thead>
-                        <tr>
-                            <th>Concepto Local (Boleta)</th>
-                            <th>Frecuencia / Atributos</th>
-                            <th class="w-200 text-right">Monto Base (S/)</th>
-                            <th class="w-60 text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-conceptos-seleccionados">
-                        <tr id="row-sin-conceptos" {{if .FormulacionConceptos}}class="d-none" {{end}}>
-                            <td colspan="4" class="text-center text-muted">
-                                <small>No se ha agregado ningún concepto aún. Utiliza el buscador superior para
-                                    seleccionar un concepto.</small>
-                            </td>
-                        </tr>
-                        {{range .FormulacionConceptos}}
-                        <tr id="row-concepto-{{.ID}}">
-                            <td>
-                                <input type="hidden" name="conceptos_ids" value="{{.ID}}">
-                                <strong>{{.NombrePersonalizado}}</strong><br>
-                                <small class="text-muted stat-mono">SUNAT: {{.CodigoSunat}} | Clasificador:
-                                    {{.ClasificadorCodigo}}</small>
-                            </td>
-                            <td>
-                                <div class="flex-gap-xs flex-wrap">
-                                    {{if eq .ModalidadEntrega "PERMANENTE"}}<mark
-                                        class="badge badge-info font-xs font-bold">PERMANENTE</mark>
-                                    {{else if eq .ModalidadEntrega "PERIODICO"}}<mark
-                                        class="badge badge-warning font-xs font-bold">PERIÓDICO</mark>
-                                    {{else if eq .ModalidadEntrega "EXCEPCIONAL"}}<mark
-                                        class="badge badge-purple font-xs font-bold">EXCEPCIONAL</mark>
-                                    {{else if eq .ModalidadEntrega "OCASIONAL"}}<mark
-                                        class="badge badge-gray font-xs font-bold">OCASIONAL</mark>
-                                    {{else if .EsOcasional}}<mark
-                                        class="badge badge-gray font-xs font-bold">OCASIONAL</mark>{{end}}
-                                    {{if and .EsExtraordinario (ne .ModalidadEntrega "EXCEPCIONAL")}}<mark
-                                        class="badge badge-purple font-xs font-bold">EXTRAORDINARIO</mark>{{end}}
-                                    {{if .EsPensionable}}<mark
-                                        class="badge badge-success font-xs font-bold">PENSIONABLE</mark>{{end}}
-                                    {{if .EsRemunerativa}}<mark
-                                        class="badge badge-info font-xs font-bold">REMUNERATIVO</mark>{{end}}
-                                </div>
-                            </td>
-                            <td>
-                                <input type="number" step="0.01" min="0.01" name="monto_{{.ID}}" value="{{printf " %.2f"
-                                    .MontoBase}}" placeholder="0.00" required
-                                    class="mb-0 p-sm text-right stat-mono font-bold"
-                                    oninput="gestorBeneficiarios.renderizarTablaFinal()">
-                            </td>
-                            <td>
-                                <div class="flex-row-end">
-                                    <button type="button" class="btn-icon btn-danger-icon"
-                                        data-tooltip="Quitar concepto" aria-label="Quitar"
-                                        onclick="quitarConceptoDeFormulario('{{.ID}}')">
-                                        <svg class="icono-menu">
-                                            <use href="#icono-trash"></use>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {{end}}
-                    </tbody>
-                </table>
+            <!-- Tabla de Conceptos Seleccionados en contenedor de bloque para OOB swap limpio -->
+            <div id="contenedor-conceptos-tabla" class="overflow-x-auto">
+                {{template "tabla_conceptos_especial" .}}
             </div>
         </fieldset>
 
@@ -144,25 +88,26 @@
             <legend><strong>2. Población Beneficiaria Acumulada</strong></legend>
 
             <div class="flex-row-between flex-items-center flex-wrap flex-gap-md mb-md">
-                <div class="flex-gap-md flex-items-center flex-wrap">
-                    <mark class="badge badge-success p-sm font-bold">
-                        👥 Beneficiarios: <span id="resumen-total-trabajadores" class="stat-mono">0</span> trabajadores
-                    </mark>
-                    <mark class="badge badge-info p-sm font-bold">
-                        💰 Presupuesto Estimado: S/ <span id="resumen-total-monto" class="stat-mono">0.00</span>
-                    </mark>
-                </div>
+                <p class="mb-0 text-muted font-sm">
+                    Los trabajadores agregados se guardan automáticamente en este borrador de planilla.
+                </p>
 
                 <div class="flex-gap-sm">
                     <button type="button"
-                        class="outline contrast btn-compact font-sm flex-inline flex-items-center flex-gap-xs"
-                        onclick="gestorBeneficiarios.limpiarTodos()">
+                        class="outline contrast btn-compact font-sm flex-inline flex-items-center flex-gap-xs mb-0"
+                        hx-post="/tenant/planillas/especial/beneficiarios/limpiar"
+                        hx-vals='{"planilla_id": {{.Planilla.ID}}}'
+                        hx-target="#alerta-especial"
+                        data-confirm-title="Limpiar Beneficiarios"
+                        data-confirm-message="¿Estás seguro de quitar a todos los trabajadores de esta planilla especial? Esta acción limpiará la lista del borrador."
+                        data-confirm-badge="Advertencia"
+                        data-confirm-btn="Sí, Limpiar Lista">
                         <svg class="icono-menu">
                             <use href="#icono-cleaning-services"></use>
                         </svg> Limpiar Lista
                     </button>
-                    <button type="button" class="primary btn-compact font-sm flex-inline flex-items-center flex-gap-xs"
-                        onclick="abrirModalAgregarPoblacion()">
+                    <button type="button" class="primary btn-compact font-sm flex-inline flex-items-center flex-gap-xs mb-0"
+                        onclick="document.getElementById('modal-agregar-poblacion').showModal()">
                         <svg class="icono-menu">
                             <use href="#icono-plus"></use>
                         </svg> Agregar Trabajadores o Grupos
@@ -170,34 +115,9 @@
                 </div>
             </div>
 
-            <!-- Contenedor dinámico de inputs ocultos que se envían con el formulario -->
-            <div id="contenedor-contratos-seleccionados-hidden"></div>
-
-            <!-- Bloque 3: Tabla Principal de Beneficiarios Afectados Finales -->
-            <div class="overflow-x-auto">
-                <table class="striped condensed mb-0">
-                    <thead>
-                        <tr>
-                            <th class="w-50">#</th>
-                            <th>Documento y Nombres Completos</th>
-                            <th>Plaza / Puesto y Unidad Orgánica</th>
-                            <th>Régimen</th>
-                            <th>Meta Presupuestal</th>
-                            <th>Conceptos Otorgados</th>
-                            <th class="w-150 text-right">Monto (S/)</th>
-                            <th class="w-60 text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-beneficiarios-finales">
-                        <tr id="row-sin-beneficiarios">
-                            <td colspan="8" class="text-center text-muted p-md">
-                                <small>No hay trabajadores agregados a la planilla especial aún.<br>Haz clic en el botón
-                                    <strong>"Agregar Trabajadores o Grupos"</strong> para buscar e incluir
-                                    poblaciones.</small>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Tabla Principal de Beneficiarios en contenedor de bloque para OOB swap limpio -->
+            <div id="contenedor-beneficiarios-tabla" class="overflow-x-auto">
+                {{template "tabla_beneficiarios_especial" .}}
             </div>
         </fieldset>
 
@@ -222,15 +142,14 @@
         <header class="flex-row-between flex-items-center">
             <div>
                 <h4 class="mb-0">Buscador e Inclusión Aditiva de Población</h4>
-                <small class="text-muted">Filtra por criterio y añade trabajadores individualmente
-                    o por subgrupos sin borrar selecciones previas.</small>
+                <small class="text-muted">Filtra por criterio y añade trabajadores individualmente o por subgrupos sin borrar selecciones previas.</small>
             </div>
-            <button aria-label="Close" rel="prev" class="close mb-0" onclick="cerrarModalAgregarPoblacion()"></button>
+            <button aria-label="Close" rel="prev" class="close mb-0" onclick="document.getElementById('modal-agregar-poblacion').close()"></button>
         </header>
 
         <div class="overflow-y-auto pr-sm flex-1">
             <!-- Notificación de inclusión en modal -->
-            <div id="alerta-modal-adicion" class="d-none mb-md"></div>
+            <div id="alerta-modal-adicion" class="mb-md"></div>
 
             <!-- Filtros del Modal -->
             <div id="form-filtros-especial" class="grid mb-md">
@@ -283,7 +202,7 @@
             <!-- Botones de Acción del Modal -->
             <div class="flex-row-between flex-items-center mb-md flex-wrap flex-gap-sm">
                 <button type="button" class="outline secondary btn-badge flex-inline flex-items-center flex-gap-xs"
-                    onclick="limpiarFiltrosEspecial()">
+                    onclick="limpiarFiltrosModal()">
                     <svg class="icono-menu">
                         <use href="#icono-trash"></use>
                     </svg> Limpiar Filtros
@@ -291,14 +210,20 @@
 
                 <div class="flex-gap-sm flex-wrap">
                     <button type="button" class="outline primary btn-compact flex-inline flex-items-center flex-gap-xs"
-                        onclick="agregarVisiblesModal()">
+                        hx-post="/tenant/planillas/especial/beneficiarios/marcados"
+                        hx-include="#form-modal-trabajadores input[name='contratos_ids']:checked"
+                        hx-vals='{"planilla_id": {{.Planilla.ID}}}'
+                        hx-target="#alerta-modal-adicion">
                         <svg class="icono-menu">
                             <use href="#icono-plus"></use>
                         </svg> Agregar Marcados en Vista
                     </button>
                     <button type="button"
                         class="primary btn-success-fill btn-compact flex-inline flex-items-center flex-gap-xs"
-                        onclick="agregarTodosLosFiltradosMasivo()">
+                        hx-post="/tenant/planillas/especial/beneficiarios/filtro"
+                        hx-include="#form-filtros-especial input, #form-filtros-especial select"
+                        hx-vals='{"planilla_id": {{.Planilla.ID}}}'
+                        hx-target="#alerta-modal-adicion">
                         <svg class="icono-menu">
                             <use href="#icono-objetivo"></use>
                         </svg> Agregar TODOS los trabajadores de este Filtro
@@ -313,470 +238,359 @@
         </div>
 
         <footer>
-            <button type="button" class="secondary btn-compact" onclick="cerrarModalAgregarPoblacion()">
+            <button type="button" class="secondary btn-compact" onclick="document.getElementById('modal-agregar-poblacion').close()">
                 Cerrar Buscador
             </button>
         </footer>
     </article>
 </dialog>
 
+<!-- ========================================================================= -->
+<!-- DEFINICIONES DE FRAGMENTOS HTMX MODULARES (SERVER-DRIVEN UI)               -->
+<!-- ========================================================================= -->
+
+{{define "contenido_kpis_especial"}}
+<article class="p-sm mb-0">
+    <small class="text-muted flex-inline flex-items-center flex-gap-xs">
+        <svg class="icono-menu">
+            <use href="#icono-usuarios"></use>
+        </svg>
+        Total Beneficiarios
+    </small>
+    <h4 class="mb-0 stat-mono"><span id="resumen-total-trabajadores">{{.TotalBeneficiarios}}</span> trabajadores</h4>
+</article>
+<article class="p-sm mb-0">
+    <small class="text-muted flex-inline flex-items-center flex-gap-xs">
+        <svg class="icono-menu">
+            <use href="#icono-banknotes"></use>
+        </svg>
+        Presupuesto Estimado
+    </small>
+    <h4 class="mb-0 text-success stat-mono">S/ <span id="resumen-total-monto">{{printf "%.2f" .PresupuestoEstimado}}</span></h4>
+</article>
+{{end}}
+
+{{define "oob_kpis_especial"}}
+<div id="contenedor-kpis-especial" class="grid grid-auto-fit-200 gap-md mb-lg" hx-swap-oob="true">
+    {{template "contenido_kpis_especial" .}}
+</div>
+{{end}}
+
+{{define "tabla_conceptos_especial"}}
+<table class="striped condensed mb-0">
+    <thead>
+        <tr>
+            <th>Concepto Local (Boleta)</th>
+            <th>Frecuencia / Atributos</th>
+            <th class="w-200 text-right">Monto Base (S/)</th>
+            <th class="w-60 text-right">Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="tbody-conceptos-seleccionados">
+        {{template "filas_conceptos_especial" .}}
+    </tbody>
+</table>
+{{end}}
+
+{{define "oob_contenedor_conceptos"}}
+<div id="contenedor-conceptos-tabla" class="overflow-x-auto" hx-swap-oob="true">
+    {{template "tabla_conceptos_especial" .}}
+</div>
+{{end}}
+
+{{define "filas_conceptos_especial"}}
+{{range .FormulacionConceptos}}
+<tr id="row-concepto-{{.ID}}">
+    <td>
+        <input type="hidden" name="conceptos_ids" value="{{.ID}}">
+        <strong>{{.NombrePersonalizado}}</strong><br>
+        <small class="text-muted stat-mono">SUNAT: {{.CodigoSunat}} | Clasificador: {{.ClasificadorCodigo}}</small>
+    </td>
+    <td>
+        <div class="flex-gap-xs flex-wrap">
+            {{if eq .ModalidadEntrega "PERMANENTE"}}<mark class="badge badge-info font-xs font-bold">PERMANENTE</mark>
+            {{else if eq .ModalidadEntrega "PERIODICO"}}<mark class="badge badge-warning font-xs font-bold">PERIÓDICO</mark>
+            {{else if eq .ModalidadEntrega "EXCEPCIONAL"}}<mark class="badge badge-purple font-xs font-bold">EXCEPCIONAL</mark>
+            {{else if eq .ModalidadEntrega "OCASIONAL"}}<mark class="badge badge-gray font-xs font-bold">OCASIONAL</mark>
+            {{else if .EsOcasional}}<mark class="badge badge-gray font-xs font-bold">OCASIONAL</mark>{{end}}
+            {{if and .EsExtraordinario (ne .ModalidadEntrega "EXCEPCIONAL")}}<mark class="badge badge-purple font-xs font-bold">EXTRAORDINARIO</mark>{{end}}
+            {{if .EsPensionable}}<mark class="badge badge-success font-xs font-bold">PENSIONABLE</mark>{{end}}
+            {{if .EsRemunerativa}}<mark class="badge badge-info font-xs font-bold">REMUNERATIVO</mark>{{end}}
+        </div>
+    </td>
+    <td>
+        <input type="number" step="0.01" min="0.01" name="monto_base" value="{{printf "%.2f" .MontoBase}}"
+            placeholder="0.00" required class="mb-0 p-sm text-right stat-mono font-bold"
+            hx-post="/tenant/planillas/especial/conceptos"
+            hx-vals='{"planilla_id": {{$.Planilla.ID}}, "concepto_tenant_id": {{.ID}}}'
+            hx-trigger="change, keyup delay:600ms changed"
+            hx-target="#alerta-especial">
+    </td>
+    <td>
+        <div class="flex-row-end">
+            <button type="button" class="btn-icon btn-danger-icon" data-tooltip="Quitar concepto" aria-label="Quitar"
+                hx-post="/tenant/planillas/especial/conceptos/eliminar"
+                hx-vals='{"planilla_id": {{$.Planilla.ID}}, "concepto_tenant_id": {{.ID}}}'
+                hx-target="#alerta-especial">
+                <svg class="icono-menu">
+                    <use href="#icono-trash"></use>
+                </svg>
+            </button>
+        </div>
+    </td>
+</tr>
+{{else}}
+<tr id="row-sin-conceptos">
+    <td colspan="4" class="text-center text-muted p-md">
+        <small>No se ha agregado ningún concepto aún. Utiliza el buscador superior para seleccionar un concepto.</small>
+    </td>
+</tr>
+{{end}}
+{{end}}
+
+{{define "tabla_beneficiarios_especial"}}
+<table class="striped condensed mb-0">
+    <thead>
+        <tr>
+            <th class="w-50">#</th>
+            <th>Documento y Nombres Completos</th>
+            <th>Plaza / Puesto y Unidad Orgánica</th>
+            <th>Régimen</th>
+            <th>Meta Presupuestal</th>
+            <th>Conceptos Otorgados</th>
+            <th class="w-180 text-right">Monto (S/)</th>
+            <th class="w-60 text-right">Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="tbody-beneficiarios-finales">
+        {{template "filas_beneficiarios_especial" .}}
+    </tbody>
+</table>
+{{end}}
+
+{{define "oob_contenedor_beneficiarios"}}
+<div id="contenedor-beneficiarios-tabla" class="overflow-x-auto" hx-swap-oob="true">
+    {{template "tabla_beneficiarios_especial" .}}
+</div>
+{{end}}
+
+{{define "filas_beneficiarios_especial"}}
+{{$planillaID := .Planilla.ID}}
+{{$conceptos := .FormulacionConceptos}}
+{{range $idx, $trab := .Beneficiarios}}
+<tr id="row-beneficiario-{{$trab.ContratoID}}">
+    <td><small class="stat-mono">{{inc $idx}}</small></td>
+    <td>
+        <strong>{{$trab.NombreCompleto}}</strong>
+        {{if $trab.TieneRetencionJudicial}}
+        <span class="badge badge-warning font-xs ml-xs flex-inline flex-items-center flex-gap-xs"
+            data-tooltip="{{if $trab.DetalleRetencionJudicial}}{{$trab.DetalleRetencionJudicial}}{{else}}Retención por Alimentos / Mandato Judicial{{end}}">
+            <svg class="icono-menu">
+                <use href="#icono-balanza"></use>
+            </svg>
+            Retención Judicial {{if gt $trab.PorcentajeJudicial 0.0}}({{$trab.PorcentajeJudicial}}%){{end}}
+        </span>
+        {{end}}
+        <br>
+        <small class="text-muted stat-mono">DNI/Doc: {{$trab.NumeroDocumento}}</small>
+    </td>
+    <td>
+        <strong>{{$trab.PuestoNombre}}</strong><br>
+        <small class="text-muted">{{if $trab.UnidadOrganicaNombre}}{{$trab.UnidadOrganicaNombre}}{{else}}Sin Unidad Orgánica{{end}}</small>
+    </td>
+    <td><small>{{$trab.RegimenNombre}}</small></td>
+    <td><small class="stat-mono">{{if $trab.MetaCodigo}}[{{$trab.MetaCodigo}}] {{$trab.MetaDescripcion}}{{else}}Default del Puesto{{end}}</small></td>
+    <td>
+        {{if eq (len $conceptos) 0}}
+            <small class="text-muted">Sin conceptos</small>
+        {{else if eq (len $conceptos) 1}}
+            {{$c := index $conceptos 0}}
+            <mark class="badge badge-purple font-xs inline-block">
+                {{$c.NombrePersonalizado}}
+            </mark>
+        {{else}}
+            <div class="flex-column gap-xs">
+                {{range $c := $conceptos}}
+                {{$montoC := index $trab.MontosCustom (printf "%d" $c.ID)}}
+                <div class="concepto-box p-xs flex-row-between flex-items-center">
+                    <span class="font-xs font-bold text-purple">{{$c.NombrePersonalizado}}</span>
+                    <div class="flex-items-center flex-gap-xs">
+                        <span class="font-xs text-muted">S/</span>
+                        <input type="number" step="0.01" min="0" 
+                            value="{{if $montoC}}{{printf "%.2f" $montoC}}{{else}}{{printf "%.2f" $c.MontoBase}}{{end}}"
+                            class="mb-0 p-xs font-xs text-right stat-mono w-90"
+                            hx-post="/tenant/planillas/especial/beneficiarios/monto"
+                            hx-vals='{"planilla_id": {{$planillaID}}, "contrato_id": {{$trab.ContratoID}}, "concepto_tenant_id": {{$c.ID}}}'
+                            hx-trigger="change, keyup delay:600ms changed"
+                            hx-target="#monto-total-worker-{{$trab.ContratoID}}"
+                            hx-swap="outerHTML">
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        {{end}}
+    </td>
+    <td class="text-right">
+        {{if eq (len $conceptos) 1}}
+            {{$c := index $conceptos 0}}
+            {{$montoC := index $trab.MontosCustom (printf "%d" $c.ID)}}
+            <input type="number" step="0.01" min="0" 
+                value="{{if $montoC}}{{printf "%.2f" $montoC}}{{else}}{{printf "%.2f" $c.MontoBase}}{{end}}"
+                class="mb-0 p-xs text-right stat-mono font-bold w-120"
+                hx-post="/tenant/planillas/especial/beneficiarios/monto"
+                hx-vals='{"planilla_id": {{$planillaID}}, "contrato_id": {{$trab.ContratoID}}, "concepto_tenant_id": {{$c.ID}}}'
+                hx-trigger="change, keyup delay:600ms changed"
+                hx-target="#monto-total-worker-{{$trab.ContratoID}}"
+                hx-swap="outerHTML">
+            <span id="monto-total-worker-{{$trab.ContratoID}}" class="d-none"></span>
+        {{else}}
+            <strong id="monto-total-worker-{{$trab.ContratoID}}" class="text-success font-md stat-mono">S/ {{printf "%.2f" $trab.MontoTotal}}</strong>
+        {{end}}
+
+        {{if $trab.TieneRetencionJudicial}}
+        <div class="mt-xs font-xs text-muted">
+            <span class="text-warning">Ret. Judicial: -S/ {{printf "%.2f" $trab.MontoRetencionJudicial}}</span><br>
+            <strong>Neto Estimado: S/ {{printf "%.2f" $trab.MontoNetoEstimado}}</strong>
+        </div>
+        {{end}}
+    </td>
+    <td class="text-right">
+        <div class="flex-row-end">
+            <button type="button" class="btn-icon btn-danger-icon" data-tooltip="Quitar beneficiario" aria-label="Quitar"
+                hx-post="/tenant/planillas/especial/beneficiarios/eliminar"
+                hx-vals='{"planilla_id": {{$planillaID}}, "contrato_id": {{$trab.ContratoID}}}'
+                hx-target="#alerta-especial">
+                <svg class="icono-menu">
+                    <use href="#icono-trash"></use>
+                </svg>
+            </button>
+        </div>
+    </td>
+</tr>
+{{else}}
+<tr id="row-sin-beneficiarios">
+    <td colspan="8" class="text-center text-muted p-md">
+        <small>No hay trabajadores agregados a la planilla especial aún.<br>Haz clic en el botón
+            <strong>"Agregar Trabajadores o Grupos"</strong> para buscar e incluir poblaciones.</small>
+    </td>
+</tr>
+{{end}}
+{{end}}
+
 {{define "tabla_trabajadores_modal"}}
 <div class="flex-row-between flex-items-center mb-sm flex-wrap flex-gap-sm">
     <div class="flex-gap-sm flex-items-center">
-        <button type="button" class="outline secondary btn-badge" onclick="marcarTodosModalVisibles(true)">
-            ✅ Marcar Visibles
+        <button type="button" class="outline secondary btn-badge flex-inline flex-items-center flex-gap-xs"
+            onclick="marcarTodosModalVisibles(true)">
+            <svg class="icono-menu text-success">
+                <use href="#icono-check-box"></use>
+            </svg>
+            Marcar Visibles
         </button>
-        <button type="button" class="outline secondary btn-badge" onclick="marcarTodosModalVisibles(false)">
-            ❌ Desmarcar Visibles
+        <button type="button" class="outline secondary btn-badge flex-inline flex-items-center flex-gap-xs"
+            onclick="marcarTodosModalVisibles(false)">
+            <svg class="icono-menu text-danger">
+                <use href="#icono-disabled-by-default"></use>
+            </svg>
+            Desmarcar Visibles
         </button>
     </div>
     <small>Total Coincidentes: <strong class="stat-mono">{{.TotalRegistros}}</strong> trabajadores</small>
 </div>
 
-<div class="overflow-x-auto">
-    <table class="striped condensed mb-0">
-        <thead>
-            <tr>
-                <th class="w-50">
-                    <input type="checkbox" onchange="marcarTodosModalVisibles(this.checked)">
-                </th>
-                <th>Documento y Apellidos, Nombres</th>
-                <th>Plaza / Puesto</th>
-                <th>Régimen</th>
-                <th>Meta Presupuestal</th>
-                <th>Unidad Orgánica</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .Trabajadores}}
-            <tr>
-                <td>
-                    <input type="checkbox" value="{{.ContratoID}}" class="chk-modal-trabajador"
-                        data-item='{"contrato_id": {{.ContratoID}}, "trabajador_id": {{.TrabajadorID}}, "numero_documento": "{{.NumeroDocumento}}", "nombre_completo": "{{.NombreCompleto}}", "puesto_nombre": "{{.PuestoNombre}}", "regimen_nombre": "{{.RegimenNombre}}", "meta_codigo": "{{.MetaCodigo}}", "meta_descripcion": "{{.MetaDescripcion}}", "unidad_organica_nombre": "{{.UnidadOrganicaNombre}}", "tiene_retencion_judicial": {{.TieneRetencionJudicial}}, "porcentaje_judicial": {{.PorcentajeJudicial}}, "detalle_retencion_judicial": "{{.DetalleRetencionJudicial}}"}'>
-                </td>
-                <td>
-                    <strong>{{.NombreCompleto}}</strong>
-                    {{if .TieneRetencionJudicial}}
-                    <span class="badge badge-warning font-xs ml-xs"
-                        data-tooltip="{{if .DetalleRetencionJudicial}}{{.DetalleRetencionJudicial}}{{else}}Retención por Alimentos / Deuda{{end}}">
-                        ⚖️ Retención Judicial {{if gt .PorcentajeJudicial 0.0}}({{.PorcentajeJudicial}}%){{end}}
-                    </span>
-                    {{end}}
-                    <br>
-                    <small class="text-muted stat-mono">DNI/Doc: {{.NumeroDocumento}}</small>
-                </td>
-                <td><small>{{.PuestoNombre}}</small></td>
-                <td><small>{{.RegimenNombre}}</small></td>
-                <td><small class="stat-mono">{{if .MetaCodigo}}[{{.MetaCodigo}}] {{.MetaDescripcion}}{{else}}Default del
-                        Puesto{{end}}</small></td>
-                <td><small>{{if .UnidadOrganicaNombre}}{{.UnidadOrganicaNombre}}{{else}}Sin Asignar{{end}}</small></td>
-            </tr>
-            {{else}}
-            <tr>
-                <td colspan="6" class="text-center">No se encontraron trabajadores que coincidan con los filtros
-                    seleccionados.</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
-</div>
-
-<!-- Controles de paginación HTMX del Modal -->
-<div class="flex-row-between flex-items-center mt-md">
-    <small>Página {{.PaginaActual}} de {{.TotalPaginas}}</small>
-    <div role="group">
-        {{if gt .PaginaAnterior 0}}
-        <button type="button" class="outline btn-badge" hx-get="/tenant/planillas/especial/trabajadores"
-            hx-include="#form-filtros-especial input, #form-filtros-especial select"
-            hx-vals='{"pagina": {{.PaginaAnterior}}}' hx-target="#contenedor-trabajadores-modal">
-            ← Anterior
-        </button>
-        {{end}}
-
-        {{if lt .PaginaActual .TotalPaginas}}
-        <button type="button" class="outline btn-badge" hx-get="/tenant/planillas/especial/trabajadores"
-            hx-include="#form-filtros-especial input, #form-filtros-especial select"
-            hx-vals='{"pagina": {{.PaginaSiguiente}}}' hx-target="#contenedor-trabajadores-modal">
-            Siguiente →
-        </button>
-        {{end}}
+<form id="form-modal-trabajadores">
+    <div class="overflow-x-auto">
+        <table class="striped condensed mb-0">
+            <thead>
+                <tr>
+                    <th class="w-50">
+                        <input type="checkbox" onchange="marcarTodosModalVisibles(this.checked)">
+                    </th>
+                    <th>Documento y Apellidos, Nombres</th>
+                    <th>Plaza / Puesto</th>
+                    <th>Régimen</th>
+                    <th>Meta Presupuestal</th>
+                    <th>Unidad Orgánica</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-trabajadores-modal">
+                {{range .Trabajadores}}
+                <tr>
+                    <td>
+                        <input type="checkbox" name="contratos_ids" value="{{.ContratoID}}" class="chk-modal-trabajador">
+                    </td>
+                    <td>
+                        <strong>{{.NombreCompleto}}</strong>
+                        {{if .TieneRetencionJudicial}}
+                        <span class="badge badge-warning font-xs ml-xs flex-inline flex-items-center flex-gap-xs"
+                            data-tooltip="{{if .DetalleRetencionJudicial}}{{.DetalleRetencionJudicial}}{{else}}Retención por Alimentos / Deuda{{end}}">
+                            <svg class="icono-menu">
+                                <use href="#icono-balanza"></use>
+                            </svg>
+                            Retención Judicial {{if gt .PorcentajeJudicial 0.0}}({{.PorcentajeJudicial}}%){{end}}
+                        </span>
+                        {{end}}
+                        <br>
+                        <small class="text-muted stat-mono">DNI/Doc: {{.NumeroDocumento}}</small>
+                    </td>
+                    <td><small>{{.PuestoNombre}}</small></td>
+                    <td><small>{{.RegimenNombre}}</small></td>
+                    <td><small class="stat-mono">{{if .MetaCodigo}}[{{.MetaCodigo}}] {{.MetaDescripcion}}{{else}}Default del Puesto{{end}}</small></td>
+                    <td><small>{{if .UnidadOrganicaNombre}}{{.UnidadOrganicaNombre}}{{else}}Sin Asignar{{end}}</small></td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="6" class="text-center text-muted p-md">
+                        No se encontraron trabajadores que coincidan con los filtros seleccionados.
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
     </div>
-</div>
+</form>
+
+<!-- Paginación Institucional Estandarizada -->
+{{template "componente_paginacion" .Paginacion}}
 {{end}}
 
-<!-- Datos iniciales de formulación para JavaScript -->
-<script id="datos-trabajadores-json" type="application/json">
-{{if .FormulacionTrabajadoresJSON}}{{.FormulacionTrabajadoresJSON}}{{else}}[]{{end}}
-</script>
+<!-- Script Progresivo Mínimo: Inicialización Limpia de TomSelect y Helpers del Modal -->
 <script>
-    try {
-        const jsonText = document.getElementById('datos-trabajadores-json')?.textContent?.trim();
-        window.__datosInicialesTrabajadores = jsonText ? JSON.parse(jsonText) : [];
-    } catch (e) {
-        window.__datosInicialesTrabajadores = [];
-    }
-</script>
-
-<script>
-    // Gestor de Memoria JS para Prorrateo, Deduplicación y Manejo Aditivo de Beneficiarios
-    window.GestorBeneficiariosEspecial = window.GestorBeneficiariosEspecial || class {
-        constructor() {
-            this.mapa = new Map(); // Key: contrato_id (string) -> Value: workerItem { ..., montos_custom: { [concepto_id]: val } }
+(function() {
+    // 1. Selector con Buscador TomSelect para Conceptos
+    const selectConcepto = document.getElementById('select-agregar-concepto');
+    if (selectConcepto && typeof TomSelect !== 'undefined') {
+        if (selectConcepto.tomselect) {
+            selectConcepto.tomselect.destroy();
         }
-
-        agregarTrabajadores(lista) {
-            if (!Array.isArray(lista) || lista.length === 0) {
-                return { agregados: 0, duplicados: 0 };
-            }
-            let agregados = 0;
-            let duplicados = 0;
-
-            lista.forEach(w => {
-                const key = String(w.contrato_id);
-                if (this.mapa.has(key)) {
-                    duplicados++;
-                } else {
-                    if (!w.montos_custom) w.montos_custom = {};
-                    this.mapa.set(key, w);
-                    agregados++;
-                }
-            });
-
-            this.renderizarTablaFinal();
-            return { agregados, duplicados };
-        }
-
-        eliminarTrabajador(contratoID) {
-            this.mapa.delete(String(contratoID));
-            this.renderizarTablaFinal();
-        }
-
-        limpiarTodos() {
-            this.mapa.clear();
-            this.renderizarTablaFinal();
-        }
-
-        obtenerConceptosSeleccionados() {
-            const tbodyConceptos = document.getElementById('tbody-conceptos-seleccionados');
-            const conceptos = [];
-            if (tbodyConceptos) {
-                const rows = tbodyConceptos.querySelectorAll('tr:not(#row-sin-conceptos)');
-                rows.forEach(tr => {
-                    const hiddenInput = tr.querySelector('input[name="conceptos_ids"]');
-                    const numberInput = tr.querySelector('input[type="number"]');
-                    const strongName = tr.querySelector('strong');
-                    if (hiddenInput && numberInput) {
-                        conceptos.push({
-                            id: hiddenInput.value,
-                            nombre: strongName ? strongName.textContent.trim() : 'Concepto',
-                            montoDefault: parseFloat(numberInput.value) || 0
-                        });
-                    }
-                });
-            }
-            return conceptos;
-        }
-
-        obtenerMontoTotalTrabajador(workerItem, conceptos) {
-            let total = 0;
-            conceptos.forEach(c => {
-                const key = String(c.id);
-                if (workerItem.montos_custom && workerItem.montos_custom[key] !== undefined) {
-                    total += parseFloat(workerItem.montos_custom[key]) || 0;
-                } else {
-                    total += c.montoDefault;
-                }
-            });
-            return total;
-        }
-
-        actualizarMontoCustomTrabajador(contratoID, conceptoID, nuevoMonto) {
-            const key = String(contratoID);
-            const worker = this.mapa.get(key);
-            if (worker) {
-                if (!worker.montos_custom) worker.montos_custom = {};
-                worker.montos_custom[String(conceptoID)] = parseFloat(nuevoMonto) || 0;
-
-                // Actualizar la suma total del trabajador en pantalla inmediatamente
-                const conceptos = this.obtenerConceptosSeleccionados();
-                const nuevoTotal = this.obtenerMontoTotalTrabajador(worker, conceptos);
-                const spanTotalFila = document.getElementById(`monto-total-worker-${contratoID}`);
-                if (spanTotalFila) {
-                    spanTotalFila.textContent = `S/ ${nuevoTotal.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                }
-
-                this.renderizarInputsHidden();
-                this.calcularMontoEstimado();
-            }
-        }
-
-        renderizarInputsHidden() {
-            const hiddenContainer = document.getElementById('contenedor-contratos-seleccionados-hidden');
-            if (!hiddenContainer) return;
-            hiddenContainer.innerHTML = '';
-
-            this.mapa.forEach((w, id) => {
-                // Input oculto para contrato_id
-                const inputHidden = document.createElement('input');
-                inputHidden.type = 'hidden';
-                inputHidden.name = 'contratos_ids';
-                inputHidden.value = id;
-                hiddenContainer.appendChild(inputHidden);
-
-                // Overrides de montos personalizados por trabajador/concepto si existen
-                if (w.montos_custom) {
-                    Object.keys(w.montos_custom).forEach(conceptoID => {
-                        const val = w.montos_custom[conceptoID];
-                        const inputCustom = document.createElement('input');
-                        inputCustom.type = 'hidden';
-                        inputCustom.name = `monto_custom_${id}_${conceptoID}`;
-                        inputCustom.value = val;
-                        hiddenContainer.appendChild(inputCustom);
-                    });
-                }
-            });
-        }
-
-        renderizarTablaFinal() {
-            const tbody = document.getElementById('tbody-beneficiarios-finales');
-            const spanTotal = document.getElementById('resumen-total-trabajadores');
-
-            if (!tbody) return;
-
-            tbody.innerHTML = '';
-            this.renderizarInputsHidden();
-
-            if (this.mapa.size === 0) {
-                tbody.innerHTML = `
-                    <tr id="row-sin-beneficiarios">
-                        <td colspan="8" class="text-center text-muted p-md">
-                            <small>No hay trabajadores agregados a la planilla especial aún.<br>Haz clic en el botón <strong>"➕ Agregar Trabajadores o Grupos"</strong> para buscar e incluir poblaciones.</small>
-                        </td>
-                    </tr>`;
-                if (spanTotal) spanTotal.textContent = '0';
-                this.calcularMontoEstimado();
-                return;
-            }
-
-            const conceptos = this.obtenerConceptosSeleccionados();
-
-            let idx = 1;
-            this.mapa.forEach((w, id) => {
-                let cellConceptos = '';
-                if (conceptos.length === 0) {
-                    cellConceptos = '<small class="text-muted">Sin conceptos configurados</small>';
-                } else if (conceptos.length === 1) {
-                    const c = conceptos[0];
-                    const valActual = (w.montos_custom && w.montos_custom[c.id] !== undefined) ? w.montos_custom[c.id] : c.montoDefault;
-                    cellConceptos = `<mark class="badge badge-purple font-xs inline-block">
-                        ${c.nombre}: S/ ${parseFloat(valActual).toFixed(2)}
-                    </mark>`;
-                } else {
-                    // Múltiples conceptos: Renderizar un input editable para CADA concepto
-                    let itemsHTML = '';
-                    conceptos.forEach(c => {
-                        const valActual = (w.montos_custom && w.montos_custom[c.id] !== undefined) ? w.montos_custom[c.id] : c.montoDefault;
-                        itemsHTML += `
-                            <div class="concepto-box">
-                                <span class="font-xs font-bold text-purple">${c.nombre}</span>
-                                <div class="flex-items-center flex-gap-xs">
-                                    <span class="font-xs text-muted">S/</span>
-                                    <input type="number" step="0.01" min="0" value="${parseFloat(valActual).toFixed(2)}" 
-                                        class="mb-0 p-xs font-xs text-right stat-mono w-90" 
-                                        oninput="gestorBeneficiarios.actualizarMontoCustomTrabajador('${id}', '${c.id}', this.value)">
-                                </div>
-                            </div>
-                        `;
-                    });
-                    cellConceptos = `<div class="flex-column">${itemsHTML}</div>`;
-                }
-
-                const montoCalculado = this.obtenerMontoTotalTrabajador(w, conceptos);
-
-                let inputMontoCol = '';
-                if (conceptos.length === 1) {
-                    const cUnico = conceptos[0];
-                    const valActual = (w.montos_custom && w.montos_custom[cUnico.id] !== undefined) ? w.montos_custom[cUnico.id] : cUnico.montoDefault;
-                    inputMontoCol = `
-                        <input type="number" step="0.01" min="0" value="${parseFloat(valActual).toFixed(2)}" 
-                            class="mb-0 p-xs text-right stat-mono font-bold w-120" 
-                            oninput="gestorBeneficiarios.actualizarMontoCustomTrabajador('${id}', '${cUnico.id}', this.value)">
-                    `;
-                } else {
-                    inputMontoCol = `
-                        <strong id="monto-total-worker-${id}" class="text-success font-md stat-mono">S/ ${montoCalculado.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                    `;
-                }
-
-                const tr = document.createElement('tr');
-                tr.id = `row-beneficiario-${id}`;
-
-                let badgeJudicial = '';
-                if (w.tiene_retencion_judicial) {
-                    const porc = w.porcentaje_judicial ? ` (${w.porcentaje_judicial}%)` : '';
-                    badgeJudicial = `<span class="badge badge-warning font-xs ml-xs" data-tooltip="${w.detalle_retencion_judicial || 'Retención por Alimentos / Deuda'}">⚖️ Retención Judicial${porc}</span>`;
-                }
-
-                tr.innerHTML = `
-                    <td><small>${idx++}</small></td>
-                    <td>
-                        <strong>${w.nombre_completo}</strong>${badgeJudicial}<br>
-                        <small class="text-muted stat-mono">DNI/Doc: ${w.numero_documento}</small>
-                    </td>
-                    <td>
-                        <strong>${w.puesto_nombre || 'Sin Plaza'}</strong><br>
-                        <small class="text-muted">${w.unidad_organica_nombre || 'Sin Unidad Orgánica'}</small>
-                    </td>
-                    <td><small>${w.regimen_nombre || 'Sin Régimen'}</small></td>
-                    <td><small class="stat-mono">${w.meta_codigo ? '[' + w.meta_codigo + '] ' + w.meta_descripcion : 'Default del Puesto'}</small></td>
-                    <td>${cellConceptos}</td>
-                    <td class="text-right">${inputMontoCol}</td>
-                    <td class="text-right">
-                        <div class="flex-row-end">
-                            <button type="button" class="btn-icon btn-danger-icon" data-tooltip="Quitar beneficiario" aria-label="Quitar" onclick="gestorBeneficiarios.eliminarTrabajador('${id}')">
-                                <svg class="icono-menu">
-                                    <use href="#icono-trash"></use>
-                                </svg>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            if (spanTotal) spanTotal.textContent = this.mapa.size;
-            this.calcularMontoEstimado();
-        }
-
-        calcularMontoEstimado() {
-            const spanMonto = document.getElementById('resumen-total-monto');
-            if (!spanMonto) return;
-
-            const conceptos = this.obtenerConceptosSeleccionados();
-            let totalGeneral = 0;
-
-            this.mapa.forEach((w) => {
-                totalGeneral += this.obtenerMontoTotalTrabajador(w, conceptos);
-            });
-
-            spanMonto.textContent = totalGeneral.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-    };
-
-    // Instancia Global
-    window.gestorBeneficiarios = new window.GestorBeneficiariosEspecial();
-
-    // 1. Lógica para Conceptos (Bloque 1)
-    function agregarConceptoAFormulario(opt) {
-        const id = opt.value;
-        if (!id) return;
-
-        const sinConceptosRow = document.getElementById('row-sin-conceptos');
-        if (sinConceptosRow) sinConceptosRow.classList.add('d-none');
-
-        if (document.getElementById('row-concepto-' + id)) return;
-
-        const nombre = opt.getAttribute('data-nombre') || opt.text;
-        const codigo = opt.getAttribute('data-codigo') || '';
-        const clasificador = opt.getAttribute('data-clasificador') || 'N/A';
-        const esOcasional = opt.getAttribute('data-ocasional') === '1';
-        const esExtraordinario = opt.getAttribute('data-extraordinario') === '1';
-        const esPensionable = opt.getAttribute('data-pensionable') === '1';
-        const esRemunerativa = opt.getAttribute('data-remunerativa') === '1';
-
-        let badges = '';
-        if (esOcasional) badges += '<mark class="badge badge-gray font-xs font-bold">OCASIONAL</mark> ';
-        if (esExtraordinario) badges += '<mark class="badge badge-purple font-xs font-bold">EXTRAORDINARIO</mark> ';
-        if (esPensionable) badges += '<mark class="badge badge-success font-xs font-bold">PENSIONABLE</mark> ';
-        if (esRemunerativa) badges += '<mark class="badge badge-info font-xs font-bold">REMUNERATIVO</mark> ';
-
-        const tbody = document.getElementById('tbody-conceptos-seleccionados');
-        const tr = document.createElement('tr');
-        tr.id = 'row-concepto-' + id;
-        tr.innerHTML = `
-            <td>
-                <input type="hidden" name="conceptos_ids" value="${id}">
-                <strong>${nombre}</strong><br>
-                <small class="text-muted">SUNAT: ${codigo} | Clasificador: ${clasificador}</small>
-            </td>
-            <td>
-                <div class="flex-gap-xs flex-wrap">
-                    ${badges}
-                </div>
-            </td>
-            <td>
-                <input type="number" step="0.01" min="0.01" name="monto_${id}" placeholder="0.00" required class="mb-0 p-sm text-right" oninput="gestorBeneficiarios.renderizarTablaFinal()">
-            </td>
-            <td class="text-center">
-                <button type="button" class="outline contrast btn-badge" onclick="quitarConceptoDeFormulario('${id}')">
-                    🗑️
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-
-        const inputMonto = tr.querySelector(`input[name="monto_${id}"]`);
-        if (inputMonto) inputMonto.focus();
-
-        gestorBeneficiarios.renderizarTablaFinal();
-    }
-
-    function quitarConceptoDeFormulario(id) {
-        const tr = document.getElementById('row-concepto-' + id);
-        if (tr) tr.remove();
-
-        const tbody = document.getElementById('tbody-conceptos-seleccionados');
-        const rowsVisibles = tbody.querySelectorAll('tr:not(#row-sin-conceptos)');
-        if (rowsVisibles.length === 0) {
-            const sinConceptosRow = document.getElementById('row-sin-conceptos');
-            if (sinConceptosRow) sinConceptosRow.classList.remove('d-none');
-        }
-        gestorBeneficiarios.renderizarTablaFinal();
-    }
-
-    function inicializarBuscadorConceptos() {
-        const el = document.getElementById('select-agregar-concepto');
-        if (!el || typeof TomSelect === 'undefined') return;
-
-        if (el.tomselect) {
-            el.tomselect.destroy();
-        }
-
-        const ts = new TomSelect(el, {
+        const ts = new TomSelect(selectConcepto, {
             create: false,
             maxItems: 1,
             plugins: ['dropdown_input'],
-            onChange: function (val) {
+            onChange: function(val) {
                 if (val) {
-                    const opt = el.querySelector(`option[value="${val}"]`);
-                    if (opt) agregarConceptoAFormulario(opt);
+                    const planillaID = '{{.Planilla.ID}}';
+                    htmx.ajax('POST', '/tenant/planillas/especial/conceptos', {
+                        values: {
+                            planilla_id: planillaID,
+                            concepto_tenant_id: val,
+                            monto_base: 0.00
+                        },
+                        target: '#alerta-especial'
+                    });
                     ts.clear(true);
                 }
             }
         });
     }
 
-    // 2. Control de Modal y Acciones Aditivas
-    function abrirModalAgregarPoblacion() {
-        const modal = document.getElementById('modal-agregar-poblacion');
-        if (modal) {
-            modal.showModal();
-        }
-    }
-
-    function cerrarModalAgregarPoblacion() {
-        const modal = document.getElementById('modal-agregar-poblacion');
-        if (modal) {
-            modal.close();
-        }
-    }
-
-    function marcarTodosModalVisibles(estado) {
-        const checkboxes = document.querySelectorAll('.chk-modal-trabajador');
+    // 2. Helpers del Modal (Sin variables globales)
+    window.marcarTodosModalVisibles = function(estado) {
+        const checkboxes = document.querySelectorAll('#tbody-trabajadores-modal .chk-modal-trabajador');
         checkboxes.forEach(c => c.checked = estado);
-    }
+    };
 
-    function limpiarFiltrosEspecial() {
+    window.limpiarFiltrosModal = function() {
         const q = document.getElementById('filtro-q');
         const reg = document.getElementById('filtro-regimen');
         const meta = document.getElementById('filtro-meta');
@@ -786,119 +600,6 @@
         if (meta) meta.value = '';
         if (uni) uni.value = '';
         if (q) htmx.trigger(q, 'search');
-    }
-
-    function mostrarAlertaModal(msg, esError = false) {
-        const div = document.getElementById('alerta-modal-adicion');
-        if (!div) return;
-        div.classList.remove('d-none');
-        div.innerHTML = `
-            <mark class="badge ${esError ? 'badge-danger' : 'badge-success'} p-sm block">
-                ${msg}
-            </mark>`;
-        setTimeout(() => {
-            div.classList.add('d-none');
-        }, 4000);
-    }
-
-    function agregarVisiblesModal() {
-        const checkboxes = document.querySelectorAll('.chk-modal-trabajador:checked');
-        if (checkboxes.length === 0) {
-            mostrarAlertaModal('⚠️ Debes marcar al menos un trabajador para agregar.', true);
-            return;
-        }
-
-        const items = [];
-        checkboxes.forEach(chk => {
-            const raw = chk.getAttribute('data-item');
-            if (raw) {
-                try {
-                    items.push(JSON.parse(raw));
-                } catch (e) { }
-            }
-        });
-
-        const res = gestorBeneficiarios.agregarTrabajadores(items);
-        let msg = `✅ Se agregaron ${res.agregados} trabajadores a la planilla especial.`;
-        if (res.duplicados > 0) {
-            msg += ` (${res.duplicados} ya estaban incluidos y se omitieron).`;
-        }
-        mostrarAlertaModal(msg);
-        marcarTodosModalVisibles(false);
-    }
-
-    async function agregarTodosLosFiltradosMasivo() {
-        const q = document.getElementById('filtro-q')?.value || '';
-        const reg = document.getElementById('filtro-regimen')?.value || '';
-        const meta = document.getElementById('filtro-meta')?.value || '';
-        const uni = document.getElementById('filtro-unidad')?.value || '';
-
-        const params = new URLSearchParams({
-            q: q,
-            regimen_id: reg,
-            meta_id: meta,
-            unidad_organica_id: uni
-        });
-
-        try {
-            const resp = await fetch('/tenant/planillas/especial/trabajadores-json?' + params.toString());
-            const data = await resp.json();
-            if (!data.success) {
-                mostrarAlertaModal('❌ Error al consultar trabajadores: ' + (data.error || 'Desconocido'), true);
-                return;
-            }
-
-            if (!data.trabajadores || data.trabajadores.length === 0) {
-                mostrarAlertaModal('⚠️ No hay trabajadores coincidentes con los filtros seleccionados.', true);
-                return;
-            }
-
-            const res = gestorBeneficiarios.agregarTrabajadores(data.trabajadores);
-            let msg = `🎉 Inclusión Masiva: Se agregaron ${res.agregados} trabajadores a la planilla especial.`;
-            if (res.duplicados > 0) {
-                msg += ` (${res.duplicados} omitidos por estar previamente incluidos).`;
-            }
-            mostrarAlertaModal(msg);
-        } catch (err) {
-            mostrarAlertaModal('❌ Error de conexión al realizar la inclusión masiva: ' + err.message, true);
-        }
-    }
-
-    // Inicializar TomSelect y Cargar Formulación Previa si existe
-    function inicializarFormularioEspecial() {
-        if (!window.gestorBeneficiarios) {
-            window.gestorBeneficiarios = new GestorBeneficiariosEspecial();
-        }
-        inicializarBuscadorConceptos();
-
-        let datosInicialesTrabajadores = window.__datosInicialesTrabajadores || [];
-        if (!Array.isArray(datosInicialesTrabajadores) || datosInicialesTrabajadores.length === 0) {
-            const jsonText = document.getElementById('datos-trabajadores-json')?.textContent?.trim();
-            if (jsonText) {
-                try {
-                    datosInicialesTrabajadores = JSON.parse(jsonText);
-                } catch (err) {
-                    console.error('Error al parsear datos iniciales de trabajadores:', err);
-                }
-            }
-        }
-        if (Array.isArray(datosInicialesTrabajadores) && datosInicialesTrabajadores.length > 0) {
-            window.gestorBeneficiarios.limpiarTodos();
-            gestorBeneficiarios.agregarTrabajadores(datosInicialesTrabajadores);
-        }
-    }
-
-    function ejecutarInicializacionConDelay() {
-        setTimeout(() => {
-            inicializarFormularioEspecial();
-        }, 50);
-    }
-
-    // Ejecutar inmediatamente y también con delay para contemplar swaps HTMX
-    inicializarFormularioEspecial();
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', ejecutarInicializacionConDelay);
-    } else {
-        ejecutarInicializacionConDelay();
-    }
+    };
+})();
 </script>

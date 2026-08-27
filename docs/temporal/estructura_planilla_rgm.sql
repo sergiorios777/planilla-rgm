@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict jViGWwVj6DhLlg8bU5eL4XUPL5PUI7LfdpcHfOD9QfrsAoOtTIKnTPSawsuoW5p
+\restrict 82uVDz6LzvrURFddILMVlW4nX02AsVsRqZLTkV3Fb3Xfj0QpMMQmCDhlbJV1fPW
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -1286,6 +1286,43 @@ ALTER SEQUENCE public.planilla_detalles_id_seq OWNED BY public.planilla_detalles
 
 
 --
+-- Name: planilla_especial_conceptos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.planilla_especial_conceptos (
+    id integer NOT NULL,
+    planilla_id integer NOT NULL,
+    concepto_tenant_id integer NOT NULL,
+    monto_base numeric(10,2) DEFAULT 0.00 NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.planilla_especial_conceptos OWNER TO postgres;
+
+--
+-- Name: planilla_especial_conceptos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.planilla_especial_conceptos_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.planilla_especial_conceptos_id_seq OWNER TO postgres;
+
+--
+-- Name: planilla_especial_conceptos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.planilla_especial_conceptos_id_seq OWNED BY public.planilla_especial_conceptos.id;
+
+
+--
 -- Name: planillas; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1974,6 +2011,13 @@ ALTER TABLE ONLY public.planilla_detalles ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: planilla_especial_conceptos id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_especial_conceptos ALTER COLUMN id SET DEFAULT nextval('public.planilla_especial_conceptos_id_seq'::regclass);
+
+
+--
 -- Name: planillas id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2355,6 +2399,14 @@ ALTER TABLE ONLY public.planilla_detalles
 
 
 --
+-- Name: planilla_especial_conceptos planilla_especial_conceptos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_especial_conceptos
+    ADD CONSTRAINT planilla_especial_conceptos_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: planillas_cts planillas_cts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2555,6 +2607,14 @@ ALTER TABLE ONLY public.unidades_organicas
 
 
 --
+-- Name: planilla_especial_conceptos unique_planilla_especial_concepto; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_especial_conceptos
+    ADD CONSTRAINT unique_planilla_especial_concepto UNIQUE (planilla_id, concepto_tenant_id);
+
+
+--
 -- Name: planillas unique_planilla_mes; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2742,6 +2802,13 @@ CREATE INDEX idx_planilla_conceptos_meta ON public.planilla_conceptos USING btre
 --
 
 CREATE INDEX idx_planilla_conceptos_rubro ON public.planilla_conceptos USING btree (fuente_rubro_id);
+
+
+--
+-- Name: idx_planilla_especial_conceptos_planilla; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_planilla_especial_conceptos_planilla ON public.planilla_especial_conceptos USING btree (planilla_id);
 
 
 --
@@ -3182,6 +3249,22 @@ ALTER TABLE ONLY public.planilla_detalles
 
 
 --
+-- Name: planilla_especial_conceptos planilla_especial_conceptos_concepto_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_especial_conceptos
+    ADD CONSTRAINT planilla_especial_conceptos_concepto_tenant_id_fkey FOREIGN KEY (concepto_tenant_id) REFERENCES public.conceptos_tenant(id) ON DELETE CASCADE;
+
+
+--
+-- Name: planilla_especial_conceptos planilla_especial_conceptos_planilla_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_especial_conceptos
+    ADD CONSTRAINT planilla_especial_conceptos_planilla_id_fkey FOREIGN KEY (planilla_id) REFERENCES public.planillas(id) ON DELETE CASCADE;
+
+
+--
 -- Name: planillas_cts planillas_cts_planilla_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3417,5 +3500,5 @@ ALTER TABLE ONLY public.usuarios
 -- PostgreSQL database dump complete
 --
 
-\unrestrict jViGWwVj6DhLlg8bU5eL4XUPL5PUI7LfdpcHfOD9QfrsAoOtTIKnTPSawsuoW5p
+\unrestrict 82uVDz6LzvrURFddILMVlW4nX02AsVsRqZLTkV3Fb3Xfj0QpMMQmCDhlbJV1fPW
 

@@ -2,6 +2,10 @@
 
 Este documento contiene los estándares principales para el mantenimiento y desarrollo del proyecto **Planillas RGM**.
 
+## Estándares de Arquitectura Backend y Server-Driven UI
+
+- **Reglas de Arquitectura Go + HTMX**: Consulta la regla [.agents/rules/architecture-go-htmx.md](file:///c:/server/www/planilla-rgm/.agents/rules/architecture-go-htmx.md) para el flujo unidireccional estricto (`Handler ──► Service ──► Repository`), aislamiento multi-tenant obligatorio (`tenant_id`), renderizado de fragmentos con `html/template`, alcance progresivo de JavaScript y prohibición de endpoints REST/JSON para manipulación del DOM.
+
 ## Estándares de Diseño y Frontend (UI/UX)
 
 - **Manifiestos de Diseño**: Toda vista HTML y hoja de estilos debe estar alineada a los documentos [DESIGN.md](file:///c:/server/www/planilla-rgm/DESIGN.md) y [design_v2.md](file:///c:/server/www/planilla-rgm/design_v2.md).

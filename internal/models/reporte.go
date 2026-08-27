@@ -64,13 +64,19 @@ type ConceptoFormulacionEspecial struct {
 }
 
 type TrabajadorFormulacionEspecial struct {
-	ContratoID           int                `json:"contrato_id"`
-	NombreCompleto       string             `json:"nombre_completo"`
-	NumeroDocumento      string             `json:"numero_documento"`
-	PuestoNombre         string             `json:"puesto_nombre"`
-	UnidadOrganicaNombre string             `json:"unidad_organica_nombre"`
-	RegimenNombre        string             `json:"regimen_nombre"`
-	MetaCodigo           string             `json:"meta_codigo"`
-	MetaDescripcion      string             `json:"meta_descripcion"`
-	MontosCustom         map[string]float64 `json:"montos_custom"`
+	ContratoID               int                `json:"contrato_id"`
+	NombreCompleto           string             `json:"nombre_completo"`
+	NumeroDocumento          string             `json:"numero_documento"`
+	PuestoNombre             string             `json:"puesto_nombre"`
+	UnidadOrganicaNombre     string             `json:"unidad_organica_nombre"`
+	RegimenNombre            string             `json:"regimen_nombre"`
+	MetaCodigo               string             `json:"meta_codigo"`
+	MetaDescripcion          string             `json:"meta_descripcion"`
+	MontosCustom             map[string]float64 `json:"montos_custom"`
+	MontoTotal               float64            `json:"monto_total"`
+	TieneRetencionJudicial   bool               `json:"tiene_retencion_judicial"`
+	PorcentajeJudicial       float64            `json:"porcentaje_judicial"`
+	DetalleRetencionJudicial string             `json:"detalle_retencion_judicial"`
+	MontoRetencionJudicial   float64            `json:"monto_retencion_judicial"`
+	MontoNetoEstimado        float64            `json:"monto_neto_estimado"`
 }

@@ -29,6 +29,17 @@ type ConceptoTemp struct {
 }
 
 func NewPlanillaRepository(db *sql.DB) *PlanillaRepository {
+	_, _ = db.Exec(`
+		CREATE TABLE IF NOT EXISTS planilla_especial_conceptos (
+			id SERIAL PRIMARY KEY,
+			planilla_id INTEGER NOT NULL REFERENCES planillas(id) ON DELETE CASCADE,
+			concepto_tenant_id INTEGER NOT NULL REFERENCES conceptos_tenant(id) ON DELETE CASCADE,
+			monto_base NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			CONSTRAINT unique_planilla_especial_concepto UNIQUE(planilla_id, concepto_tenant_id)
+		);
+		CREATE INDEX IF NOT EXISTS idx_planilla_especial_conceptos_planilla ON planilla_especial_conceptos(planilla_id);
+	`)
 	return &PlanillaRepository{db: db}
 }
 
@@ -2373,9 +2384,9 @@ func (r *PlanillaRepository) RecalcularPlanillaEspecial(ctx context.Context, pla
 
 // ObtenerFormulacionEspecial recupera los conceptos y trabajadores ya formulados de una planilla extraordinaria
 func (r *PlanillaRepository) ObtenerFormulacionEspecial(planillaID int, tenantID int) ([]models.ConceptoFormulacionEspecial, []models.TrabajadorFormulacionEspecial, error) {
-	// 1. Obtener Conceptos Formulados
+	// 1. Obtener Conceptos Formulados (preferir planilla_especial_conceptos si existen, solo de tipo INGRESO)
 	queryConceptos := `
-		SELECT DISTINCT ON (ct.id)
+		SELECT 
 			ct.id,
 			ct.nombre_personalizado,
 			cm.codigo,
@@ -2385,63 +2396,101 @@ func (r *PlanillaRepository) ObtenerFormulacionEspecial(planillaID int, tenantID
 			COALESCE(ct.modalidad_entrega, 'PERMANENTE') as modalidad_entrega,
 			COALESCE(ct.es_pensionable, false),
 			COALESCE(ct.es_remunerativa, false),
-			pc.monto,
-			pc.id
-		FROM planilla_conceptos pc
-		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
-		INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+			pec.monto_base
+		FROM planilla_especial_conceptos pec
+		INNER JOIN conceptos_tenant ct ON pec.concepto_tenant_id = ct.id
 		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
 		LEFT JOIN clasificadores_mef cr ON ct.clasificador_id = cr.id
-		WHERE pd.planilla_id = $1
-		ORDER BY ct.id, pc.id ASC
+		WHERE pec.planilla_id = $1 AND (UPPER(cm.tipo) = 'INGRESO' OR cm.tipo IS NULL)
+		ORDER BY pec.id ASC
 	`
 	rowsConc, err := r.db.Query(queryConceptos, planillaID)
-	if err != nil {
-		log.Println("❌ ERROR EN queryConceptos ObtenerFormulacionEspecial:", err)
-		return nil, nil, err
-	}
-	defer rowsConc.Close()
-
 	var conceptos []models.ConceptoFormulacionEspecial
-	for rowsConc.Next() {
-		var c models.ConceptoFormulacionEspecial
-		var pcID int
-		err := rowsConc.Scan(
-			&c.ID, &c.NombrePersonalizado, &c.CodigoSunat, &c.ClasificadorCodigo,
-			&c.EsOcasional, &c.EsExtraordinario, &c.ModalidadEntrega, &c.EsPensionable, &c.EsRemunerativa,
-			&c.MontoBase, &pcID,
-		)
-		if err == nil {
-			conceptos = append(conceptos, c)
+	if err == nil {
+		defer rowsConc.Close()
+		for rowsConc.Next() {
+			var c models.ConceptoFormulacionEspecial
+			err := rowsConc.Scan(
+				&c.ID, &c.NombrePersonalizado, &c.CodigoSunat, &c.ClasificadorCodigo,
+				&c.EsOcasional, &c.EsExtraordinario, &c.ModalidadEntrega, &c.EsPensionable, &c.EsRemunerativa,
+				&c.MontoBase,
+			)
+			if err == nil {
+				conceptos = append(conceptos, c)
+			}
 		}
 	}
-	if err := rowsConc.Err(); err != nil {
-		return nil, nil, err
+
+	// Si no hubo en planilla_especial_conceptos, consultar en planilla_conceptos como fallback histórico (SOLO INGRESOS)
+	if len(conceptos) == 0 {
+		queryFallback := `
+			SELECT DISTINCT ON (ct.id)
+				ct.id,
+				ct.nombre_personalizado,
+				cm.codigo,
+				COALESCE(cr.codigo, 'N/A') as clasificador,
+				COALESCE(ct.es_ocasional, false),
+				COALESCE(ct.es_extraordinario, false),
+				COALESCE(ct.modalidad_entrega, 'PERMANENTE') as modalidad_entrega,
+				COALESCE(ct.es_pensionable, false),
+				COALESCE(ct.es_remunerativa, false),
+				pc.monto
+			FROM planilla_conceptos pc
+			INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
+			INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+			INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+			LEFT JOIN clasificadores_mef cr ON ct.clasificador_id = cr.id
+			WHERE pd.planilla_id = $1 AND (UPPER(pc.tipo_concepto) = 'INGRESO' OR (pc.tipo_concepto IS NULL AND UPPER(cm.tipo) = 'INGRESO'))
+			ORDER BY ct.id, pc.id ASC
+		`
+		rowsFb, errFb := r.db.Query(queryFallback, planillaID)
+		if errFb == nil {
+			defer rowsFb.Close()
+			for rowsFb.Next() {
+				var c models.ConceptoFormulacionEspecial
+				if err := rowsFb.Scan(
+					&c.ID, &c.NombrePersonalizado, &c.CodigoSunat, &c.ClasificadorCodigo,
+					&c.EsOcasional, &c.EsExtraordinario, &c.ModalidadEntrega, &c.EsPensionable, &c.EsRemunerativa,
+					&c.MontoBase,
+				); err == nil {
+					conceptos = append(conceptos, c)
+				}
+			}
+		}
 	}
 
-	// 2. Obtener Trabajadores y sus montos custom
+	// 2. Obtener Trabajadores y sus montos custom con retención judicial
 	queryTrabajadores := `
 		SELECT 
 			pd.id as detalle_id,
 			pd.contrato_id,
-			COALESCE(pd.trabajador_nombre_completo, TRIM(t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres)) as nombre_completo,
-			COALESCE(pd.trabajador_numero_documento, t.numero_documento) as numero_documento,
+			COALESCE(pd.trabajador_nombre_completo, TRIM(t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres), 'Trabajador') as nombre_completo,
+			COALESCE(pd.trabajador_numero_documento, t.numero_documento, '') as numero_documento,
 			COALESCE(pd.puesto_nombre, p.nombre, 'Sin Plaza') as puesto_nombre,
-			COALESCE(uo.nombre, '') as unidad_organica_nombre,
+			COALESCE(pd.unidad_organica_nombre, uo.nombre, '') as unidad_organica_nombre,
 			COALESCE(rl.descripcion, 'Sin Régimen') as regimen_nombre,
 			COALESCE(m.codigo, '') as meta_codigo,
-			COALESCE(m.descripcion, '') as meta_descripcion
+			COALESCE(m.descripcion, '') as meta_descripcion,
+			CASE WHEN dj.trabajador_id IS NOT NULL THEN true ELSE false END as tiene_retencion_judicial,
+			COALESCE(dj.porcentaje, 0.0) as porcentaje_judicial,
+			COALESCE(dj.detalle_documento, dj.descripcion, '') as detalle_retencion_judicial
 		FROM planilla_detalles pd
-		INNER JOIN contratos c ON pd.contrato_id = c.id
-		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		LEFT JOIN contratos c ON pd.contrato_id = c.id
+		LEFT JOIN trabajadores t ON c.trabajador_id = t.id
 		LEFT JOIN puestos p ON c.puesto_id = p.id
 		LEFT JOIN unidades_organicas uo ON p.unidad_organica_id = uo.id
 		LEFT JOIN regimenes_laborales rl ON p.regimen_id = rl.id
 		LEFT JOIN metas_presupuestales m ON p.meta_id = m.id
+		LEFT JOIN (
+			SELECT DISTINCT ON (trabajador_id) trabajador_id, porcentaje, detalle_documento, descripcion
+			FROM descuentos
+			WHERE activo = true AND tipo_descuento = 'JUDICIAL' AND tenant_id = $2
+			ORDER BY trabajador_id, id DESC
+		) dj ON t.id = dj.trabajador_id
 		WHERE pd.planilla_id = $1
 		ORDER BY pd.id ASC
 	`
-	rowsTrab, err := r.db.Query(queryTrabajadores, planillaID)
+	rowsTrab, err := r.db.Query(queryTrabajadores, planillaID, tenantID)
 	if err != nil {
 		log.Println("❌ ERROR EN queryTrabajadores ObtenerFormulacionEspecial:", err)
 		return conceptos, nil, err
@@ -2461,10 +2510,13 @@ func (r *PlanillaRepository) ObtenerFormulacionEspecial(planillaID int, tenantID
 			&tt.detalleID, &tt.item.ContratoID, &tt.item.NombreCompleto, &tt.item.NumeroDocumento,
 			&tt.item.PuestoNombre, &tt.item.UnidadOrganicaNombre, &tt.item.RegimenNombre,
 			&tt.item.MetaCodigo, &tt.item.MetaDescripcion,
+			&tt.item.TieneRetencionJudicial, &tt.item.PorcentajeJudicial, &tt.item.DetalleRetencionJudicial,
 		)
-		if err == nil {
-			listaTemp = append(listaTemp, tt)
+		if err != nil {
+			log.Printf("❌ ERROR en Scan queryTrabajadores: %v", err)
+			continue
 		}
+		listaTemp = append(listaTemp, tt)
 	}
 	if err := rowsTrab.Err(); err != nil {
 		return conceptos, nil, err
@@ -2472,25 +2524,426 @@ func (r *PlanillaRepository) ObtenerFormulacionEspecial(planillaID int, tenantID
 
 	var trabajadores []models.TrabajadorFormulacionEspecial
 	for _, tt := range listaTemp {
-		rowsC, err := r.db.Query(`SELECT concepto_tenant_id, monto FROM planilla_conceptos WHERE planilla_detalle_id = $1`, tt.detalleID)
+		rowsC, err := r.db.Query(`SELECT concepto_tenant_id, monto, COALESCE(tipo_concepto, 'INGRESO') FROM planilla_conceptos WHERE planilla_detalle_id = $1`, tt.detalleID)
+		var totalFila float64
 		if err == nil {
 			for rowsC.Next() {
 				var cTenantID sql.NullInt64
 				var monto float64
-				if err := rowsC.Scan(&cTenantID, &monto); err == nil && cTenantID.Valid {
-					tt.item.MontosCustom[fmt.Sprintf("%d", cTenantID.Int64)] = monto
+				var tipo string
+				if err := rowsC.Scan(&cTenantID, &monto, &tipo); err == nil && cTenantID.Valid {
+					if strings.ToUpper(tipo) == "RETENCION" {
+						tt.item.MontoRetencionJudicial += monto
+					} else {
+						tt.item.MontosCustom[fmt.Sprintf("%d", cTenantID.Int64)] = monto
+						totalFila += monto
+					}
 				}
-			}
-			if err := rowsC.Err(); err != nil {
-				rowsC.Close()
-				return conceptos, nil, err
 			}
 			rowsC.Close()
 		}
+
+		if len(tt.item.MontosCustom) == 0 {
+			for _, c := range conceptos {
+				totalFila += c.MontoBase
+			}
+		}
+
+		tt.item.MontoTotal = totalFila
+
+		// Calcular deducción judicial estimada si no estaba grabada pero el trabajador tiene mandato judicial
+		if tt.item.MontoRetencionJudicial == 0 && tt.item.TieneRetencionJudicial && tt.item.PorcentajeJudicial > 0 {
+			tt.item.MontoRetencionJudicial = math.Round(totalFila*(tt.item.PorcentajeJudicial/100.0)*100) / 100
+		}
+
+		if tt.item.MontoRetencionJudicial > 0 {
+			tt.item.MontoNetoEstimado = totalFila - tt.item.MontoRetencionJudicial
+		} else {
+			tt.item.MontoNetoEstimado = totalFila
+		}
+
 		trabajadores = append(trabajadores, tt.item)
 	}
 
+	log.Printf("📊 ObtenerFormulacionEspecial: PlanillaID=%d, Conceptos=%d, Trabajadores=%d", planillaID, len(conceptos), len(trabajadores))
 	return conceptos, trabajadores, nil
+}
+
+// AgregarConceptoBorradorEspecial agrega o actualiza un concepto en el borrador de planilla especial
+func (r *PlanillaRepository) AgregarConceptoBorradorEspecial(ctx context.Context, planillaID, tenantID, conceptoTenantID int, montoBase float64) error {
+	var estado string
+	err := r.db.QueryRowContext(ctx, `SELECT estado FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID).Scan(&estado)
+	if err != nil {
+		return fmt.Errorf("planilla no encontrada: %w", err)
+	}
+	if estado != "BORRADOR" {
+		return fmt.Errorf("la planilla no está en estado BORRADOR")
+	}
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// 1. Upsert en planilla_especial_conceptos
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO planilla_especial_conceptos (planilla_id, concepto_tenant_id, monto_base)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (planilla_id, concepto_tenant_id) DO UPDATE SET monto_base = EXCLUDED.monto_base
+	`, planillaID, conceptoTenantID, montoBase)
+	if err != nil {
+		return fmt.Errorf("error al guardar concepto especial: %w", err)
+	}
+
+	// 2. Obtener tipo de concepto
+	var tipoConcepto string
+	err = tx.QueryRowContext(ctx, `
+		SELECT COALESCE(cm.tipo, 'INGRESO')
+		FROM conceptos_tenant ct
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+		WHERE ct.id = $1 AND ct.tenant_id = $2
+	`, conceptoTenantID, tenantID).Scan(&tipoConcepto)
+	if err != nil {
+		tipoConcepto = "INGRESO"
+	}
+
+	// 3. Si ya existen trabajadores en planilla_detalles, agregarles este concepto si no lo tienen
+	rowsDet, err := tx.QueryContext(ctx, `SELECT id FROM planilla_detalles WHERE planilla_id = $1`, planillaID)
+	if err == nil {
+		var detIDs []int
+		for rowsDet.Next() {
+			var dID int
+			if err := rowsDet.Scan(&dID); err == nil {
+				detIDs = append(detIDs, dID)
+			}
+		}
+		rowsDet.Close()
+
+		for _, dID := range detIDs {
+			res, _ := tx.ExecContext(ctx, `
+				UPDATE planilla_conceptos 
+				SET monto = $1 
+				WHERE planilla_detalle_id = $2 AND concepto_tenant_id = $3
+			`, montoBase, dID, conceptoTenantID)
+			if aff, _ := res.RowsAffected(); aff == 0 {
+				_, _ = tx.ExecContext(ctx, `
+					INSERT INTO planilla_conceptos (planilla_detalle_id, concepto_tenant_id, tipo_concepto, monto)
+					VALUES ($1, $2, $3, $4)
+				`, dID, conceptoTenantID, tipoConcepto, montoBase)
+			}
+		}
+	}
+
+	return tx.Commit()
+}
+
+// QuitarConceptoBorradorEspecial elimina un concepto del borrador y de los detalles
+func (r *PlanillaRepository) QuitarConceptoBorradorEspecial(ctx context.Context, planillaID, tenantID, conceptoTenantID int) error {
+	var estado string
+	err := r.db.QueryRowContext(ctx, `SELECT estado FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID).Scan(&estado)
+	if err != nil {
+		return fmt.Errorf("planilla no encontrada: %w", err)
+	}
+	if estado != "BORRADOR" {
+		return fmt.Errorf("la planilla no está en estado BORRADOR")
+	}
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, `DELETE FROM planilla_especial_conceptos WHERE planilla_id = $1 AND concepto_tenant_id = $2`, planillaID, conceptoTenantID)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, `
+		DELETE FROM planilla_conceptos 
+		WHERE concepto_tenant_id = $1 
+		AND planilla_detalle_id IN (SELECT id FROM planilla_detalles WHERE planilla_id = $2)
+	`, conceptoTenantID, planillaID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// AgregarBeneficiariosBorrador agrega trabajadores específicos a la planilla especial
+func (r *PlanillaRepository) AgregarBeneficiariosBorrador(ctx context.Context, planillaID, tenantID int, contratosIDs []int) (int, int, error) {
+	if len(contratosIDs) == 0 {
+		return 0, 0, nil
+	}
+
+	var estado string
+	err := r.db.QueryRowContext(ctx, `SELECT estado FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID).Scan(&estado)
+	if err != nil {
+		return 0, 0, fmt.Errorf("planilla no encontrada: %w", err)
+	}
+	if estado != "BORRADOR" {
+		return 0, 0, fmt.Errorf("la planilla no está en estado BORRADOR")
+	}
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer tx.Rollback()
+
+	type concSpec struct {
+		id    int
+		tipo  string
+		monto float64
+	}
+	var conceptosPlanilla []concSpec
+	rowsC, err := tx.QueryContext(ctx, `
+		SELECT pec.concepto_tenant_id, COALESCE(cm.tipo, 'INGRESO'), pec.monto_base
+		FROM planilla_especial_conceptos pec
+		INNER JOIN conceptos_tenant ct ON pec.concepto_tenant_id = ct.id
+		INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+		WHERE pec.planilla_id = $1 AND (UPPER(cm.tipo) = 'INGRESO' OR cm.tipo IS NULL)
+	`, planillaID)
+	if err == nil {
+		for rowsC.Next() {
+			var cs concSpec
+			if err := rowsC.Scan(&cs.id, &cs.tipo, &cs.monto); err == nil {
+				conceptosPlanilla = append(conceptosPlanilla, cs)
+			}
+		}
+		rowsC.Close()
+	}
+
+	// Fallback histórico para conceptos de ingreso si no están en planilla_especial_conceptos
+	if len(conceptosPlanilla) == 0 {
+		rowsCFallback, errFb := tx.QueryContext(ctx, `
+			SELECT DISTINCT ON (ct.id) ct.id, COALESCE(pc.tipo_concepto, 'INGRESO'), pc.monto
+			FROM planilla_conceptos pc
+			INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
+			INNER JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+			INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+			WHERE pd.planilla_id = $1 AND (UPPER(pc.tipo_concepto) = 'INGRESO' OR (pc.tipo_concepto IS NULL AND UPPER(cm.tipo) = 'INGRESO'))
+			ORDER BY ct.id, pc.id ASC
+		`, planillaID)
+		if errFb == nil {
+			for rowsCFallback.Next() {
+				var cs concSpec
+				if err := rowsCFallback.Scan(&cs.id, &cs.tipo, &cs.monto); err == nil {
+					conceptosPlanilla = append(conceptosPlanilla, cs)
+				}
+			}
+			rowsCFallback.Close()
+		}
+	}
+
+	var totalBaseIngresos float64
+	for _, cp := range conceptosPlanilla {
+		totalBaseIngresos += cp.monto
+	}
+
+	queryContratos := `
+		SELECT 
+			c.id AS contrato_id,
+			t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS nombre_completo,
+			t.numero_documento,
+			COALESCE(p.nombre, 'Sin Plaza') AS puesto_nombre,
+			COALESCE(uo.nombre, '') AS unidad_organica_nombre
+		FROM contratos c
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		LEFT JOIN puestos p ON c.puesto_id = p.id
+		LEFT JOIN unidades_organicas uo ON p.unidad_organica_id = uo.id
+		WHERE c.id = ANY($1) AND c.tenant_id = $2
+	`
+	rowsTrab, err := tx.QueryContext(ctx, queryContratos, pq.Array(contratosIDs), tenantID)
+	if err != nil {
+		return 0, 0, fmt.Errorf("error al consultar contratos: %w", err)
+	}
+
+	type contratoData struct {
+		id     int
+		nombre string
+		doc    string
+		puesto string
+		unidad string
+	}
+	var listaContratos []contratoData
+	for rowsTrab.Next() {
+		var cd contratoData
+		if err := rowsTrab.Scan(&cd.id, &cd.nombre, &cd.doc, &cd.puesto, &cd.unidad); err == nil {
+			listaContratos = append(listaContratos, cd)
+		}
+	}
+	rowsTrab.Close() // IMPORTANTE: Cerrar antes de ejecutar nuevas sentencias en tx para evitar 'driver: bad connection'
+
+	stmtDetalle, err := tx.PrepareContext(ctx, `
+		INSERT INTO planilla_detalles (
+			planilla_id, contrato_id, trabajador_nombre_completo, trabajador_numero_documento,
+			puesto_nombre, unidad_organica_nombre, total_ingresos, total_retenciones, total_aportes, neto_pagar
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, 0.00, 0.00, $7)
+		ON CONFLICT (planilla_id, contrato_id) DO NOTHING
+		RETURNING id
+	`)
+	if err != nil {
+		return 0, 0, fmt.Errorf("error al preparar inserción de detalles: %w", err)
+	}
+	defer stmtDetalle.Close()
+
+	stmtConcepto, err := tx.PrepareContext(ctx, `
+		INSERT INTO planilla_conceptos (planilla_detalle_id, concepto_tenant_id, tipo_concepto, monto)
+		VALUES ($1, $2, $3, $4)
+	`)
+	if err != nil {
+		return 0, 0, fmt.Errorf("error al preparar inserción de conceptos: %w", err)
+	}
+	defer stmtConcepto.Close()
+
+	agregados := 0
+	omitidos := 0
+
+	for _, cd := range listaContratos {
+		var detalleID int
+		errIns := stmtDetalle.QueryRowContext(ctx, planillaID, cd.id, cd.nombre, cd.doc, cd.puesto, cd.unidad, totalBaseIngresos).Scan(&detalleID)
+		if errIns != nil {
+			omitidos++
+			continue
+		}
+		agregados++
+
+		for _, cp := range conceptosPlanilla {
+			_, _ = stmtConcepto.ExecContext(ctx, detalleID, cp.id, cp.tipo, cp.monto)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, 0, err
+	}
+
+	return agregados, omitidos, nil
+}
+
+// AgregarBeneficiariosPorFiltroBorrador agrega todos los trabajadores que coinciden con el filtro
+func (r *PlanillaRepository) AgregarBeneficiariosPorFiltroBorrador(ctx context.Context, planillaID, tenantID int, busqueda string, regimenID, metaID, unidadID int) (int, int, error) {
+	trabajadores, err := r.ObtenerTrabajadoresEspecialTodos(tenantID, busqueda, regimenID, metaID, unidadID)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	var contratosIDs []int
+	for _, t := range trabajadores {
+		contratosIDs = append(contratosIDs, t.ContratoID)
+	}
+
+	return r.AgregarBeneficiariosBorrador(ctx, planillaID, tenantID, contratosIDs)
+}
+
+// EliminarBeneficiarioBorrador quita un trabajador del borrador
+func (r *PlanillaRepository) EliminarBeneficiarioBorrador(ctx context.Context, planillaID, tenantID, contratoID int) error {
+	var estado string
+	err := r.db.QueryRowContext(ctx, `SELECT estado FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID).Scan(&estado)
+	if err != nil {
+		return fmt.Errorf("planilla no encontrada: %w", err)
+	}
+	if estado != "BORRADOR" {
+		return fmt.Errorf("la planilla no está en estado BORRADOR")
+	}
+
+	_, err = r.db.ExecContext(ctx, `DELETE FROM planilla_detalles WHERE planilla_id = $1 AND contrato_id = $2`, planillaID, contratoID)
+	return err
+}
+
+// ActualizarMontoBeneficiarioBorrador actualiza el monto de un concepto específico para un trabajador
+func (r *PlanillaRepository) ActualizarMontoBeneficiarioBorrador(ctx context.Context, planillaID, tenantID, contratoID, conceptoTenantID int, nuevoMonto float64) (float64, float64, error) {
+	var estado string
+	err := r.db.QueryRowContext(ctx, `SELECT estado FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID).Scan(&estado)
+	if err != nil {
+		return 0, 0, fmt.Errorf("planilla no encontrada: %w", err)
+	}
+	if estado != "BORRADOR" {
+		return 0, 0, fmt.Errorf("la planilla no está en estado BORRADOR")
+	}
+
+	var detalleID int
+	err = r.db.QueryRowContext(ctx, `SELECT id FROM planilla_detalles WHERE planilla_id = $1 AND contrato_id = $2`, planillaID, contratoID).Scan(&detalleID)
+	if err != nil {
+		return 0, 0, fmt.Errorf("detalle de planilla no encontrado para contrato %d: %w", contratoID, err)
+	}
+
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE planilla_conceptos 
+		SET monto = $1 
+		WHERE planilla_detalle_id = $2 AND concepto_tenant_id = $3
+	`, nuevoMonto, detalleID, conceptoTenantID)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if rowsAff, _ := res.RowsAffected(); rowsAff == 0 {
+		var tipo string
+		_ = r.db.QueryRowContext(ctx, `
+			SELECT COALESCE(cm.tipo, 'INGRESO')
+			FROM conceptos_tenant ct
+			INNER JOIN conceptos_maestros cm ON ct.concepto_id = cm.id
+			WHERE ct.id = $1
+		`, conceptoTenantID).Scan(&tipo)
+		if tipo == "" {
+			tipo = "INGRESO"
+		}
+		_, _ = r.db.ExecContext(ctx, `
+			INSERT INTO planilla_conceptos (planilla_detalle_id, concepto_tenant_id, tipo_concepto, monto)
+			VALUES ($1, $2, $3, $4)
+		`, detalleID, conceptoTenantID, tipo, nuevoMonto)
+	}
+
+	var totalTrabajador float64
+	_ = r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(monto), 0.00) 
+		FROM planilla_conceptos 
+		WHERE planilla_detalle_id = $1
+	`, detalleID).Scan(&totalTrabajador)
+
+	var totalPlanilla float64
+	_ = r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(pc.monto), 0.00)
+		FROM planilla_conceptos pc
+		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
+		WHERE pd.planilla_id = $1
+	`, planillaID).Scan(&totalPlanilla)
+
+	return totalTrabajador, totalPlanilla, nil
+}
+
+// LimpiarBeneficiariosBorrador elimina todos los trabajadores del borrador
+func (r *PlanillaRepository) LimpiarBeneficiariosBorrador(ctx context.Context, planillaID, tenantID int) error {
+	var estado string
+	err := r.db.QueryRowContext(ctx, `SELECT estado FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID).Scan(&estado)
+	if err != nil {
+		return fmt.Errorf("planilla no encontrada: %w", err)
+	}
+	if estado != "BORRADOR" {
+		return fmt.Errorf("la planilla no está en estado BORRADOR")
+	}
+
+	_, err = r.db.ExecContext(ctx, `DELETE FROM planilla_detalles WHERE planilla_id = $1`, planillaID)
+	return err
+}
+
+// ObtenerResumenFormulacionEspecial obtiene el total de beneficiarios y monto acumulado estimado
+func (r *PlanillaRepository) ObtenerResumenFormulacionEspecial(ctx context.Context, planillaID int) (int, float64, error) {
+	var totalTrabajadores int
+	var totalMonto float64
+
+	err := r.db.QueryRowContext(ctx, `
+		SELECT 
+			COUNT(DISTINCT pd.id) as total_trabajadores,
+			COALESCE(SUM(pc.monto), 0.00) as total_monto
+		FROM planilla_detalles pd
+		LEFT JOIN planilla_conceptos pc ON pd.id = pc.planilla_detalle_id
+		WHERE pd.planilla_id = $1
+	`, planillaID).Scan(&totalTrabajadores, &totalMonto)
+
+	return totalTrabajadores, totalMonto, err
 }
 
 // ObtenerConceptosSunatAgrupados obtiene la lista agrupada de conceptos para auditar códigos SUNAT en una planilla
