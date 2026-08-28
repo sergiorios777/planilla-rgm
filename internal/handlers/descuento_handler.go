@@ -133,8 +133,11 @@ func (h *DescuentoHandler) ListarHTMX(w http.ResponseWriter, r *http.Request) {
 		"#form-filtros-descuentos",
 	)
 
+	kpi, _ := h.Repo.ObtenerKPIs(tenantID)
+
 	datos := map[string]interface{}{
 		"Descuentos": descuentos,
+		"KPI":        kpi,
 		"Paginacion": paginacion,
 	}
 
@@ -441,9 +444,24 @@ func (h *DescuentoHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 // ToggleActivo cambia el estado de activación de un descuento
 func (h *DescuentoHandler) ToggleActivo(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
-	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
-	activo := r.URL.Query().Get("activo") == "true"
-	motivoBaja := r.URL.Query().Get("motivo_baja")
+	r.ParseForm()
+
+	idStr := r.FormValue("id")
+	if idStr == "" {
+		idStr = r.URL.Query().Get("id")
+	}
+	id, _ := strconv.Atoi(idStr)
+
+	activoStr := r.FormValue("activo")
+	if activoStr == "" {
+		activoStr = r.URL.Query().Get("activo")
+	}
+	activo := activoStr == "true"
+
+	motivoBaja := r.FormValue("motivo_baja")
+	if motivoBaja == "" {
+		motivoBaja = r.URL.Query().Get("motivo_baja")
+	}
 
 	err := h.Repo.ToggleActivo(id, tenantID, activo, motivoBaja)
 	if err != nil {
@@ -458,7 +476,13 @@ func (h *DescuentoHandler) ToggleActivo(w http.ResponseWriter, r *http.Request) 
 // Eliminar remueve un descuento
 func (h *DescuentoHandler) Eliminar(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
-	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	r.ParseForm()
+
+	idStr := r.FormValue("id")
+	if idStr == "" {
+		idStr = r.URL.Query().Get("id")
+	}
+	id, _ := strconv.Atoi(idStr)
 
 	err := h.Repo.Eliminar(id, tenantID)
 	if err != nil {

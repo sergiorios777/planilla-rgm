@@ -19,42 +19,8 @@
     </header>
 
     <!-- KPI Bento Grid Resumen -->
-    <div class="grid mb-md">
-        <div class="card p-sm flex-row-between flex-items-center bg-card-kpi">
-            <div>
-                <small class="text-muted text-uppercase font-xs">Total Activos</small>
-                <div class="font-lg stat-mono font-bold text-primary">{{.KPI.TotalActivos}}</div>
-            </div>
-            <div class="font-xl">📋</div>
-        </div>
-        <div class="card p-sm flex-row-between flex-items-center bg-card-kpi">
-            <div>
-                <small class="text-muted text-uppercase font-xs">Retenciones Judiciales</small>
-                <div class="font-lg stat-mono font-bold text-danger">{{.KPI.TotalJudiciales}}</div>
-            </div>
-            <div class="font-xl">⚖️</div>
-        </div>
-        <div class="card p-sm flex-row-between flex-items-center bg-card-kpi">
-            <div>
-                <small class="text-muted text-uppercase font-xs">Cuotas Sindicales</small>
-                <div class="font-lg stat-mono font-bold text-info">{{.KPI.TotalSindicales}}</div>
-            </div>
-            <div class="font-xl">🏛️</div>
-        </div>
-        <div class="card p-sm flex-row-between flex-items-center bg-card-kpi">
-            <div>
-                <small class="text-muted text-uppercase font-xs">Préstamos / Convenios</small>
-                <div class="font-lg stat-mono font-bold text-warning">{{.KPI.TotalPrestamos}}</div>
-            </div>
-            <div class="font-xl">💳</div>
-        </div>
-        <div class="card p-sm flex-row-between flex-items-center bg-card-kpi">
-            <div>
-                <small class="text-muted text-uppercase font-xs">Colaboradores Afectos</small>
-                <div class="font-lg stat-mono font-bold">{{.KPI.TotalTrabajadores}}</div>
-            </div>
-            <div class="font-xl">👥</div>
-        </div>
+    <div id="contenedor-kpis-descuentos" class="grid grid-auto-fit-200 gap-md mb-lg">
+        {{template "contenido_kpis_descuentos" .}}
     </div>
 
     <!-- Barra de Búsqueda y Filtros -->
@@ -64,13 +30,14 @@
                 Buscar
                 <input type="search" name="buscar" placeholder="Trabajador, DNI, Expediente o Beneficiario..."
                     hx-get="/tenant/descuentos/lista" hx-trigger="keyup changed delay:500ms, search"
-                    hx-include="#form-filtros-descuentos" hx-target="#lista-descuentos">
+                    hx-include="#form-filtros-descuentos" hx-target="#lista-descuentos"
+                    hx-indicator="#indicador-busqueda-descuentos">
             </label>
 
             <label>
                 Tipo de Descuento
                 <select name="tipo_descuento" hx-get="/tenant/descuentos/lista" hx-include="#form-filtros-descuentos"
-                    hx-target="#lista-descuentos">
+                    hx-target="#lista-descuentos" hx-indicator="#indicador-busqueda-descuentos">
                     <option value="TODOS">Todos los tipos</option>
                     <option value="JUDICIAL">Retención Judicial (Alimentos/Deudas)</option>
                     <option value="SINDICAL">Cuota Sindical</option>
@@ -83,7 +50,7 @@
             <label>
                 Estado
                 <select name="estado" hx-get="/tenant/descuentos/lista" hx-include="#form-filtros-descuentos"
-                    hx-target="#lista-descuentos">
+                    hx-target="#lista-descuentos" hx-indicator="#indicador-busqueda-descuentos">
                     <option value="TODOS">Todos los estados</option>
                     <option value="ACTIVOS" selected>Solo Activos</option>
                     <option value="INACTIVOS">Solo Inactivos / Dados de Baja</option>
@@ -93,7 +60,7 @@
             <label class="w-120">
                 Mostrar
                 <select name="limite" hx-get="/tenant/descuentos/lista" hx-include="#form-filtros-descuentos"
-                    hx-target="#lista-descuentos">
+                    hx-target="#lista-descuentos" hx-indicator="#indicador-busqueda-descuentos">
                     <option value="15">15 filas</option>
                     <option value="30">30 filas</option>
                     <option value="50">50 filas</option>
@@ -101,8 +68,12 @@
             </label>
         </form>
 
-        <div id="lista-descuentos" hx-get="/tenant/descuentos/lista"
-            hx-trigger="actualizarDescuentos from:body">
+        <div id="indicador-busqueda-descuentos" class="htmx-indicator font-xs text-muted mb-sm flex-items-center flex-gap-xs">
+            <span aria-busy="true"></span>
+            <span>Consultando catálogo de descuentos...</span>
+        </div>
+
+        <div id="lista-descuentos">
             {{template "tabla_descuentos" .}}
         </div>
     </div>
@@ -120,7 +91,11 @@
                     Dar de Baja Descuento
                 </h4>
             </header>
-            <form id="form-baja-descuento" onsubmit="ejecutarBajaDescuento(event)">
+            <form id="form-baja-descuento"
+                hx-post="/tenant/descuentos/toggle-activo?activo=false"
+                hx-target="#lista-descuentos"
+                hx-swap="innerHTML"
+                hx-on::after-request="if(event.detail.successful) { document.getElementById('modal-baja-descuento').close(); this.reset(); }">
                 <input type="hidden" id="baja-descuento-id" name="id">
                 <p class="font-sm mb-sm">Indique el motivo o resolución por el cual se deja sin efecto este descuento:</p>
                 <label>
@@ -138,7 +113,65 @@
     </dialog>
 </article>
 
+{{define "contenido_kpis_descuentos"}}
+<div class="card-section m-0 border-box flex-column justify-between">
+    <div class="flex-row-between mb-xs">
+        <small class="text-uppercase text-muted">Total Activos</small>
+        <span class="badge badge-primary">Catálogo</span>
+    </div>
+    <h3 class="stat-mono mb-0 text-primary">{{.KPI.TotalActivos}}</h3>
+    <small class="text-muted flex-items-center flex-gap-xs">
+        <svg class="icono-menu"><use href="#icono-list-todo"></use></svg> Registros vigentes
+    </small>
+</div>
+<div class="card-section m-0 border-box flex-column justify-between">
+    <div class="flex-row-between mb-xs">
+        <small class="text-uppercase text-muted">Judiciales</small>
+        <span class="badge badge-danger">Alimentos/Deudas</span>
+    </div>
+    <h3 class="stat-mono mb-0 text-danger">{{.KPI.TotalJudiciales}}</h3>
+    <small class="text-muted flex-items-center flex-gap-xs">
+        <svg class="icono-menu"><use href="#icono-balanza"></use></svg> Mandatos de juzgado
+    </small>
+</div>
+<div class="card-section m-0 border-box flex-column justify-between">
+    <div class="flex-row-between mb-xs">
+        <small class="text-uppercase text-muted">Sindicales</small>
+        <span class="badge badge-info">Aportes</span>
+    </div>
+    <h3 class="stat-mono mb-0 text-info">{{.KPI.TotalSindicales}}</h3>
+    <small class="text-muted flex-items-center flex-gap-xs">
+        <svg class="icono-menu"><use href="#icono-edificio-2"></use></svg> Cuotas sindicales
+    </small>
+</div>
+<div class="card-section m-0 border-box flex-column justify-between">
+    <div class="flex-row-between mb-xs">
+        <small class="text-uppercase text-muted">Préstamos / Conv.</small>
+        <span class="badge badge-warning">Entidades</span>
+    </div>
+    <h3 class="stat-mono mb-0 text-warning">{{.KPI.TotalPrestamos}}</h3>
+    <small class="text-muted flex-items-center flex-gap-xs">
+        <svg class="icono-menu"><use href="#icono-banknotes"></use></svg> Cuotas bancarias
+    </small>
+</div>
+<div class="card-section m-0 border-box flex-column justify-between">
+    <div class="flex-row-between mb-xs">
+        <small class="text-uppercase text-muted">Colaboradores</small>
+        <span class="badge badge-purple">Personal</span>
+    </div>
+    <h3 class="stat-mono mb-0 text-purple">{{.KPI.TotalTrabajadores}}</h3>
+    <small class="text-muted flex-items-center flex-gap-xs">
+        <svg class="icono-menu"><use href="#icono-usuarios"></use></svg> Personal afecto
+    </small>
+</div>
+{{end}}
+
 {{define "tabla_descuentos"}}
+{{if .KPI}}
+<div id="contenedor-kpis-descuentos" class="grid grid-auto-fit-200 gap-md mb-lg" hx-swap-oob="true">
+    {{template "contenido_kpis_descuentos" .}}
+</div>
+{{end}}
 <div class="table-responsive">
     <table class="striped condensed w-full" id="tabla-descuentos">
         <thead>
@@ -169,13 +202,13 @@
                 </td>
                 <td>
                     {{if eq .TipoDescuento "JUDICIAL"}}
-                    <mark class="badge badge-danger font-xs">⚖️ JUDICIAL</mark>
+                    <mark class="badge badge-danger font-xs">JUDICIAL</mark>
                     {{else if eq .TipoDescuento "SINDICAL"}}
-                    <mark class="badge badge-info font-xs">🏛️ SINDICAL</mark>
+                    <mark class="badge badge-info font-xs">SINDICAL</mark>
                     {{else if eq .TipoDescuento "PRESTAMO"}}
-                    <mark class="badge badge-warning font-xs">💳 PRÉSTAMO</mark>
+                    <mark class="badge badge-warning font-xs">PRÉSTAMO</mark>
                     {{else if eq .TipoDescuento "CONVENIO"}}
-                    <mark class="badge badge-purple font-xs">🤝 CONVENIO</mark>
+                    <mark class="badge badge-purple font-xs">CONVENIO</mark>
                     {{else}}
                     <mark class="badge font-xs">{{.TipoDescuento}}</mark>
                     {{end}}
@@ -245,7 +278,7 @@
                         </button>
                         {{if .Activo}}
                         <button type="button" class="btn-icon text-danger" data-tooltip="Dar de baja este descuento" data-placement="left"
-                            onclick="abrirModalBaja({{.ID}})">
+                            onclick="const m = document.getElementById('modal-baja-descuento'); m.querySelector('[name=id]').value='{{.ID}}'; m.querySelector('[name=motivo_baja]').value=''; m.showModal();">
                             <svg class="icono-menu">
                                 <use href="#icono-archive"></use>
                             </svg>
@@ -261,8 +294,11 @@
                         {{end}}
                         <button type="button" class="btn-icon text-danger" data-tooltip="Eliminar registro" data-placement="left"
                             hx-delete="/tenant/descuentos/eliminar?id={{.ID}}"
-                            hx-confirm="¿Está seguro de eliminar definitivamente este descuento?"
-                            hx-target="#lista-descuentos">
+                            hx-target="#lista-descuentos"
+                            data-confirm-title="Eliminar Descuento Definitivamente"
+                            data-confirm-message="¿Está seguro de eliminar definitivamente este descuento o retención? Esta acción es irreversible y afectará los cálculos de planilla."
+                            data-confirm-badge="Eliminación"
+                            data-confirm-btn="Sí, Eliminar">
                             <svg class="icono-menu">
                                 <use href="#icono-trash"></use>
                             </svg>
@@ -285,23 +321,3 @@
     {{template "componente_paginacion" .Paginacion}}
 {{end}}
 {{end}}
-
-<script>
-    function abrirModalBaja(id) {
-        document.getElementById('baja-descuento-id').value = id;
-        document.getElementById('baja-descuento-motivo').value = '';
-        document.getElementById('modal-baja-descuento').showModal();
-    }
-
-    function ejecutarBajaDescuento(event) {
-        event.preventDefault();
-        const id = document.getElementById('baja-descuento-id').value;
-        const motivo = encodeURIComponent(document.getElementById('baja-descuento-motivo').value);
-        htmx.ajax('POST', `/tenant/descuentos/toggle-activo?id=${id}&activo=false&motivo_baja=${motivo}`, {
-            target: '#lista-descuentos',
-            swap: 'innerHTML'
-        }).then(() => {
-            document.getElementById('modal-baja-descuento').close();
-        });
-    }
-</script>
