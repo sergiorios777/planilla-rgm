@@ -1,111 +1,163 @@
 <article>
-    <header>
-        <h3 class="m-0">📊 Centro de Informes y Reportes Institucionales</h3>
-        <small>Extrae, visualiza y exporta la información oficial de la municipalidad.</small>
+    <header class="flex-row-between flex-items-center mb-md">
+        <div>
+            <h3 class="mb-xs flex-items-center flex-gap-sm">
+                <svg class="icono-menu text-primary">
+                    <use href="#icono-dashboard"></use>
+                </svg>
+                Centro de Informes y Reportes Institucionales
+            </h3>
+            <p class="font-sm text-muted mb-0">Extrae, visualiza y exporta la información oficial de la municipalidad.</p>
+        </div>
     </header>
 
-    <div class="grid layout-sidebar-main">
-        
-        <aside>
-            <nav>
-                <h5 class="mt-0 pl-sm text-muted">Módulos</h5>
-                <ul class="list-none pl-0">
-                    <li><button class="outline secondary style-btn w-full text-left mb-sm" hx-get="/tenant/reportes/filtrar?modulo=TODOS" hx-target="#panel-lista-reportes">📂 Todos los Reportes</button></li>
-                    <li><button class="outline secondary style-btn w-full text-left mb-sm" hx-get="/tenant/reportes/filtrar?modulo=TRABAJADORES" hx-target="#panel-lista-reportes">👥 Trabajadores</button></li>
-                    <li><button class="outline secondary style-btn w-full text-left mb-sm" hx-get="/tenant/reportes/filtrar?modulo=ORGANIGRAMA" hx-target="#panel-lista-reportes">🏢 Organigrama</button></li>
-                    <li><button class="outline secondary style-btn w-full text-left mb-sm" hx-get="/tenant/reportes/filtrar?modulo=PUESTOS" hx-target="#panel-lista-reportes">📊 Puestos (Plazas)</button></li>
-                    <li><button class="outline secondary style-btn w-full text-left mb-sm" hx-get="/tenant/reportes/filtrar?modulo=CONCEPTOS" hx-target="#panel-lista-reportes">⚙️ Conceptos</button></li>
-                    <li><button class="outline secondary style-btn w-full text-left mb-sm" hx-get="/tenant/reportes/filtrar?modulo=CONTRATOS" hx-target="#panel-lista-reportes">⏳ Contratos</button></li>
-                </ul>
-            </nav>
-        </aside>
+    <!-- Barra de Filtros y Búsqueda Reactiva -->
+    <form id="form-filtros-reportes" class="grid mb-md">
+        <label class="mb-0">
+            Buscar Informe
+            <input type="search" id="input-buscar-reportes" name="buscar" placeholder="Buscar por nombre, palabra clave o descripción..."
+                hx-get="/tenant/reportes/filtrar"
+                hx-trigger="keyup changed delay:350ms, search"
+                hx-include="#form-filtros-reportes"
+                hx-target="#panel-lista-reportes"
+                hx-indicator="#indicador-reportes"
+                class="mb-0">
+        </label>
 
-        <section>
-            <div id="panel-lista-reportes" hx-get="/tenant/reportes/filtrar?modulo=TODOS" hx-trigger="load">
-                <div aria-busy="true" class="text-center">Cargando catálogo de informes...</div>
-            </div>
-        </section>
+        <label class="mb-0">
+            Módulo Funcional
+            <select name="modulo" id="select-modulo-reportes"
+                hx-get="/tenant/reportes/filtrar"
+                hx-include="#form-filtros-reportes"
+                hx-target="#panel-lista-reportes"
+                hx-indicator="#indicador-reportes"
+                class="mb-0">
+                <option value="TODOS" selected>Todos los módulos</option>
+                <option value="TRABAJADORES">Trabajadores y Legajo</option>
+                <option value="ORGANIGRAMA">Estructura Orgánica</option>
+                <option value="PUESTOS">Puestos y Plazas (CAP/PAP)</option>
+                <option value="CONCEPTOS">Catálogo de Conceptos</option>
+                <option value="CONTRATOS">Contratos y Plazos</option>
+            </select>
+        </label>
+    </form>
 
+    <div id="indicador-reportes" class="htmx-indicator font-xs text-muted mb-md flex-items-center flex-gap-xs">
+        <span aria-busy="true"></span>
+        <span>Consultando catálogo de reportes...</span>
+    </div>
+
+    <!-- Catálogo Dinámico de Reportes en Tabla -->
+    <div id="panel-lista-reportes">
+        {{template "lista_reportes" .}}
     </div>
 </article>
 
 {{define "lista_reportes"}}
-    <div class="flex-column flex-gap-md">
-        {{range .Reportes}}
-        <div class="border-box p-md">
-            <div class="flex-row-between flex-align-start">
-                <div class="flex-grow min-w-250">
-                    <h5 class="m-0 mb-xs">{{.Nombre}}</h5>
-                    <p class="m-0 font-sm text-muted">{{.Descripcion}}</p>
-                    
-                    <div class="flex-row-start flex-gap-md mt-sm">
-                        <span class="badge badge-secondary">
-                            📂 {{.Modulo}}
-                        </span>
+<div class="table-responsive">
+    <table class="striped condensed w-full mb-0">
+        <thead>
+            <tr>
+                <th style="min-width: 340px;">Reporte Institucional</th>
+                <th style="width: 200px;" class="text-center">Parámetros</th>
+                <th style="width: 110px;" class="text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Reportes}}
+            <tr>
+                <!-- Columna 1: Reporte (Icono, Título, Badge y Descripción) -->
+                <td>
+                    <form id="form-rep-{{.ID}}" method="GET" target="_blank">
+                        <input type="hidden" name="id" value="{{.ID}}">
+                    </form>
 
-                        {{if eq .ID "trab_cumple"}}
-                        <!-- Selector de Mes de Cumpleaños -->
-                        <div class="inline-flex-center flex-gap-sm">
-                            <label class="m-0 font-xs font-bold">Mes:</label>
-                            <select class="select-compact" 
-                                    onchange="document.getElementById('pdf-trab_cumple').href='/tenant/reportes/ver-pdf?id=trab_cumple&mes=' + this.value; document.getElementById('excel-trab_cumple').href='/tenant/reportes/descargar-excel?id=trab_cumple&mes=' + this.value;">
-                                <option value="1" {{if eq $.MesActual 1}}selected{{end}}>Enero</option>
-                                <option value="2" {{if eq $.MesActual 2}}selected{{end}}>Febrero</option>
-                                <option value="3" {{if eq $.MesActual 3}}selected{{end}}>Marzo</option>
-                                <option value="4" {{if eq $.MesActual 4}}selected{{end}}>Abril</option>
-                                <option value="5" {{if eq $.MesActual 5}}selected{{end}}>Mayo</option>
-                                <option value="6" {{if eq $.MesActual 6}}selected{{end}}>Junio</option>
-                                <option value="7" {{if eq $.MesActual 7}}selected{{end}}>Julio</option>
-                                <option value="8" {{if eq $.MesActual 8}}selected{{end}}>Agosto</option>
-                                <option value="9" {{if eq $.MesActual 9}}selected{{end}}>Septiembre</option>
-                                <option value="10" {{if eq $.MesActual 10}}selected{{end}}>Octubre</option>
-                                <option value="11" {{if eq $.MesActual 11}}selected{{end}}>Noviembre</option>
-                                <option value="12" {{if eq $.MesActual 12}}selected{{end}}>Diciembre</option>
-                            </select>
-                        </div>
+                    <div class="flex-items-center flex-gap-xs mb-xs">
+                        {{if eq .Modulo "TRABAJADORES"}}
+                        <svg class="icono-menu text-info"><use href="#icono-usuarios"></use></svg>
+                        {{else if eq .Modulo "ORGANIGRAMA"}}
+                        <svg class="icono-menu text-success"><use href="#icono-edificio"></use></svg>
+                        {{else if eq .Modulo "PUESTOS"}}
+                        <svg class="icono-menu text-warning"><use href="#icono-objetivo"></use></svg>
+                        {{else if eq .Modulo "CONCEPTOS"}}
+                        <svg class="icono-menu text-purple"><use href="#icono-bloc-notas"></use></svg>
+                        {{else if eq .Modulo "CONTRATOS"}}
+                        <svg class="icono-menu text-danger"><use href="#icono-contracts"></use></svg>
+                        {{else}}
+                        <svg class="icono-menu text-primary"><use href="#icono-cajas"></use></svg>
                         {{end}}
+                        <strong class="font-sm">{{.Nombre}}</strong>
 
-                        {{if eq .ID "contrato_vence"}}
-                        <!-- Input de Días de Vencimiento -->
-                        <div class="inline-flex-center flex-gap-sm">
-                            <label class="m-0 font-xs font-bold">Rango (días):</label>
-                            <input type="number" value="30" min="1" max="365" class="w-70 input-compact"
-                                   oninput="document.getElementById('pdf-contrato_vence').href='/tenant/reportes/ver-pdf?id=contrato_vence&dias=' + this.value; document.getElementById('excel-contrato_vence').href='/tenant/reportes/descargar-excel?id=contrato_vence&dias=' + this.value;">
-                        </div>
+                        {{if eq .Modulo "TRABAJADORES"}}
+                        <mark class="badge badge-info font-xs">TRABAJADORES</mark>
+                        {{else if eq .Modulo "ORGANIGRAMA"}}
+                        <mark class="badge badge-success font-xs">ORGANIGRAMA</mark>
+                        {{else if eq .Modulo "PUESTOS"}}
+                        <mark class="badge badge-warning font-xs">PUESTOS</mark>
+                        {{else if eq .Modulo "CONCEPTOS"}}
+                        <mark class="badge badge-purple font-xs">CONCEPTOS</mark>
+                        {{else if eq .Modulo "CONTRATOS"}}
+                        <mark class="badge badge-danger font-xs">CONTRATOS</mark>
+                        {{else}}
+                        <mark class="badge badge-secondary font-xs">{{.Modulo}}</mark>
                         {{end}}
                     </div>
-                </div>
-                
-                <div role="group" class="mb-0 w-auto inline-flex flex-gap-sm">
+                    <small class="text-muted">{{.Descripcion}}</small>
+                </td>
+
+                <!-- Columna 2: Parámetros -->
+                <td class="text-center">
                     {{if eq .ID "trab_cumple"}}
-                    <a id="pdf-trab_cumple" href="/tenant/reportes/ver-pdf?id=trab_cumple&mes={{$.MesActual}}" target="_blank" class="button outline secondary btn-sm text-no-underline">
-                        👁️ Ver PDF
-                    </a>
-                    <a id="excel-trab_cumple" href="/tenant/reportes/descargar-excel?id=trab_cumple&mes={{$.MesActual}}" class="button outline contrast btn-sm text-no-underline">
-                        📥 Excel
-                    </a>
+                    <div class="flex-items-center justify-center flex-gap-xs">
+                        <small class="text-muted font-bold font-xs">Mes:</small>
+                        <select name="mes" form="form-rep-{{.ID}}" class="btn-compact font-xs mb-0" style="padding: 0.2rem 0.5rem; height: auto;">
+                            <option value="1" {{if eq $.MesActual 1}}selected{{end}}>Enero</option>
+                            <option value="2" {{if eq $.MesActual 2}}selected{{end}}>Febrero</option>
+                            <option value="3" {{if eq $.MesActual 3}}selected{{end}}>Marzo</option>
+                            <option value="4" {{if eq $.MesActual 4}}selected{{end}}>Abril</option>
+                            <option value="5" {{if eq $.MesActual 5}}selected{{end}}>Mayo</option>
+                            <option value="6" {{if eq $.MesActual 6}}selected{{end}}>Junio</option>
+                            <option value="7" {{if eq $.MesActual 7}}selected{{end}}>Julio</option>
+                            <option value="8" {{if eq $.MesActual 8}}selected{{end}}>Agosto</option>
+                            <option value="9" {{if eq $.MesActual 9}}selected{{end}}>Septiembre</option>
+                            <option value="10" {{if eq $.MesActual 10}}selected{{end}}>Octubre</option>
+                            <option value="11" {{if eq $.MesActual 11}}selected{{end}}>Noviembre</option>
+                            <option value="12" {{if eq $.MesActual 12}}selected{{end}}>Diciembre</option>
+                        </select>
+                    </div>
                     {{else if eq .ID "contrato_vence"}}
-                    <a id="pdf-contrato_vence" href="/tenant/reportes/ver-pdf?id=contrato_vence&dias=30" target="_blank" class="button outline secondary btn-sm text-no-underline">
-                        👁️ Ver PDF
-                    </a>
-                    <a id="excel-contrato_vence" href="/tenant/reportes/descargar-excel?id=contrato_vence&dias=30" class="button outline contrast btn-sm text-no-underline">
-                        📥 Excel
-                    </a>
+                    <div class="flex-items-center justify-center flex-gap-xs">
+                        <small class="text-muted font-bold font-xs">Días:</small>
+                        <input type="number" name="dias" form="form-rep-{{.ID}}" value="30" min="1" max="365" 
+                               class="btn-compact font-xs mb-0 stat-mono text-center" style="width: 75px; padding: 0.2rem 0.5rem; height: auto;">
+                    </div>
                     {{else}}
-                    <a href="/tenant/reportes/ver-pdf?id={{.ID}}" target="_blank" class="button outline secondary btn-sm text-no-underline">
-                        👁️ Ver PDF
-                    </a>
-                    <a href="/tenant/reportes/descargar-excel?id={{.ID}}" class="button outline contrast btn-sm text-no-underline">
-                        📥 Excel
-                    </a>
+                    <span class="text-muted font-xs"><em>Ninguno</em></span>
                     {{end}}
-                </div>
-            </div>
-        </div>
-        {{else}}
-        <div class="text-center p-md font-italic text-muted">
-            No se encontraron reportes disponibles para este módulo.
-        </div>
-        {{end}}
-    </div>
+                </td>
+
+                <!-- Columna 3: Acciones (Botones Planos con SVG y Tooltip) -->
+                <td class="text-center">
+                    <div class="flex-row-center flex-items-center justify-center flex-gap-xs">
+                        <button type="submit" form="form-rep-{{.ID}}" formaction="/tenant/reportes/ver-pdf"
+                            class="btn-icon text-danger" data-tooltip="Visualizar en PDF" data-placement="left">
+                            <svg class="icono-menu"><use href="#icono-eye"></use></svg>
+                        </button>
+                        <button type="submit" form="form-rep-{{.ID}}" formaction="/tenant/reportes/descargar-excel"
+                            class="btn-icon text-success" data-tooltip="Exportar a Excel" data-placement="left">
+                            <svg class="icono-menu"><use href="#icono-table"></use></svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="3" class="text-center p-lg font-italic text-muted">
+                    No se encontraron reportes institucionales con los filtros seleccionados.
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
 {{end}}

@@ -7,6 +7,7 @@ import (
 	"planilla-rgm/internal/config"
 	"planilla-rgm/internal/models"
 	"planilla-rgm/internal/services"
+	"strings"
 	"time"
 )
 
@@ -21,7 +22,11 @@ func (h *ReporteHandler) VistaUI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error cargando la plantilla de reportes: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	tmpl.Execute(w, nil)
+	tmpl.Execute(w, map[string]interface{}{
+		"Reportes":     config.ListaReportes,
+		"MesActual":    int(time.Now().Month()),
+		"ModuloActual": "TODOS",
+	})
 }
 
 // FiltrarUI filtra la lista de reportes en memoria asíncronamente con HTMX
@@ -30,10 +35,17 @@ func (h *ReporteHandler) FiltrarUI(w http.ResponseWriter, r *http.Request) {
 	if modulo == "" {
 		modulo = "TODOS"
 	}
+	buscar := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("buscar")))
 
 	var filtrados []models.Reporte
 	for _, rep := range config.ListaReportes {
-		if modulo == "TODOS" || rep.Modulo == modulo {
+		coincideModulo := modulo == "TODOS" || rep.Modulo == modulo
+		coincideBusqueda := buscar == "" ||
+			strings.Contains(strings.ToLower(rep.Nombre), buscar) ||
+			strings.Contains(strings.ToLower(rep.Descripcion), buscar) ||
+			strings.Contains(strings.ToLower(rep.Modulo), buscar)
+
+		if coincideModulo && coincideBusqueda {
 			filtrados = append(filtrados, rep)
 		}
 	}
@@ -46,8 +58,9 @@ func (h *ReporteHandler) FiltrarUI(w http.ResponseWriter, r *http.Request) {
 
 	// Renderizar solo la subplantilla para el target de HTMX
 	tmpl.ExecuteTemplate(w, "lista_reportes", map[string]interface{}{
-		"Reportes": filtrados,
-		"MesActual": int(time.Now().Month()),
+		"Reportes":     filtrados,
+		"MesActual":    int(time.Now().Month()),
+		"ModuloActual": modulo,
 	})
 }
 
