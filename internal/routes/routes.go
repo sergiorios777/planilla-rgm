@@ -432,6 +432,17 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/asistencia/editar-ui", middleware.RequireAuth(asistenciaHandler.EditarUI))
 	mux.HandleFunc("/tenant/asistencia/actualizar", middleware.RequireAuth(asistenciaHandler.Actualizar))
 
+	// Vacaciones y Licencias
+	licenciaVacRepo := repository.NewLicenciaVacacionRepository(db)
+	licenciaVacHandler := handlers.NewLicenciaVacacionHandler(licenciaVacRepo, trabajadorRepo)
+	mux.HandleFunc("/tenant/ui/vacaciones-licencias", middleware.RequireAuth(licenciaVacHandler.VistaUI))
+	mux.HandleFunc("/tenant/vacaciones-licencias/lista", middleware.RequireAuth(licenciaVacHandler.Listar))
+	mux.HandleFunc("/tenant/vacaciones-licencias/modal-crear", middleware.RequireAuth(licenciaVacHandler.ModalCrearUI))
+	mux.HandleFunc("/tenant/vacaciones-licencias/crear", middleware.RequireAuth(licenciaVacHandler.Crear))
+	mux.HandleFunc("/tenant/vacaciones-licencias/modal-editar", middleware.RequireAuth(licenciaVacHandler.ModalEditarUI))
+	mux.HandleFunc("/tenant/vacaciones-licencias/actualizar", middleware.RequireAuth(licenciaVacHandler.Actualizar))
+	mux.HandleFunc("/tenant/vacaciones-licencias/eliminar", middleware.RequireAuth(licenciaVacHandler.Eliminar))
+
 	// Rutas de presupuesto anual de las planillas
 	presupuestoRepo := repository.NewPresupuestoRepository(db)
 	presupuestoService := services.NewPresupuestoService(presupuestoRepo, puestoRepo, puestoConceptoRepo, planillaService)

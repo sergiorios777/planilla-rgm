@@ -68,6 +68,9 @@ func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
 	descRepo := repository.NewDescuentoRepository(s.Repo.GetDB())
 	mapaDescuentosTrabajador, _ := descRepo.ObtenerDescuentosActivosPorTrabajadorMasivo(tenantID, trabajadorIDs, anio, mes)
 
+	licRepo := repository.NewLicenciaVacacionRepository(s.Repo.GetDB())
+	mapaIncidencias, _ := licRepo.ObtenerIncidenciasMes(tenantID, anio, mes)
+
 	// =========================================================
 	// 2. INICIO DE LA CONCURRENCIA (WORKER POOL)
 	// =========================================================
@@ -101,6 +104,7 @@ func (s *PlanillaService) Procesar(planillaID int, tenantID int) error {
 			MapaAfectacionesGlobal: mapaAfectacionesGlobal,
 			ReglasFinanciamiento:   reglasFinanciamiento,
 			DescuentosTrabajador:   mapaDescuentosTrabajador[contrato.TrabajadorID],
+			Incidencias:            mapaIncidencias[contrato.TrabajadorID],
 		}
 	}
 	close(jobs) // Cerramos para que los workers sepan que no hay más
@@ -224,6 +228,14 @@ func (s *PlanillaService) calcularBoletaContrato(job models.JobPlanilla) (models
 
 	// Calculamos días y factor de prorrateo
 	diasLaborados := s.calcularDiasLaborados(job.Contrato.FechaInicio, job.Contrato.FechaFin, job.Anio, job.MesActual)
+	for _, inc := range job.Incidencias {
+		if inc.Tipo == "LICENCIA_SIN_GOCE" {
+			diasLaborados -= float64(inc.DiasEnMes)
+		}
+	}
+	if diasLaborados < 0 {
+		diasLaborados = 0
+	}
 	factorProrrateo := diasLaborados / 30.0
 
 	// Calcular gratificación y bonificación extraordinaria si corresponde (DL 728 en Julio/Diciembre)

@@ -320,7 +320,10 @@ func (r *PlanillaRepository) ObtenerDetalles(planillaID int, tenantID int) ([]mo
 		SELECT d.id, d.planilla_id, d.contrato_id, d.total_ingresos, d.total_retenciones, d.total_aportes, d.neto_pagar,
 		       t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
 		       t.numero_documento AS trabajador_doc,
-		       COALESCE(p.nombre, 'Sin Plaza Asignada') AS puesto_nombre
+		       COALESCE(p.nombre, 'Sin Plaza Asignada') AS puesto_nombre,
+		       c.trabajador_id,
+		       pl.anio,
+		       pl.mes
 		FROM planilla_detalles d
 		INNER JOIN planillas pl ON d.planilla_id = pl.id
 		INNER JOIN contratos c ON d.contrato_id = c.id
@@ -336,17 +339,33 @@ func (r *PlanillaRepository) ObtenerDetalles(planillaID int, tenantID int) ([]mo
 	defer rows.Close()
 
 	var lista []models.PlanillaDetalle
+	var trabIDs []int
+	var pAnio, pMes int
 	for rows.Next() {
 		var d models.PlanillaDetalle
+		var tID int
 		err := rows.Scan(&d.ID, &d.PlanillaID, &d.ContratoID, &d.TotalIngresos, &d.TotalRetenciones, &d.TotalAportes, &d.NetoPagar,
-			&d.TrabajadorNombre, &d.TrabajadorDoc, &d.PuestoNombre)
+			&d.TrabajadorNombre, &d.TrabajadorDoc, &d.PuestoNombre, &tID, &pAnio, &pMes)
 		if err == nil {
 			lista = append(lista, d)
+			trabIDs = append(trabIDs, tID)
 		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
+	if len(lista) > 0 && pAnio > 0 && pMes > 0 {
+		licRepo := NewLicenciaVacacionRepository(r.db)
+		mapaIncidencias, _ := licRepo.ObtenerIncidenciasMes(tenantID, pAnio, pMes)
+		if len(mapaIncidencias) > 0 {
+			for i := range lista {
+				tID := trabIDs[i]
+				lista[i].Incidencias = mapaIncidencias[tID]
+			}
+		}
+	}
+
 	return lista, nil
 }
 
@@ -356,7 +375,10 @@ func (r *PlanillaRepository) ObtenerDetallePorID(detalleID int, tenantID int) (*
 		SELECT d.id, d.planilla_id, d.contrato_id, d.total_ingresos, d.total_retenciones, d.total_aportes, d.neto_pagar,
 		       t.apellido_paterno || ' ' || t.apellido_materno || ', ' || t.nombres AS trabajador_nombre,
 		       t.numero_documento AS trabajador_doc,
-		       COALESCE(p.nombre, 'Sin Plaza Asignada') AS puesto_nombre
+		       COALESCE(p.nombre, 'Sin Plaza Asignada') AS puesto_nombre,
+		       c.trabajador_id,
+		       pl.anio,
+		       pl.mes
 		FROM planilla_detalles d
 		INNER JOIN planillas pl ON d.planilla_id = pl.id
 		INNER JOIN contratos c ON d.contrato_id = c.id
@@ -365,9 +387,10 @@ func (r *PlanillaRepository) ObtenerDetallePorID(detalleID int, tenantID int) (*
 		WHERE d.id = $1 AND pl.tenant_id = $2
 	`
 	var d models.PlanillaDetalle
+	var tID, pAnio, pMes int
 	err := r.db.QueryRow(query, detalleID, tenantID).Scan(
 		&d.ID, &d.PlanillaID, &d.ContratoID, &d.TotalIngresos, &d.TotalRetenciones, &d.TotalAportes, &d.NetoPagar,
-		&d.TrabajadorNombre, &d.TrabajadorDoc, &d.PuestoNombre,
+		&d.TrabajadorNombre, &d.TrabajadorDoc, &d.PuestoNombre, &tID, &pAnio, &pMes,
 	)
 	if err != nil {
 		return nil, err
@@ -377,6 +400,13 @@ func (r *PlanillaRepository) ObtenerDetallePorID(detalleID int, tenantID int) (*
 	if err == nil {
 		d.Conceptos = conceptos
 	}
+
+	if pAnio > 0 && pMes > 0 {
+		licRepo := NewLicenciaVacacionRepository(r.db)
+		mapaIncidencias, _ := licRepo.ObtenerIncidenciasMes(tenantID, pAnio, pMes)
+		d.Incidencias = mapaIncidencias[tID]
+	}
+
 	return &d, nil
 }
 
@@ -812,7 +842,8 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 			COALESCE(t.direccion, '-'),
 			COALESCE(t.regimen_pensionario, 'ONP'),
 			COALESCE(a.nombre, '-'),
-			COALESCE(t.cuspp, '-')
+			COALESCE(t.cuspp, '-'),
+			COALESCE(t.id, 0) AS trabajador_id
 		FROM planilla_detalles pd
 		LEFT JOIN contratos c ON pd.contrato_id = c.id
 		LEFT JOIN trabajadores t ON c.trabajador_id = t.id
@@ -837,7 +868,7 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 			&b.DetalleID, &b.TrabajadorDoc, &b.TrabajadorNombre, &b.Cargo, &b.Regimen,
 			&b.TotalIngresos, &b.TotalRetenciones, &b.TotalAportes, &b.NetoPagar,
 			&b.Sexo, &b.FechaNacimiento, &b.FechaIngreso, &b.FechaCese, &b.Direccion,
-			&b.RegimenPensionario, &b.AfpNombre, &b.Cuspp,
+			&b.RegimenPensionario, &b.AfpNombre, &b.Cuspp, &b.TrabajadorID,
 		)
 		if err != nil {
 			return nil, err
@@ -854,6 +885,27 @@ func (r *PlanillaRepository) ObtenerDatosParaReporte(planillaID int, tenantID in
 	}
 	if err := rowsDet.Err(); err != nil {
 		return nil, err
+	}
+
+	if len(reporte.Boletas) > 0 && reporte.PlanillaAnio > 0 && reporte.PlanillaMes > 0 {
+		licRepo := NewLicenciaVacacionRepository(r.db)
+		mapaIncidencias, _ := licRepo.ObtenerIncidenciasMes(tenantID, reporte.PlanillaAnio, reporte.PlanillaMes)
+		for _, b := range reporte.Boletas {
+			if incs, ok := mapaIncidencias[b.TrabajadorID]; ok && len(incs) > 0 {
+				b.Incidencias = incs
+				var textos []string
+				for _, inc := range incs {
+					label := "Vacaciones"
+					if inc.Tipo == "LICENCIA_CON_GOCE" {
+						label = "Lic. Con Goce"
+					} else if inc.Tipo == "LICENCIA_SIN_GOCE" {
+						label = "Lic. Sin Goce"
+					}
+					textos = append(textos, fmt.Sprintf("%s: %d d (%s)", label, inc.DiasEnMes, inc.DocumentoAprobacion))
+				}
+				b.IncidenciasTexto = strings.Join(textos, " | ")
+			}
+		}
 	}
 
 	// 3. Obtener TODOS los conceptos históricos inmutables
@@ -990,15 +1042,26 @@ func (r *PlanillaRepository) ObtenerDatosPlameJornada(planillaID int, tenantID i
 	return lista, nil
 }
 
-// ObtenerDatosPlameRemuneraciones obtiene los datos de remuneraciones para exportar a PLAME (.rem)
-func (r *PlanillaRepository) ObtenerDatosPlameRemuneraciones(planillaID int, tenantID int) ([]models.PlameRemuneracion, error) {
+// ObtenerDatosPlameRemuneraciones obtiene los datos detallados de remuneraciones para exportar a PLAME (.rem)
+func (r *PlanillaRepository) ObtenerDatosPlameRemuneraciones(planillaID int, tenantID int) ([]models.PlameConceptoDetalle, error) {
 	query := `
-		SELECT t.tipo_documento, t.numero_documento, COALESCE(NULLIF(pc.codigo_sunat, ''), cm.codigo) AS codigo, pc.monto
+		SELECT 
+			t.id AS trabajador_id,
+			t.tipo_documento, 
+			t.numero_documento, 
+			COALESCE(NULLIF(pc.codigo_sunat, ''), cm.codigo) AS codigo,
+			pc.tipo_concepto,
+			COALESCE(ct.es_remunerativa, false) AS es_remunerativa,
+			COALESCE(rl.codigo, '276') AS regimen_codigo,
+			pc.monto
 		FROM planilla_conceptos pc
 		INNER JOIN planilla_detalles pd ON pc.planilla_detalle_id = pd.id
 		INNER JOIN contratos c ON pd.contrato_id = c.id
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		LEFT JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
 		LEFT JOIN conceptos_maestros cm ON pc.maestro_id = cm.id
+		LEFT JOIN puestos p ON c.puesto_id = p.id
+		LEFT JOIN regimenes_laborales rl ON p.regimen_id = rl.id
 		INNER JOIN planillas pl ON pd.planilla_id = pl.id
 		WHERE pd.planilla_id = $1 AND pl.tenant_id = $2 
 		  AND (cm.origen = 'sunat' OR pc.codigo_sunat IS NOT NULL) 
@@ -1011,10 +1074,19 @@ func (r *PlanillaRepository) ObtenerDatosPlameRemuneraciones(planillaID int, ten
 	}
 	defer rows.Close()
 
-	var lista []models.PlameRemuneracion
+	var lista []models.PlameConceptoDetalle
 	for rows.Next() {
-		var rem models.PlameRemuneracion
-		if err := rows.Scan(&rem.TipoDocumento, &rem.NumeroDocumento, &rem.CodigoConcepto, &rem.Monto); err != nil {
+		var rem models.PlameConceptoDetalle
+		if err := rows.Scan(
+			&rem.TrabajadorID,
+			&rem.TipoDocumento,
+			&rem.NumeroDocumento,
+			&rem.CodigoConcepto,
+			&rem.TipoConcepto,
+			&rem.EsRemunerativa,
+			&rem.RegimenCodigo,
+			&rem.Monto,
+		); err != nil {
 			return nil, err
 		}
 		lista = append(lista, rem)

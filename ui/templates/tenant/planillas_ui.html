@@ -292,13 +292,18 @@
             </a>
         </div>
 
-        <div class="flex-row-between border-dashed p-md opacity-60">
+        <div class="flex-row-between border-box">
             <div>
-                <strong class="d-block font-sm text-muted">🏥 Días No Laborados /
-                    Subsidiados (.snl)</strong>
+                <strong class="d-block font-sm">🏥 Días No Laborados / Subsidiados (.snl)</strong>
                 <small class="text-muted text-mono font-xs">{{.SnlFilename}}</small>
             </div>
-            <span class="badge badge-secondary">Siguiente Versión</span>
+            <a href="/tenant/planillas/descargar-plame?id={{.Planilla.ID}}&tipo=snl" target="_blank" role="button"
+                class="outline primary btn-sm btn-compact">
+                <svg class="icono-menu">
+                    <use href="#icono-move-to-inbox"></use>
+                </svg>
+                Descargar
+            </a>
         </div>
 
         <div class="border-top pt-md mt-sm">

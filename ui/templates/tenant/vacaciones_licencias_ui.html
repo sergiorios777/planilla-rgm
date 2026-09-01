@@ -1,0 +1,516 @@
+<article>
+    <header class="flex-row-between flex-items-center flex-wrap flex-gap-md">
+        <div>
+            <h3 class="mb-0 flex-items-center flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-contracts"></use>
+                </svg>
+                Control de Vacaciones y Licencias del Personal
+            </h3>
+            <p><small class="text-muted">Registro de descansos vacacionales y suspensiones laborales con documento de aprobación.</small></p>
+        </div>
+        <div class="flex-gap-sm mb-0">
+            <button class="primary btn-compact flex-inline flex-items-center flex-gap-xs"
+                hx-get="/tenant/vacaciones-licencias/modal-crear"
+                hx-target="#modal-body-vacacion"
+                onclick="document.getElementById('modal-vacacion').showModal()">
+                <svg class="icono-menu">
+                    <use href="#icono-nuevo-1"></use>
+                </svg>
+                Registrar Vacación / Licencia
+            </button>
+        </div>
+    </header>
+
+    <!-- KPIs Bento Grid -->
+    <div id="contenedor-kpis-vacaciones">
+        {{template "kpis_bento" .}}
+    </div>
+
+    <!-- Barra de Búsqueda y Filtros -->
+    <div class="card-section p-md mb-lg">
+        <form id="form-filtros-vacaciones" class="grid mb-0">
+            <label>
+                Buscar Personal o Documento
+                <input type="search" name="buscar" placeholder="🔍 Trabajador, DNI o N° Resolución..."
+                    hx-get="/tenant/vacaciones-licencias/lista"
+                    hx-trigger="keyup changed delay:400ms, search"
+                    hx-include="#form-filtros-vacaciones"
+                    hx-target="#tbody-vacaciones"
+                    hx-indicator="#indicador-busqueda-vac">
+            </label>
+
+            <label>
+                Tipo de Incidencia
+                <select name="tipo" hx-get="/tenant/vacaciones-licencias/lista"
+                    hx-include="#form-filtros-vacaciones"
+                    hx-target="#tbody-vacaciones">
+                    <option value="TODOS">Todos los tipos</option>
+                    <option value="VACACION">🏖️ Vacaciones</option>
+                    <option value="LICENCIA_CON_GOCE">🟢 Licencia Con Goce de Haber</option>
+                    <option value="LICENCIA_SIN_GOCE">🔴 Licencia Sin Goce de Haber</option>
+                </select>
+            </label>
+
+            <label>
+                Estado
+                <select name="estado" hx-get="/tenant/vacaciones-licencias/lista"
+                    hx-include="#form-filtros-vacaciones"
+                    hx-target="#tbody-vacaciones">
+                    <option value="TODOS">Todos los estados</option>
+                    <option value="APROBADO" selected>Aprobado</option>
+                    <option value="PROGRAMADO">Programado</option>
+                    <option value="EJECUTADO">Ejecutado</option>
+                    <option value="CANCELADO">Cancelado</option>
+                </select>
+            </label>
+
+            <div class="flex-row-end flex-items-end mb-sm">
+                <span id="indicador-busqueda-vac" class="htmx-indicator font-xs" aria-busy="true">Buscando...</span>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Registros -->
+    <div class="table-responsive">
+        <table class="striped condensed w-full" id="tabla-vacaciones-licencias">
+            <thead>
+                <tr>
+                    <th style="min-width: 200px;">Trabajador</th>
+                    <th style="width: 140px;">Tipo de Incidencia</th>
+                    <th style="min-width: 170px;">Periodo (Fechas)</th>
+                    <th class="text-center" style="width: 75px;">Días</th>
+                    <th style="min-width: 220px;">Documento de Aprobación</th>
+                    <th style="min-width: 220px;">Código SUNAT (Tabla 21)</th>
+                    <th class="text-center" style="width: 95px;">Estado</th>
+                    <th class="text-center" style="width: 90px;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-vacaciones"
+                hx-get="/tenant/vacaciones-licencias/lista"
+                hx-trigger="recargarTablaVacaciones from:body">
+                {{template "tabla_registros" .}}
+            </tbody>
+        </table>
+    </div>
+</article>
+
+<!-- Bento Grid Template -->
+{{define "kpis_bento"}}
+<div class="grid grid-auto-fit-200 gap-md mb-lg">
+    <div class="card-section m-0 border-box flex-column justify-between">
+        <div class="flex-row-between mb-xs">
+            <small class="text-uppercase text-muted">Vacaciones del Mes</small>
+            <span class="badge badge-purple">🏖️ Periodo Actual</span>
+        </div>
+        <h3 class="stat-mono mb-0 text-purple">{{.KPIs.TotalEnVacacionesMes}}</h3>
+        <small class="text-muted mt-xs font-xs">Trabajadores gozando descanso</small>
+    </div>
+
+    <div class="card-section m-0 border-box flex-column justify-between">
+        <div class="flex-row-between mb-xs">
+            <small class="text-uppercase text-muted">Licencias Con Goce</small>
+            <span class="badge badge-success">🟢 Con Haber</span>
+        </div>
+        <h3 class="stat-mono mb-0 text-success">{{.KPIs.TotalLicenciasConGoceMes}}</h3>
+        <small class="text-muted mt-xs font-xs">Salud, maternidad, luto, etc.</small>
+    </div>
+
+    <div class="card-section m-0 border-box flex-column justify-between">
+        <div class="flex-row-between mb-xs">
+            <small class="text-uppercase text-muted">Licencias Sin Goce</small>
+            <span class="badge badge-danger">🔴 Sin Haber</span>
+        </div>
+        <h3 class="stat-mono mb-0 text-danger">{{.KPIs.TotalLicenciasSinGoceMes}}</h3>
+        <small class="text-muted mt-xs font-xs">Deducción de días laborados</small>
+    </div>
+
+    <div class="card-section m-0 border-box flex-column justify-between">
+        <div class="flex-row-between mb-xs">
+            <small class="text-uppercase text-muted">Total Registros</small>
+            <span class="badge badge-info">Histórico</span>
+        </div>
+        <h3 class="stat-mono mb-0 text-info">{{.KPIs.TotalHistorico}}</h3>
+        <small class="text-muted mt-xs font-xs">Incidencias gestionadas</small>
+    </div>
+</div>
+{{end}}
+
+<!-- Table Rows Template -->
+{{define "tabla_registros"}}
+{{range .Lista}}
+<tr id="fila-vac-{{.ID}}">
+    <td>
+        <strong>{{.TrabajadorNombre}}</strong><br>
+        <small class="stat-mono text-muted">DNI: {{.TrabajadorDoc}} | Plaza: {{.PuestoNombre}}</small>
+    </td>
+    <td>
+        {{if eq .Tipo "VACACION"}}
+        <mark class="badge badge-purple font-xs">🏖️ VACACIONES</mark>
+        {{else if eq .Tipo "LICENCIA_CON_GOCE"}}
+        <mark class="badge badge-success font-xs">🟢 LIC. CON GOCE</mark>
+        {{else if eq .Tipo "LICENCIA_SIN_GOCE"}}
+        <mark class="badge badge-danger font-xs">🔴 LIC. SIN GOCE</mark>
+        {{else}}
+        <mark class="badge font-xs">{{.Tipo}}</mark>
+        {{end}}
+        {{if .Subtipo}}
+        <div class="font-xs text-muted mt-xxs">{{.Subtipo}}</div>
+        {{end}}
+    </td>
+    <td>
+        <div class="font-sm">
+            <span>📅 {{.FechaInicio}}</span> al <span>{{.FechaFin}}</span>
+        </div>
+    </td>
+    <td class="text-center font-sm">
+        <span class="badge badge-secondary stat-mono font-bold">{{.DiasCalendario}} d</span>
+    </td>
+    <td>
+        <div class="flex-items-center flex-gap-xs font-sm">
+            <svg class="icono-menu" style="width: 14px; height: 14px;">
+                <use href="#icono-bloc-notas"></use>
+            </svg>
+            <strong>{{.DocumentoAprobacion}}</strong>
+        </div>
+        {{if .FechaAprobacion}}
+        <small class="text-muted">Fecha: {{.FechaAprobacion}}</small>
+        {{end}}
+        {{if .Observaciones}}
+        <div class="font-xs text-muted" title="{{.Observaciones}}" style="max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            💬 {{.Observaciones}}
+        </div>
+        {{end}}
+    </td>
+    <td>
+        <mark class="badge badge-info stat-mono font-xs" title="{{.SunatDescripcionAbrev}}">
+            [{{.CodigoSunatSuspension}}] {{if eq .SunatTipoSuspension "PERFECTA"}}S.P.{{else}}S.I.{{end}}
+        </mark>
+        <div class="font-xs text-muted" style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            {{.SunatDescripcionAbrev}}
+        </div>
+    </td>
+    <td class="text-center">
+        {{if eq .Estado "APROBADO"}}
+        <span class="badge badge-success font-xs">Aprobado</span>
+        {{else if eq .Estado "PROGRAMADO"}}
+        <span class="badge badge-warning font-xs">Programado</span>
+        {{else if eq .Estado "EJECUTADO"}}
+        <span class="badge badge-info font-xs">Ejecutado</span>
+        {{else}}
+        <span class="badge badge-danger font-xs">Cancelado</span>
+        {{end}}
+    </td>
+    <td class="text-center">
+        <div class="flex-row-center flex-items-center flex-gap-xs justify-center">
+            <button class="btn-icon" data-tooltip="Editar incidencia" data-placement="top"
+                hx-get="/tenant/vacaciones-licencias/modal-editar?id={{.ID}}"
+                hx-target="#modal-body-vacacion"
+                onclick="document.getElementById('modal-vacacion').showModal()">
+                <svg class="icono-menu">
+                    <use href="#icono-editar"></use>
+                </svg>
+            </button>
+            <button class="btn-icon text-danger" data-tooltip="Eliminar" data-placement="top"
+                hx-post="/tenant/vacaciones-licencias/eliminar?id={{.ID}}"
+                hx-target="#contenedor-kpis-vacaciones"
+                data-confirm-title="Eliminar Incidencia"
+                data-confirm-message="¿Estás seguro de eliminar este registro de vacaciones/licencia? Esta acción no se puede deshacer."
+                data-confirm-btn="Sí, Eliminar">
+                <svg class="icono-menu">
+                    <use href="#icono-papelera"></use>
+                </svg>
+            </button>
+        </div>
+    </td>
+</tr>
+{{else}}
+<tr>
+    <td colspan="8" class="text-center text-muted p-lg">
+        No se encontraron registros de vacaciones o licencias con los filtros seleccionados.
+    </td>
+</tr>
+{{end}}
+{{end}}
+
+<!-- Dialog Modal Único para Crear y Editar -->
+<dialog id="modal-vacacion" hx-on:cerrar-modal-vacacion="this.close()" hx-on:cerrarmodalvacacion="this.close()">
+    <article class="modal-card-lg">
+        <header class="flex-row-between flex-items-center">
+            <h4 class="mb-0" id="modal-titulo-vacacion">
+                <svg class="icono-menu">
+                    <use href="#icono-contracts"></use>
+                </svg>
+                Gestión de Vacaciones y Licencias
+            </h4>
+            <button aria-label="Close" rel="prev" onclick="document.getElementById('modal-vacacion').close()"></button>
+        </header>
+        <div id="modal-body-vacacion">
+            <p aria-busy="true">Cargando formulario...</p>
+        </div>
+    </article>
+</dialog>
+
+<!-- Formulario Modal de Creación -->
+{{define "formulario_crear_modal"}}
+<div id="alerta-error-modal"></div>
+<form hx-post="/tenant/vacaciones-licencias/crear"
+      hx-target="#contenedor-kpis-vacaciones"
+      hx-indicator="#loading-crear-vac"
+      hx-on::after-request="if(event.detail.successful && !event.detail.xhr.responseText.includes('alert-danger')) { document.getElementById('modal-vacacion').close(); this.reset(); }">
+
+    <div class="mb-md">
+        <label for="select-contrato-vac">
+            Trabajador / Plaza Activa <span class="text-danger">*</span>
+        </label>
+        <select id="select-contrato-vac" name="contrato_id" required class="select-con-buscador" style="width: 100%;">
+            <option value="">-- Seleccionar Trabajador --</option>
+            {{range .Contratos}}
+            <option value="{{.ID}}">[{{.NumeroDocumento}}] {{.TrabajadorNombre}}</option>
+            {{end}}
+        </select>
+    </div>
+
+    <div class="grid">
+        <label>
+            Tipo de Incidencia <span class="text-danger">*</span>
+            <select name="tipo" id="tipo-incidencia-select" required onchange="ajustarTipoSuspension(this.value)">
+                <option value="VACACION" selected>🏖️ Vacaciones Programadas / Gozadas</option>
+                <option value="LICENCIA_CON_GOCE">🟢 Licencia CON Goce de Haber</option>
+                <option value="LICENCIA_SIN_GOCE">🔴 Licencia SIN Goce de Haber</option>
+            </select>
+        </label>
+
+        <label>
+            Motivo / Subtipo Específico
+            <input type="text" name="subtipo" placeholder="Ej. Descanso Médico, Maternidad, Motivos Particulares...">
+        </label>
+    </div>
+
+    <div class="mb-md">
+        <label for="select-sunat-tabla21">
+            Código SUNAT (Tabla 21: Tipo de Suspensión) <span class="text-danger">*</span>
+        </label>
+        <select id="select-sunat-tabla21" name="codigo_sunat_suspension" required class="select-con-buscador" style="width: 100%;">
+            {{range .CatalogoSunat}}
+            <option value="{{.Codigo}}" data-tipo="{{.TipoSuspension}}" {{if eq .Codigo "23"}}selected{{end}}>
+                [{{.Codigo}}] {{if eq .TipoSuspension "PERFECTA"}}(S.P. Sin Goce){{else}}(S.I. Con Goce){{end}} - {{.Descripcion}}
+            </option>
+            {{end}}
+        </select>
+    </div>
+
+    <div class="grid">
+        <label>
+            Fecha de Inicio <span class="text-danger">*</span>
+            <input type="date" name="fecha_inicio" id="fecha-inicio-vac" required onchange="calcularDiasCalendario()">
+        </label>
+
+        <label>
+            Fecha de Fin <span class="text-danger">*</span>
+            <input type="date" name="fecha_fin" id="fecha-fin-vac" required onchange="calcularDiasCalendario()">
+        </label>
+
+        <label>
+            Días Totales
+            <input type="text" id="dias-calendario-display" value="0 días" readonly class="stat-mono bg-light text-center font-bold">
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>
+            Documento de Aprobación <span class="text-danger">*</span>
+            <input type="text" name="documento_aprobacion" required placeholder="Ej. R.A. N° 084-2026-MDR, Memo N° 120-RRHH...">
+        </label>
+
+        <label>
+            Fecha del Documento
+            <input type="date" name="fecha_aprobacion" value="{{.FechaHoy}}">
+        </label>
+
+        <label>
+            Estado del Registro
+            <select name="estado">
+                <option value="APROBADO" selected>Aprobado</option>
+                <option value="PROGRAMADO">Programado</option>
+                <option value="EJECUTADO">Ejecutado</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="mb-lg">
+        <label>
+            Observaciones Adicionales
+            <textarea name="observaciones" rows="2" placeholder="Detalles de sustento, trámite o reemplazo..."></textarea>
+        </label>
+    </div>
+
+    <footer class="flex-row-end flex-gap-sm mb-0">
+        <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-vacacion').close()">Cancelar</button>
+        <button type="submit" class="primary btn-compact flex-inline flex-items-center flex-gap-xs">
+            <span id="loading-crear-vac" class="htmx-indicator" aria-busy="true"></span>
+            Guardar Registro
+        </button>
+    </footer>
+</form>
+{{end}}
+
+<!-- Formulario Modal de Edición -->
+{{define "formulario_editar_modal"}}
+<div id="alerta-error-modal-edit"></div>
+<form hx-post="/tenant/vacaciones-licencias/actualizar"
+      hx-target="#contenedor-kpis-vacaciones"
+      hx-indicator="#loading-edit-vac"
+      hx-on::after-request="if(event.detail.successful && !event.detail.xhr.responseText.includes('alert-danger')) { document.getElementById('modal-vacacion').close(); }">
+
+    <input type="hidden" name="id" value="{{.Item.ID}}">
+
+    <div class="alert-box alert-info mb-md">
+        <strong>Trabajador:</strong> {{.Item.TrabajadorID}} (Registro ID: #{{.Item.ID}})
+    </div>
+
+    <div class="grid">
+        <label>
+            Tipo de Incidencia <span class="text-danger">*</span>
+            <select name="tipo" id="tipo-incidencia-select-edit" required onchange="ajustarTipoSuspensionEdit(this.value)">
+                <option value="VACACION" {{if eq .Item.Tipo "VACACION"}}selected{{end}}>🏖️ Vacaciones</option>
+                <option value="LICENCIA_CON_GOCE" {{if eq .Item.Tipo "LICENCIA_CON_GOCE"}}selected{{end}}>🟢 Licencia CON Goce</option>
+                <option value="LICENCIA_SIN_GOCE" {{if eq .Item.Tipo "LICENCIA_SIN_GOCE"}}selected{{end}}>🔴 Licencia SIN Goce</option>
+            </select>
+        </label>
+
+        <label>
+            Motivo / Subtipo Específico
+            <input type="text" name="subtipo" value="{{.Item.Subtipo}}" placeholder="Ej. Descanso Médico, Maternidad...">
+        </label>
+    </div>
+
+    <div class="mb-md">
+        <label for="select-sunat-tabla21-edit">
+            Código SUNAT (Tabla 21: Tipo de Suspensión) <span class="text-danger">*</span>
+        </label>
+        {{$currentCode := .Item.CodigoSunatSuspension}}
+        <select id="select-sunat-tabla21-edit" name="codigo_sunat_suspension" required class="select-con-buscador" style="width: 100%;">
+            {{range .CatalogoSunat}}
+            <option value="{{.Codigo}}" data-tipo="{{.TipoSuspension}}" {{if eq .Codigo $currentCode}}selected{{end}}>
+                [{{.Codigo}}] {{if eq .TipoSuspension "PERFECTA"}}(S.P. Sin Goce){{else}}(S.I. Con Goce){{end}} - {{.Descripcion}}
+            </option>
+            {{end}}
+        </select>
+    </div>
+
+    <div class="grid">
+        <label>
+            Fecha de Inicio <span class="text-danger">*</span>
+            <input type="date" name="fecha_inicio" id="fecha-inicio-vac-edit" value="{{.Item.FechaInicio}}" required onchange="calcularDiasCalendarioEdit()">
+        </label>
+
+        <label>
+            Fecha de Fin <span class="text-danger">*</span>
+            <input type="date" name="fecha_fin" id="fecha-fin-vac-edit" value="{{.Item.FechaFin}}" required onchange="calcularDiasCalendarioEdit()">
+        </label>
+
+        <label>
+            Días Totales
+            <input type="text" id="dias-calendario-display-edit" value="{{.Item.DiasCalendario}} días" readonly class="stat-mono bg-light text-center font-bold">
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>
+            Documento de Aprobación <span class="text-danger">*</span>
+            <input type="text" name="documento_aprobacion" value="{{.Item.DocumentoAprobacion}}" required>
+        </label>
+
+        <label>
+            Fecha del Documento
+            <input type="date" name="fecha_aprobacion" value="{{if .Item.FechaAprobacion}}{{.Item.FechaAprobacion}}{{end}}">
+        </label>
+
+        <label>
+            Estado del Registro
+            <select name="estado">
+                <option value="APROBADO" {{if eq .Item.Estado "APROBADO"}}selected{{end}}>Aprobado</option>
+                <option value="PROGRAMADO" {{if eq .Item.Estado "PROGRAMADO"}}selected{{end}}>Programado</option>
+                <option value="EJECUTADO" {{if eq .Item.Estado "EJECUTADO"}}selected{{end}}>Ejecutado</option>
+                <option value="CANCELADO" {{if eq .Item.Estado "CANCELADO"}}selected{{end}}>Cancelado</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="mb-lg">
+        <label>
+            Observaciones Adicionales
+            <textarea name="observaciones" rows="2">{{.Item.Observaciones}}</textarea>
+        </label>
+    </div>
+
+    <footer class="flex-row-end flex-gap-sm mb-0">
+        <button type="button" class="secondary outline btn-compact" onclick="document.getElementById('modal-vacacion').close()">Cancelar</button>
+        <button type="submit" class="primary btn-compact flex-inline flex-items-center flex-gap-xs">
+            <span id="loading-edit-vac" class="htmx-indicator" aria-busy="true"></span>
+            Actualizar Registro
+        </button>
+    </footer>
+</form>
+{{end}}
+
+<script>
+    function ajustarTipoSuspension(tipo) {
+        const selectSunat = document.getElementById('select-sunat-tabla21');
+        if (!selectSunat || !selectSunat.tomselect) return;
+        if (tipo === 'VACACION') {
+            selectSunat.tomselect.setValue('23');
+        } else if (tipo === 'LICENCIA_CON_GOCE') {
+            selectSunat.tomselect.setValue('26');
+        } else if (tipo === 'LICENCIA_SIN_GOCE') {
+            selectSunat.tomselect.setValue('05');
+        }
+    }
+
+    function ajustarTipoSuspensionEdit(tipo) {
+        const selectSunat = document.getElementById('select-sunat-tabla21-edit');
+        if (!selectSunat || !selectSunat.tomselect) return;
+        if (tipo === 'VACACION') {
+            selectSunat.tomselect.setValue('23');
+        } else if (tipo === 'LICENCIA_CON_GOCE') {
+            selectSunat.tomselect.setValue('26');
+        } else if (tipo === 'LICENCIA_SIN_GOCE') {
+            selectSunat.tomselect.setValue('05');
+        }
+    }
+
+    function calcularDiasCalendario() {
+        const fIni = document.getElementById('fecha-inicio-vac').value;
+        const fFin = document.getElementById('fecha-fin-vac').value;
+        const display = document.getElementById('dias-calendario-display');
+        if (fIni && fFin) {
+            const d1 = new Date(fIni);
+            const d2 = new Date(fFin);
+            const diffTime = d2 - d1;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            if (diffDays > 0) {
+                display.value = diffDays + " días";
+            } else {
+                display.value = "Fecha inválida";
+            }
+        }
+    }
+
+    function calcularDiasCalendarioEdit() {
+        const fIni = document.getElementById('fecha-inicio-vac-edit').value;
+        const fFin = document.getElementById('fecha-fin-vac-edit').value;
+        const display = document.getElementById('dias-calendario-display-edit');
+        if (fIni && fFin) {
+            const d1 = new Date(fIni);
+            const d2 = new Date(fFin);
+            const diffTime = d2 - d1;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            if (diffDays > 0) {
+                display.value = diffDays + " días";
+            } else {
+                display.value = "Fecha inválida";
+            }
+        }
+    }
+</script>

@@ -132,8 +132,19 @@
                 {{range .Detalles}}
                 <tr class="fila-trabajador-resumen"
                     data-trabajador="{{.TrabajadorNombre}} {{.TrabajadorDoc}} {{.PuestoNombre}}">
-                    <td><strong>{{.TrabajadorNombre}}</strong><br><small class="stat-mono">Doc:
-                            {{.TrabajadorDoc}}</small></td>
+                    <td>
+                        <strong>{{.TrabajadorNombre}}</strong>
+                        {{range .Incidencias}}
+                            {{if eq .Tipo "VACACION"}}
+                            <mark class="badge badge-purple font-xs" title="{{.DocumentoAprobacion}} ({{.FechaInicio}} al {{.FechaFin}})">🏖️ Vacaciones: {{.DiasEnMes}}d</mark>
+                            {{else if eq .Tipo "LICENCIA_CON_GOCE"}}
+                            <mark class="badge badge-success font-xs" title="{{.DocumentoAprobacion}} ({{.FechaInicio}} al {{.FechaFin}})">🟢 Lic. C/G: {{.DiasEnMes}}d</mark>
+                            {{else if eq .Tipo "LICENCIA_SIN_GOCE"}}
+                            <mark class="badge badge-danger font-xs" title="{{.DocumentoAprobacion}} ({{.FechaInicio}} al {{.FechaFin}})">🔴 Lic. S/G: {{.DiasEnMes}}d</mark>
+                            {{end}}
+                        {{end}}
+                        <br><small class="stat-mono">Doc: {{.TrabajadorDoc}}</small>
+                    </td>
                     <td><small>{{.PuestoNombre}}</small></td>
                     <td class="text-right text-success stat-mono">S/ {{printf "%.2f" .TotalIngresos}}</td>
                     <td class="text-right text-danger stat-mono">S/ {{printf "%.2f" .TotalRetenciones}}</td>
@@ -188,6 +199,22 @@
             </div>
         </div>
     </div>
+
+    {{if .Incidencias}}
+    <div class="alert-box alert-info mb-md p-sm font-sm">
+        <strong>📌 Novedades / Incidencias en este Periodo:</strong>
+        <ul class="mb-0 mt-xs pl-md">
+            {{range .Incidencias}}
+            <li>
+                <strong>{{if eq .Tipo "VACACION"}}🏖️ Vacaciones{{else if eq .Tipo "LICENCIA_CON_GOCE"}}🟢 Licencia Con Goce{{else}}🔴 Licencia Sin Goce{{end}}:</strong>
+                {{.DiasEnMes}} día(s) en este mes (del {{.FechaInicio}} al {{.FechaFin}}) -
+                <em>Doc. Aprobación:</em> <strong>{{.DocumentoAprobacion}}</strong>
+                {{if .Observaciones}}<small class="text-muted">({{.Observaciones}})</small>{{end}}
+            </li>
+            {{end}}
+        </ul>
+    </div>
+    {{end}}
 
     <div class="overflow-x-auto max-h-380">
         <table class="striped condensed font-sm">

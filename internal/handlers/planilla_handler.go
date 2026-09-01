@@ -629,10 +629,40 @@ func (h *PlanillaHandler) DescargarPlame(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "Error al obtener datos: "+err.Error(), 500)
 			return
 		}
-		texto := plameService.GenerarRemuneracionesTexto(datos)
+
+		licRepo := repository.NewLicenciaVacacionRepository(h.Repo.GetDB())
+		mapaIncs, _ := licRepo.ObtenerIncidenciasMes(tenantID, planilla.Anio, planilla.Mes)
+		diasVacMap := make(map[int]int)
+		for trabID, incs := range mapaIncs {
+			for _, inc := range incs {
+				if inc.Tipo == "VACACION" || inc.CodigoSunatSuspension == "23" || inc.CodigoSunatSuspension == "34" {
+					diasVacMap[trabID] += inc.DiasEnMes
+				}
+			}
+		}
+
+		datosTransformados := plameService.TransformarRemuneracionesConVacaciones(datos, diasVacMap)
+		texto := plameService.GenerarRemuneracionesTexto(datosTransformados)
 
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.rem"`, filenameBase))
+		w.Write([]byte(texto))
+
+	case "snl":
+		licRepo := repository.NewLicenciaVacacionRepository(h.Repo.GetDB())
+		mapaIncs, err := licRepo.ObtenerIncidenciasMes(tenantID, planilla.Anio, planilla.Mes)
+		if err != nil {
+			http.Error(w, "Error al obtener incidencias: "+err.Error(), 500)
+			return
+		}
+		var listaIncs []models.PersonalIncidenciaMes
+		for _, incs := range mapaIncs {
+			listaIncs = append(listaIncs, incs...)
+		}
+		texto := plameService.GenerarSuspensionesTexto(listaIncs)
+
+		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.snl"`, filenameBase))
 		w.Write([]byte(texto))
 
 	case "zip":
@@ -648,9 +678,25 @@ func (h *PlanillaHandler) DescargarPlame(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "Error al obtener datos: "+err.Error(), 500)
 			return
 		}
-		textoRem := plameService.GenerarRemuneracionesTexto(datosRem)
 
-		zipBytes, err := plameService.GenerarZip(textoJor, textoRem, filenameBase+".jor", filenameBase+".rem")
+		licRepo := repository.NewLicenciaVacacionRepository(h.Repo.GetDB())
+		mapaIncs, _ := licRepo.ObtenerIncidenciasMes(tenantID, planilla.Anio, planilla.Mes)
+		diasVacMap := make(map[int]int)
+		var listaIncs []models.PersonalIncidenciaMes
+		for trabID, incs := range mapaIncs {
+			for _, inc := range incs {
+				if inc.Tipo == "VACACION" || inc.CodigoSunatSuspension == "23" || inc.CodigoSunatSuspension == "34" {
+					diasVacMap[trabID] += inc.DiasEnMes
+				}
+				listaIncs = append(listaIncs, inc)
+			}
+		}
+
+		datosRemTransformados := plameService.TransformarRemuneracionesConVacaciones(datosRem, diasVacMap)
+		textoRem := plameService.GenerarRemuneracionesTexto(datosRemTransformados)
+		textoSnl := plameService.GenerarSuspensionesTexto(listaIncs)
+
+		zipBytes, err := plameService.GenerarZipCompleto(textoJor, textoRem, textoSnl, filenameBase+".jor", filenameBase+".rem", filenameBase+".snl")
 		if err != nil {
 			http.Error(w, "Error al generar ZIP: "+err.Error(), 500)
 			return
@@ -1408,10 +1454,43 @@ func (h *PlanillaHandler) VistaAuditoriaSunat(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	licRepo := repository.NewLicenciaVacacionRepository(h.Repo.GetDB())
+	mapaIncidencias, _ := licRepo.ObtenerIncidenciasMes(tenantID, planilla.Anio, planilla.Mes)
+
+	var listaIncidencias []models.PersonalIncidenciaMes
+	var totalVacaciones, totalLicConGoce, totalLicSinGoce int
+	for _, incs := range mapaIncidencias {
+		for _, inc := range incs {
+			listaIncidencias = append(listaIncidencias, inc)
+			switch inc.Tipo {
+			case "VACACION":
+				totalVacaciones++
+			case "LICENCIA_CON_GOCE":
+				totalLicConGoce++
+			case "LICENCIA_SIN_GOCE":
+				totalLicSinGoce++
+			}
+		}
+	}
+
+	tieneCodigo0118 := false
+	for _, c := range conceptos {
+		if c.CodigoSunatActual == "0118" {
+			tieneCodigo0118 = true
+			break
+		}
+	}
+	alertaVacacionesSin0118 := (totalVacaciones > 0 && !tieneCodigo0118)
+
 	datos := map[string]interface{}{
-		"Planilla":  planilla,
-		"Conceptos": conceptos,
-		"Maestros":  maestros,
+		"Planilla":               planilla,
+		"Conceptos":              conceptos,
+		"Maestros":               maestros,
+		"Incidencias":            listaIncidencias,
+		"TotalVacaciones":        totalVacaciones,
+		"TotalLicConGoce":        totalLicConGoce,
+		"TotalLicSinGoce":        totalLicSinGoce,
+		"AlertaVacacionesSin0118": alertaVacacionesSin0118,
 	}
 
 	tmpl, err := template.ParseFiles("ui/templates/tenant/planilla_sunat_codigos_ui.html")

@@ -114,7 +114,11 @@ func (s *PdfService) GenerarReportePlanilla(datos *models.DatosReportePlanilla) 
 		// Fila 1: Trabajador
 		pdf.CellFormat(277, 6, tr(fmt.Sprintf(" TRABAJADOR: %s (DNI: %s)", b.TrabajadorNombre, b.TrabajadorDoc)), "LTR", 1, "L", true, 0, "")
 		// Fila 2: Cargo y Régimen
-		pdf.CellFormat(277, 6, tr(fmt.Sprintf(" CARGO: %s | RÉGIMEN: %s", b.Cargo, b.Regimen)), "LBR", 1, "L", true, 0, "")
+		infoFila2 := fmt.Sprintf(" CARGO: %s | RÉGIMEN: %s", b.Cargo, b.Regimen)
+		if b.IncidenciasTexto != "" {
+			infoFila2 += fmt.Sprintf(" | 📌 %s", b.IncidenciasTexto)
+		}
+		pdf.CellFormat(277, 6, tr(infoFila2), "LBR", 1, "L", true, 0, "")
 
 		yInicial := pdf.GetY()
 
@@ -383,8 +387,18 @@ func (s *PdfService) dibujarBoleta(pdf *gofpdf.Fpdf, tr func(string) string, b *
 	if strings.TrimSpace(ceseTxt) == "" {
 		ceseTxt = "-"
 	}
-	pdf.CellFormat(135, 4.5, tr(fmt.Sprintf(" RÉGIMEN LAB.: %s", b.Regimen)), "LB", 0, "L", true, 0, "")
-	pdf.CellFormat(55, 4.5, tr(fmt.Sprintf(" F. CESE: %s", ceseTxt)), "BR", 1, "L", true, 0, "")
+	borderFila4 := "LB"
+	borderFila4R := "BR"
+	if b.IncidenciasTexto != "" {
+		borderFila4 = "L"
+		borderFila4R = "R"
+	}
+	pdf.CellFormat(135, 4.5, tr(fmt.Sprintf(" RÉGIMEN LAB.: %s", b.Regimen)), borderFila4, 0, "L", true, 0, "")
+	pdf.CellFormat(55, 4.5, tr(fmt.Sprintf(" F. CESE: %s", ceseTxt)), borderFila4R, 1, "L", true, 0, "")
+
+	if b.IncidenciasTexto != "" {
+		pdf.CellFormat(190, 4.5, tr(fmt.Sprintf(" 📌 NOVEDADES / INCIDENCIAS: %s", b.IncidenciasTexto)), "LBR", 1, "L", true, 0, "")
+	}
 	pdf.Ln(2)
 
 	// 3. Tablas de Conceptos (2 Columnas: Ingresos vs Retenciones)

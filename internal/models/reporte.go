@@ -24,6 +24,7 @@ type DatosReportePlanilla struct {
 
 type BoletaReporte struct {
 	DetalleID          int
+	TrabajadorID       int
 	TrabajadorDoc      string
 	TrabajadorNombre   string
 	Cargo              string
@@ -43,6 +44,8 @@ type BoletaReporte struct {
 	Ingresos           []ConceptoReporte
 	Retenciones        []ConceptoReporte
 	Aportes            []ConceptoReporte
+	IncidenciasTexto   string
+	Incidencias        []PersonalIncidenciaMes
 }
 
 type ConceptoReporte struct {

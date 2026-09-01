@@ -55,9 +55,61 @@
             onclick="document.getElementById('modal-plame').showModal()">
             <svg class="icono-menu">
                 <use href="#icono-file-export"></use>
-            </svg> Exportar a PLAME (.rem / .jor)
+            </svg> Exportar a PLAME (.rem / .jor / .snl)
         </button>
+
+        {{if .Incidencias}}
+        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+            onclick="document.getElementById('modal-incidencias-sunat').showModal()">
+            <svg class="icono-menu">
+                <use href="#icono-contracts"></use>
+            </svg> Incidencias del Mes ({{len .Incidencias}})
+        </button>
+        {{end}}
     </div>
+
+    <!-- Alerta de Auditoría PLAME: Vacaciones sin código 0118 -->
+    {{if .AlertaVacacionesSin0118}}
+    <div class="alert-box alert-danger mb-md">
+        <div class="flex-row-between flex-items-center flex-wrap flex-gap-sm">
+            <div class="flex-row-start flex-gap-sm flex-items-center">
+                <svg class="icono-menu text-danger">
+                    <use href="#icono-alerta-triangulo"></use>
+                </svg>
+                <div>
+                    <strong>⚠️ Alerta de Auditoría PLAME:</strong>
+                    Se han registrado <strong>{{.TotalVacaciones}} trabajador(es) con descanso vacacional</strong> en este mes, pero ningún concepto de la planilla tiene asignado el código SUNAT <strong><code>0118</code> (Remuneración Vacacional)</strong>.
+                    Reasigne el código oficial para que el PDT PLAME reconozca el descanso vacacional sin observaciones.
+                </div>
+            </div>
+            <button class="primary outline btn-compact font-xs" onclick="document.getElementById('modal-incidencias-sunat').showModal()">
+                🔍 Ver Personal en Vacaciones
+            </button>
+        </div>
+    </div>
+    {{end}}
+
+    <!-- Resumen de Novedades / Incidencias del Mes -->
+    {{if .Incidencias}}
+    <div class="alert-box alert-secondary mb-md">
+        <div class="flex-row-between flex-items-center flex-wrap flex-gap-sm">
+            <div class="flex-row-start flex-gap-sm flex-items-center">
+                <svg class="icono-menu">
+                    <use href="#icono-contracts"></use>
+                </svg>
+                <div>
+                    <strong>Suspensión Laboral en este Periodo (Tabla 21 SUNAT):</strong>
+                    {{if gt .TotalVacaciones 0}}<mark class="badge badge-purple font-xs">🏖️ {{.TotalVacaciones}} Vacaciones</mark> {{end}}
+                    {{if gt .TotalLicConGoce 0}}<mark class="badge badge-success font-xs">🟢 {{.TotalLicConGoce}} Lic. Con Goce</mark> {{end}}
+                    {{if gt .TotalLicSinGoce 0}}<mark class="badge badge-danger font-xs">🔴 {{.TotalLicSinGoce}} Lic. Sin Goce</mark> {{end}}
+                </div>
+            </div>
+            <button class="outline secondary btn-compact font-xs" onclick="document.getElementById('modal-incidencias-sunat').showModal()">
+                📋 Ver Padrón de Incidencias
+            </button>
+        </div>
+    </div>
+    {{end}}
 
     <!-- Banner informativo -->
     <div class="alert-box alert-info mb-md">
@@ -128,6 +180,13 @@
                     </td>
                     <td>
                         <strong class="concepto-planilla-nombre">{{$c.NombreConcepto}}</strong>
+                        {{if eq $c.CodigoSunatActual "0118"}}
+                        <div class="mt-xxs"><mark class="badge badge-purple font-xxs">🏖️ REMUNERACIÓN VACACIONAL</mark></div>
+                        {{else if eq $c.CodigoSunatActual "0705"}}
+                        <div class="mt-xxs"><mark class="badge badge-danger font-xxs">🔴 INASISTENCIAS / SIN GOCE</mark></div>
+                        {{else if eq $c.CodigoSunatActual "0916"}}
+                        <div class="mt-xxs"><mark class="badge badge-info font-xxs">🔵 SUBSIDIOS MATERNIDAD/ESSALUD</mark></div>
+                        {{end}}
                     </td>
                     <td class="text-center font-sm">
                         <span class="badge badge-secondary"
@@ -219,6 +278,84 @@
         <div id="modal-plame-body">
             <p aria-busy="true">Preparando archivos de importación...</p>
         </div>
+    </article>
+</dialog>
+
+<!-- Modal de Novedades e Incidencias del Mes -->
+<dialog id="modal-incidencias-sunat">
+    <article class="modal-card-lg">
+        <header class="flex-row-between flex-items-center">
+            <h4 class="mb-0">
+                <svg class="icono-menu">
+                    <use href="#icono-contracts"></use>
+                </svg>
+                Padrón de Vacaciones y Licencias del Mes (Tabla 21 SUNAT)
+            </h4>
+            <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-incidencias-sunat').close()"></a>
+        </header>
+
+        <div class="table-responsive max-h-380">
+            <table class="striped condensed font-sm w-full">
+                <thead>
+                    <tr>
+                        <th>Trabajador</th>
+                        <th>Tipo de Incidencia</th>
+                        <th>Periodo</th>
+                        <th class="text-center">Días en Mes</th>
+                        <th>Doc. Aprobación</th>
+                        <th>Código Tabla 21</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Incidencias}}
+                    <tr>
+                        <td>
+                            <strong>{{.TrabajadorNombre}}</strong><br>
+                            <small class="stat-mono text-muted">DNI: {{.TrabajadorDoc}}</small>
+                        </td>
+                        <td>
+                            {{if eq .Tipo "VACACION"}}
+                            <mark class="badge badge-purple font-xs">🏖️ Vacaciones</mark>
+                            {{else if eq .Tipo "LICENCIA_CON_GOCE"}}
+                            <mark class="badge badge-success font-xs">🟢 Lic. Con Goce</mark>
+                            {{else if eq .Tipo "LICENCIA_SIN_GOCE"}}
+                            <mark class="badge badge-danger font-xs">🔴 Lic. Sin Goce</mark>
+                            {{else}}
+                            <mark class="badge font-xs">{{.Tipo}}</mark>
+                            {{end}}
+                            {{if .Subtipo}}<div class="font-xs text-muted">{{.Subtipo}}</div>{{end}}
+                        </td>
+                        <td class="font-xs">
+                            {{.FechaInicio}} al {{.FechaFin}}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-secondary stat-mono font-bold">{{.DiasEnMes}} d</span>
+                        </td>
+                        <td>
+                            <strong>{{.DocumentoAprobacion}}</strong>
+                            {{if .FechaAprobacion}}<br><small class="text-muted">Fecha: {{.FechaAprobacion}}</small>{{end}}
+                        </td>
+                        <td>
+                            <mark class="badge badge-info stat-mono font-xs" title="{{.SunatDescripcionAbrev}}">
+                                [{{.CodigoSunatSuspension}}] {{if eq .SunatTipoSuspension "PERFECTA"}}S.P.{{else}}S.I.{{end}}
+                            </mark>
+                            <div class="font-xs text-muted">{{.SunatDescripcionAbrev}}</div>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted p-md">
+                            No se registraron vacaciones ni licencias en este periodo mensual.
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+
+        <footer class="flex-row-end mt-md mb-0">
+            <button class="secondary outline btn-compact" onclick="document.getElementById('modal-incidencias-sunat').close()">Cerrar</button>
+        </footer>
     </article>
 </dialog>
 

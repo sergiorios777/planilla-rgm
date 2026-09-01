@@ -576,8 +576,9 @@ type PlanillaDetalle struct {
 	// Campos auxiliares para pintar la boleta (JOINs)
 	TrabajadorNombre string             `json:"trabajador_nombre,omitempty"`
 	TrabajadorDoc    string             `json:"trabajador_doc,omitempty"`
-	RegimenDesc      string             `json:"regimen_desc,omitempty"`
-	Conceptos        []PlanillaConcepto `json:"conceptos,omitempty"`
+	RegimenDesc      string                  `json:"regimen_desc,omitempty"`
+	Conceptos        []PlanillaConcepto      `json:"conceptos,omitempty"`
+	Incidencias      []PersonalIncidenciaMes `json:"incidencias,omitempty"`
 }
 
 // PuestoPAP es un DTO exclusivo para extraer los datos descriptivos del reporte
@@ -746,6 +747,18 @@ type PlameRemuneracion struct {
 	TipoDocumento   string
 	NumeroDocumento string
 	CodigoConcepto  string
+	Monto           float64
+}
+
+// PlameConceptoDetalle representa un concepto con sus metadatos de régimen y naturaleza remunerativa para el prorrateo vacacional PLAME
+type PlameConceptoDetalle struct {
+	TrabajadorID    int
+	TipoDocumento   string
+	NumeroDocumento string
+	CodigoConcepto  string
+	TipoConcepto    string // 'INGRESO', 'RETENCION', 'APORTE'
+	EsRemunerativa  bool
+	RegimenCodigo   string
 	Monto           float64
 }
 

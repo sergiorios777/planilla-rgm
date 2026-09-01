@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 	"planilla-rgm/internal/config"
 )
 
@@ -43,5 +44,30 @@ func main() {
 		log.Fatalf("Error ejecutando migración de descuentos: %v", err)
 	}
 
-	log.Println("✅ Tablas de entidades financieras, descuentos y descuento_conceptos migradas exitosamente")
+	cleanUpMigration := func(content string) string {
+		parts := strings.Split(content, "-- +goose Down")
+		return parts[0]
+	}
+
+	// Ejecutar migración de Tabla 21 de SUNAT (suspensiones)
+	sqlBytesT21, err := os.ReadFile("internal/repository/migrations/20260830120000_crear_tabla_sunat_21_suspensiones.sql")
+	if err != nil {
+		log.Fatalf("Error leyendo archivo de migración tabla 21: %v", err)
+	}
+	_, err = db.Exec(cleanUpMigration(string(sqlBytesT21)))
+	if err != nil {
+		log.Fatalf("Error ejecutando migración tabla 21: %v", err)
+	}
+	log.Println("✅ Tabla 21 SUNAT (sunat_tipos_suspension) migrada y poblada exitosamente")
+
+	// Ejecutar migración de vacaciones y licencias
+	sqlBytesVac, err := os.ReadFile("internal/repository/migrations/20260830121000_crear_personal_licencias_vacaciones.sql")
+	if err != nil {
+		log.Fatalf("Error leyendo archivo de migración licencias/vacaciones: %v", err)
+	}
+	_, err = db.Exec(cleanUpMigration(string(sqlBytesVac)))
+	if err != nil {
+		log.Fatalf("Error ejecutando migración licencias/vacaciones: %v", err)
+	}
+	log.Println("✅ Tabla personal_licencias_vacaciones migrada exitosamente")
 }
