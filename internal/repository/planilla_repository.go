@@ -3025,6 +3025,7 @@ func (r *PlanillaRepository) ObtenerConceptosSunatAgrupados(planillaID int, tena
 			pc.concepto_tenant_id,
 			COALESCE(pc.maestro_id, 0) AS maestro_id,
 			COALESCE(NULLIF(pc.codigo_sunat, ''), cm.codigo, '') AS codigo_sunat_actual,
+			COALESCE(cm.descripcion, '') AS descripcion_sunat_actual,
 			COALESCE(pc.nombre_en_boleta, ct.nombre_personalizado, 'CONCEPTO SIN NOMBRE') AS nombre_concepto,
 			pc.tipo_concepto,
 			COUNT(DISTINCT pd.id) AS total_trabajadores,
@@ -3041,6 +3042,7 @@ func (r *PlanillaRepository) ObtenerConceptosSunatAgrupados(planillaID int, tena
 			pc.maestro_id, 
 			pc.codigo_sunat, 
 			cm.codigo, 
+			cm.descripcion,
 			pc.nombre_en_boleta, 
 			ct.nombre_personalizado, 
 			pc.tipo_concepto, 
@@ -3068,6 +3070,7 @@ func (r *PlanillaRepository) ObtenerConceptosSunatAgrupados(planillaID int, tena
 			&cTenantID,
 			&item.MaestroID,
 			&item.CodigoSunatActual,
+			&item.DescripcionSunatActual,
 			&item.NombreConcepto,
 			&item.TipoConcepto,
 			&item.TotalTrabajadores,
@@ -3135,28 +3138,28 @@ func (r *PlanillaRepository) ObtenerMaestrosSunat() ([]models.ConceptoMaestro, e
 }
 
 // ActualizarCodigoSunatConceptoMasivo actualiza en lote el código SUNAT y maestro_id para un concepto dentro de una planilla
-func (r *PlanillaRepository) ActualizarCodigoSunatConceptoMasivo(planillaID int, tenantID int, conceptoTenantID *int, nombreEnBoleta string, nuevoMaestroID int, actualizarDefault bool) error {
+func (r *PlanillaRepository) ActualizarCodigoSunatConceptoMasivo(planillaID int, tenantID int, conceptoTenantID *int, nombreEnBoleta string, nuevoMaestroID int, actualizarDefault bool) (string, error) {
 	// 1. Validar estado de la planilla
 	var estado string
 	err := r.db.QueryRow(`SELECT estado FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID).Scan(&estado)
 	if err != nil {
-		return fmt.Errorf("planilla no encontrada: %w", err)
+		return "", fmt.Errorf("planilla no encontrada: %w", err)
 	}
 	if estado == "CERRADA" {
-		return fmt.Errorf("la planilla se encuentra CERRADA y no permite modificaciones")
+		return "", fmt.Errorf("la planilla se encuentra CERRADA y no permite modificaciones")
 	}
 
 	// 2. Resolver código oficial del maestro SUNAT
 	var nuevoCodigoSunat string
 	err = r.db.QueryRow(`SELECT codigo FROM conceptos_maestros WHERE id = $1 AND origen = 'sunat'`, nuevoMaestroID).Scan(&nuevoCodigoSunat)
 	if err != nil {
-		return fmt.Errorf("código maestro SUNAT no válido: %w", err)
+		return "", fmt.Errorf("código maestro SUNAT no válido: %w", err)
 	}
 
 	// 3. Ejecutar actualización transaccional
 	tx, err := r.db.Begin()
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer tx.Rollback()
 
@@ -3171,7 +3174,7 @@ func (r *PlanillaRepository) ActualizarCodigoSunatConceptoMasivo(planillaID int,
 			  AND pc.concepto_tenant_id = $4
 		`, nuevoCodigoSunat, nuevoMaestroID, planillaID, *conceptoTenantID)
 		if err != nil {
-			return fmt.Errorf("error actualizando conceptos de planilla: %w", err)
+			return "", fmt.Errorf("error actualizando conceptos de planilla: %w", err)
 		}
 
 		if actualizarDefault {
@@ -3182,7 +3185,7 @@ func (r *PlanillaRepository) ActualizarCodigoSunatConceptoMasivo(planillaID int,
 				WHERE id = $2 AND tenant_id = $3
 			`, nuevoMaestroID, *conceptoTenantID, tenantID)
 			if err != nil {
-				return fmt.Errorf("error actualizando concepto predeterminado: %w", err)
+				return "", fmt.Errorf("error actualizando concepto predeterminado: %w", err)
 			}
 		}
 	} else {
@@ -3197,9 +3200,13 @@ func (r *PlanillaRepository) ActualizarCodigoSunatConceptoMasivo(planillaID int,
 			  AND pc.nombre_en_boleta = $4
 		`, nuevoCodigoSunat, nuevoMaestroID, planillaID, nombreEnBoleta)
 		if err != nil {
-			return fmt.Errorf("error actualizando conceptos de planilla sin tenant: %w", err)
+			return "", fmt.Errorf("error actualizando conceptos de planilla sin tenant: %w", err)
 		}
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return "", err
+	}
+
+	return nuevoCodigoSunat, nil
 }

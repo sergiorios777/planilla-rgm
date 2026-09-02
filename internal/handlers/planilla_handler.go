@@ -1523,19 +1523,17 @@ func (h *PlanillaHandler) ActualizarCodigoSunatHTMX(w http.ResponseWriter, r *ht
 	}
 
 	if planillaID <= 0 || nuevoMaestroID <= 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`<span class="badge badge-danger font-sm">Parámetros inválidos</span>`))
+		http.Error(w, "Parámetros inválidos", http.StatusBadRequest)
 		return
 	}
 
-	err := h.Repo.ActualizarCodigoSunatConceptoMasivo(planillaID, tenantID, conceptoTenantID, nombreEnBoleta, nuevoMaestroID, actualizarDefault)
+	_, err := h.Repo.ActualizarCodigoSunatConceptoMasivo(planillaID, tenantID, conceptoTenantID, nombreEnBoleta, nuevoMaestroID, actualizarDefault)
 	if err != nil {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf(`<span class="badge badge-danger font-sm" title="%s">❌ %s</span>`, err.Error(), err.Error())))
+		http.Error(w, "Error al actualizar código SUNAT: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Devolvemos indicador de éxito reactivo
-	w.Write([]byte(`<span class="badge badge-success font-sm">✅ Guardado</span>`))
+	r.URL.RawQuery = fmt.Sprintf("id=%d", planillaID)
+	h.VistaAuditoriaSunat(w, r)
 }
 

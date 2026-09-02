@@ -361,9 +361,12 @@ func TestAuditoriaYActualizacionCodigosSunat(t *testing.T) {
 	}
 
 	// 8. Test ActualizarCodigoSunatConceptoMasivo (con actualizarDefault = true)
-	err = repo.ActualizarCodigoSunatConceptoMasivo(planillaID, tenantID, &conceptoTenantID, "", maestroID2, true)
+	codigoRetornado, err := repo.ActualizarCodigoSunatConceptoMasivo(planillaID, tenantID, &conceptoTenantID, "", maestroID2, true)
 	if err != nil {
 		t.Fatalf("Error en ActualizarCodigoSunatConceptoMasivo: %v", err)
+	}
+	if codigoRetornado != cod2 {
+		t.Errorf("got codigoRetornado %s; want %s", codigoRetornado, cod2)
 	}
 
 	// Verificar que planilla_conceptos se actualizó
@@ -398,7 +401,7 @@ func TestAuditoriaYActualizacionCodigosSunat(t *testing.T) {
 
 	// 10. Test bloqueo de planilla cerrada
 	_, _ = db.Exec("UPDATE planillas SET estado = 'CERRADA' WHERE id = $1", planillaID)
-	err = repo.ActualizarCodigoSunatConceptoMasivo(planillaID, tenantID, &conceptoTenantID, "", maestroID1, false)
+	_, err = repo.ActualizarCodigoSunatConceptoMasivo(planillaID, tenantID, &conceptoTenantID, "", maestroID1, false)
 	if err == nil {
 		t.Errorf("ActualizarCodigoSunatConceptoMasivo debió fallar en planilla CERRADA, pero no retornó error")
 	}

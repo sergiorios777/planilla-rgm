@@ -254,14 +254,15 @@ type PlanillaConcepto struct {
 
 // ConceptoSunatAgrupado representa el consolidado de un concepto dentro de una planilla para auditoría SUNAT / PLAME
 type ConceptoSunatAgrupado struct {
-	ConceptoTenantID  *int    `json:"concepto_tenant_id"`
-	MaestroID         int     `json:"maestro_id"`
-	CodigoSunatActual string  `json:"codigo_sunat_actual"`
-	NombreConcepto    string  `json:"nombre_concepto"`
-	TipoConcepto      string  `json:"tipo_concepto"` // INGRESO, RETENCION, APORTE
-	TotalTrabajadores int     `json:"total_trabajadores"`
-	TotalMonto        float64 `json:"total_monto"`
-	MaestroIDOriginal int     `json:"maestro_id_original"`
+	ConceptoTenantID       *int    `json:"concepto_tenant_id"`
+	MaestroID              int     `json:"maestro_id"`
+	CodigoSunatActual      string  `json:"codigo_sunat_actual"`
+	DescripcionSunatActual string  `json:"descripcion_sunat_actual"`
+	NombreConcepto         string  `json:"nombre_concepto"`
+	TipoConcepto           string  `json:"tipo_concepto"` // INGRESO, RETENCION, APORTE
+	TotalTrabajadores      int     `json:"total_trabajadores"`
+	TotalMonto             float64 `json:"total_monto"`
+	MaestroIDOriginal      int     `json:"maestro_id_original"`
 }
 
 // ReglaFinanciamientoConcepto representa una regla de excepción de financiamiento por concepto
