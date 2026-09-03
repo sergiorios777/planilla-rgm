@@ -1,0 +1,246 @@
+<article>
+    <header class="flex-row-between">
+        <div>
+            <h3 class="mb-0 flex-gap-sm">
+                <svg class="icono-menu">
+                    <use href="#icono-qrcode"></use>
+                </svg> Auditoría y Declaración PDT PLAME (SUNAT)
+            </h3>
+            <p><small>Panel central de auditoría de la Tabla 22, prorrateo vacacional y exportación de archivos
+                    estructurados para el PDT 0601.</small></p>
+        </div>
+        <div class="flex-items-center flex-gap-sm">
+            <mark class="badge badge-info stat-mono font-sm" id="badge-periodo-actual">
+                📅 Periodo: {{.Anio}} - {{printf "%02d" .Mes}}
+            </mark>
+        </div>
+    </header>
+
+    <!-- Barra de Filtros de Periodo -->
+    <div class="card-section mb-md p-md border-radius-sm bg-light">
+        <form id="form-filtro-periodo" class="mb-0" hx-get="/tenant/plame/lista"
+            hx-target="#contenedor-planillas-periodo" hx-trigger="change">
+            <div class="grid mb-0">
+                <div>
+                    <label for="filtro-anio" class="font-xs font-bold text-muted mb-xxs">Año Fiscal</label>
+                    <input type="number" id="filtro-anio" name="anio" value="{{.Anio}}" min="2020" max="2099"
+                        class="input-sm mb-0">
+                </div>
+                <div>
+                    <label for="filtro-mes" class="font-xs font-bold text-muted mb-xxs">Mes de Declaración</label>
+                    <select id="filtro-mes" name="mes" class="input-sm mb-0">
+                        <option value="1" {{if eq .Mes 1}}selected{{end}}>01 - Enero</option>
+                        <option value="2" {{if eq .Mes 2}}selected{{end}}>02 - Febrero</option>
+                        <option value="3" {{if eq .Mes 3}}selected{{end}}>03 - Marzo</option>
+                        <option value="4" {{if eq .Mes 4}}selected{{end}}>04 - Abril</option>
+                        <option value="5" {{if eq .Mes 5}}selected{{end}}>05 - Mayo</option>
+                        <option value="6" {{if eq .Mes 6}}selected{{end}}>06 - Junio</option>
+                        <option value="7" {{if eq .Mes 7}}selected{{end}}>07 - Julio</option>
+                        <option value="8" {{if eq .Mes 8}}selected{{end}}>08 - Agosto</option>
+                        <option value="9" {{if eq .Mes 9}}selected{{end}}>09 - Septiembre</option>
+                        <option value="10" {{if eq .Mes 10}}selected{{end}}>10 - Octubre</option>
+                        <option value="11" {{if eq .Mes 11}}selected{{end}}>11 - Noviembre</option>
+                        <option value="12" {{if eq .Mes 12}}selected{{end}}>12 - Diciembre</option>
+                    </select>
+                </div>
+                <div class="flex-items-end">
+                    <button type="submit" class="secondary outline btn-compact w-full flex-center flex-gap-xs">
+                        <svg class="icono-menu">
+                            <use href="#icono-autorenew"></use>
+                        </svg> Actualizar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Contenedor dinámico que se reemplaza con HTMX al cambiar año/mes -->
+    <div id="contenedor-planillas-periodo">
+        {{template "fragmento_planillas_periodo" .}}
+    </div>
+</article>
+
+<!-- Modal de Exportación PLAME -->
+<dialog id="modal-plame">
+    <article class="modal-card-md">
+        <header class="flex-row-between flex-items-center">
+            <h4 class="mb-0 flex-items-center flex-gap-xs">
+                <svg class="icono-menu text-primary">
+                    <use href="#icono-file-export"></use>
+                </svg>
+                Exportar Archivos para PDT PLAME
+            </h4>
+            <a href="#close" aria-label="Close" class="close"
+                onclick="document.getElementById('modal-plame').close()"></a>
+        </header>
+        <div id="modal-plame-body" class="py-sm">
+            <p aria-busy="true">Preparando archivos de importación...</p>
+        </div>
+        <footer class="flex-row-end mt-md mb-0">
+            <button class="secondary outline btn-compact" onclick="document.getElementById('modal-plame').close()">
+                Cerrar
+            </button>
+        </footer>
+    </article>
+</dialog>
+
+<!-- ================================================================= -->
+<!-- TEMPLATE DEFINITIONS PARA HTMX SWAPS -->
+<!-- ================================================================= -->
+
+{{define "fragmento_planillas_periodo"}}
+<div>
+    <!-- Alertas tributarias del periodo -->
+    {{if .Resumen.AlertaVacacionesSin0118}}
+    <div class="alert-box alert-danger mb-md">
+        <div class="flex-row-start flex-gap-sm flex-items-center">
+            <svg class="icono-menu text-danger">
+                <use href="#icono-alerta-triangulo"></use>
+            </svg>
+            <div>
+                <strong>Alerta de Auditoría PLAME:</strong>
+                Se registraron <strong>{{.Resumen.TotalVacaciones}} trabajador(es) con descanso vacacional</strong> en
+                este mes (Tabla 21), pero algunas planillas aún no tienen generado o sincronizado el concepto de
+                remuneración vacacional.
+                Ingrese a auditar la planilla correspondiente para verificar el prorrateo automático.
+            </div>
+        </div>
+    </div>
+    {{end}}
+
+    <!-- Tarjetas de Resumen KPI (Bento Grid) -->
+    <div class="grid mb-lg">
+        <div class="card-section p-md text-center border-radius-sm">
+            <small class="text-muted font-xs font-bold d-block mb-xxs">PLANILLAS EN EL MES</small>
+            <strong class="font-lg text-primary">{{.Resumen.TotalPlanillas}}</strong>
+            <div class="font-xxs text-muted mt-xxs">{{.Resumen.PlanillasListas}} con snapshot</div>
+        </div>
+        <div class="card-section p-md text-center border-radius-sm">
+            <small class="text-muted font-xs font-bold d-block mb-xxs">TOTAL DECLARABLES</small>
+            <strong class="font-lg text-success">{{.Resumen.TotalTrabajadores}} pers.</strong>
+            <div class="font-xxs text-muted mt-xxs">Personal en planilla</div>
+        </div>
+        <div class="card-section p-md text-center border-radius-sm">
+            <small class="text-muted font-xs font-bold d-block mb-xxs">DEVENGADO TOTAL</small>
+            <strong class="font-lg stat-mono">S/ {{printf "%.2f" .Resumen.TotalDevengado}}</strong>
+            <div class="font-xxs text-muted mt-xxs">Monto base imponible</div>
+        </div>
+        <div class="card-section p-md text-center border-radius-sm">
+            <small class="text-muted font-xs font-bold d-block mb-xxs">PAGADO TOTAL</small>
+            <strong class="font-lg stat-mono text-primary">S/ {{printf "%.2f" .Resumen.TotalPagado}}</strong>
+            <div class="font-xxs text-muted mt-xxs">Neto percibido</div>
+        </div>
+        <div class="card-section p-md text-center border-radius-sm">
+            <small class="text-muted font-xs font-bold d-block mb-xxs">INCIDENCIAS TABLA 21</small>
+            <strong class="font-lg text-warning">{{.Resumen.TotalVacaciones}} Vac.</strong>
+            <div class="font-xxs text-muted mt-xxs">{{.Resumen.TotalLicenciasConGoce}} Con Goce |
+                {{.Resumen.TotalLicenciasSinGoce}} Sin Goce</div>
+        </div>
+    </div>
+
+    <!-- Tabla de Planillas del Periodo -->
+    <div class="table-responsive">
+        <table class="striped condensed w-full">
+            <thead>
+                <tr>
+                    <th style="width: 70px;">ID</th>
+                    <th>Tipo / Descripción de Planilla</th>
+                    <th class="text-center" style="width: 110px;">Estado Nómina</th>
+                    <th class="text-center" style="width: 90px;">Personal</th>
+                    <th class="text-right" style="width: 130px;">Devengado</th>
+                    <th class="text-right" style="width: 130px;">Pagado</th>
+                    <th style="min-width: 140px;">Snapshot PLAME</th>
+                    <th class="text-center" style="width: 220px;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Planillas}}
+                <tr>
+                    <td class="stat-mono font-sm text-muted">#{{.PlanillaID}}</td>
+                    <td>
+                        <strong>{{.Descripcion}}</strong><br>
+                        <small class="text-muted font-xs">Régimen / Tipo: {{.TipoPlanilla}}</small>
+                    </td>
+                    <td class="text-center">
+                        {{if eq .EstadoPlanilla "BORRADOR"}}
+                        <mark class="badge badge-warning font-xs">
+                            <svg class="icono-menu">
+                                <use href="#icono-draft"></use>
+                            </svg> BORRADOR</mark>
+                        {{else}}
+                        <mark class="badge badge-success font-xs">
+                            <svg class="icono-menu">
+                                <use href="#icono-lock"></use>
+                            </svg> CERRADA</mark>
+                        {{end}}
+                    </td>
+                    <td class="text-center font-sm">
+                        <span class="badge badge-secondary">{{.TotalTrabajadores}} pers.</span>
+                    </td>
+                    <td class="text-right font-sm stat-mono text-muted">
+                        S/ {{printf "%.2f" .TotalDevengado}}
+                    </td>
+                    <td class="text-right font-sm stat-mono font-bold">
+                        S/ {{printf "%.2f" .TotalPagado}}
+                    </td>
+                    <td class="font-xs">
+                        {{if .TieneAjustesManuales}}
+                        <mark class="badge badge-warning font-xxs">
+                            <svg class="icono-menu">
+                                <use href="#icono-edit"></use>
+                            </svg> Con Ajustes Manuales</mark><br>
+                        {{else if .TieneSnapshot}}
+                        <mark class="badge badge-success font-xxs">
+                            <svg class="icono-menu">
+                                <use href="#icono-robot"></use>
+                            </svg> Generado Automático</mark><br>
+                        {{else}}
+                        <mark class="badge badge-secondary font-xxs">
+                            <svg class="icono-menu">
+                                <use href="#icono-alerta-triangulo"></use>
+                            </svg> Pendiente de Generar</mark><br>
+                        {{end}}
+
+                        {{if .TieneRemVacacional}}
+                        <span class="text-muted font-xxs">
+                            <svg class="icono-menu">
+                                <use href="#icono-beach-access"></use>
+                            </svg> Rem. Vacacional incluida</span>
+                        {{end}}
+                    </td>
+                    <td class="text-center">
+                        <div class="flex-row-center flex-gap-xs">
+                            <button type="button"
+                                class="primary btn-compact font-xs flex-inline flex-items-center flex-gap-xs"
+                                hx-get="/tenant/plame/auditoria?id={{.PlanillaID}}" hx-target="#contenido-tenant"
+                                title="Auditar conceptos y colaboradores de esta planilla">
+                                <svg class="icono-menu">
+                                    <use href="#icono-fact-check"></use>
+                                </svg> Auditar
+                            </button>
+
+                            <button type="button"
+                                class="secondary outline btn-compact font-xs flex-inline flex-items-center flex-gap-xs"
+                                hx-get="/tenant/plame/exportar-modal?id={{.PlanillaID}}" hx-target="#modal-plame-body"
+                                onclick="document.getElementById('modal-plame').showModal()"
+                                title="Exportar archivos .rem, .jor, .snl, .zip">
+                                <svg class="icono-menu">
+                                    <use href="#icono-package-2"></use>
+                                </svg> Exportar
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="8" class="text-center text-muted p-lg">
+                        No se encontraron planillas calculadas para el periodo seleccionado ({{.Anio}} - {{printf "%02d"
+                        .Mes}}).
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}

@@ -262,7 +262,90 @@ type ConceptoSunatAgrupado struct {
 	TipoConcepto           string  `json:"tipo_concepto"` // INGRESO, RETENCION, APORTE
 	TotalTrabajadores      int     `json:"total_trabajadores"`
 	TotalMonto             float64 `json:"total_monto"`
+	TotalDevengado         float64 `json:"total_devengado"`
+	TotalPagado            float64 `json:"total_pagado"`
+	TieneAjustesManuales   bool    `json:"tiene_ajustes_manuales"`
+	TieneVacacional        bool    `json:"tiene_vacacional"`
 	MaestroIDOriginal      int     `json:"maestro_id_original"`
+}
+
+// PlanillaPlameConcepto representa una fila del snapshot tributario planilla_plame_conceptos
+type PlanillaPlameConcepto struct {
+	ID                   int       `json:"id"`
+	PlanillaID           int       `json:"planilla_id"`
+	PlanillaDetalleID    int       `json:"planilla_detalle_id"`
+	TrabajadorID         int       `json:"trabajador_id"`
+	PlanillaConceptoID   *int      `json:"planilla_concepto_id,omitempty"`
+	CodigoSunat          string    `json:"codigo_sunat"`
+	DescripcionSunat     string    `json:"descripcion_sunat"`
+	TipoConcepto         string    `json:"tipo_concepto"` // INGRESO, RETENCION, APORTE
+	MontoDevengado       float64   `json:"monto_devengado"`
+	MontoPagado          float64   `json:"monto_pagado"`
+	EsConceptoVacacional bool      `json:"es_concepto_vacacional"`
+	EsAjusteManual       bool      `json:"es_ajuste_manual"`
+	ObservacionAjuste    string    `json:"observacion_ajuste,omitempty"`
+	CreatedAt            time.Time `json:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at"`
+
+	// Campos auxiliares para renderizado en UI
+	TrabajadorNombre      string `json:"trabajador_nombre,omitempty"`
+	TrabajadorDocumento   string `json:"trabajador_documento,omitempty"`
+	TrabajadorTipoDoc     string `json:"trabajador_tipo_doc,omitempty"`
+	RegimenNombre         string `json:"regimen_nombre,omitempty"`
+	ConceptoLaboralNombre string `json:"concepto_laboral_nombre,omitempty"`
+}
+
+// PlameTrabajadorConceptoItem representa un colaborador asociado a un código SUNAT para la vista detallada
+type PlameTrabajadorConceptoItem struct {
+	PlanillaPlameConceptoID int     `json:"planilla_plame_concepto_id"`
+	PlanillaDetalleID       int     `json:"planilla_detalle_id"`
+	TrabajadorID            int     `json:"trabajador_id"`
+	TipoDocumento           string  `json:"tipo_documento"`
+	NumeroDocumento         string  `json:"numero_documento"`
+	NombreCompleto          string  `json:"nombre_completo"`
+	RegimenNombre           string  `json:"regimen_nombre"`
+	CodigoSunat             string  `json:"codigo_sunat"`
+	DescripcionSunat        string  `json:"descripcion_sunat"`
+	TipoConcepto            string  `json:"tipo_concepto"`
+	MontoDevengado          float64 `json:"monto_devengado"`
+	MontoPagado             float64 `json:"monto_pagado"`
+	EsConceptoVacacional    bool    `json:"es_concepto_vacacional"`
+	EsAjusteManual          bool    `json:"es_ajuste_manual"`
+	ObservacionAjuste       string  `json:"observacion_ajuste"`
+	ConceptoLaboralNombre   string  `json:"concepto_laboral_nombre"`
+}
+
+// PlamePlanillaResumenItem representa una planilla calculada del periodo con su estado de snapshot para el Hub PLAME
+type PlamePlanillaResumenItem struct {
+	PlanillaID           int     `json:"planilla_id"`
+	Anio                 int     `json:"anio"`
+	Mes                  int     `json:"mes"`
+	TipoPlanilla         string  `json:"tipo_planilla"`
+	Descripcion          string  `json:"descripcion"`
+	EstadoPlanilla       string  `json:"estado_planilla"` // BORRADOR, CERRADA
+	TotalTrabajadores    int     `json:"total_trabajadores"`
+	TotalDevengado       float64 `json:"total_devengado"`
+	TotalPagado          float64 `json:"total_pagado"`
+	TieneSnapshot        bool    `json:"tiene_snapshot"`
+	TieneAjustesManuales bool    `json:"tiene_ajustes_manuales"`
+	TieneRemVacacional   bool    `json:"tiene_rem_vacacional"`
+	TotalConceptosSunat  int     `json:"total_conceptos_sunat"`
+}
+
+// PlameHubResumen agrupa los KPIs globales del periodo mensual para el Hub PLAME
+type PlameHubResumen struct {
+	Anio                    int     `json:"anio"`
+	Mes                     int     `json:"mes"`
+	TotalPlanillas          int     `json:"total_planillas"`
+	TotalTrabajadores       int     `json:"total_trabajadores"`
+	TotalDevengado          float64 `json:"total_devengado"`
+	TotalPagado             float64 `json:"total_pagado"`
+	TotalVacaciones         int     `json:"total_vacaciones"`
+	TotalLicenciasConGoce   int     `json:"total_licencias_con_goce"`
+	TotalLicenciasSinGoce   int     `json:"total_licencias_sin_goce"`
+	AlertaVacacionesSin0118 bool    `json:"alerta_vacaciones_sin_0118"`
+	PlanillasListas         int     `json:"planillas_listas"`
+	PlanillasConAjustes     int     `json:"planillas_con_ajustes"`
 }
 
 // ReglaFinanciamientoConcepto representa una regla de excepción de financiamiento por concepto
@@ -749,6 +832,8 @@ type PlameRemuneracion struct {
 	NumeroDocumento string
 	CodigoConcepto  string
 	Monto           float64
+	MontoDevengado  float64
+	MontoPagado     float64
 }
 
 // PlameConceptoDetalle representa un concepto con sus metadatos de régimen y naturaleza remunerativa para el prorrateo vacacional PLAME

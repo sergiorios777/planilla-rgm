@@ -1,0 +1,216 @@
+<article>
+    <!-- Cabecera de Navegación y Contexto -->
+    <header class="flex-row-between flex-wrap flex-gap-md mb-md">
+        <div>
+            <div class="flex-row-start flex-items-center flex-gap-sm mb-xs">
+                <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+                    hx-get="/tenant/plame/auditoria?id={{.Planilla.ID}}" hx-target="#contenido-tenant"
+                    hx-push-url="true">
+                    <svg class="icono-menu">
+                        <use href="#icono-previo-cuadrado"></use>
+                    </svg>
+                    Cancelar y Volver a Auditoría
+                </button>
+                <mark class="badge badge-purple stat-mono font-sm font-bold">
+                    SUNAT {{.CodigoSunatActual}}
+                </mark>
+            </div>
+            <h3 class="mb-0 text-primary">
+                Reasignar Código SUNAT en Bloque (Tabla 22 - PLAME)
+            </h3>
+            <p class="text-muted font-xs mb-0">
+                Reclasifique este concepto en toda la planilla de manera asistida y previsualice los colaboradores
+                afectados antes de aplicar los cambios.
+            </p>
+        </div>
+
+        <div class="flex-items-center flex-gap-sm">
+            <mark class="badge badge-info stat-mono">
+                <svg class="icono-menu">
+                    <use href="#icono-calendar-days"></use>
+                </svg>
+                Periodo: {{.Planilla.Anio}} - {{printf "%02d" .Planilla.Mes}}
+            </mark>
+            {{if eq .Planilla.Estado "BORRADOR"}}
+            <mark class="badge badge-warning font-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-draft"></use>
+                </svg>
+                BORRADOR (Edición Permitida)
+            </mark>
+            {{else}}
+            <mark class="badge badge-danger font-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-lock"></use>
+                </svg>
+                CERRADA (Solo Lectura)
+            </mark>
+            {{end}}
+        </div>
+    </header>
+
+    <!-- Disposición de 2 Columnas: Formulario de Reasignación vs Previsualización de Impacto -->
+    <div class="grid">
+        <!-- Panel Izquierdo: Formulario de Reasignación -->
+        <div>
+            <div class="card p-md border-radius-md bg-light mb-md">
+                <h5 class="mb-sm text-primary flex-items-center flex-gap-xs">
+                    <svg class="icono-menu">
+                        <use href="#icono-qrcode"></use>
+                    </svg>
+                    Ficha del Concepto Origen
+                </h5>
+
+                <div class="callout-box mb-md">
+                    <div class="flex-row-between flex-items-center mb-xs">
+                        <strong class="font-md text-primary">{{.DescripcionSunatActual}}</strong>
+                        {{if eq .TipoConcepto "INGRESO"}}
+                        <mark class="badge badge-success font-xxs">INGRESO</mark>
+                        {{else if eq .TipoConcepto "RETENCION"}}
+                        <mark class="badge badge-danger font-xxs">RETENCIÓN</mark>
+                        {{else}}
+                        <mark class="badge badge-info font-xxs">APORTE</mark>
+                        {{end}}
+                    </div>
+                    <div class="font-xs text-muted mb-xs">
+                        Código SUNAT actual en planilla: <mark
+                            class="badge badge-purple stat-mono font-xs">{{.CodigoSunatActual}}</mark>
+                    </div>
+                    <div class="grid grid-auto-fit-150 gap-xs font-xs mt-sm pt-xs border-top">
+                        <div>
+                            <span class="text-muted">Personal:</span> <strong class="stat-mono">{{.TotalTrabajadores}}
+                                pers.</strong>
+                        </div>
+                        <div>
+                            <span class="text-muted">Total Dev.:</span> <strong class="stat-mono">S/ {{printf "%.2f"
+                                .TotalDevengado}}</strong>
+                        </div>
+                        <div>
+                            <span class="text-muted">Total Pag.:</span> <strong class="stat-mono text-success">S/
+                                {{printf "%.2f" .TotalPagado}}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                {{if ne .Planilla.Estado "CERRADA"}}
+                <form id="form-reasignar-codigo-sunat" hx-post="/tenant/plame/actualizar-codigo"
+                    hx-target="#contenido-tenant">
+                    <input type="hidden" name="planilla_id" value="{{.Planilla.ID}}">
+                    <input type="hidden" name="codigo_sunat_actual" value="{{.CodigoSunatActual}}">
+
+                    <label class="mb-md">
+                        <strong>Nuevo Código Oficial SUNAT (Tabla 22 - PLAME) *</strong>
+                        <select name="nuevo_maestro_id" id="select-nuevo-maestro-sunat" class="select-con-buscador"
+                            required style="width: 100%;">
+                            <option value="">-- Buscar por código (ej: 0121) o descripción --</option>
+                            {{range .Maestros}}
+                            <option value="{{.ID}}" data-codigo="{{.Codigo}}" {{if eq .Codigo
+                                $.CodigoSunatActual}}selected{{end}}>
+                                [{{.Codigo}}] {{.Descripcion}} ({{.Tipo}})
+                            </option>
+                            {{end}}
+                        </select>
+                        <small class="text-muted">Escriba el número de código o palabras de la descripción para
+                            filtrar.</small>
+                    </label>
+
+                    <div class="card p-sm mb-md bg-white border-radius-sm">
+                        <label class="flex-inline flex-items-center flex-gap-xs font-xs mb-0">
+                            <input type="checkbox" name="actualizar_default" value="true" role="switch">
+                            <span><strong>Guardar en el catálogo institucional como predeterminado</strong> para las
+                                futuras planillas del inquilino.</span>
+                        </label>
+                    </div>
+
+                    <div class="alert-box alert-secondary font-xs mb-md">
+                        ℹ️ <strong>Nota de Seguridad:</strong> Este cambio actualizará las líneas de este concepto en el
+                        snapshot tributario de esta planilla para los <strong>{{.TotalTrabajadores}}
+                            colaboradores</strong> listados a la derecha.
+                    </div>
+
+                    <footer class="flex-row-end flex-gap-sm mt-md mb-0">
+                        <button type="button" class="secondary outline btn-compact"
+                            hx-get="/tenant/plame/auditoria?id={{.Planilla.ID}}" hx-target="#contenido-tenant">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="primary btn-compact flex-inline flex-items-center flex-gap-xs">
+                            <svg class="icono-menu">
+                                <use href="#icono-guardar"></use>
+                            </svg>
+                            Confirmar y Aplicar Cambio Masivo
+                        </button>
+                    </footer>
+                </form>
+                {{else}}
+                <div class="alert-box alert-danger font-xs">
+                    🔒 La planilla está en estado <strong>CERRADA</strong>. No se permiten modificaciones ni
+                    reasignaciones masivas de códigos.
+                </div>
+                <footer class="flex-row-end mt-md">
+                    <button type="button" class="secondary outline btn-compact"
+                        hx-get="/tenant/plame/auditoria?id={{.Planilla.ID}}" hx-target="#contenido-tenant">
+                        Volver a Auditoría
+                    </button>
+                </footer>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Previsualización de Impacto -->
+        <div>
+            <div class="card p-md border-radius-md bg-light">
+                <div class="flex-row-between flex-items-center mb-sm">
+                    <h5 class="mb-0 text-primary flex-items-center flex-gap-xs">
+                        <svg class="icono-menu">
+                            <use href="#icono-contracts"></use>
+                        </svg>
+                        Colaboradores a Reclasificar ({{len .TrabajadoresAfectados}})
+                    </h5>
+                    <small class="text-muted font-xs">Vista previa de impacto</small>
+                </div>
+
+                <div class="table-responsive max-h-450">
+                    <table class="striped condensed font-sm w-full">
+                        <thead>
+                            <tr>
+                                <th>Colaborador</th>
+                                <th>Concepto Nómina</th>
+                                <th class="text-right">Devengado</th>
+                                <th class="text-right">Pagado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range .TrabajadoresAfectados}}
+                            <tr>
+                                <td>
+                                    <strong class="font-xs">{{.NombreCompleto}}</strong><br>
+                                    <small class="stat-mono text-muted">{{.TipoDocumento}}: {{.NumeroDocumento}}</small>
+                                </td>
+                                <td class="font-xs">
+                                    {{if .EsConceptoVacacional}}
+                                    <mark class="badge badge-purple font-xxs">Consolidado Vacacional</mark>
+                                    {{else}}
+                                    {{.ConceptoLaboralNombre}}
+                                    {{end}}
+                                </td>
+                                <td class="text-right stat-mono font-xs text-muted">
+                                    S/ {{printf "%.2f" .MontoDevengado}}
+                                </td>
+                                <td class="text-right stat-mono font-xs font-bold">
+                                    S/ {{printf "%.2f" .MontoPagado}}
+                                </td>
+                            </tr>
+                            {{else}}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted p-md">
+                                    No hay colaboradores afectados para este concepto.
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</article>

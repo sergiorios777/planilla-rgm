@@ -360,6 +360,11 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	anexoService := services.NewAnexoService(anexoRepo, planillaRepo, tenantRepo)
 	planillaService := services.NewPlanillaService(planillaRepo)
 
+	licenciaVacRepo := repository.NewLicenciaVacacionRepository(db)
+	plameRepo := repository.NewPlameRepository(db)
+	plameService := services.NewPlameService(plameRepo, planillaRepo, licenciaVacRepo)
+	plameHandler := handlers.NewPlameHandler(plameService, planillaRepo, licenciaVacRepo)
+
 	planillaHandler := handlers.PlanillaHandler{
 		Repo:               planillaRepo,
 		PuestoRepo:         puestoRepo,
@@ -391,10 +396,31 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/planillas/conceptos/actualizar-presupuesto-bulk", middleware.RequireAuth(planillaHandler.ActualizarPresupuestoBulkHTMX))
 	mux.HandleFunc("/tenant/planillas/descargar-reporte", middleware.RequireAuth(planillaHandler.DescargarReportePDF))
 	mux.HandleFunc("/tenant/planillas/descargar-boletas", middleware.RequireAuth(planillaHandler.DescargarBoletasPDF))
-	mux.HandleFunc("/tenant/planillas/exportar-plame-modal", middleware.RequireAuth(planillaHandler.ExportarPlameModal))
-	mux.HandleFunc("/tenant/planillas/descargar-plame", middleware.RequireAuth(planillaHandler.DescargarPlame))
-	mux.HandleFunc("/tenant/planillas/sunat-codigos", middleware.RequireAuth(planillaHandler.VistaAuditoriaSunat))
-	mux.HandleFunc("/tenant/planillas/sunat-codigos/actualizar", middleware.RequireAuth(planillaHandler.ActualizarCodigoSunatHTMX))
+
+	// Rutas dedicadas para el Módulo de Auditoría y Declaración PDT PLAME (SUNAT)
+	mux.HandleFunc("/tenant/ui/plame", middleware.RequireAuth(plameHandler.VistaHub))
+	mux.HandleFunc("/tenant/plame/lista", middleware.RequireAuth(plameHandler.ListarPlanillasPeriodoHTMX))
+	mux.HandleFunc("/tenant/plame/auditoria", middleware.RequireAuth(plameHandler.VistaAuditoria))
+	mux.HandleFunc("/tenant/plame/concepto/trabajadores", middleware.RequireAuth(plameHandler.VistaConceptoTrabajadores))
+	mux.HandleFunc("/tenant/plame/concepto/reasignar", middleware.RequireAuth(plameHandler.VistaReasignarConcepto))
+	mux.HandleFunc("/tenant/plame/trabajadores", middleware.RequireAuth(plameHandler.VerTrabajadoresPorConceptoHTMX))
+	mux.HandleFunc("/tenant/plame/trabajador-modal", middleware.RequireAuth(plameHandler.ModalEditarTrabajadorHTMX))
+	mux.HandleFunc("/tenant/plame/trabajador-guardar", middleware.RequireAuth(plameHandler.GuardarTrabajadorHTMX))
+	mux.HandleFunc("/tenant/plame/actualizar-codigo", middleware.RequireAuth(plameHandler.ActualizarCodigoMasivoHTMX))
+	mux.HandleFunc("/tenant/plame/resetear", middleware.RequireAuth(plameHandler.ResetearSnapshotHTMX))
+	mux.HandleFunc("/tenant/plame/exportar-modal", middleware.RequireAuth(plameHandler.ExportarModalHTMX))
+	mux.HandleFunc("/tenant/plame/descargar", middleware.RequireAuth(plameHandler.DescargarArchivos))
+
+	// Rutas legacy de acceso a PLAME desde vistas de nómina
+	mux.HandleFunc("/tenant/planillas/exportar-plame-modal", middleware.RequireAuth(plameHandler.ExportarModalHTMX))
+	mux.HandleFunc("/tenant/planillas/descargar-plame", middleware.RequireAuth(plameHandler.DescargarArchivos))
+	mux.HandleFunc("/tenant/planillas/sunat-codigos", middleware.RequireAuth(plameHandler.VistaAuditoria))
+	mux.HandleFunc("/tenant/planillas/sunat-codigos/actualizar", middleware.RequireAuth(plameHandler.ActualizarCodigoMasivoHTMX))
+	mux.HandleFunc("/tenant/planillas/sunat-codigos/resetear", middleware.RequireAuth(plameHandler.ResetearSnapshotHTMX))
+	mux.HandleFunc("/tenant/planillas/sunat-codigos/trabajadores", middleware.RequireAuth(plameHandler.VerTrabajadoresPorConceptoHTMX))
+	mux.HandleFunc("/tenant/planillas/sunat-codigos/trabajador-modal", middleware.RequireAuth(plameHandler.ModalEditarTrabajadorHTMX))
+	mux.HandleFunc("/tenant/planillas/sunat-codigos/trabajador-guardar", middleware.RequireAuth(plameHandler.GuardarTrabajadorHTMX))
+
 	mux.HandleFunc("/tenant/planillas/anexos/ui", middleware.RequireAuth(planillaHandler.VistaAnexos))
 	mux.HandleFunc("/tenant/planillas/anexos/anexo1/pdf", middleware.RequireAuth(planillaHandler.DescargarAnexo1PDF))
 	mux.HandleFunc("/tenant/planillas/anexos/anexo1/excel", middleware.RequireAuth(planillaHandler.DescargarAnexo1Excel))
@@ -433,7 +459,6 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/asistencia/actualizar", middleware.RequireAuth(asistenciaHandler.Actualizar))
 
 	// Vacaciones y Licencias
-	licenciaVacRepo := repository.NewLicenciaVacacionRepository(db)
 	licenciaVacHandler := handlers.NewLicenciaVacacionHandler(licenciaVacRepo, trabajadorRepo)
 	mux.HandleFunc("/tenant/ui/vacaciones-licencias", middleware.RequireAuth(licenciaVacHandler.VistaUI))
 	mux.HandleFunc("/tenant/vacaciones-licencias/lista", middleware.RequireAuth(licenciaVacHandler.Listar))

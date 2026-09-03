@@ -608,7 +608,7 @@ func (h *PlanillaHandler) DescargarPlame(w http.ResponseWriter, r *http.Request)
 	mesStr := fmt.Sprintf("%02d", planilla.Mes)
 	filenameBase := fmt.Sprintf("0601%d%s%s", planilla.Anio, mesStr, ruc)
 
-	plameService := services.NewPlameService(h.Repo)
+	plameService := h.getPlameService()
 
 	switch tipo {
 	case "jor":
@@ -624,25 +624,12 @@ func (h *PlanillaHandler) DescargarPlame(w http.ResponseWriter, r *http.Request)
 		w.Write([]byte(texto))
 
 	case "rem":
-		datos, err := h.Repo.ObtenerDatosPlameRemuneraciones(planillaID, tenantID)
+		datosRem, err := plameService.ObtenerRemuneracionesSnapshot(planillaID, tenantID)
 		if err != nil {
-			http.Error(w, "Error al obtener datos: "+err.Error(), 500)
+			http.Error(w, "Error al obtener remuneraciones de snapshot: "+err.Error(), 500)
 			return
 		}
-
-		licRepo := repository.NewLicenciaVacacionRepository(h.Repo.GetDB())
-		mapaIncs, _ := licRepo.ObtenerIncidenciasMes(tenantID, planilla.Anio, planilla.Mes)
-		diasVacMap := make(map[int]int)
-		for trabID, incs := range mapaIncs {
-			for _, inc := range incs {
-				if inc.Tipo == "VACACION" || inc.CodigoSunatSuspension == "23" || inc.CodigoSunatSuspension == "34" {
-					diasVacMap[trabID] += inc.DiasEnMes
-				}
-			}
-		}
-
-		datosTransformados := plameService.TransformarRemuneracionesConVacaciones(datos, diasVacMap)
-		texto := plameService.GenerarRemuneracionesTexto(datosTransformados)
+		texto := plameService.GenerarRemuneracionesTexto(datosRem)
 
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.rem"`, filenameBase))
@@ -668,32 +655,24 @@ func (h *PlanillaHandler) DescargarPlame(w http.ResponseWriter, r *http.Request)
 	case "zip":
 		datosJor, err := h.Repo.ObtenerDatosPlameJornada(planillaID, tenantID)
 		if err != nil {
-			http.Error(w, "Error al obtener datos: "+err.Error(), 500)
+			http.Error(w, "Error al obtener jornada: "+err.Error(), 500)
 			return
 		}
 		textoJor := plameService.GenerarJornadaTexto(datosJor)
 
-		datosRem, err := h.Repo.ObtenerDatosPlameRemuneraciones(planillaID, tenantID)
+		datosRem, err := plameService.ObtenerRemuneracionesSnapshot(planillaID, tenantID)
 		if err != nil {
-			http.Error(w, "Error al obtener datos: "+err.Error(), 500)
+			http.Error(w, "Error al obtener remuneraciones de snapshot: "+err.Error(), 500)
 			return
 		}
+		textoRem := plameService.GenerarRemuneracionesTexto(datosRem)
 
 		licRepo := repository.NewLicenciaVacacionRepository(h.Repo.GetDB())
 		mapaIncs, _ := licRepo.ObtenerIncidenciasMes(tenantID, planilla.Anio, planilla.Mes)
-		diasVacMap := make(map[int]int)
 		var listaIncs []models.PersonalIncidenciaMes
-		for trabID, incs := range mapaIncs {
-			for _, inc := range incs {
-				if inc.Tipo == "VACACION" || inc.CodigoSunatSuspension == "23" || inc.CodigoSunatSuspension == "34" {
-					diasVacMap[trabID] += inc.DiasEnMes
-				}
-				listaIncs = append(listaIncs, inc)
-			}
+		for _, incs := range mapaIncs {
+			listaIncs = append(listaIncs, incs...)
 		}
-
-		datosRemTransformados := plameService.TransformarRemuneracionesConVacaciones(datosRem, diasVacMap)
-		textoRem := plameService.GenerarRemuneracionesTexto(datosRemTransformados)
 		textoSnl := plameService.GenerarSuspensionesTexto(listaIncs)
 
 		zipBytes, err := plameService.GenerarZipCompleto(textoJor, textoRem, textoSnl, filenameBase+".jor", filenameBase+".rem", filenameBase+".snl")
@@ -1428,6 +1407,12 @@ func (h *PlanillaHandler) ProcesarEspecial(w http.ResponseWriter, r *http.Reques
 	h.VistaDetalle(w, r)
 }
 
+func (h *PlanillaHandler) getPlameService() *services.PlameService {
+	plameRepo := repository.NewPlameRepository(h.Repo.GetDB())
+	licRepo := repository.NewLicenciaVacacionRepository(h.Repo.GetDB())
+	return services.NewPlameService(plameRepo, h.Repo, licRepo)
+}
+
 // VistaAuditoriaSunat renderiza la vista de auditoría y reasignación de códigos SUNAT para PLAME
 func (h *PlanillaHandler) VistaAuditoriaSunat(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
@@ -1442,7 +1427,8 @@ func (h *PlanillaHandler) VistaAuditoriaSunat(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	conceptos, err := h.Repo.ObtenerConceptosSunatAgrupados(planillaID, tenantID)
+	plameSvc := h.getPlameService()
+	conceptos, err := plameSvc.ObtenerConceptosAgrupados(planillaID, tenantID)
 	if err != nil {
 		http.Error(w, "Error obteniendo conceptos: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -1473,14 +1459,14 @@ func (h *PlanillaHandler) VistaAuditoriaSunat(w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	tieneCodigo0118 := false
+	tieneVacacional := false
 	for _, c := range conceptos {
-		if c.CodigoSunatActual == "0118" {
-			tieneCodigo0118 = true
+		if c.TieneVacacional || c.CodigoSunatActual == "2007" || c.CodigoSunatActual == "2043" || c.CodigoSunatActual == "2049" || c.CodigoSunatActual == "0118" {
+			tieneVacacional = true
 			break
 		}
 	}
-	alertaVacacionesSin0118 := (totalVacaciones > 0 && !tieneCodigo0118)
+	alertaVacacionesSin0118 := (totalVacaciones > 0 && !tieneVacacional)
 
 	datos := map[string]interface{}{
 		"Planilla":               planilla,
@@ -1501,7 +1487,31 @@ func (h *PlanillaHandler) VistaAuditoriaSunat(w http.ResponseWriter, r *http.Req
 	tmpl.Execute(w, datos)
 }
 
-// ActualizarCodigoSunatHTMX procesa el cambio de código SUNAT para un concepto agrupado de una planilla
+// ResetearSnapshotPlameHTMX restablece el snapshot de PLAME a partir del cálculo base de la planilla
+func (h *PlanillaHandler) ResetearSnapshotPlameHTMX(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		return
+	}
+	r.ParseForm()
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.FormValue("planilla_id"))
+	if planillaID <= 0 {
+		http.Error(w, "ID de planilla inválido", http.StatusBadRequest)
+		return
+	}
+
+	plameSvc := h.getPlameService()
+	if err := plameSvc.ResetearSnapshot(planillaID, tenantID); err != nil {
+		http.Error(w, "Error restableciendo snapshot: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	r.URL.RawQuery = fmt.Sprintf("id=%d", planillaID)
+	h.VistaAuditoriaSunat(w, r)
+}
+
+// ActualizarCodigoSunatHTMX procesa el cambio masivo de código SUNAT para un concepto agrupado de una planilla
 func (h *PlanillaHandler) ActualizarCodigoSunatHTMX(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
@@ -1511,23 +1521,17 @@ func (h *PlanillaHandler) ActualizarCodigoSunatHTMX(w http.ResponseWriter, r *ht
 	tenantID := obtenerTenantID(r)
 
 	planillaID, _ := strconv.Atoi(r.FormValue("planilla_id"))
+	codigoActual := r.FormValue("codigo_sunat_actual")
 	nuevoMaestroID, _ := strconv.Atoi(r.FormValue("nuevo_maestro_id"))
-	nombreEnBoleta := r.FormValue("nombre_en_boleta")
 	actualizarDefault := r.FormValue("actualizar_default") == "true" || r.FormValue("actualizar_default") == "on" || r.FormValue("actualizar_default") == "1"
 
-	var conceptoTenantID *int
-	if ctStr := r.FormValue("concepto_tenant_id"); ctStr != "" && ctStr != "0" {
-		if idVal, err := strconv.Atoi(ctStr); err == nil && idVal > 0 {
-			conceptoTenantID = &idVal
-		}
-	}
-
-	if planillaID <= 0 || nuevoMaestroID <= 0 {
+	if planillaID <= 0 || nuevoMaestroID <= 0 || codigoActual == "" {
 		http.Error(w, "Parámetros inválidos", http.StatusBadRequest)
 		return
 	}
 
-	_, err := h.Repo.ActualizarCodigoSunatConceptoMasivo(planillaID, tenantID, conceptoTenantID, nombreEnBoleta, nuevoMaestroID, actualizarDefault)
+	plameSvc := h.getPlameService()
+	_, err := plameSvc.ActualizarCodigoMasivo(planillaID, tenantID, codigoActual, nuevoMaestroID, actualizarDefault)
 	if err != nil {
 		http.Error(w, "Error al actualizar código SUNAT: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -1536,4 +1540,171 @@ func (h *PlanillaHandler) ActualizarCodigoSunatHTMX(w http.ResponseWriter, r *ht
 	r.URL.RawQuery = fmt.Sprintf("id=%d", planillaID)
 	h.VistaAuditoriaSunat(w, r)
 }
+
+// VerTrabajadoresPorConceptoSunatHTMX retorna el fragmento HTML con el listado de colaboradores que tienen un código SUNAT
+func (h *PlanillaHandler) VerTrabajadoresPorConceptoSunatHTMX(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("planilla_id"))
+	codigoSunat := r.URL.Query().Get("codigo_sunat")
+
+	if planillaID <= 0 || codigoSunat == "" {
+		http.Error(w, "Parámetros requeridos faltantes", http.StatusBadRequest)
+		return
+	}
+
+	planilla, err := h.Repo.ObtenerPorID(planillaID, tenantID)
+	if err != nil || planilla == nil {
+		http.Error(w, "Planilla no encontrada", http.StatusNotFound)
+		return
+	}
+
+	plameSvc := h.getPlameService()
+	trabajadores, err := plameSvc.ObtenerTrabajadoresPorConcepto(planillaID, tenantID, codigoSunat)
+	if err != nil {
+		http.Error(w, "Error al obtener colaboradores: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	datos := map[string]interface{}{
+		"Planilla":     planilla,
+		"CodigoSunat":  codigoSunat,
+		"Trabajadores": trabajadores,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/tenant/planilla_sunat_codigos_ui.html")
+	if err != nil {
+		http.Error(w, "Error cargando plantilla: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := tmpl.ExecuteTemplate(w, "fragmento_trabajadores_por_concepto", datos); err != nil {
+		log.Printf("Error renderizando fragmento_trabajadores_por_concepto: %v", err)
+		http.Error(w, "Error renderizando fragmento: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// ModalEditarPlameTrabajadorHTMX retorna el modal con la tabla de conceptos tributarios editables de un colaborador
+func (h *PlanillaHandler) ModalEditarPlameTrabajadorHTMX(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	detalleID, _ := strconv.Atoi(r.URL.Query().Get("detalle_id"))
+	if detalleID <= 0 {
+		http.Error(w, "Detalle de planilla no especificado", http.StatusBadRequest)
+		return
+	}
+
+	plameSvc := h.getPlameService()
+	conceptos, err := plameSvc.ObtenerDetalleTrabajador(detalleID, tenantID)
+	if err != nil {
+		http.Error(w, "Error obteniendo conceptos de trabajador: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	maestros, err := h.Repo.ObtenerMaestrosSunat()
+	if err != nil {
+		http.Error(w, "Error obteniendo catálogo SUNAT: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var trabajadorNombre, trabajadorDoc, regimenNombre string
+	var planillaID int
+	if len(conceptos) > 0 {
+		trabajadorNombre = conceptos[0].TrabajadorNombre
+		trabajadorDoc = conceptos[0].TrabajadorDocumento
+		regimenNombre = conceptos[0].RegimenNombre
+		planillaID = conceptos[0].PlanillaID
+	}
+
+	planilla, _ := h.Repo.ObtenerPorID(planillaID, tenantID)
+
+	datos := map[string]interface{}{
+		"Planilla":          planilla,
+		"PlanillaDetalleID": detalleID,
+		"TrabajadorNombre":  trabajadorNombre,
+		"TrabajadorDoc":     trabajadorDoc,
+		"RegimenNombre":     regimenNombre,
+		"Conceptos":         conceptos,
+		"Maestros":          maestros,
+	}
+
+	tmpl, err := template.ParseFiles("ui/templates/tenant/planilla_sunat_codigos_ui.html")
+	if err != nil {
+		http.Error(w, "Error cargando plantilla: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := tmpl.ExecuteTemplate(w, "modal_editar_plame_trabajador_content", datos); err != nil {
+		log.Printf("Error renderizando modal_editar_plame_trabajador_content: %v", err)
+		http.Error(w, "Error renderizando modal: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// GuardarPlameTrabajadorHTMX procesa el guardado detallado de conceptos tributarios de un colaborador
+func (h *PlanillaHandler) GuardarPlameTrabajadorHTMX(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		return
+	}
+	r.ParseForm()
+	tenantID := obtenerTenantID(r)
+
+	detalleID, _ := strconv.Atoi(r.FormValue("planilla_detalle_id"))
+	planillaID, _ := strconv.Atoi(r.FormValue("planilla_id"))
+	if detalleID <= 0 || planillaID <= 0 {
+		http.Error(w, "Parámetros inválidos", http.StatusBadRequest)
+		return
+	}
+
+	codigos := r.Form["codigo_sunat[]"]
+	tipos := r.Form["tipo_concepto[]"]
+	devengados := r.Form["monto_devengado[]"]
+	pagados := r.Form["monto_pagado[]"]
+	vacacionales := r.Form["es_vacacional[]"]
+	observaciones := r.Form["observacion[]"]
+
+	var items []models.PlanillaPlameConcepto
+	for i := 0; i < len(codigos); i++ {
+		cod := strings.TrimSpace(codigos[i])
+		if cod == "" {
+			continue
+		}
+		tipo := "INGRESO"
+		if i < len(tipos) && tipos[i] != "" {
+			tipo = tipos[i]
+		}
+		dev, _ := strconv.ParseFloat(devengados[i], 64)
+		pag, _ := strconv.ParseFloat(pagados[i], 64)
+		esVac := false
+		if i < len(vacacionales) {
+			esVac = (vacacionales[i] == "true" || vacacionales[i] == "1")
+		}
+		obs := ""
+		if i < len(observaciones) {
+			obs = observaciones[i]
+		}
+
+		if dev <= 0 && pag <= 0 {
+			continue
+		}
+
+		items = append(items, models.PlanillaPlameConcepto{
+			CodigoSunat:          cod,
+			TipoConcepto:         tipo,
+			MontoDevengado:       dev,
+			MontoPagado:          pag,
+			EsConceptoVacacional: esVac,
+			EsAjusteManual:       true,
+			ObservacionAjuste:    obs,
+		})
+	}
+
+	plameSvc := h.getPlameService()
+	if err := plameSvc.GuardarConceptosTrabajador(detalleID, tenantID, items); err != nil {
+		http.Error(w, "Error guardando conceptos: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	r.URL.RawQuery = fmt.Sprintf("id=%d", planillaID)
+	h.VistaAuditoriaSunat(w, r)
+}
+
 

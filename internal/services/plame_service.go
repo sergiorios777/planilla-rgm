@@ -11,11 +11,27 @@ import (
 )
 
 type PlameService struct {
-	Repo *repository.PlanillaRepository
+	Repo         *repository.PlameRepository
+	PlanillaRepo *repository.PlanillaRepository
+	LicRepo      *repository.LicenciaVacacionRepository
 }
 
-func NewPlameService(repo *repository.PlanillaRepository) *PlameService {
-	return &PlameService{Repo: repo}
+func NewPlameService(repo *repository.PlameRepository, planillaRepo *repository.PlanillaRepository, licRepo *repository.LicenciaVacacionRepository) *PlameService {
+	return &PlameService{
+		Repo:         repo,
+		PlanillaRepo: planillaRepo,
+		LicRepo:      licRepo,
+	}
+}
+
+// ObtenerPeriodoPlanillas retorna las planillas calculadas del mes con sus métricas para el Hub PLAME
+func (s *PlameService) ObtenerPeriodoPlanillas(tenantID, anio, mes int) ([]models.PlamePlanillaResumenItem, error) {
+	return s.Repo.ObtenerPeriodoPlanillasPlame(tenantID, anio, mes)
+}
+
+// ObtenerResumenPeriodo calcula los KPIs globales y alertas del periodo mensual
+func (s *PlameService) ObtenerResumenPeriodo(tenantID, anio, mes int) (models.PlameHubResumen, error) {
+	return s.Repo.ObtenerResumenPeriodoPlame(tenantID, anio, mes)
 }
 
 // Helper to map document types to SUNAT codes (01=DNI, 04=CE, 07=Pasaporte)
@@ -172,17 +188,79 @@ func (s *PlameService) TransformarRemuneracionesConVacaciones(
 	return resultado
 }
 
-// GenerarRemuneracionesTexto builds the content for the .rem file
+// AsegurarSnapshot verifica que la planilla tenga su snapshot tributario inicializado; si no existe, lo crea
+func (s *PlameService) AsegurarSnapshot(planillaID int, tenantID int) error {
+	existe, err := s.Repo.ExisteSnapshotPlame(planillaID, tenantID)
+	if err != nil {
+		return err
+	}
+	if !existe {
+		return s.Repo.InicializarSnapshotPlame(planillaID, tenantID)
+	}
+	return nil
+}
+
+// ObtenerConceptosAgrupados obtiene los conceptos agrupados para la auditoría macro asegurando el snapshot
+func (s *PlameService) ObtenerConceptosAgrupados(planillaID int, tenantID int) ([]models.ConceptoSunatAgrupado, error) {
+	if err := s.AsegurarSnapshot(planillaID, tenantID); err != nil {
+		return nil, err
+	}
+	return s.Repo.ObtenerPlameConceptosAgrupados(planillaID, tenantID)
+}
+
+// ObtenerTrabajadoresPorConcepto retorna el listado de colaboradores asignados a un código SUNAT
+func (s *PlameService) ObtenerTrabajadoresPorConcepto(planillaID int, tenantID int, codigoSunat string) ([]models.PlameTrabajadorConceptoItem, error) {
+	if err := s.AsegurarSnapshot(planillaID, tenantID); err != nil {
+		return nil, err
+	}
+	return s.Repo.ObtenerPlameTrabajadoresPorConcepto(planillaID, tenantID, codigoSunat)
+}
+
+// ObtenerDetalleTrabajador retorna los conceptos tributarios de un colaborador
+func (s *PlameService) ObtenerDetalleTrabajador(detalleID int, tenantID int) ([]models.PlanillaPlameConcepto, error) {
+	return s.Repo.ObtenerPlameConceptosPorDetalle(detalleID, tenantID)
+}
+
+// GuardarConceptosTrabajador actualiza las líneas de un colaborador
+func (s *PlameService) GuardarConceptosTrabajador(detalleID int, tenantID int, items []models.PlanillaPlameConcepto) error {
+	return s.Repo.GuardarPlameConceptosTrabajador(detalleID, tenantID, items)
+}
+
+// ActualizarCodigoMasivo reasigna un código SUNAT para toda la planilla
+func (s *PlameService) ActualizarCodigoMasivo(planillaID int, tenantID int, codigoActual string, nuevoMaestroID int, actualizarDefault bool) (string, error) {
+	return s.Repo.ActualizarCodigoSunatPlameMasivo(planillaID, tenantID, codigoActual, nuevoMaestroID, actualizarDefault)
+}
+
+// ResetearSnapshot regenera el snapshot desde el cálculo base
+func (s *PlameService) ResetearSnapshot(planillaID int, tenantID int) error {
+	return s.Repo.ResetearSnapshotPlame(planillaID, tenantID)
+}
+
+// ObtenerRemuneracionesSnapshot retorna las remuneraciones directamente del snapshot de PLAME
+func (s *PlameService) ObtenerRemuneracionesSnapshot(planillaID int, tenantID int) ([]models.PlameRemuneracion, error) {
+	if err := s.AsegurarSnapshot(planillaID, tenantID); err != nil {
+		return nil, err
+	}
+	return s.Repo.ObtenerDatosPlameRemuneracionesDirectas(planillaID, tenantID)
+}
+
+// GenerarRemuneracionesTexto builds the content for the .rem file reflecting exact Devengado and Pagado amounts
 func (s *PlameService) GenerarRemuneracionesTexto(datos []models.PlameRemuneracion) string {
 	var sb strings.Builder
 	for _, r := range datos {
 		tipoDocCode := mapTipoDocumento(r.TipoDocumento)
+		montoDev := r.MontoDevengado
+		montoPag := r.MontoPagado
+		if montoDev == 0 && montoPag == 0 && r.Monto > 0 {
+			montoDev = r.Monto
+			montoPag = r.Monto
+		}
 		// Col 1: Tipo de Documento
 		// Col 2: Número de Documento
 		// Col 3: Código de Concepto
 		// Col 4: Monto Devengado
 		// Col 5: Monto Pagado
-		line := fmt.Sprintf("%s|%s|%s|%.2f|%.2f|\r\n", tipoDocCode, r.NumeroDocumento, r.CodigoConcepto, r.Monto, r.Monto)
+		line := fmt.Sprintf("%s|%s|%s|%.2f|%.2f|\r\n", tipoDocCode, r.NumeroDocumento, r.CodigoConcepto, montoDev, montoPag)
 		sb.WriteString(line)
 	}
 	return sb.String()
@@ -195,7 +273,7 @@ func (s *PlameService) GenerarSuspensionesTexto(incidencias []models.PersonalInc
 		if inc.DiasEnMes <= 0 {
 			continue
 		}
-		tipoDocCode := "01"
+		tipoDocCode := "01" // DNI por defecto para suspensiones SUNAT
 		codSusp := fmt.Sprintf("%02s", strings.TrimSpace(inc.CodigoSunatSuspension))
 		line := fmt.Sprintf("%s|%s|%s|%d|\r\n", tipoDocCode, inc.TrabajadorDoc, codSusp, inc.DiasEnMes)
 		sb.WriteString(line)

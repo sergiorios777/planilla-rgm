@@ -6,87 +6,114 @@
                     <use href="#icono-qrcode"></use>
                 </svg> Auditoría y Reasignación de Códigos SUNAT (PLAME)
             </h3>
-            <p><small>Verificación y reclasificación de la Tabla 22 de SUNAT para los conceptos calculados en esta
-                    planilla.</small></p>
+            <p><small>Verificación, prorrateo vacacional y reclasificación de la Tabla 22 de SUNAT para PDT
+                    PLAME.</small></p>
         </div>
         <div class="flex-items-center flex-gap-sm">
             <mark class="badge badge-info stat-mono">
-                📅 {{.Planilla.Anio}} - {{printf "%02d" .Planilla.Mes}}
+                <svg class="icono-menu">
+                    <use href="#icono-calendar-days"></use>
+                </svg>
+                {{.Planilla.Anio}} - {{printf "%02d" .Planilla.Mes}}
             </mark>
             <span id="badge-estado-planilla">
                 {{if eq .Planilla.Estado "BORRADOR"}}
                 <mark class="badge badge-warning">
-                    📝 BORRADOR (Edición Permitida)
+                    <svg class="icono-menu">
+                        <use href="#icono-draft"></use>
+                    </svg>
+                    BORRADOR
                 </mark>
                 {{else}}
                 <mark class="badge badge-success">
-                    🔒 CERRADA (Solo Lectura)
+                    <svg class="icono-menu">
+                        <use href="#icono-lock"></use>
+                    </svg>
+                    CERRADA
                 </mark>
                 {{end}}
             </span>
         </div>
     </header>
 
-    <!-- Toolbar superior de navegación -->
-    <div class="flex-row-start mb-lg flex-wrap flex-gap-sm">
-        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
-            hx-get="/tenant/ui/planillas" hx-target="#contenido-tenant">
-            <svg class="icono-menu">
-                <use href="#icono-previo-cuadrado"></use>
-            </svg> Volver al Historial
-        </button>
+    <!-- Toolbar superior de navegación y acciones -->
+    <div class="flex-row-between mb-lg flex-wrap flex-gap-sm">
+        <div class="flex-row-start flex-wrap flex-gap-sm">
+            <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+                hx-get="/tenant/ui/plame?anio={{.Planilla.Anio}}&mes={{.Planilla.Mes}}" hx-target="#contenido-tenant">
+                <svg class="icono-menu">
+                    <use href="#icono-previo-cuadrado"></use>
+                </svg> Volver a Hub PLAME
+            </button>
 
-        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
-            hx-get="/tenant/planillas/detalle/ui?id={{.Planilla.ID}}" hx-target="#contenido-tenant">
-            <svg class="icono-menu">
-                <use href="#icono-eye"></use>
-            </svg> Volver a Detalle
-        </button>
+            <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+                hx-get="/tenant/planillas/detalle/ui?id={{.Planilla.ID}}" hx-target="#contenido-tenant">
+                <svg class="icono-menu">
+                    <use href="#icono-eye"></use>
+                </svg> Volver a Detalle Nómina
+            </button>
 
-        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
-            hx-get="/tenant/ui/planillas/rubros-metas?id={{.Planilla.ID}}" hx-target="#contenido-tenant">
-            <svg class="icono-menu">
-                <use href="#icono-objetivo"></use>
-            </svg> Rubros y Metas
-        </button>
+            <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+                hx-get="/tenant/ui/planillas/rubros-metas?id={{.Planilla.ID}}" hx-target="#contenido-tenant">
+                <svg class="icono-menu">
+                    <use href="#icono-objetivo"></use>
+                </svg> Rubros y Metas
+            </button>
 
-        <button class="primary outline btn-compact flex-inline flex-items-center flex-gap-xs"
-            hx-get="/tenant/planillas/exportar-plame-modal?id={{.Planilla.ID}}" hx-target="#modal-plame-body"
-            onclick="document.getElementById('modal-plame').showModal()">
-            <svg class="icono-menu">
-                <use href="#icono-file-export"></use>
-            </svg> Exportar a PLAME (.rem / .jor / .snl)
-        </button>
+            <button class="primary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+                hx-get="/tenant/plame/exportar-modal?id={{.Planilla.ID}}" hx-target="#modal-plame-body"
+                onclick="document.getElementById('modal-plame').showModal()">
+                <svg class="icono-menu">
+                    <use href="#icono-file-export"></use>
+                </svg> Exportar a PLAME (.rem / .jor / .snl)
+            </button>
 
-        {{if .Incidencias}}
-        <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
-            onclick="document.getElementById('modal-incidencias-sunat').showModal()">
-            <svg class="icono-menu">
-                <use href="#icono-contracts"></use>
-            </svg> Incidencias del Mes ({{len .Incidencias}})
-        </button>
+            {{if .Incidencias}}
+            <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+                onclick="document.getElementById('modal-incidencias-sunat').showModal()">
+                <svg class="icono-menu">
+                    <use href="#icono-contracts"></use>
+                </svg> Incidencias del Mes ({{len .Incidencias}})
+            </button>
+            {{end}}
+        </div>
+
+        {{if ne .Planilla.Estado "CERRADA"}}
+        <div>
+            <button type="button" class="warning outline btn-compact flex-inline flex-items-center flex-gap-xs"
+                hx-post="/tenant/plame/resetear" hx-vals='{"planilla_id": {{.Planilla.ID}}}'
+                hx-target="#contenido-tenant" data-confirm-title="Restablecer Snapshot PLAME"
+                data-confirm-message="¿Está seguro de restablecer el snapshot tributario PLAME? Se recalcularán los prorrateos automáticos de vacaciones y se perderán los ajustes manuales individuales realizados en esta planilla."
+                data-confirm-badge="Snapshot Tributario" data-confirm-btn="Sí, Restablecer"
+                title="Restablece todos los conceptos tributarios a partir de la planilla calculada original">
+                <svg class="icono-menu">
+                    <use href="#icono-autorenew"></use>
+                </svg> Restablecer Snapshot
+            </button>
+        </div>
         {{end}}
     </div>
 
-    <!-- Alerta de Auditoría PLAME: Vacaciones sin código 0118 -->
+    <!-- Alerta de Auditoría PLAME: Vacaciones sin código vacacional -->
     {{if .AlertaVacacionesSin0118}}
-    <div class="alert-box alert-danger mb-md">
+    <div class="callout-box mb-md" style="border-left-color: #ba1a1a;">
         <div class="flex-row-between flex-items-center flex-wrap flex-gap-sm">
             <div class="flex-row-start flex-gap-sm flex-items-center">
                 <svg class="icono-menu text-danger">
                     <use href="#icono-alerta-triangulo"></use>
                 </svg>
                 <div>
-                    <strong>⚠️ Alerta de Auditoría PLAME:</strong>
+                    <strong class="text-danger">Alerta de Auditoría PLAME:</strong>
                     Se han registrado <strong>{{.TotalVacaciones}} trabajador(es) con descanso vacacional</strong> en
-                    este mes, pero ningún concepto de la planilla tiene asignado el código SUNAT
-                    <strong><code>0118</code> (Remuneración Vacacional)</strong>.
-                    Reasigne el código oficial para que el PDT PLAME reconozca el descanso vacacional sin observaciones.
+                    este mes, pero ningún concepto de la planilla tiene asignado código de remuneración vacacional
+                    (<code>2043</code>, <code>2007</code>, <code>2049</code> ó <code>0118</code>).
+                    Pulse <em>Restablecer Snapshot</em> para que el sistema genere el prorrateo consolidado
+                    automáticamente.
                 </div>
             </div>
             <button class="primary outline btn-compact font-xs"
                 onclick="document.getElementById('modal-incidencias-sunat').showModal()">
-                🔍 Ver Personal en Vacaciones
+                Ver Personal en Vacaciones
             </button>
         </div>
     </div>
@@ -94,7 +121,7 @@
 
     <!-- Resumen de Novedades / Incidencias del Mes -->
     {{if .Incidencias}}
-    <div class="alert-box alert-secondary mb-md">
+    <div class="callout-box mb-md" style="border-left-color: #64748b;">
         <div class="flex-row-between flex-items-center flex-wrap flex-gap-sm">
             <div class="flex-row-start flex-gap-sm flex-items-center">
                 <svg class="icono-menu">
@@ -102,90 +129,93 @@
                 </svg>
                 <div>
                     <strong>Suspensión Laboral en este Periodo (Tabla 21 SUNAT):</strong>
-                    {{if gt .TotalVacaciones 0}}<mark class="badge badge-purple font-xs">🏖️ {{.TotalVacaciones}}
-                        Vacaciones</mark> {{end}}
-                    {{if gt .TotalLicConGoce 0}}<mark class="badge badge-success font-xs">🟢 {{.TotalLicConGoce}} Lic.
-                        Con Goce</mark> {{end}}
-                    {{if gt .TotalLicSinGoce 0}}<mark class="badge badge-danger font-xs">🔴 {{.TotalLicSinGoce}} Lic.
-                        Sin Goce</mark> {{end}}
+                    {{if gt .TotalVacaciones 0}}<mark class="badge badge-purple font-xs">Vacaciones:
+                        {{.TotalVacaciones}}</mark> {{end}}
+                    {{if gt .TotalLicConGoce 0}}<mark class="badge badge-success font-xs">Lic. Con Goce:
+                        {{.TotalLicConGoce}}</mark> {{end}}
+                    {{if gt .TotalLicSinGoce 0}}<mark class="badge badge-danger font-xs">Lic. Sin Goce:
+                        {{.TotalLicSinGoce}}</mark> {{end}}
                 </div>
             </div>
             <button class="outline secondary btn-compact font-xs"
                 onclick="document.getElementById('modal-incidencias-sunat').showModal()">
-                📋 Ver Padrón de Incidencias
+                Ver Padrón de Incidencias
             </button>
         </div>
     </div>
     {{end}}
 
     <!-- Banner informativo -->
-    <div class="alert-box alert-info mb-md">
+    <div class="banner-info mb-md">
         <div class="flex-row-start flex-gap-sm flex-items-center">
-            <svg class="icono-menu">
+            <svg class="icono-menu text-info">
                 <use href="#icono-info"></use>
             </svg>
             <div>
-                <strong>Auditoría de Conceptos para PDT Planilla Electrónica:</strong>
-                Los cambios de código SUNAT realizados en esta vista se actualizan inmediatamente en todas las boletas
-                de esta planilla, garantizando que el archivo de exportación <code>.rem</code> refleje la clasificación
-                exacta requerida.
+                <strong>Snapshot Tributario Independiente:</strong>
+                Las ediciones de códigos SUNAT, desdoblamientos y montos devengados/pagados realizados en esta pantalla
+                se reflejan
+                directamente en el archivo <code>.rem</code> para el PDT PLAME, <strong>sin alterar las boletas de pago
+                    ni las metas presupuestales</strong> de la institución.
             </div>
         </div>
     </div>
 
     <!-- Filtros y Búsqueda de Conceptos (Card Section) -->
-    <div class="card-section mb-md p-md border-radius-sm">
+    <div class="card-section mb-md p-md">
         <div class="flex-row-between flex-items-center flex-wrap flex-gap-md">
-            <div style="flex: 1; min-width: 280px;">
-                <label for="filtro-concepto-sunat" class="font-xs text-muted mb-xxs font-bold">
-                    🔍 Buscar Concepto o Código SUNAT
+            <div class="flex-1 min-w-250">
+                <label for="filtro-concepto-sunat" class="font-xs text-muted mb-xs font-bold">
+                    Buscar Código SUNAT, Concepto o Naturaleza
                 </label>
                 <input type="search" id="filtro-concepto-sunat"
-                    placeholder="Escribe el nombre del concepto, código (ej: 0121, 2043)..." class="input-sm mb-0"
+                    placeholder="Escribe código (ej: 0121, 2043, 2007) o descripción..." class="input-sm mb-0"
                     oninput="window.filtrarTablaConceptosSunat()" onsearch="window.filtrarTablaConceptosSunat()"
                     onkeyup="window.filtrarTablaConceptosSunat()">
             </div>
             <div>
-                <label class="font-xs text-muted mb-xxs font-bold">
+                <label class="font-xs text-muted mb-xs font-bold">
                     Filtrar por Naturaleza
                 </label>
                 <div class="flex-row-start flex-gap-xs" id="grupo-botones-filtro-tipo">
                     <button type="button" class="btn-compact font-xs btn-filtro-tipo" data-tipo=""
                         onclick="window.filtrarTipoConcepto('', this)">
-                        🌐 Todos
+                        Todos
                     </button>
-                    <button type="button"
-                        class="outline secondary btn-compact font-xs btn-filtro-tipo btn-filtro-ingreso"
+                    <button type="button" class="outline secondary btn-compact font-xs btn-filtro-tipo"
                         data-tipo="INGRESO" onclick="window.filtrarTipoConcepto('INGRESO', this)">
-                        🟢 Ingresos
+                        Ingresos
                     </button>
-                    <button type="button"
-                        class="outline secondary btn-compact font-xs btn-filtro-tipo btn-filtro-retencion"
+                    <button type="button" class="outline secondary btn-compact font-xs btn-filtro-tipo"
                         data-tipo="RETENCION" onclick="window.filtrarTipoConcepto('RETENCION', this)">
-                        🔴 Retenciones
+                        Retenciones
                     </button>
-                    <button type="button"
-                        class="outline secondary btn-compact font-xs btn-filtro-tipo btn-filtro-aporte"
+                    <button type="button" class="outline secondary btn-compact font-xs btn-filtro-tipo"
                         data-tipo="APORTE" onclick="window.filtrarTipoConcepto('APORTE', this)">
-                        🔵 Aportes
+                        Aportes
                     </button>
                 </div>
             </div>
         </div>
+        <div class="mt-xs text-muted font-xs">
+            Mostrando <strong id="contador-conceptos-visibles" class="text-primary stat-mono">{{len
+                .Conceptos}}</strong> de {{len .Conceptos}} conceptos tributarios
+        </div>
     </div>
 
-    <!-- Tabla Agrupada de Conceptos -->
+    <!-- Tabla Agrupada de Conceptos Tributarios PLAME -->
     <div class="table-responsive">
-        <table class="striped condensed w-full" id="tabla-conceptos-sunat">
+        <table class="striped condensed" id="tabla-conceptos-sunat">
             <thead>
                 <tr>
-                    <th style="width: 110px;">Tipo</th>
-                    <th style="min-width: 200px;">Concepto en Planilla</th>
-                    <th class="text-center" style="width: 80px;">Afectados</th>
-                    <th class="text-right" style="width: 120px;">Total Planilla</th>
-                    <th class="text-center" style="width: 110px;">Código SUNAT</th>
-                    <th style="min-width: 280px;">Descripción Oficial SUNAT (Tabla 22)</th>
-                    <th class="text-center" style="width: 70px;">Acción</th>
+                    <th class="w-100">Tipo</th>
+                    <th class="text-center w-100">Código SUNAT</th>
+                    <th>Descripción Oficial SUNAT (Tabla 22)</th>
+                    <th class="text-center w-90">Colaboradores</th>
+                    <th class="text-right w-120">Total Devengado</th>
+                    <th class="text-right w-120">Total Pagado</th>
+                    <th class="w-120">Condición</th>
+                    <th class="text-center w-90">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -194,86 +224,105 @@
                 {{range $idx, $c := .Conceptos}}
                 <tr id="fila-concepto-{{$idx}}" class="fila-concepto-item" data-tipo="{{$c.TipoConcepto}}"
                     data-nombre="{{$c.NombreConcepto}}" data-codigo="{{$c.CodigoSunatActual}}"
-                    data-desc="{{$c.DescripcionSunatActual}}">
+                    data-desc="{{$c.DescripcionSunatActual}}" data-devengado="{{$c.TotalDevengado}}"
+                    data-pagado="{{$c.TotalPagado}}">
                     <td>
                         {{if eq $c.TipoConcepto "INGRESO"}}
-                        <mark class="badge badge-success font-xs">🟢 INGRESO</mark>
-                        {{else if eq $c.TipoConcepto "RETENCION"}}
-                        <mark class="badge badge-danger font-xs">🔴 RETENCIÓN</mark>
+                        <mark class="badge badge-success font-xs">Ingreso</mark>
+                        {{else if or (eq $c.TipoConcepto "RETENCION") (eq $c.TipoConcepto "DESCUENTO")}}
+                        <mark class="badge badge-danger font-xs">Retención</mark>
                         {{else if eq $c.TipoConcepto "APORTE"}}
-                        <mark class="badge badge-info font-xs">🔵 APORTE</mark>
+                        <mark class="badge badge-info font-xs">Aporte</mark>
                         {{else}}
-                        <mark class="badge font-xs">{{$c.TipoConcepto}}</mark>
+                        <mark class="badge badge-secondary font-xs">{{$c.TipoConcepto}}</mark>
                         {{end}}
-                    </td>
-                    <td>
-                        <strong class="concepto-planilla-nombre">{{$c.NombreConcepto}}</strong>
-                        {{if eq $c.CodigoSunatActual "0118"}}
-                        <div class="mt-xxs"><mark class="badge badge-purple font-xxs">🏖️ REMUNERACIÓN VACACIONAL</mark>
-                        </div>
-                        {{else if eq $c.CodigoSunatActual "0705"}}
-                        <div class="mt-xxs"><mark class="badge badge-danger font-xxs">🔴 INASISTENCIAS / SIN GOCE</mark>
-                        </div>
-                        {{else if eq $c.CodigoSunatActual "0916"}}
-                        <div class="mt-xxs"><mark class="badge badge-info font-xxs">🔵 SUBSIDIOS
-                                MATERNIDAD/ESSALUD</mark></div>
-                        {{end}}
-                    </td>
-                    <td class="text-center font-sm">
-                        <span class="badge badge-secondary"
-                            title="{{$c.TotalTrabajadores}} colaboradores">{{$c.TotalTrabajadores}}</span>
-                    </td>
-                    <td class="text-right font-sm stat-mono">
-                        S/ {{printf "%.2f" $c.TotalMonto}}
                     </td>
                     <td class="text-center">
-                        {{if $c.CodigoSunatActual}}
-                        <mark class="badge badge-purple font-sm stat-mono" id="badge-cod-{{$idx}}">
+                        <mark class="badge badge-purple stat-mono font-sm" id="badge-cod-{{$idx}}">
                             {{$c.CodigoSunatActual}}
                         </mark>
-                        {{else}}
-                        <span class="text-muted font-xs"><em>(Sin código)</em></span>
-                        {{end}}
                     </td>
-                    <td class="font-sm">
-                        {{if $c.DescripcionSunatActual}}
-                        <span class="font-bold">[{{$c.CodigoSunatActual}}]</span> {{$c.DescripcionSunatActual}}
+                    <td>
+                        <strong>{{$c.DescripcionSunatActual}}</strong>
+                    </td>
+                    <td class="text-center">
+                        <mark class="badge badge-secondary stat-mono font-xs"
+                            title="{{$c.TotalTrabajadores}} colaboradores">
+                            {{$c.TotalTrabajadores}} pers.
+                        </mark>
+                    </td>
+                    <td class="text-right stat-mono text-muted">
+                        S/ {{printf "%.2f" $c.TotalDevengado}}
+                    </td>
+                    <td class="text-right stat-mono font-bold">
+                        S/ {{printf "%.2f" $c.TotalPagado}}
+                    </td>
+                    <td>
+                        {{if $c.TieneVacacional}}
+                        <mark class="badge badge-purple font-xs mb-xs">Rem. Vacacional</mark><br>
+                        {{end}}
+                        {{if $c.TieneAjustesManuales}}
+                        <mark class="badge badge-warning font-xs">Personalizado</mark>
                         {{else}}
-                        <small class="text-muted font-italic">No clasificado en Tabla 22</small>
+                        <small class="text-muted">Automático</small>
                         {{end}}
                     </td>
                     <td class="text-center">
-                        {{if ne $planillaEstado "CERRADA"}}
-                        <button type="button" class="btn-icon" data-tooltip="Reasignar Código SUNAT"
-                            data-placement="left" aria-label="Reasignar Código SUNAT"
-                            onclick="abrirModalEditarCodigoSunat('{{$c.MaestroID}}', '{{$c.CodigoSunatActual}}', '{{$c.NombreConcepto}}', '{{$c.TipoConcepto}}', '{{if $c.ConceptoTenantID}}{{$c.ConceptoTenantID}}{{else}}0{{end}}')">
-                            <svg class="icono-menu">
-                                <use href="#icono-lapiz-cuadrado"></use>
-                            </svg>
-                        </button>
-                        {{else}}
-                        <span class="text-muted font-xs">🔒</span>
-                        {{end}}
+                        <div class="flex-row-center flex-gap-xs">
+                            <button type="button" class="btn-icon" data-tooltip="Ver colaboradores con este código"
+                                data-placement="left" aria-label="Ver colaboradores"
+                                hx-get="/tenant/plame/concepto/trabajadores?planilla_id={{$planillaID}}&codigo_sunat={{$c.CodigoSunatActual}}"
+                                hx-target="#contenido-tenant" hx-push-url="true">
+                                <svg class="icono-menu">
+                                    <use href="#icono-usuarios"></use>
+                                </svg>
+                            </button>
+
+                            {{if ne $planillaEstado "CERRADA"}}
+                            <button type="button" class="btn-icon" data-tooltip="Reasignar en Bloque"
+                                data-placement="left" aria-label="Reasignar Código SUNAT Masivo"
+                                hx-get="/tenant/plame/concepto/reasignar?planilla_id={{$planillaID}}&codigo_sunat={{$c.CodigoSunatActual}}"
+                                hx-target="#contenido-tenant" hx-push-url="true">
+                                <svg class="icono-menu">
+                                    <use href="#icono-lapiz-cuadrado"></use>
+                                </svg>
+                            </button>
+                            {{else}}
+                            <span class="btn-icon disabled-link" data-tooltip="Planilla cerrada (Solo lectura)">
+                                <svg class="icono-menu text-muted">
+                                    <use href="#icono-lock"></use>
+                                </svg>
+                            </span>
+                            {{end}}
+                        </div>
                     </td>
                 </tr>
                 {{else}}
                 <tr>
-                    <td colspan="7" class="text-center text-muted p-lg">
-                        No hay conceptos calculados registrados para esta planilla.
+                    <td colspan="8" class="text-center text-muted p-lg">
+                        No hay conceptos registrados en el snapshot de auditoría para esta planilla.
                     </td>
                 </tr>
                 {{end}}
                 <tr id="fila-sin-resultados-filtro" style="display: none;">
-                    <td colspan="7" class="text-center text-muted p-lg">
-                        🔍 No se encontraron conceptos que coincidan con los filtros aplicados.
+                    <td colspan="8" class="text-center text-muted p-lg">
+                        No se encontraron conceptos que coincidan con los filtros aplicados.
                     </td>
                 </tr>
             </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <th colspan="4" class="text-left">TOTALES AUDITADOS</th>
+                    <th class="text-right stat-mono" id="total-devengado-pie">S/ 0.00</th>
+                    <th class="text-right stat-mono" id="total-pagado-pie">S/ 0.00</th>
+                    <th colspan="2"></th>
+                </tr>
+            </tfoot>
         </table>
     </div>
 </article>
 
-<!-- Modal de Descarga de PLAME -->
+<!-- Modal: Descarga de PLAME -->
 <dialog id="modal-plame">
     <article class="modal-card-md">
         <header>
@@ -292,7 +341,7 @@
     </article>
 </dialog>
 
-<!-- Modal de Novedades e Incidencias del Mes -->
+<!-- Modal: Novedades e Incidencias del Mes (Tabla 21) -->
 <dialog id="modal-incidencias-sunat">
     <article class="modal-card-lg">
         <header class="flex-row-between flex-items-center">
@@ -307,7 +356,7 @@
         </header>
 
         <div class="table-responsive max-h-380">
-            <table class="striped condensed font-sm w-full">
+            <table class="striped condensed font-sm">
                 <thead>
                     <tr>
                         <th>Trabajador</th>
@@ -327,11 +376,11 @@
                         </td>
                         <td>
                             {{if eq .Tipo "VACACION"}}
-                            <mark class="badge badge-purple font-xs">🏖️ Vacaciones</mark>
+                            <mark class="badge badge-purple font-xs">Vacaciones</mark>
                             {{else if eq .Tipo "LICENCIA_CON_GOCE"}}
-                            <mark class="badge badge-success font-xs">🟢 Lic. Con Goce</mark>
+                            <mark class="badge badge-success font-xs">Lic. Con Goce</mark>
                             {{else if eq .Tipo "LICENCIA_SIN_GOCE"}}
-                            <mark class="badge badge-danger font-xs">🔴 Lic. Sin Goce</mark>
+                            <mark class="badge badge-danger font-xs">Lic. Sin Goce</mark>
                             {{else}}
                             <mark class="badge font-xs">{{.Tipo}}</mark>
                             {{end}}
@@ -341,7 +390,7 @@
                             {{.FechaInicio}} al {{.FechaFin}}
                         </td>
                         <td class="text-center">
-                            <span class="badge badge-secondary stat-mono font-bold">{{.DiasEnMes}} d</span>
+                            <mark class="badge badge-secondary stat-mono font-xs">{{.DiasEnMes}} d</mark>
                         </td>
                         <td>
                             <strong>{{.DocumentoAprobacion}}</strong>
@@ -374,120 +423,30 @@
     </article>
 </dialog>
 
-<!-- Modal para Reasignación Individual de Código SUNAT -->
-<dialog id="modal-editar-concepto-sunat">
-    <article class="modal-card-md">
-        <header class="flex-row-between flex-items-center">
-            <h4 class="mb-0 flex-items-center flex-gap-xs">
-                <svg class="icono-menu text-primary">
-                    <use href="#icono-qrcode"></use>
-                </svg>
-                Reasignar Código SUNAT (Tabla 22)
-            </h4>
-            <a href="#close" aria-label="Close" class="close" onclick="cerrarModalEditarCodigoSunat()"></a>
-        </header>
-
-        <div class="py-sm">
-            <!-- Ficha resumen del concepto seleccionado -->
-            <div class="callout-box mb-md">
-                <div class="flex-row-between flex-items-center mb-xxs">
-                    <strong id="modal-concepto-nombre" class="font-md text-primary">Concepto</strong>
-                    <span id="modal-concepto-tipo-badge"></span>
-                </div>
-                <small class="text-muted">Código SUNAT actual en boleta: </small>
-                <mark class="badge badge-purple stat-mono font-xs" id="modal-concepto-codigo-actual">(Sin código)</mark>
-            </div>
-
-            <form id="form-editar-codigo-sunat" hx-post="/tenant/planillas/sunat-codigos/actualizar"
-                hx-target="#contenido-tenant" onsubmit="cerrarModalEditarCodigoSunat()">
-                <input type="hidden" name="planilla_id" value="{{.Planilla.ID}}">
-                <input type="hidden" name="concepto_tenant_id" id="modal-concepto-tenant-id" value="0">
-                <input type="hidden" name="nombre_en_boleta" id="modal-concepto-nombre-hidden" value="">
-
-                <label class="mb-md">
-                    Seleccionar Código Oficial SUNAT (Tabla 22 - PLAME)
-                    <select name="nuevo_maestro_id" id="modal-select-maestro-sunat" class="select-con-buscador" required
-                        style="width: 100%;">
-                        <option value="">-- Buscar por código (ej: 0121) o descripción --</option>
-                        {{range .Maestros}}
-                        <option value="{{.ID}}" data-codigo="{{.Codigo}}">
-                            [{{.Codigo}}] {{.Descripcion}}
-                        </option>
-                        {{end}}
-                    </select>
-                </label>
-
-                <div id="modal-label-actualizar-default" class="mb-md">
-                    <label class="flex-inline flex-items-center flex-gap-xs font-xs mb-0">
-                        <input type="checkbox" name="actualizar_default" id="modal-chk-actualizar-default" value="true"
-                            role="switch">
-                        <span>Guardar también en el catálogo institucional como predeterminado para futuras
-                            planillas</span>
-                    </label>
-                </div>
-
-                <footer class="flex-row-end flex-gap-sm mt-md mb-0">
-                    <button type="button" class="secondary outline btn-compact"
-                        onclick="cerrarModalEditarCodigoSunat()">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="primary btn-compact flex-inline flex-items-center flex-gap-xs">
-                        <svg class="icono-menu">
-                            <use href="#icono-guardar"></use>
-                        </svg>
-                        Guardar Código SUNAT
-                    </button>
-                </footer>
-            </form>
-        </div>
-    </article>
-</dialog>
-
-<style>
-    #tabla-conceptos-sunat .concepto-planilla-nombre {
-        line-height: 1.25;
-        word-break: break-word;
-        font-size: 0.85rem;
-    }
-
-    /* Estilos semánticos para botones de filtro de naturaleza */
-    .btn-filtro-ingreso.outline {
-        color: #065f46;
-        border-color: #a7f3d0;
-    }
-
-    .btn-filtro-ingreso:not(.outline) {
-        background-color: #059669 !important;
-        border-color: #059669 !important;
-        color: #ffffff !important;
-    }
-
-    .btn-filtro-retencion.outline {
-        color: #991b1b;
-        border-color: #fecaca;
-    }
-
-    .btn-filtro-retencion:not(.outline) {
-        background-color: #dc2626 !important;
-        border-color: #dc2626 !important;
-        color: #ffffff !important;
-    }
-
-    .btn-filtro-aporte.outline {
-        color: #1e40af;
-        border-color: #bfdbfe;
-    }
-
-    .btn-filtro-aporte:not(.outline) {
-        background-color: #2563eb !important;
-        border-color: #2563eb !important;
-        color: #ffffff !important;
-    }
-</style>
-
 <script>
-    // Estado del filtro de tipo/naturaleza activo ('', 'INGRESO', 'RETENCION', 'APORTE')
     window.tipoConceptoSunatActivo = '';
+
+    window.actualizarTotalesConceptosSunat = function () {
+        let devengado = 0;
+        let pagado = 0;
+        let visibles = 0;
+        const rows = document.querySelectorAll('#tabla-conceptos-sunat tbody tr.fila-concepto-item');
+        rows.forEach(row => {
+            if (!row.hidden && row.style.display !== 'none') {
+                visibles++;
+                devengado += parseFloat(row.getAttribute('data-devengado') || 0);
+                pagado += parseFloat(row.getAttribute('data-pagado') || 0);
+            }
+        });
+
+        const elDev = document.getElementById('total-devengado-pie');
+        const elPag = document.getElementById('total-pagado-pie');
+        const elContador = document.getElementById('contador-conceptos-visibles');
+
+        if (elDev) elDev.textContent = 'S/ ' + devengado.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (elPag) elPag.textContent = 'S/ ' + pagado.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (elContador) elContador.textContent = visibles;
+    };
 
     window.filtrarTipoConcepto = function (tipo, btnEl) {
         window.tipoConceptoSunatActivo = (tipo || '').toUpperCase().trim();
@@ -540,53 +499,10 @@
             noResultsRow.style.display = mostrarSinResultados ? '' : 'none';
             noResultsRow.hidden = !mostrarSinResultados;
         }
+
+        window.actualizarTotalesConceptosSunat();
     };
 
-    window.abrirModalEditarCodigoSunat = function (maestroId, codigoSunat, nombreConcepto, tipoConcepto, conceptoTenantId) {
-        document.getElementById('modal-concepto-nombre').textContent = nombreConcepto;
-        document.getElementById('modal-concepto-nombre-hidden').value = nombreConcepto;
-        document.getElementById('modal-concepto-tenant-id').value = conceptoTenantId || '0';
-        document.getElementById('modal-concepto-codigo-actual').textContent = codigoSunat ? codigoSunat : '(Sin código)';
-
-        const tipoBadgeEl = document.getElementById('modal-concepto-tipo-badge');
-        if (tipoBadgeEl) {
-            if (tipoConcepto === 'INGRESO') {
-                tipoBadgeEl.innerHTML = '<mark class="badge badge-success font-xs">🟢 INGRESO</mark>';
-            } else if (tipoConcepto === 'RETENCION') {
-                tipoBadgeEl.innerHTML = '<mark class="badge badge-danger font-xs">🔴 RETENCIÓN</mark>';
-            } else if (tipoConcepto === 'APORTE') {
-                tipoBadgeEl.innerHTML = '<mark class="badge badge-info font-xs">🔵 APORTE</mark>';
-            } else {
-                tipoBadgeEl.innerHTML = '<mark class="badge font-xs">' + tipoConcepto + '</mark>';
-            }
-        }
-
-        const defaultLabel = document.getElementById('modal-label-actualizar-default');
-        const defaultChk = document.getElementById('modal-chk-actualizar-default');
-        if (defaultChk) defaultChk.checked = false;
-        if (defaultLabel) {
-            defaultLabel.style.display = (conceptoTenantId && conceptoTenantId !== '0') ? '' : 'none';
-        }
-
-        const selectEl = document.getElementById('modal-select-maestro-sunat');
-        if (selectEl) {
-            if (selectEl.tomselect) {
-                selectEl.tomselect.setValue(maestroId || '', true);
-            } else {
-                selectEl.value = maestroId || '';
-            }
-        }
-
-        const modal = document.getElementById('modal-editar-concepto-sunat');
-        if (modal) {
-            modal.showModal();
-        }
-    };
-
-    window.cerrarModalEditarCodigoSunat = function () {
-        const modal = document.getElementById('modal-editar-concepto-sunat');
-        if (modal) {
-            modal.close();
-        }
-    };
+    // Inicializar totales y conteo en renderizado
+    window.actualizarTotalesConceptosSunat();
 </script>

@@ -9,7 +9,7 @@ import (
 )
 
 func TestGenerarJornadaTexto(t *testing.T) {
-	service := NewPlameService(nil)
+	service := NewPlameService(nil, nil, nil)
 
 	datos := []models.PlameJornada{
 		{
@@ -34,7 +34,7 @@ func TestGenerarJornadaTexto(t *testing.T) {
 }
 
 func TestGenerarRemuneracionesTexto(t *testing.T) {
-	service := NewPlameService(nil)
+	service := NewPlameService(nil, nil, nil)
 
 	datos := []models.PlameRemuneracion{
 		{
@@ -60,8 +60,67 @@ func TestGenerarRemuneracionesTexto(t *testing.T) {
 	}
 }
 
+func TestGenerarRemuneracionesTexto_DevengadoVsPagadoDiferente(t *testing.T) {
+	service := NewPlameService(nil, nil, nil)
+
+	datos := []models.PlameRemuneracion{
+		{
+			TipoDocumento:   "DNI",
+			NumeroDocumento: "11223344",
+			CodigoConcepto:  "0121",
+			MontoDevengado:  3000.00,
+			MontoPagado:     1500.00,
+		},
+		{
+			TipoDocumento:   "CE",
+			NumeroDocumento: "00112233",
+			CodigoConcepto:  "0312",
+			MontoDevengado:  500.00,
+			MontoPagado:     500.00,
+		},
+	}
+
+	expected := "01|11223344|0121|3000.00|1500.00|\r\n" +
+		"04|00112233|0312|500.00|500.00|\r\n"
+
+	result := service.GenerarRemuneracionesTexto(datos)
+	if result != expected {
+		t.Errorf("expected:\n%q\ngot:\n%q", expected, result)
+	}
+}
+
+func TestGenerarRemuneracionesTexto_DesdoblamientoConcepto(t *testing.T) {
+	service := NewPlameService(nil, nil, nil)
+
+	// Un bono desdoblado en 2 códigos SUNAT para el mismo trabajador
+	datos := []models.PlameRemuneracion{
+		{
+			TipoDocumento:   "DNI",
+			NumeroDocumento: "77889900",
+			CodigoConcepto:  "0121",
+			MontoDevengado:  600.00,
+			MontoPagado:     600.00,
+		},
+		{
+			TipoDocumento:   "DNI",
+			NumeroDocumento: "77889900",
+			CodigoConcepto:  "0122",
+			MontoDevengado:  400.00,
+			MontoPagado:     400.00,
+		},
+	}
+
+	expected := "01|77889900|0121|600.00|600.00|\r\n" +
+		"01|77889900|0122|400.00|400.00|\r\n"
+
+	result := service.GenerarRemuneracionesTexto(datos)
+	if result != expected {
+		t.Errorf("expected:\n%q\ngot:\n%q", expected, result)
+	}
+}
+
 func TestGenerarZip(t *testing.T) {
-	service := NewPlameService(nil)
+	service := NewPlameService(nil, nil, nil)
 
 	jorText := "jor_content"
 	remText := "rem_content"
@@ -109,7 +168,7 @@ func TestGenerarZip(t *testing.T) {
 }
 
 func TestGenerarSuspensionesTexto(t *testing.T) {
-	service := NewPlameService(nil)
+	service := NewPlameService(nil, nil, nil)
 
 	incidencias := []models.PersonalIncidenciaMes{
 		{
@@ -134,7 +193,7 @@ func TestGenerarSuspensionesTexto(t *testing.T) {
 }
 
 func TestGenerarZipCompleto(t *testing.T) {
-	service := NewPlameService(nil)
+	service := NewPlameService(nil, nil, nil)
 
 	jorText := "jor_content"
 	remText := "rem_content"
@@ -180,7 +239,7 @@ func TestMapearCodigoSunatVacaciones(t *testing.T) {
 }
 
 func TestTransformarRemuneraciones_SinVacaciones(t *testing.T) {
-	service := NewPlameService(nil)
+	service := NewPlameService(nil, nil, nil)
 
 	conceptos := []models.PlameConceptoDetalle{
 		{
@@ -209,7 +268,7 @@ func TestTransformarRemuneraciones_SinVacaciones(t *testing.T) {
 }
 
 func TestTransformarRemuneraciones_VacacionesParciales_CAS_1057(t *testing.T) {
-	service := NewPlameService(nil)
+	service := NewPlameService(nil, nil, nil)
 
 	// Trabajador CAS con 15 días de vacaciones
 	// Básico S/ 3000.00 (Remunerativo) -> 15 días ord = S/ 1500.00 (0121), 15 días vac = S/ 1500.00 (2043)
@@ -264,7 +323,7 @@ func TestTransformarRemuneraciones_VacacionesParciales_CAS_1057(t *testing.T) {
 }
 
 func TestTransformarRemuneraciones_VacacionesParciales_276_ConNoRemunerativo(t *testing.T) {
-	service := NewPlameService(nil)
+	service := NewPlameService(nil, nil, nil)
 
 	// Trabajador 276 con 10 días de vacaciones
 	// Básico S/ 1000.00 (Remunerativo) -> 10/30 = 333.33 vac (2007), 666.67 ord (0121)
@@ -328,7 +387,7 @@ func TestTransformarRemuneraciones_VacacionesParciales_276_ConNoRemunerativo(t *
 }
 
 func TestTransformarRemuneraciones_MesCompleto_Ley30057(t *testing.T) {
-	service := NewPlameService(nil)
+	service := NewPlameService(nil, nil, nil)
 
 	// Trabajador Servir con 30 días de vacaciones
 	// Básico S/ 4000.00 (Remunerativo) -> 100% vacacional a código 2049

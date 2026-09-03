@@ -70,4 +70,15 @@ func main() {
 		log.Fatalf("Error ejecutando migración licencias/vacaciones: %v", err)
 	}
 	log.Println("✅ Tabla personal_licencias_vacaciones migrada exitosamente")
+
+	// Ejecutar migración de planilla_plame_conceptos
+	sqlBytesPlame, err := os.ReadFile("internal/repository/migrations/20260902100000_crear_tabla_planilla_plame_conceptos.sql")
+	if err != nil {
+		log.Fatalf("Error leyendo archivo de migración planilla_plame_conceptos: %v", err)
+	}
+	_, err = db.Exec(cleanUpMigration(string(sqlBytesPlame)))
+	if err != nil {
+		log.Fatalf("Error ejecutando migración planilla_plame_conceptos: %v", err)
+	}
+	log.Println("✅ Tabla planilla_plame_conceptos migrada exitosamente")
 }
