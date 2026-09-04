@@ -269,8 +269,8 @@
                     </td>
                     <td class="text-center">
                         <div class="flex-row-center flex-gap-xs">
-                            <button type="button" class="btn-icon" data-tooltip="Ver colaboradores con este código"
-                                data-placement="left" aria-label="Ver colaboradores"
+                            <button type="button" class="btn-icon" data-tooltip="Reasignar por trabajador"
+                                data-placement="left" aria-label="Reasignar Código SUNAT por trabajador"
                                 hx-get="/tenant/plame/concepto/trabajadores?planilla_id={{$planillaID}}&codigo_sunat={{$c.CodigoSunatActual}}"
                                 hx-target="#contenido-tenant" hx-push-url="true">
                                 <svg class="icono-menu">
@@ -284,7 +284,7 @@
                                 hx-get="/tenant/plame/concepto/reasignar?planilla_id={{$planillaID}}&codigo_sunat={{$c.CodigoSunatActual}}"
                                 hx-target="#contenido-tenant" hx-push-url="true">
                                 <svg class="icono-menu">
-                                    <use href="#icono-lapiz-cuadrado"></use>
+                                    <use href="#icono-change-circle"></use>
                                 </svg>
                             </button>
                             {{else}}

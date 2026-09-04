@@ -317,8 +317,8 @@ func (h *PlameHandler) VerTrabajadoresPorConceptoHTMX(w http.ResponseWriter, r *
 	h.VistaConceptoTrabajadores(w, r)
 }
 
-// ModalEditarTrabajadorHTMX retorna el modal con la tabla de conceptos editables por trabajador
-func (h *PlameHandler) ModalEditarTrabajadorHTMX(w http.ResponseWriter, r *http.Request) {
+// VistaEditarTrabajador renderiza la vista completa para la edición y desdoblamiento tributario de un colaborador
+func (h *PlameHandler) VistaEditarTrabajador(w http.ResponseWriter, r *http.Request) {
 	tenantID := obtenerTenantID(r)
 	detalleID, _ := strconv.Atoi(r.URL.Query().Get("detalle_id"))
 	if detalleID <= 0 {
@@ -340,6 +340,11 @@ func (h *PlameHandler) ModalEditarTrabajadorHTMX(w http.ResponseWriter, r *http.
 
 	var trabajadorNombre, trabajadorDoc, regimenNombre string
 	var planillaID int
+	var totalDevengado, totalPagado float64
+	for _, c := range conceptos {
+		totalDevengado += c.MontoDevengado
+		totalPagado += c.MontoPagado
+	}
 	if len(conceptos) > 0 {
 		trabajadorNombre = conceptos[0].TrabajadorNombre
 		trabajadorDoc = conceptos[0].TrabajadorDocumento
@@ -357,18 +362,28 @@ func (h *PlameHandler) ModalEditarTrabajadorHTMX(w http.ResponseWriter, r *http.
 		"TrabajadorNombre":  trabajadorNombre,
 		"TrabajadorDoc":     trabajadorDoc,
 		"RegimenNombre":     regimenNombre,
+		"TotalDevengado":    totalDevengado,
+		"TotalPagado":       totalPagado,
 		"Conceptos":         conceptos,
 		"Maestros":          maestros,
 		"OrigenVista":       origenVista,
 		"CodigoSunatFiltro": codigoSunatFiltro,
 	}
 
-	tmpl, err := template.ParseFiles("ui/templates/tenant/plame_concepto_trabajadores_ui.html")
+	tmpl, err := template.ParseFiles(
+		"ui/templates/tenant/plame_trabajador_edicion_ui.html",
+		"ui/templates/components/buscador_codigo_sunat_modal.html",
+	)
 	if err != nil {
-		http.Error(w, "Error cargando plantilla: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Error cargando plantilla de edición de trabajador: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	tmpl.ExecuteTemplate(w, "modal_editar_plame_trabajador_content", datos)
+	tmpl.Execute(w, datos)
+}
+
+// ModalEditarTrabajadorHTMX delega a VistaEditarTrabajador para compatibilidad
+func (h *PlameHandler) ModalEditarTrabajadorHTMX(w http.ResponseWriter, r *http.Request) {
+	h.VistaEditarTrabajador(w, r)
 }
 
 // GuardarTrabajadorHTMX guarda las líneas tributarias editadas o desdobladas de un trabajador
@@ -436,8 +451,8 @@ func (h *PlameHandler) GuardarTrabajadorHTMX(w http.ResponseWriter, r *http.Requ
 	}
 
 	origenVista := r.FormValue("origen_vista")
-	if origenVista == "trabajadores" {
-		codigoSunatFiltro := r.FormValue("codigo_sunat_filtro")
+	codigoSunatFiltro := strings.TrimSpace(r.FormValue("codigo_sunat_filtro"))
+	if origenVista == "trabajadores" && codigoSunatFiltro != "" {
 		r.URL.RawQuery = fmt.Sprintf("planilla_id=%d&codigo_sunat=%s", planillaID, url.QueryEscape(codigoSunatFiltro))
 		h.VistaConceptoTrabajadores(w, r)
 		return

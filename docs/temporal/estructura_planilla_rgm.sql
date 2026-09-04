@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict Pz0HMHnO6GhR76aTLpx5oQiSpTI7vYJJe1dpQ31rMxVMW6NbsdI9mN81gMqkboD
+\restrict e7DTBEtIG38pQ3uFVms4YzKTeQsslsxOSCFczYXkNBdocaefKO1Zv8AmzDpPa3Z
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -1152,6 +1152,55 @@ ALTER SEQUENCE public.parametros_globales_id_seq OWNED BY public.parametros_glob
 
 
 --
+-- Name: personal_licencias_vacaciones; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.personal_licencias_vacaciones (
+    id integer NOT NULL,
+    tenant_id integer NOT NULL,
+    trabajador_id integer NOT NULL,
+    contrato_id integer,
+    tipo character varying(30) NOT NULL,
+    subtipo character varying(60),
+    codigo_sunat_suspension character varying(10) NOT NULL,
+    fecha_inicio date NOT NULL,
+    fecha_fin date NOT NULL,
+    dias_calendario integer GENERATED ALWAYS AS (((fecha_fin - fecha_inicio) + 1)) STORED,
+    documento_aprobacion character varying(255) NOT NULL,
+    fecha_aprobacion date,
+    observaciones text,
+    estado character varying(20) DEFAULT 'APROBADO'::character varying NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_fechas_consistentes CHECK ((fecha_fin >= fecha_inicio))
+);
+
+
+ALTER TABLE public.personal_licencias_vacaciones OWNER TO postgres;
+
+--
+-- Name: personal_licencias_vacaciones_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.personal_licencias_vacaciones_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.personal_licencias_vacaciones_id_seq OWNER TO postgres;
+
+--
+-- Name: personal_licencias_vacaciones_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.personal_licencias_vacaciones_id_seq OWNED BY public.personal_licencias_vacaciones.id;
+
+
+--
 -- Name: planilla_conceptos; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1320,6 +1369,53 @@ ALTER SEQUENCE public.planilla_especial_conceptos_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.planilla_especial_conceptos_id_seq OWNED BY public.planilla_especial_conceptos.id;
+
+
+--
+-- Name: planilla_plame_conceptos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.planilla_plame_conceptos (
+    id integer NOT NULL,
+    planilla_id integer NOT NULL,
+    planilla_detalle_id integer NOT NULL,
+    trabajador_id integer NOT NULL,
+    planilla_concepto_id integer,
+    codigo_sunat character varying(10) NOT NULL,
+    descripcion_sunat character varying(255) DEFAULT ''::character varying NOT NULL,
+    tipo_concepto character varying(20) NOT NULL,
+    monto_devengado numeric(12,2) DEFAULT 0.00 NOT NULL,
+    monto_pagado numeric(12,2) DEFAULT 0.00 NOT NULL,
+    es_concepto_vacacional boolean DEFAULT false NOT NULL,
+    es_ajuste_manual boolean DEFAULT false NOT NULL,
+    observacion_ajuste text,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.planilla_plame_conceptos OWNER TO postgres;
+
+--
+-- Name: planilla_plame_conceptos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.planilla_plame_conceptos_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.planilla_plame_conceptos_id_seq OWNER TO postgres;
+
+--
+-- Name: planilla_plame_conceptos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.planilla_plame_conceptos_id_seq OWNED BY public.planilla_plame_conceptos.id;
 
 
 --
@@ -1627,6 +1723,45 @@ ALTER SEQUENCE public.reglas_financiamiento_modelo_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.reglas_financiamiento_modelo_id_seq OWNED BY public.reglas_financiamiento_modelo.id;
+
+
+--
+-- Name: sunat_tipos_suspension; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.sunat_tipos_suspension (
+    id integer NOT NULL,
+    codigo character varying(10) NOT NULL,
+    descripcion text NOT NULL,
+    descripcion_abreviada character varying(150) NOT NULL,
+    tipo_suspension character varying(20) NOT NULL,
+    activo boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.sunat_tipos_suspension OWNER TO postgres;
+
+--
+-- Name: sunat_tipos_suspension_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.sunat_tipos_suspension_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.sunat_tipos_suspension_id_seq OWNER TO postgres;
+
+--
+-- Name: sunat_tipos_suspension_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.sunat_tipos_suspension_id_seq OWNED BY public.sunat_tipos_suspension.id;
 
 
 --
@@ -1990,6 +2125,13 @@ ALTER TABLE ONLY public.parametros_globales ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: personal_licencias_vacaciones id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.personal_licencias_vacaciones ALTER COLUMN id SET DEFAULT nextval('public.personal_licencias_vacaciones_id_seq'::regclass);
+
+
+--
 -- Name: planilla_conceptos id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2015,6 +2157,13 @@ ALTER TABLE ONLY public.planilla_detalles ALTER COLUMN id SET DEFAULT nextval('p
 --
 
 ALTER TABLE ONLY public.planilla_especial_conceptos ALTER COLUMN id SET DEFAULT nextval('public.planilla_especial_conceptos_id_seq'::regclass);
+
+
+--
+-- Name: planilla_plame_conceptos id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_plame_conceptos ALTER COLUMN id SET DEFAULT nextval('public.planilla_plame_conceptos_id_seq'::regclass);
 
 
 --
@@ -2064,6 +2213,13 @@ ALTER TABLE ONLY public.reglas_financiamiento_concepto ALTER COLUMN id SET DEFAU
 --
 
 ALTER TABLE ONLY public.reglas_financiamiento_modelo ALTER COLUMN id SET DEFAULT nextval('public.reglas_financiamiento_modelo_id_seq'::regclass);
+
+
+--
+-- Name: sunat_tipos_suspension id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sunat_tipos_suspension ALTER COLUMN id SET DEFAULT nextval('public.sunat_tipos_suspension_id_seq'::regclass);
 
 
 --
@@ -2375,6 +2531,14 @@ ALTER TABLE ONLY public.parametros_globales
 
 
 --
+-- Name: personal_licencias_vacaciones personal_licencias_vacaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.personal_licencias_vacaciones
+    ADD CONSTRAINT personal_licencias_vacaciones_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: planilla_conceptos planilla_conceptos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2404,6 +2568,14 @@ ALTER TABLE ONLY public.planilla_detalles
 
 ALTER TABLE ONLY public.planilla_especial_conceptos
     ADD CONSTRAINT planilla_especial_conceptos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: planilla_plame_conceptos planilla_plame_conceptos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_plame_conceptos
+    ADD CONSTRAINT planilla_plame_conceptos_pkey PRIMARY KEY (id);
 
 
 --
@@ -2484,6 +2656,22 @@ ALTER TABLE ONLY public.reglas_financiamiento_concepto
 
 ALTER TABLE ONLY public.reglas_financiamiento_modelo
     ADD CONSTRAINT reglas_financiamiento_modelo_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sunat_tipos_suspension sunat_tipos_suspension_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sunat_tipos_suspension
+    ADD CONSTRAINT sunat_tipos_suspension_codigo_key UNIQUE (codigo);
+
+
+--
+-- Name: sunat_tipos_suspension sunat_tipos_suspension_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sunat_tipos_suspension
+    ADD CONSTRAINT sunat_tipos_suspension_pkey PRIMARY KEY (id);
 
 
 --
@@ -2749,6 +2937,20 @@ CREATE INDEX idx_descuentos_vigencia ON public.descuentos USING btree (tenant_id
 
 
 --
+-- Name: idx_licencias_vac_periodo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_licencias_vac_periodo ON public.personal_licencias_vacaciones USING btree (tenant_id, fecha_inicio, fecha_fin);
+
+
+--
+-- Name: idx_licencias_vac_tenant_fechas; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_licencias_vac_tenant_fechas ON public.personal_licencias_vacaciones USING btree (tenant_id, trabajador_id, fecha_inicio, fecha_fin);
+
+
+--
 -- Name: idx_mef_muc_grupo_nivel; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2788,6 +2990,34 @@ CREATE INDEX idx_notificaciones_usuario_leido ON public.notificaciones USING btr
 --
 
 CREATE INDEX idx_organigramas_tenant ON public.organigramas USING btree (tenant_id);
+
+
+--
+-- Name: idx_plame_conceptos_cod_sunat; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_plame_conceptos_cod_sunat ON public.planilla_plame_conceptos USING btree (planilla_id, codigo_sunat);
+
+
+--
+-- Name: idx_plame_conceptos_detalle; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_plame_conceptos_detalle ON public.planilla_plame_conceptos USING btree (planilla_detalle_id);
+
+
+--
+-- Name: idx_plame_conceptos_planilla; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_plame_conceptos_planilla ON public.planilla_plame_conceptos USING btree (planilla_id);
+
+
+--
+-- Name: idx_plame_conceptos_trabajador; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_plame_conceptos_trabajador ON public.planilla_plame_conceptos USING btree (trabajador_id);
 
 
 --
@@ -3185,6 +3415,38 @@ ALTER TABLE ONLY public.pap_detalles
 
 
 --
+-- Name: personal_licencias_vacaciones personal_licencias_vacaciones_codigo_sunat_suspension_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.personal_licencias_vacaciones
+    ADD CONSTRAINT personal_licencias_vacaciones_codigo_sunat_suspension_fkey FOREIGN KEY (codigo_sunat_suspension) REFERENCES public.sunat_tipos_suspension(codigo);
+
+
+--
+-- Name: personal_licencias_vacaciones personal_licencias_vacaciones_contrato_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.personal_licencias_vacaciones
+    ADD CONSTRAINT personal_licencias_vacaciones_contrato_id_fkey FOREIGN KEY (contrato_id) REFERENCES public.contratos(id) ON DELETE SET NULL;
+
+
+--
+-- Name: personal_licencias_vacaciones personal_licencias_vacaciones_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.personal_licencias_vacaciones
+    ADD CONSTRAINT personal_licencias_vacaciones_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
+
+
+--
+-- Name: personal_licencias_vacaciones personal_licencias_vacaciones_trabajador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.personal_licencias_vacaciones
+    ADD CONSTRAINT personal_licencias_vacaciones_trabajador_id_fkey FOREIGN KEY (trabajador_id) REFERENCES public.trabajadores(id) ON DELETE CASCADE;
+
+
+--
 -- Name: planilla_conceptos planilla_conceptos_concepto_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3262,6 +3524,38 @@ ALTER TABLE ONLY public.planilla_especial_conceptos
 
 ALTER TABLE ONLY public.planilla_especial_conceptos
     ADD CONSTRAINT planilla_especial_conceptos_planilla_id_fkey FOREIGN KEY (planilla_id) REFERENCES public.planillas(id) ON DELETE CASCADE;
+
+
+--
+-- Name: planilla_plame_conceptos planilla_plame_conceptos_planilla_concepto_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_plame_conceptos
+    ADD CONSTRAINT planilla_plame_conceptos_planilla_concepto_id_fkey FOREIGN KEY (planilla_concepto_id) REFERENCES public.planilla_conceptos(id) ON DELETE SET NULL;
+
+
+--
+-- Name: planilla_plame_conceptos planilla_plame_conceptos_planilla_detalle_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_plame_conceptos
+    ADD CONSTRAINT planilla_plame_conceptos_planilla_detalle_id_fkey FOREIGN KEY (planilla_detalle_id) REFERENCES public.planilla_detalles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: planilla_plame_conceptos planilla_plame_conceptos_planilla_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_plame_conceptos
+    ADD CONSTRAINT planilla_plame_conceptos_planilla_id_fkey FOREIGN KEY (planilla_id) REFERENCES public.planillas(id) ON DELETE CASCADE;
+
+
+--
+-- Name: planilla_plame_conceptos planilla_plame_conceptos_trabajador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.planilla_plame_conceptos
+    ADD CONSTRAINT planilla_plame_conceptos_trabajador_id_fkey FOREIGN KEY (trabajador_id) REFERENCES public.trabajadores(id) ON DELETE CASCADE;
 
 
 --
@@ -3500,5 +3794,5 @@ ALTER TABLE ONLY public.usuarios
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Pz0HMHnO6GhR76aTLpx5oQiSpTI7vYJJe1dpQ31rMxVMW6NbsdI9mN81gMqkboD
+\unrestrict e7DTBEtIG38pQ3uFVms4YzKTeQsslsxOSCFczYXkNBdocaefKO1Zv8AmzDpPa3Z
 

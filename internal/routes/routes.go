@@ -405,6 +405,7 @@ func registrarRutasTenant(mux *http.ServeMux, db *sql.DB) {
 	mux.HandleFunc("/tenant/plame/concepto/reasignar", middleware.RequireAuth(plameHandler.VistaReasignarConcepto))
 	mux.HandleFunc("/tenant/plame/trabajadores", middleware.RequireAuth(plameHandler.VerTrabajadoresPorConceptoHTMX))
 	mux.HandleFunc("/tenant/plame/trabajador-modal", middleware.RequireAuth(plameHandler.ModalEditarTrabajadorHTMX))
+	mux.HandleFunc("/tenant/plame/trabajador-editar", middleware.RequireAuth(plameHandler.VistaEditarTrabajador))
 	mux.HandleFunc("/tenant/plame/trabajador-guardar", middleware.RequireAuth(plameHandler.GuardarTrabajadorHTMX))
 	mux.HandleFunc("/tenant/plame/actualizar-codigo", middleware.RequireAuth(plameHandler.ActualizarCodigoMasivoHTMX))
 	mux.HandleFunc("/tenant/plame/resetear", middleware.RequireAuth(plameHandler.ResetearSnapshotHTMX))

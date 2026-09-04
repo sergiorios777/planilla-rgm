@@ -237,29 +237,44 @@ func TestPlameModalTrabajadores(t *testing.T) {
 		}
 		t.Logf("Conceptos detalle trabajador obtenidos: %d", len(conceptosDet))
 
+		err = plameSvc.GuardarConceptosTrabajador(detTrabID, tenantID, conceptosDet)
+		if err != nil {
+			t.Fatalf("ERROR AL GUARDAR CONCEPTOS: %v", err)
+		}
+
 		maestros, err := repo.ObtenerMaestrosSunat()
 		if err != nil {
 			t.Fatalf("Error obteniendo maestros SUNAT: %v", err)
 		}
 
-		datosModal := map[string]interface{}{
+		datosEdicion := map[string]interface{}{
 			"Planilla":          planilla,
 			"PlanillaDetalleID": detTrabID,
 			"TrabajadorNombre":  trabajadores[0].NombreCompleto,
 			"TrabajadorDoc":     trabajadores[0].NumeroDocumento,
 			"RegimenNombre":     trabajadores[0].RegimenNombre,
+			"TotalDevengado":    3000.00,
+			"TotalPagado":       3000.00,
 			"Conceptos":         conceptosDet,
 			"Maestros":          maestros,
 			"OrigenVista":       "trabajadores",
 			"CodigoSunatFiltro": codigoTest,
 		}
 
-		var bufModal bytes.Buffer
-		err = tmplTrab.ExecuteTemplate(&bufModal, "modal_editar_plame_trabajador_content", datosModal)
+		tmplEdicion, err := template.ParseFiles(
+			"../../ui/templates/tenant/plame_trabajador_edicion_ui.html",
+			"../../ui/templates/components/buscador_codigo_sunat_modal.html",
+		)
 		if err != nil {
-			t.Fatalf("Error ejecutando modal_editar_plame_trabajador_content: %v", err)
+			t.Fatalf("Error parseando plantilla plame_trabajador_edicion_ui.html: %v", err)
 		}
-		t.Logf("Modal editar trabajador renderizado con éxito! Longitud: %d bytes", bufModal.Len())
+
+		var bufEdicion bytes.Buffer
+		err = tmplEdicion.Execute(&bufEdicion, datosEdicion)
+		if err != nil {
+			t.Fatalf("Error ejecutando plame_trabajador_edicion_ui.html: %v", err)
+		}
+		t.Logf("Vista plame_trabajador_edicion_ui.html renderizada con éxito! Longitud: %d bytes", bufEdicion.Len())
 
 		// 12. Probar renderizar vista de reasignación masiva plame_reasignar_concepto_ui.html
 		datosReasignar := map[string]interface{}{

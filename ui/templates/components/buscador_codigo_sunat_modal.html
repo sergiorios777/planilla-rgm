@@ -1,0 +1,110 @@
+{{define "componente_buscador_codigo_sunat"}}
+<!-- Modal Buscador de Códigos SUNAT (Tabla 22 PLAME) Reutilizable -->
+<dialog id="modal-buscador-codigo-sunat">
+    <article class="modal-card-lg" style="max-width: 850px; width: 95vw; max-height: 85vh; display: flex; flex-direction: column;">
+        <header class="flex-row-between flex-items-center mb-0">
+            <h4 class="mb-0 flex-items-center flex-gap-xs">
+                <svg class="icono-menu text-primary">
+                    <use href="#icono-qrcode"></use>
+                </svg>
+                Catálogo Oficial SUNAT (Tabla 22 - PLAME)
+            </h4>
+            <button aria-label="Close" rel="prev"
+                onclick="document.getElementById('modal-buscador-codigo-sunat').close()"></button>
+        </header>
+
+        <div class="py-sm flex-1 flex-column" style="min-height: 0;">
+            <!-- Barra de Búsqueda y Filtros Rápidos por Naturaleza -->
+            <div class="mb-sm">
+                <input type="search" id="filtro-buscador-sunat-modal"
+                    placeholder="Buscar por código (ej: 0121, 2043) o descripción (ej: vacaciones, básico, asignación)..."
+                    class="input-sm mb-xs"
+                    oninput="window.filtrarCatalogoSunatModal(this.value)">
+
+                <div class="flex-row-between flex-items-center flex-wrap flex-gap-xs font-xs">
+                    <div class="flex-row-start flex-gap-xs" id="tabs-filtro-sunat-modal">
+                        <button type="button" class="btn-compact font-xs btn-tab-sunat" data-filtro=""
+                            onclick="window.filtrarTipoCatalogoSunatModal('', this)">
+                            Todos ({{len .}})
+                        </button>
+                        <button type="button" class="outline secondary btn-compact font-xs btn-tab-sunat" data-filtro="01"
+                            onclick="window.filtrarTipoCatalogoSunatModal('01', this)">
+                            Ingresos (0100-0500)
+                        </button>
+                        <button type="button" class="outline secondary btn-compact font-xs btn-tab-sunat" data-filtro="06"
+                            onclick="window.filtrarTipoCatalogoSunatModal('06', this)">
+                            Descuentos (0600-0700)
+                        </button>
+                        <button type="button" class="outline secondary btn-compact font-xs btn-tab-sunat" data-filtro="08"
+                            onclick="window.filtrarTipoCatalogoSunatModal('08', this)">
+                            Aportes (0800)
+                        </button>
+                    </div>
+                    <span class="text-muted font-xs">
+                        Mostrando: <strong id="contador-maestros-sunat-visibles" class="text-primary stat-mono">{{len .}}</strong> códigos
+                    </span>
+                </div>
+            </div>
+
+            <!-- Tabla de Selección con Scroll Controlado -->
+            <div class="table-responsive" style="max-height: 48vh; overflow-y: auto;">
+                <table class="striped condensed font-sm w-full" id="tabla-catalogo-sunat-modal">
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">Código</th>
+                            <th>Descripción Oficial de la Tabla 22</th>
+                            <th style="width: 120px;">Naturaleza</th>
+                            <th class="text-center" style="width: 100px;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .}}
+                        <tr class="fila-catalogo-sunat-item"
+                            data-codigo="{{.Codigo}}"
+                            data-desc="{{.Descripcion}}"
+                            data-tipo="{{.Tipo}}">
+                            <td class="stat-mono font-bold">
+                                <mark class="badge badge-purple font-xs">{{.Codigo}}</mark>
+                            </td>
+                            <td>
+                                <strong>{{.Descripcion}}</strong>
+                            </td>
+                            <td class="font-xs text-muted">
+                                {{if .Tipo}}
+                                <mark class="badge font-xxs {{if eq .Tipo "INGRESO"}}badge-success{{else if eq .Tipo "RETENCION"}}badge-danger{{else}}badge-info{{end}}">
+                                    {{.Tipo}}
+                                </mark>
+                                {{else}}
+                                <span class="text-muted font-xxs">General</span>
+                                {{end}}
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="primary btn-compact font-xs flex-inline flex-items-center flex-gap-xs"
+                                    onclick="window.seleccionarCodigoSunat('{{.Codigo}}', '{{.Descripcion}}', '{{.Tipo}}')">
+                                    <svg class="icono-menu">
+                                        <use href="#icono-check"></use>
+                                    </svg>
+                                    Elegir
+                                </button>
+                            </td>
+                        </tr>
+                        {{end}}
+                        <tr id="fila-sin-catalogo-sunat" style="display: none;">
+                            <td colspan="4" class="text-center text-muted p-md">
+                                No se encontraron códigos SUNAT que coincidan con la búsqueda.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer class="flex-row-end mt-sm mb-0">
+            <button type="button" class="secondary outline btn-compact"
+                onclick="document.getElementById('modal-buscador-codigo-sunat').close()">
+                Cerrar
+            </button>
+        </footer>
+    </article>
+</dialog>
+{{end}}

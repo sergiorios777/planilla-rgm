@@ -678,7 +678,7 @@ func (r *PlameRepository) GuardarPlameConceptosTrabajador(detalleID int, tenantI
 		FROM planilla_detalles pd
 		INNER JOIN contratos c ON pd.contrato_id = c.id
 		INNER JOIN planillas p ON pd.planilla_id = p.id
-		WHERE pd.id = $1 AND pd.tenant_id = $2
+		WHERE pd.id = $1 AND p.tenant_id = $2
 	`, detalleID, tenantID).Scan(&planillaID, &trabajadorID, &estado)
 	if err != nil {
 		return fmt.Errorf("detalle de planilla no encontrado: %w", err)
@@ -823,7 +823,8 @@ func (r *PlameRepository) ObtenerDatosPlameJornada(planillaID int, tenantID int)
 		FROM planilla_detalles pd
 		INNER JOIN contratos c ON pd.contrato_id = c.id
 		INNER JOIN trabajadores t ON c.trabajador_id = t.id
-		WHERE pd.planilla_id = $1 AND pd.tenant_id = $2
+		INNER JOIN planillas p ON pd.planilla_id = p.id
+		WHERE pd.planilla_id = $1 AND p.tenant_id = $2
 		ORDER BY t.numero_documento ASC
 	`
 	rows, err := r.db.Query(query, planillaID, tenantID)

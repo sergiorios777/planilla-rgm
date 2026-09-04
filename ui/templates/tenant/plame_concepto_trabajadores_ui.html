@@ -1,20 +1,28 @@
 <article>
-    <!-- Cabecera de Navegación y Contexto -->
+    <!-- Cabecera de Navegación y Contexto (Breadcrumb Semántico Pico.css v2) -->
     <header class="flex-row-between flex-wrap flex-gap-md mb-md">
         <div>
-            <div class="flex-row-start flex-items-center flex-gap-sm mb-xs">
-                <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
-                    hx-get="/tenant/plame/auditoria?id={{.Planilla.ID}}" hx-target="#contenido-tenant"
-                    hx-push-url="true">
-                    <svg class="icono-menu">
-                        <use href="#icono-previo-cuadrado"></use>
-                    </svg>
-                    Volver a Auditoría de Planilla
-                </button>
-                <mark class="badge badge-purple stat-mono font-sm font-bold">
-                    SUNAT {{.CodigoSunat}}
-                </mark>
-            </div>
+            <nav aria-label="breadcrumb" class="mb-xs">
+                <ul>
+                    <li>
+                        <a hx-get="/tenant/ui/plame?anio={{.Planilla.Anio}}&mes={{.Planilla.Mes}}"
+                            hx-target="#contenido-tenant" hx-push-url="true">
+                            Hub PLAME
+                        </a>
+                    </li>
+                    <li>
+                        <a hx-get="/tenant/plame/auditoria?id={{.Planilla.ID}}" hx-target="#contenido-tenant"
+                            hx-push-url="true">
+                            Auditoría {{.Planilla.Anio}}-{{printf "%02d" .Planilla.Mes}}
+                        </a>
+                    </li>
+                    <li>
+                        <mark class="badge badge-purple stat-mono font-xs font-bold">
+                            SUNAT {{.CodigoSunat}}
+                        </mark>
+                    </li>
+                </ul>
+            </nav>
             <h3 class="mb-0 text-primary">
                 {{.DescripcionSunat}}
             </h3>
@@ -25,19 +33,19 @@
 
         <div class="flex-items-center flex-gap-sm">
             <mark class="badge badge-info stat-mono">
-                <svg class="icono-menu text-danger">
+                <svg class="icono-menu">
                     <use href="#icono-calendar-month"></use>
                 </svg> Periodo: {{.Planilla.Anio}} - {{printf "%02d" .Planilla.Mes}}
             </mark>
             {{if eq .Planilla.Estado "BORRADOR"}}
             <mark class="badge badge-warning font-xs">
-                <svg class="icono-menu text-danger">
+                <svg class="icono-menu">
                     <use href="#icono-draft"></use>
                 </svg> BORRADOR (Edición Permitida)
             </mark>
             {{else}}
             <mark class="badge badge-success font-xs">
-                <svg class="icono-menu text-danger">
+                <svg class="icono-menu">
                     <use href="#icono-lock"></use>
                 </svg> CERRADA (Solo Lectura)
             </mark>
@@ -45,44 +53,55 @@
         </div>
     </header>
 
-    <!-- Bento Grid de Resumen del Concepto -->
+    <!-- Bento Grid de Resumen del Concepto (Estándar de Dominio) -->
     <div class="grid grid-auto-fit-200 gap-md mb-lg">
-        <div class="card p-md border-radius-md bg-light">
-            <div class="font-xs text-muted mb-xxs">Colaboradores Registrados</div>
-            <div class="font-xl font-bold text-primary stat-mono">{{len .Trabajadores}}</div>
-            <div class="font-xxs text-muted mt-xxs">Con este código tributario</div>
-        </div>
-
-        <div class="card p-md border-radius-md bg-light">
-            <div class="font-xs text-muted mb-xxs">Total Devengado</div>
-            <div class="font-xl font-bold stat-mono text-muted">S/ {{printf "%.2f" .TotalDevengado}}</div>
-            <div class="font-xxs text-muted mt-xxs">Monto computable periodo</div>
-        </div>
-
-        <div class="card p-md border-radius-md bg-light">
-            <div class="font-xs text-muted mb-xxs">Total Pagado en Nómina</div>
-            <div class="font-xl font-bold stat-mono text-success">S/ {{printf "%.2f" .TotalPagado}}</div>
-            <div class="font-xxs text-muted mt-xxs">Desembolso efectivo</div>
-        </div>
-
-        <div class="card p-md border-radius-md bg-light">
-            <div class="font-xs text-muted mb-xxs">Ajustes Personalizados</div>
-            <div class="font-xl font-bold stat-mono text-warning">
-                {{.TotalAjustados}}
+        <div class="card-section m-0 border-box flex-column justify-between">
+            <div class="flex-row-between mb-xs">
+                <small class="text-uppercase text-muted font-xxs">Colaboradores</small>
+                <span class="badge badge-info font-xxs">Padrón</span>
             </div>
-            <div class="font-xxs text-muted mt-xxs">Desdoblados o modificados</div>
+            <h3 class="stat-mono mb-0 text-primary">{{len .Trabajadores}}</h3>
+            <small class="text-muted font-xxs">Con este código tributario</small>
+        </div>
+
+        <div class="card-section m-0 border-box flex-column justify-between">
+            <div class="flex-row-between mb-xs">
+                <small class="text-uppercase text-muted font-xxs">Total Devengado</small>
+                <span class="badge badge-secondary font-xxs">Base</span>
+            </div>
+            <h3 class="stat-mono mb-0 text-muted">S/ {{printf "%.2f" .TotalDevengado}}</h3>
+            <small class="text-muted font-xxs">Monto computable periodo</small>
+        </div>
+
+        <div class="card-section m-0 border-box flex-column justify-between">
+            <div class="flex-row-between mb-xs">
+                <small class="text-uppercase text-muted font-xxs">Total Pagado</small>
+                <span class="badge badge-success font-xxs">Nómina</span>
+            </div>
+            <h3 class="stat-mono mb-0 text-success">S/ {{printf "%.2f" .TotalPagado}}</h3>
+            <small class="text-muted font-xxs">Desembolso efectivo</small>
+        </div>
+
+        <div class="card-section m-0 border-box flex-column justify-between">
+            <div class="flex-row-between mb-xs">
+                <small class="text-uppercase text-muted font-xxs">Ajustes Manuales</small>
+                <span class="badge badge-warning font-xxs">Ajustados</span>
+            </div>
+            <h3 class="stat-mono mb-0 text-warning">{{.TotalAjustados}}</h3>
+            <small class="text-muted font-xxs">Desdoblados o modificados</small>
         </div>
     </div>
 
     <!-- Barra de Filtro y Búsqueda en Vivo -->
-    <div class="flex-row-between flex-items-center flex-wrap flex-gap-sm mb-md p-sm bg-light border-radius-sm">
-        <div class="flex-grow max-w-400">
-            <input type="search" id="filtro-trabajador-input" placeholder="🔍 Buscar por DNI, Apellidos o Nombres..."
+    <div class="flex-row-between flex-items-center flex-wrap flex-gap-md mb-md">
+        <div class="flex-1 min-w-250 max-w-400">
+            <input type="search" id="filtro-trabajador-input" placeholder="Buscar por DNI, apellidos o nombres..."
                 class="input-sm mb-0" oninput="window.filtrarTrabajadoresPlame(this.value)">
         </div>
-        <div class="flex-row-end flex-gap-xs font-xs text-muted">
-            <span>Mostrando: <strong id="contador-trabajadores-visibles" class="text-primary">{{len
-                    .Trabajadores}}</strong> de {{len .Trabajadores}} colaboradores</span>
+        <div class="font-xs text-muted">
+            Mostrando: <strong id="contador-trabajadores-visibles" class="text-primary stat-mono">{{len
+                .Trabajadores}}</strong> de <strong class="text-primary stat-mono">{{len .Trabajadores}}</strong>
+            colaboradores
         </div>
     </div>
 
@@ -105,7 +124,8 @@
                 {{$planillaEstado := .Planilla.Estado}}
                 {{$codigoActual := .CodigoSunat}}
                 {{range .Trabajadores}}
-                <tr class="fila-trabajador-item" data-dni="{{.NumeroDocumento}}" data-nombre="{{.NombreCompleto}}">
+                <tr class="fila-trabajador-item" data-dni="{{.NumeroDocumento}}" data-nombre="{{.NombreCompleto}}"
+                    data-devengado="{{.MontoDevengado}}" data-pagado="{{.MontoPagado}}">
                     <td class="stat-mono font-xs">
                         <strong>{{.TipoDocumento}}</strong>: {{.NumeroDocumento}}
                     </td>
@@ -118,7 +138,7 @@
                     <td class="font-xs">
                         {{if .EsConceptoVacacional}}
                         <mark class="badge badge-purple font-xxs">
-                            <svg class="icono-menu text-danger">
+                            <svg class="icono-menu">
                                 <use href="#icono-beach-access"></use>
                             </svg> Consolidado Vacacional</mark>
                         {{else}}
@@ -134,33 +154,33 @@
                     <td class="text-center font-xs">
                         {{if .EsAjusteManual}}
                         <mark class="badge badge-warning font-xxs" title="{{.ObservacionAjuste}}">
-                            <svg class="icono-menu text-danger">
-                                <use href="#icono-edit"></use>
+                            <svg class="icono-menu">
+                                <use href="#icono-lapiz-cuadrado"></use>
                             </svg> Ajustado</mark>
                         {{else}}
                         <span class="text-muted font-xxs">
-                            <svg class="icono-menu text-danger">
+                            <svg class="icono-menu">
                                 <use href="#icono-robot"></use>
                             </svg> Automático</span>
                         {{end}}
                     </td>
                     <td class="text-center">
                         {{if ne $planillaEstado "CERRADA"}}
-                        <button type="button"
-                            class="btn-compact primary outline font-xs flex-inline flex-items-center flex-gap-xs"
-                            hx-get="/tenant/plame/trabajador-modal?detalle_id={{.PlanillaDetalleID}}&origen_vista=trabajadores&codigo_sunat_filtro={{$codigoActual}}"
-                            hx-target="#modal-editar-plame-trabajador-body"
-                            onclick="document.getElementById('modal-editar-plame-trabajador-body').innerHTML = '<p aria-busy=\'true\'>Cargando conceptos tributarios del colaborador...</p>'; document.getElementById('modal-editar-plame-trabajador').showModal();"
-                            title="Editar códigos y desdoblamientos tributarios de este colaborador">
-                            <svg class="icono-menu text-danger">
-                                <use href="#icono-edit"></use>
-                            </svg> Editar Detalle
+                        <button type="button" class="btn-icon" data-tooltip="Editar Detalle Tributario" aria-label="Editar Detalle Tributario"
+                            hx-get="/tenant/plame/trabajador-editar?detalle_id={{.PlanillaDetalleID}}&origen_vista=trabajadores&codigo_sunat_filtro={{$codigoActual}}"
+                            hx-target="#contenido-tenant"
+                            hx-push-url="true">
+                            <svg class="icono-menu">
+                                <use href="#icono-lapiz-cuadrado"></use>
+                            </svg>
                         </button>
                         {{else}}
-                        <span class="text-muted font-xs">
-                            <svg class="icono-menu text-danger">
+                        <span class="btn-icon disabled-link" data-tooltip="Planilla cerrada (Solo lectura)"
+                            aria-label="Solo lectura">
+                            <svg class="icono-menu text-muted">
                                 <use href="#icono-lock"></use>
-                            </svg> Solo Lectura</span>
+                            </svg>
+                        </span>
                         {{end}}
                     </td>
                 </tr>
@@ -173,230 +193,20 @@
                 {{end}}
                 <tr id="fila-sin-trabajadores-busqueda" style="display: none;">
                     <td colspan="8" class="text-center text-muted p-lg">
-                        🔍 No se encontraron colaboradores que coincidan con la búsqueda.
+                        No se encontraron colaboradores que coincidan con la búsqueda.
                     </td>
                 </tr>
             </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <th colspan="4" class="text-left">TOTALES REGISTRADOS (FILTRADOS)</th>
+                    <th class="text-right stat-mono" id="total-devengado-trabajadores">S/ {{printf "%.2f"
+                        .TotalDevengado}}</th>
+                    <th class="text-right stat-mono" id="total-pagado-trabajadores">S/ {{printf "%.2f" .TotalPagado}}
+                    </th>
+                    <th colspan="2"></th>
+                </tr>
+            </tfoot>
         </table>
     </div>
 </article>
-
-<!-- Modal Enfocado: Edición Tributaria a Detalle del Colaborador -->
-<dialog id="modal-editar-plame-trabajador">
-    <article class="modal-card-lg" style="max-width: 950px;">
-        <header class="flex-row-between flex-items-center">
-            <h4 class="mb-0 flex-items-center flex-gap-xs">
-                <svg class="icono-menu text-primary">
-                    <use href="#icono-lapiz-cuadrado"></use>
-                </svg>
-                Edición Tributaria a Detalle por Colaborador (PLAME)
-            </h4>
-            <a href="#close" aria-label="Close" class="close"
-                onclick="document.getElementById('modal-editar-plame-trabajador').close()"></a>
-        </header>
-
-        <div id="modal-editar-plame-trabajador-body" class="py-sm">
-            <p aria-busy="true">Cargando conceptos tributarios del colaborador...</p>
-        </div>
-    </article>
-</dialog>
-
-<!-- Template del contenido del modal de edición de trabajador -->
-{{define "modal_editar_plame_trabajador_content"}}
-<form id="form-editar-plame-trabajador" hx-post="/tenant/plame/trabajador-guardar" hx-target="#contenido-tenant"
-    onsubmit="document.getElementById('modal-editar-plame-trabajador').close()">
-    <input type="hidden" name="planilla_id" value="{{.Planilla.ID}}">
-    <input type="hidden" name="planilla_detalle_id" value="{{.PlanillaDetalleID}}">
-    <input type="hidden" name="origen_vista" value="{{.OrigenVista}}">
-    <input type="hidden" name="codigo_sunat_filtro" value="{{.CodigoSunatFiltro}}">
-
-    <div class="callout-box mb-md">
-        <div class="flex-row-between flex-items-center">
-            <div>
-                <strong class="font-md text-primary">{{.TrabajadorNombre}}</strong>
-                <div class="font-xs text-muted stat-mono">Documento: {{.TrabajadorDoc}} | Régimen: {{.RegimenNombre}}
-                </div>
-            </div>
-            <mark class="badge badge-info font-xs">Planilla: {{.Planilla.Anio}}-{{printf "%02d" .Planilla.Mes}}</mark>
-        </div>
-    </div>
-
-    <div class="table-responsive max-h-380 mb-md">
-        <table class="striped condensed font-sm w-full" id="tabla-edicion-conceptos-trabajador">
-            <thead>
-                <tr>
-                    <th style="min-width: 140px;">Concepto Origen</th>
-                    <th style="min-width: 260px;">Código Oficial SUNAT (Tabla 22)</th>
-                    <th style="width: 100px;">Tipo</th>
-                    <th class="text-right" style="width: 110px;">Devengado (S/)</th>
-                    <th class="text-right" style="width: 110px;">Pagado (S/)</th>
-                    <th class="text-center" style="width: 60px;">Vac.</th>
-                    <th class="text-center" style="width: 50px;"></th>
-                </tr>
-            </thead>
-            <tbody id="tbody-plame-conceptos-filas">
-                {{range $idx, $c := .Conceptos}}
-                <tr class="fila-concepto-trabajador-item">
-                    <td>
-                        <small class="font-xs text-muted d-block">
-                            {{if $c.EsConceptoVacacional}}
-                            <mark class="badge badge-purple font-xxs">Consolidado Vacacional</mark>
-                            {{else}}
-                            {{$c.ConceptoLaboralNombre}}
-                            {{end}}
-                        </small>
-                    </td>
-                    <td>
-                        <select name="codigo_sunat[]" class="input-sm select-codigo-sunat-item mb-0" required>
-                            <option value="">-- Seleccionar Código --</option>
-                            {{range $.Maestros}}
-                            <option value="{{.Codigo}}" {{if eq .Codigo $c.CodigoSunat}}selected{{end}}>
-                                [{{.Codigo}}] {{.Descripcion}}
-                            </option>
-                            {{end}}
-                        </select>
-                    </td>
-                    <td>
-                        <select name="tipo_concepto[]" class="input-sm mb-0">
-                            <option value="INGRESO" {{if eq $c.TipoConcepto "INGRESO" }}selected{{end}}>Ingreso</option>
-                            <option value="RETENCION" {{if eq $c.TipoConcepto "RETENCION" }}selected{{end}}>Retención
-                            </option>
-                            <option value="APORTE" {{if eq $c.TipoConcepto "APORTE" }}selected{{end}}>Aporte</option>
-                        </select>
-                    </td>
-                    <td>
-                        <input type="number" name="monto_devengado[]" step="0.01" min="0" value="{{printf " %.2f"
-                            $c.MontoDevengado}}" class="input-sm text-right stat-mono mb-0" required>
-                    </td>
-                    <td>
-                        <input type="number" name="monto_pagado[]" step="0.01" min="0" value="{{printf " %.2f"
-                            $c.MontoPagado}}" class="input-sm text-right stat-mono mb-0" required>
-                    </td>
-                    <td class="text-center">
-                        <input type="checkbox" name="es_vacacional[]" value="true" {{if
-                            $c.EsConceptoVacacional}}checked{{end}} title="Es remuneración vacacional">
-                    </td>
-                    <td class="text-center">
-                        <button type="button" class="btn-icon text-danger" title="Eliminar sub-línea"
-                            onclick="window.eliminarFilaConceptoTrabajador(this)">
-                            🗑️
-                        </button>
-                    </td>
-                </tr>
-                {{end}}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Botón para añadir desdoblamiento de concepto -->
-    <div class="flex-row-start mb-md">
-        <button type="button" class="outline secondary btn-compact font-xs flex-inline flex-items-center flex-gap-xs"
-            onclick="window.agregarFilaDesdoblamientoTrabajador()">
-            ➕ Desdoblar / Agregar Código SUNAT Adicional
-        </button>
-    </div>
-
-    <label class="mb-md font-xs">
-        Observación / Justificación del Ajuste Tributario:
-        <input type="text" name="observacion[]"
-            placeholder="Ej: Bonificación con afectación tributaria diferenciada por informe legal..." class="input-sm">
-    </label>
-
-    <footer class="flex-row-end flex-gap-sm mt-md mb-0">
-        <button type="button" class="secondary outline btn-compact"
-            onclick="document.getElementById('modal-editar-plame-trabajador').close()">
-            Cancelar
-        </button>
-        <button type="submit" class="primary btn-compact flex-inline flex-items-center flex-gap-xs">
-            <svg class="icono-menu">
-                <use href="#icono-guardar"></use>
-            </svg>
-            Guardar Ajustes Tributarios
-        </button>
-    </footer>
-</form>
-{{end}}
-
-<script>
-    // Filtro instantáneo de colaboradores en la vista
-    window.filtrarTrabajadoresPlame = function (termino) {
-        var query = (termino || '').toLowerCase().trim();
-        var filas = document.querySelectorAll('.fila-trabajador-item');
-        var visibles = 0;
-
-        filas.forEach(function (fila) {
-            var dni = (fila.getAttribute('data-dni') || '').toLowerCase();
-            var nombre = (fila.getAttribute('data-nombre') || '').toLowerCase();
-
-            if (!query || dni.includes(query) || nombre.includes(query)) {
-                fila.style.display = '';
-                visibles++;
-            } else {
-                fila.style.display = 'none';
-            }
-        });
-
-        var cont = document.getElementById('contador-trabajadores-visibles');
-        if (cont) cont.textContent = visibles;
-
-        var filaSinResultados = document.getElementById('fila-sin-trabajadores-busqueda');
-        if (filaSinResultados) {
-            filaSinResultados.style.display = (visibles === 0 && filas.length > 0) ? '' : 'none';
-        }
-    };
-
-    // Funciones dinámicas del modal de edición de trabajador
-    window.agregarFilaDesdoblamientoTrabajador = function () {
-        var tbody = document.getElementById('tbody-plame-conceptos-filas');
-        if (!tbody) return;
-
-        var primerSelect = tbody.querySelector('.select-codigo-sunat-item');
-        var opcionesHTML = primerSelect ? primerSelect.innerHTML : '<option value="">-- Seleccionar Código --</option>';
-
-        var tr = document.createElement('tr');
-        tr.className = 'fila-concepto-trabajador-item';
-        tr.innerHTML = `
-            <td>
-                <mark class="badge badge-warning font-xxs">Sub-desdoblamiento</mark>
-            </td>
-            <td>
-                <select name="codigo_sunat[]" class="input-sm select-codigo-sunat-item mb-0" required>
-                    ${opcionesHTML}
-                </select>
-            </td>
-            <td>
-                <select name="tipo_concepto[]" class="input-sm mb-0">
-                    <option value="INGRESO" selected>Ingreso</option>
-                    <option value="RETENCION">Retención</option>
-                    <option value="APORTE">Aporte</option>
-                </select>
-            </td>
-            <td>
-                <input type="number" name="monto_devengado[]" step="0.01" min="0" value="0.00" class="input-sm text-right stat-mono mb-0" required>
-            </td>
-            <td>
-                <input type="number" name="monto_pagado[]" step="0.01" min="0" value="0.00" class="input-sm text-right stat-mono mb-0" required>
-            </td>
-            <td class="text-center">
-                <input type="checkbox" name="es_vacacional[]" value="true" title="Es remuneración vacacional">
-            </td>
-            <td class="text-center">
-                <button type="button" class="btn-icon text-danger" title="Eliminar sub-línea" onclick="window.eliminarFilaConceptoTrabajador(this)">
-                    🗑️
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    };
-
-    window.eliminarFilaConceptoTrabajador = function (btn) {
-        var tr = btn.closest('tr');
-        if (!tr) return;
-        var tbody = tr.closest('tbody');
-        if (tbody && tbody.querySelectorAll('tr').length <= 1) {
-            alert('Debe mantener al menos una línea de concepto tributario para el colaborador.');
-            return;
-        }
-        tr.remove();
-    };
-</script>
