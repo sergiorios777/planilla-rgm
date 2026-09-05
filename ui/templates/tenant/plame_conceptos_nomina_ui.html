@@ -1,0 +1,263 @@
+<article>
+    <!-- Cabecera de Navegación y Contexto (Breadcrumb Semántico Pico.css v2) -->
+    <header class="flex-row-between flex-wrap flex-gap-md mb-md">
+        <div>
+            <nav aria-label="breadcrumb" class="mb-xs">
+                <ul>
+                    <li>
+                        <a hx-get="/tenant/ui/plame?anio={{.Planilla.Anio}}&mes={{.Planilla.Mes}}"
+                            hx-target="#contenido-tenant" hx-push-url="true">
+                            Hub PLAME
+                        </a>
+                    </li>
+                    <li>
+                        <a hx-get="/tenant/plame/auditoria?id={{.Planilla.ID}}" hx-target="#contenido-tenant"
+                            hx-push-url="true">
+                            Auditoría {{.Planilla.Anio}}-{{printf "%02d" .Planilla.Mes}}
+                        </a>
+                    </li>
+                    <li>
+                        <mark class="badge badge-purple stat-mono font-xs font-bold">
+                            Conceptos de Planilla
+                        </mark>
+                    </li>
+                </ul>
+            </nav>
+            <h3 class="mb-0 text-primary">
+                Auditoría por Conceptos de Planilla: {{.Planilla.Descripcion}}
+            </h3>
+            <p class="text-muted font-xs mb-0">
+                Mapeo masivo entre conceptos institucionales de nómina y los códigos oficiales de la Tabla 22 de SUNAT.
+            </p>
+        </div>
+
+        <div class="flex-items-center flex-gap-sm">
+            <mark class="badge badge-info stat-mono">
+                <svg class="icono-menu">
+                    <use href="#icono-calendar-month"></use>
+                </svg> Periodo: {{.Planilla.Anio}} - {{printf "%02d" .Planilla.Mes}}
+            </mark>
+            {{if eq .Planilla.Estado "BORRADOR"}}
+            <mark class="badge badge-warning font-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-draft"></use>
+                </svg> BORRADOR
+            </mark>
+            {{else}}
+            <mark class="badge badge-success font-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-lock"></use>
+                </svg> CERRADA
+            </mark>
+            {{end}}
+        </div>
+    </header>
+
+    <!-- Sub-Navegación Tridimensional de Auditoría PLAME (Pico.css v2) -->
+    <nav class="subnav-auditoria-plame mb-md">
+        <div class="flex-row-start flex-gap-xs">
+            <a hx-get="/tenant/plame/auditoria?id={{.Planilla.ID}}" hx-target="#contenido-tenant"
+                class="btn-compact font-xs {{if eq .SubTab " sunat"}}primary{{else}}outline secondary{{end}} flex-inline
+                flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-qrcode"></use>
+                </svg>
+                Por Códigos SUNAT
+            </a>
+            <a hx-get="/tenant/plame/trabajadores-padron?planilla_id={{.Planilla.ID}}" hx-target="#contenido-tenant"
+                class="btn-compact font-xs {{if eq .SubTab " trabajadores"}}primary{{else}}outline secondary{{end}}
+                flex-inline flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-groups"></use>
+                </svg>
+                Por Colaboradores
+            </a>
+            <a hx-get="/tenant/plame/conceptos-nomina?planilla_id={{.Planilla.ID}}" hx-target="#contenido-tenant"
+                class="btn-compact font-xs {{if eq .SubTab " conceptos"}}primary{{else}}outline secondary{{end}}
+                flex-inline flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-payments"></use>
+                </svg>
+                Por Conceptos de Planilla
+            </a>
+        </div>
+    </nav>
+
+    <!-- Toolbar superior de navegación -->
+    <div class="flex-row-between mb-lg flex-wrap flex-gap-sm">
+        <div class="flex-row-start flex-wrap flex-gap-sm">
+            <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+                hx-get="/tenant/ui/plame?anio={{.Planilla.Anio}}&mes={{.Planilla.Mes}}" hx-target="#contenido-tenant">
+                <svg class="icono-menu">
+                    <use href="#icono-previo-cuadrado"></use>
+                </svg> Volver a Hub PLAME
+            </button>
+            <button class="secondary outline btn-compact flex-inline flex-items-center flex-gap-xs"
+                hx-get="/tenant/planillas/detalle/ui?id={{.Planilla.ID}}" hx-target="#contenido-tenant">
+                <svg class="icono-menu">
+                    <use href="#icono-eye"></use>
+                </svg> Volver a Detalle Nómina
+            </button>
+        </div>
+    </div>
+
+    <!-- Bento Grid de KPIs -->
+    <div class="grid grid-auto-fit-200 gap-md mb-lg">
+        <div class="card-section m-0 border-box flex-column justify-between">
+            <div class="flex-row-between mb-xs">
+                <small class="text-uppercase text-muted font-xxs">Conceptos Institucionales</small>
+                <span class="badge badge-info font-xxs">Nómina</span>
+            </div>
+            <h3 class="stat-mono mb-0 text-primary">{{.TotalConceptosNomina}}</h3>
+            <small class="text-muted font-xxs">Rubros utilizados en la planilla</small>
+        </div>
+
+        <div class="card-section m-0 border-box flex-column justify-between">
+            <div class="flex-row-between mb-xs">
+                <small class="text-uppercase text-muted font-xxs">Total Devengado</small>
+                <span class="badge badge-secondary font-xxs">Computable</span>
+            </div>
+            <h3 class="stat-mono mb-0 text-muted">S/ {{printf "%.2f" .TotalDevengado}}</h3>
+            <small class="text-muted font-xxs">Suma global de devengados</small>
+        </div>
+
+        <div class="card-section m-0 border-box flex-column justify-between">
+            <div class="flex-row-between mb-xs">
+                <small class="text-uppercase text-muted font-xxs">Total Pagado</small>
+                <span class="badge badge-success font-xxs">Efectivo</span>
+            </div>
+            <h3 class="stat-mono mb-0 text-success">S/ {{printf "%.2f" .TotalPagado}}</h3>
+            <small class="text-muted font-xxs">Suma global de pagos</small>
+        </div>
+
+        <div class="card-section m-0 border-box flex-column justify-between">
+            <div class="flex-row-between mb-xs">
+                <small class="text-uppercase text-muted font-xxs">Reasignados</small>
+                <span class="badge badge-warning font-xxs">Auditoría</span>
+            </div>
+            <h3 class="stat-mono mb-0 text-warning">{{.TotalAjustados}}</h3>
+            <small class="text-muted font-xxs">Conceptos con mapeo ajustado</small>
+        </div>
+    </div>
+
+    <!-- Banner informativo de impacto en bloque -->
+    <div class="banner-info mb-md">
+        <div class="flex-row-start flex-gap-sm flex-items-center">
+            <svg class="icono-menu text-primary">
+                <use href="#icono-info"></use>
+            </svg>
+            <div class="font-xs">
+                <strong>Reasignación en Bloque:</strong>
+                Cambiar el código SUNAT de un concepto institucional reclasifica automáticamente en el snapshot PLAME a
+                <strong>todos los colaboradores</strong> que perciben dicho concepto en esta planilla.
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Conceptos Institucionales -->
+    <div class="table-responsive">
+        <table class="striped condensed font-sm w-full">
+            <thead>
+                <tr>
+                    <th>Concepto Institucional (Boleta)</th>
+                    <th style="width: 110px;">Naturaleza</th>
+                    <th style="min-width: 280px;">Código Oficial SUNAT (Tabla 22)</th>
+                    <th class="text-center" style="width: 120px;">Colaboradores</th>
+                    <th class="text-right" style="width: 130px;">Devengado (S/)</th>
+                    <th class="text-right" style="width: 130px;">Pagado (S/)</th>
+                    <th class="text-center" style="width: 100px;">Estado</th>
+                    <th class="text-center" style="width: 120px;">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{$planillaID := .Planilla.ID}}
+                {{$planillaEstado := .Planilla.Estado}}
+                {{range .Conceptos}}
+                <tr class="fila-concepto-nomina-item" data-concepto-id="{{.ConceptoTenantID}}"
+                    data-nombre="{{.ConceptoNombre}}">
+                    <td>
+                        <strong class="font-xs">{{.ConceptoNombre}}</strong>
+                    </td>
+                    <td>
+                        <mark class="badge font-xxs {{if eq .TipoConcepto " INGRESO"}}badge-success{{else if eq
+                            .TipoConcepto "RETENCION" }}badge-danger{{else}}badge-info{{end}}">
+                            {{.TipoConcepto}}
+                        </mark>
+                    </td>
+                    <td>
+                        <div class="flex-row-start flex-items-center flex-gap-xs">
+                            <mark class="badge badge-purple stat-mono font-xs font-bold">
+                                {{.CodigoSunat}}
+                            </mark>
+                            <span class="font-xs text-muted text-truncate" title="{{.DescripcionSunat}}">
+                                {{.DescripcionSunat}}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="text-center stat-mono font-xs">
+                        {{.TotalTrabajadores}} pers.
+                    </td>
+                    <td class="text-right stat-mono font-xs text-muted">
+                        S/ {{printf "%.2f" .TotalDevengado}}
+                    </td>
+                    <td class="text-right stat-mono font-xs font-bold">
+                        S/ {{printf "%.2f" .TotalPagado}}
+                    </td>
+                    <td class="text-center font-xs">
+                        {{if .TieneAjusteManual}}
+                        <mark class="badge badge-warning font-xxs">
+                            <svg class="icono-menu">
+                                <use href="#icono-lapiz-cuadrado"></use>
+                            </svg> Reasignado
+                        </mark>
+                        {{else}}
+                        <span class="text-muted font-xxs">
+                            <svg class="icono-menu">
+                                <use href="#icono-robot"></use>
+                            </svg> Automático
+                        </span>
+                        {{end}}
+                    </td>
+                    <td class="text-center">
+                        {{if ne $planillaEstado "CERRADA"}}
+                        <button type="button"
+                            class="secondary outline btn-compact font-xs flex-inline flex-items-center flex-gap-xxs"
+                            onclick="window.abrirModalReasignarConceptoNomina(this)"
+                            title="Reasignar código SUNAT a todos los colaboradores de este concepto">
+                            <svg class="icono-menu">
+                                <use href="#icono-change-circle"></use>
+                            </svg> Reasignar
+                        </button>
+                        {{else}}
+                        <span class="btn-icon disabled-link" data-tooltip="Planilla cerrada (Solo lectura)">
+                            <svg class="icono-menu text-muted">
+                                <use href="#icono-lock"></use>
+                            </svg>
+                        </span>
+                        {{end}}
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="8" class="text-center text-muted p-lg">
+                        No hay conceptos calculados en esta planilla.
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Formulario Oculto para Reasignación Masiva vía HTMX -->
+    <form id="form-reasignar-concepto-nomina" hx-post="/tenant/plame/conceptos-nomina/reasignar"
+        hx-target="#contenido-tenant" style="display: none;">
+        <input type="hidden" name="planilla_id" value="{{.Planilla.ID}}">
+        <input type="hidden" name="concepto_tenant_id" id="input-reasignar-concepto-tenant-id" value="0">
+        <input type="hidden" name="nombre_en_boleta" id="input-reasignar-nombre-en-boleta" value="">
+        <input type="hidden" name="nuevo_codigo_sunat" id="input-reasignar-nuevo-codigo-sunat" value="">
+        <input type="hidden" name="actualizar_default" id="input-reasignar-actualizar-default" value="false">
+    </form>
+</article>
+
+<!-- Invocación del Componente Reutilizable Buscador SUNAT -->
+{{template "componente_buscador_codigo_sunat" .Maestros}}

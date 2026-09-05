@@ -373,12 +373,50 @@ window.actualizarTotalesEdicionTrabajador = function () {
 // Componente Reutilizable: Modal Buscador de Códigos SUNAT (Tabla 22 - PLAME)
 // ==============================================================================
 window.filaEdicionActiva = null;
+window.conceptoNominaActivo = null;
 window.tipoFiltroSunatModalActivo = '';
 
 window.abrirBuscadorCodigoSunat = function (btn) {
     const tr = btn ? btn.closest('tr') : null;
     if (!tr) return;
     window.filaEdicionActiva = tr;
+    window.conceptoNominaActivo = null;
+
+    const modal = document.getElementById('modal-buscador-codigo-sunat');
+    if (!modal) return;
+
+    // Resetear filtro de búsqueda
+    const input = document.getElementById('filtro-buscador-sunat-modal');
+    if (input) {
+        input.value = '';
+    }
+
+    // Resetear pestañas de filtro a "Todos"
+    window.tipoFiltroSunatModalActivo = '';
+    const tabContainer = document.getElementById('tabs-filtro-sunat-modal');
+    if (tabContainer) {
+        tabContainer.querySelectorAll('.btn-tab-sunat').forEach(b => {
+            if (b.getAttribute('data-filtro') === '') {
+                b.className = 'btn-compact font-xs btn-tab-sunat';
+            } else {
+                b.className = 'outline secondary btn-compact font-xs btn-tab-sunat';
+            }
+        });
+    }
+
+    window.filtrarCatalogoSunatModal('');
+    modal.showModal();
+
+    setTimeout(() => {
+        if (input) input.focus();
+    }, 50);
+};
+
+window.abrirModalReasignarConceptoNomina = function (btn) {
+    const tr = btn ? btn.closest('tr') : null;
+    if (!tr) return;
+    window.conceptoNominaActivo = tr;
+    window.filaEdicionActiva = null;
 
     const modal = document.getElementById('modal-buscador-codigo-sunat');
     if (!modal) return;
@@ -469,6 +507,51 @@ window.filtrarTipoCatalogoSunatModal = function (filtro, btnEl) {
 };
 
 window.seleccionarCodigoSunat = function (codigo, descripcion, tipo) {
+    const modal = document.getElementById('modal-buscador-codigo-sunat');
+
+    // Flujo A: Reasignación masiva de concepto de nómina institucional
+    if (window.conceptoNominaActivo) {
+        const tr = window.conceptoNominaActivo;
+        const conceptoId = tr.getAttribute('data-concepto-id') || '0';
+        const nombreConcepto = tr.getAttribute('data-nombre') || '';
+
+        if (modal) modal.close();
+
+        const confirmar = confirm(`¿Desea reasignar el concepto "${nombreConcepto}" al código SUNAT [${codigo}] - ${descripcion} para todos los colaboradores de esta planilla?`);
+        if (!confirmar) {
+            window.conceptoNominaActivo = null;
+            return;
+        }
+
+        let actualizarDefault = false;
+        if (conceptoId && conceptoId !== '0') {
+            actualizarDefault = confirm(`¿Desea además actualizar la vinculación predeterminada del concepto "${nombreConcepto}" al código [${codigo}] para las próximas planillas?`);
+        }
+
+        const form = document.getElementById('form-reasignar-concepto-nomina');
+        if (form) {
+            const inpId = document.getElementById('input-reasignar-concepto-tenant-id');
+            const inpNom = document.getElementById('input-reasignar-nombre-en-boleta');
+            const inpCod = document.getElementById('input-reasignar-nuevo-codigo-sunat');
+            const inpDef = document.getElementById('input-reasignar-actualizar-default');
+
+            if (inpId) inpId.value = conceptoId;
+            if (inpNom) inpNom.value = nombreConcepto;
+            if (inpCod) inpCod.value = codigo;
+            if (inpDef) inpDef.value = actualizarDefault ? 'true' : 'false';
+
+            if (typeof htmx !== 'undefined') {
+                htmx.trigger(form, 'submit');
+            } else {
+                form.submit();
+            }
+        }
+
+        window.conceptoNominaActivo = null;
+        return;
+    }
+
+    // Flujo B: Edición de fila individual de trabajador
     if (!window.filaEdicionActiva) return;
 
     const tr = window.filaEdicionActiva;
@@ -502,7 +585,6 @@ window.seleccionarCodigoSunat = function (codigo, descripcion, tipo) {
         }
     }
 
-    const modal = document.getElementById('modal-buscador-codigo-sunat');
     if (modal) modal.close();
 };
 

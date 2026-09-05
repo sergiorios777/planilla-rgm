@@ -20,6 +20,12 @@
                             SUNAT {{.CodigoSunatFiltro}}
                         </a>
                     </li>
+                    {{else if eq .OrigenVista "padron"}}
+                    <li>
+                        <a hx-get="/tenant/plame/trabajadores-padron?planilla_id={{.Planilla.ID}}" hx-target="#contenido-tenant" hx-push-url="true">
+                            Padrón de Colaboradores
+                        </a>
+                    </li>
                     {{end}}
                     <li>
                         <mark class="badge badge-purple stat-mono font-xs font-bold">
@@ -228,6 +234,12 @@
             {{if eq .OrigenVista "trabajadores"}}
             <button type="button" class="secondary outline btn-compact"
                 hx-get="/tenant/plame/concepto/trabajadores?planilla_id={{.Planilla.ID}}&codigo_sunat={{.CodigoSunatFiltro}}"
+                hx-target="#contenido-tenant" hx-push-url="true">
+                Cancelar
+            </button>
+            {{else if eq .OrigenVista "padron"}}
+            <button type="button" class="secondary outline btn-compact"
+                hx-get="/tenant/plame/trabajadores-padron?planilla_id={{.Planilla.ID}}"
                 hx-target="#contenido-tenant" hx-push-url="true">
                 Cancelar
             </button>

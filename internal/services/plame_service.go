@@ -330,3 +330,25 @@ func (s *PlameService) GenerarZipCompleto(jornadaTxt string, remuneracionesTxt s
 
 	return buf.Bytes(), nil
 }
+
+// ObtenerPadronTrabajadores obtiene el padrón consolidado de trabajadores de la planilla
+func (s *PlameService) ObtenerPadronTrabajadores(planillaID, tenantID int, q string, limit, offset int) ([]models.PlameTrabajadorPadronItem, int, error) {
+	if err := s.AsegurarSnapshot(planillaID, tenantID); err != nil {
+		return nil, 0, err
+	}
+	return s.Repo.ObtenerPadronTrabajadoresPlame(planillaID, tenantID, q, limit, offset)
+}
+
+// ObtenerConceptosNomina obtiene los conceptos institucionales de la nómina y su asignación SUNAT
+func (s *PlameService) ObtenerConceptosNomina(planillaID, tenantID int) ([]models.PlameConceptoNominaItem, error) {
+	if err := s.AsegurarSnapshot(planillaID, tenantID); err != nil {
+		return nil, err
+	}
+	return s.Repo.ObtenerConceptosNominaPlame(planillaID, tenantID)
+}
+
+// ActualizarCodigoConceptoNomina reasigna en bloque un código SUNAT a un concepto institucional
+func (s *PlameService) ActualizarCodigoConceptoNomina(planillaID, tenantID int, conceptoTenantID int, nombreEnBoleta string, nuevoCodigoSunat string, actualizarDefault bool) (int64, error) {
+	return s.Repo.ActualizarCodigoConceptoNominaMasivo(planillaID, tenantID, conceptoTenantID, nombreEnBoleta, nuevoCodigoSunat, actualizarDefault)
+}
+

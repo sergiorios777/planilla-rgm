@@ -36,6 +36,36 @@
         </div>
     </header>
 
+    <!-- Sub-Navegación Tridimensional de Auditoría PLAME (Pico.css v2) -->
+    <nav class="subnav-auditoria-plame mb-md">
+        <div class="flex-row-start flex-gap-xs">
+            <a hx-get="/tenant/plame/auditoria?id={{.Planilla.ID}}" hx-target="#contenido-tenant"
+                class="btn-compact font-xs {{if eq .SubTab " sunat"}}primary{{else}}outline secondary{{end}} flex-inline
+                flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-qrcode"></use>
+                </svg>
+                Por Códigos SUNAT
+            </a>
+            <a hx-get="/tenant/plame/trabajadores-padron?planilla_id={{.Planilla.ID}}" hx-target="#contenido-tenant"
+                class="btn-compact font-xs {{if eq .SubTab " trabajadores"}}primary{{else}}outline secondary{{end}}
+                flex-inline flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-groups"></use>
+                </svg>
+                Por Colaboradores
+            </a>
+            <a hx-get="/tenant/plame/conceptos-nomina?planilla_id={{.Planilla.ID}}" hx-target="#contenido-tenant"
+                class="btn-compact font-xs {{if eq .SubTab " conceptos"}}primary{{else}}outline secondary{{end}}
+                flex-inline flex-items-center flex-gap-xs">
+                <svg class="icono-menu">
+                    <use href="#icono-payments"></use>
+                </svg>
+                Por Conceptos de Planilla
+            </a>
+        </div>
+    </nav>
+
     <!-- Toolbar superior de navegación y acciones -->
     <div class="flex-row-between mb-lg flex-wrap flex-gap-sm">
         <div class="flex-row-start flex-wrap flex-gap-sm">

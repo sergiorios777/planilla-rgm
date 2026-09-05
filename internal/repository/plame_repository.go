@@ -923,3 +923,231 @@ func mapRegimenCodigoVacacional(regimenCodigo string) string {
 		return "2007"
 	}
 }
+
+// ObtenerPadronTrabajadoresPlame obtiene la lista consolidada de trabajadores de una planilla para auditoría con búsqueda y paginación
+func (r *PlameRepository) ObtenerPadronTrabajadoresPlame(planillaID, tenantID int, q string, limit, offset int) ([]models.PlameTrabajadorPadronItem, int, error) {
+	termino := strings.TrimSpace(q)
+
+	countQuery := `
+		SELECT COUNT(pd.id)
+		FROM planilla_detalles pd
+		INNER JOIN contratos c ON pd.contrato_id = c.id
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		INNER JOIN planillas p ON pd.planilla_id = p.id
+		WHERE pd.planilla_id = $1 AND p.tenant_id = $2
+		  AND (
+			$3 = '' OR 
+			t.numero_documento ILIKE '%' || $3 || '%' OR 
+			CONCAT(t.apellido_paterno, ' ', t.apellido_materno, ' ', t.nombres) ILIKE '%' || $3 || '%'
+		  )
+	`
+	var total int
+	err := r.db.QueryRow(countQuery, planillaID, tenantID, termino).Scan(&total)
+	if err != nil {
+		return nil, 0, fmt.Errorf("error contando trabajadores del padrón: %w", err)
+	}
+
+	if limit <= 0 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	query := `
+		SELECT 
+			pd.id AS planilla_detalle_id,
+			t.id AS trabajador_id,
+			t.tipo_documento,
+			t.numero_documento,
+			TRIM(CONCAT(t.apellido_paterno, ' ', t.apellido_materno, ', ', t.nombres)) AS nombre_completo,
+			COALESCE(r.descripcion, r.codigo, 'SIN RÉGIMEN') AS regimen_nombre,
+			COALESCE(SUM(ppc.monto_devengado), 0.00) AS total_devengado,
+			COALESCE(SUM(ppc.monto_pagado), 0.00) AS total_pagado,
+			COUNT(ppc.id) AS total_conceptos,
+			COALESCE(BOOL_OR(ppc.es_ajuste_manual), false) AS tiene_ajuste_manual
+		FROM planilla_detalles pd
+		INNER JOIN contratos c ON pd.contrato_id = c.id
+		INNER JOIN trabajadores t ON c.trabajador_id = t.id
+		LEFT JOIN puestos pst ON c.puesto_id = pst.id
+		LEFT JOIN regimenes_laborales r ON pst.regimen_id = r.id
+		INNER JOIN planillas p ON pd.planilla_id = p.id
+		LEFT JOIN planilla_plame_conceptos ppc ON pd.id = ppc.planilla_detalle_id
+		WHERE pd.planilla_id = $1 AND p.tenant_id = $2
+		  AND (
+			$3 = '' OR 
+			t.numero_documento ILIKE '%' || $3 || '%' OR 
+			CONCAT(t.apellido_paterno, ' ', t.apellido_materno, ' ', t.nombres) ILIKE '%' || $3 || '%'
+		  )
+		GROUP BY pd.id, t.id, t.tipo_documento, t.numero_documento, t.apellido_paterno, t.apellido_materno, t.nombres, r.descripcion, r.codigo
+		ORDER BY t.apellido_paterno ASC, t.apellido_materno ASC, t.nombres ASC
+		LIMIT $4 OFFSET $5
+	`
+	rows, err := r.db.Query(query, planillaID, tenantID, termino, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("error consultando padrón de trabajadores: %w", err)
+	}
+	defer rows.Close()
+
+	var lista []models.PlameTrabajadorPadronItem
+	for rows.Next() {
+		var it models.PlameTrabajadorPadronItem
+		err := rows.Scan(
+			&it.PlanillaDetalleID,
+			&it.TrabajadorID,
+			&it.TipoDocumento,
+			&it.NumeroDocumento,
+			&it.NombreCompleto,
+			&it.RegimenNombre,
+			&it.TotalDevengado,
+			&it.TotalPagado,
+			&it.TotalConceptos,
+			&it.TieneAjusteManual,
+		)
+		if err != nil {
+			return nil, 0, fmt.Errorf("error escaneando trabajador del padrón: %w", err)
+		}
+		lista = append(lista, it)
+	}
+
+	return lista, total, nil
+}
+
+// ObtenerConceptosNominaPlame obtiene el consolidado de conceptos institucionales de nómina usados en la planilla y su mapeo al snapshot PLAME
+func (r *PlameRepository) ObtenerConceptosNominaPlame(planillaID, tenantID int) ([]models.PlameConceptoNominaItem, error) {
+	query := `
+		SELECT 
+			COALESCE(ct.id, 0) AS concepto_tenant_id,
+			COALESCE(ct.nombre_personalizado, pc.nombre_en_boleta, 'Remuneración Vacacional') AS concepto_nombre,
+			ppc.tipo_concepto,
+			ppc.codigo_sunat,
+			COALESCE(NULLIF(ppc.descripcion_sunat, ''), cm.descripcion, 'Concepto SUNAT') AS descripcion_sunat,
+			COUNT(DISTINCT ppc.trabajador_id) AS total_trabajadores,
+			COALESCE(SUM(ppc.monto_devengado), 0.00) AS total_devengado,
+			COALESCE(SUM(ppc.monto_pagado), 0.00) AS total_pagado,
+			COALESCE(BOOL_OR(ppc.es_ajuste_manual), false) AS tiene_ajuste_manual
+		FROM planilla_plame_conceptos ppc
+		INNER JOIN planillas p ON ppc.planilla_id = p.id
+		LEFT JOIN planilla_conceptos pc ON ppc.planilla_concepto_id = pc.id
+		LEFT JOIN conceptos_tenant ct ON pc.concepto_tenant_id = ct.id
+		LEFT JOIN conceptos_maestros cm ON cm.codigo = ppc.codigo_sunat AND cm.origen = 'sunat'
+		WHERE ppc.planilla_id = $1 AND p.tenant_id = $2
+		GROUP BY ct.id, ct.nombre_personalizado, pc.nombre_en_boleta, ppc.tipo_concepto, ppc.codigo_sunat, cm.descripcion, ppc.descripcion_sunat
+		ORDER BY 
+			CASE ppc.tipo_concepto
+				WHEN 'INGRESO' THEN 1
+				WHEN 'RETENCION' THEN 2
+				WHEN 'APORTE' THEN 3
+				ELSE 4
+			END,
+			concepto_nombre ASC
+	`
+	rows, err := r.db.Query(query, planillaID, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("error consultando conceptos de nómina de la planilla: %w", err)
+	}
+	defer rows.Close()
+
+	var lista []models.PlameConceptoNominaItem
+	for rows.Next() {
+		var it models.PlameConceptoNominaItem
+		err := rows.Scan(
+			&it.ConceptoTenantID,
+			&it.ConceptoNombre,
+			&it.TipoConcepto,
+			&it.CodigoSunat,
+			&it.DescripcionSunat,
+			&it.TotalTrabajadores,
+			&it.TotalDevengado,
+			&it.TotalPagado,
+			&it.TieneAjusteManual,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error escaneando concepto de nómina: %w", err)
+		}
+		lista = append(lista, it)
+	}
+
+	return lista, nil
+}
+
+// ActualizarCodigoConceptoNominaMasivo actualiza en bloque el código SUNAT para todas las líneas de un concepto institucional en el snapshot
+func (r *PlameRepository) ActualizarCodigoConceptoNominaMasivo(planillaID, tenantID int, conceptoTenantID int, nombreEnBoleta string, nuevoCodigoSunat string, actualizarDefault bool) (int64, error) {
+	var estado string
+	err := r.db.QueryRow(`SELECT estado FROM planillas WHERE id = $1 AND tenant_id = $2`, planillaID, tenantID).Scan(&estado)
+	if err != nil {
+		return 0, fmt.Errorf("planilla no encontrada: %w", err)
+	}
+	if estado == "CERRADA" {
+		return 0, fmt.Errorf("la planilla se encuentra CERRADA y no permite modificaciones")
+	}
+
+	var descSunat string
+	err = r.db.QueryRow(`SELECT descripcion FROM conceptos_maestros WHERE codigo = $1 AND origen = 'sunat' LIMIT 1`, nuevoCodigoSunat).Scan(&descSunat)
+	if err != nil || descSunat == "" {
+		descSunat = "CONCEPTO SUNAT " + nuevoCodigoSunat
+	}
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	var res sql.Result
+	if conceptoTenantID > 0 {
+		updateQuery := `
+			UPDATE planilla_plame_conceptos ppc
+			SET codigo_sunat = $1,
+			    descripcion_sunat = $2,
+			    es_ajuste_manual = true,
+			    observacion_ajuste = 'Reasignación masiva desde conceptos de nómina',
+			    updated_at = CURRENT_TIMESTAMP
+			FROM planilla_conceptos pc
+			WHERE ppc.planilla_concepto_id = pc.id
+			  AND pc.concepto_tenant_id = $3
+			  AND ppc.planilla_id = $4
+		`
+		res, err = tx.Exec(updateQuery, nuevoCodigoSunat, descSunat, conceptoTenantID, planillaID)
+	} else if nombreEnBoleta != "" {
+		updateQuery := `
+			UPDATE planilla_plame_conceptos ppc
+			SET codigo_sunat = $1,
+			    descripcion_sunat = $2,
+			    es_ajuste_manual = true,
+			    observacion_ajuste = 'Reasignación masiva desde conceptos de nómina',
+			    updated_at = CURRENT_TIMESTAMP
+			FROM planilla_conceptos pc
+			WHERE ppc.planilla_concepto_id = pc.id
+			  AND pc.nombre_en_boleta = $3
+			  AND ppc.planilla_id = $4
+		`
+		res, err = tx.Exec(updateQuery, nuevoCodigoSunat, descSunat, nombreEnBoleta, planillaID)
+	} else {
+		return 0, fmt.Errorf("debe especificar conceptoTenantID o nombreEnBoleta")
+	}
+
+	if err != nil {
+		return 0, fmt.Errorf("error actualizando líneas de concepto en snapshot: %w", err)
+	}
+
+	filasAfectadas, _ := res.RowsAffected()
+
+	if actualizarDefault && conceptoTenantID > 0 {
+		_, err = tx.Exec(`
+			UPDATE conceptos_tenant
+			SET concepto_id = COALESCE((SELECT id FROM conceptos_maestros WHERE codigo = $1 AND origen = 'sunat' LIMIT 1), concepto_id)
+			WHERE id = $2 AND tenant_id = $3
+		`, nuevoCodigoSunat, conceptoTenantID, tenantID)
+		if err != nil {
+			return 0, fmt.Errorf("error actualizando catálogo predeterminado de concepto: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return filasAfectadas, nil
+}
+

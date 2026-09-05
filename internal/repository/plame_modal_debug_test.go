@@ -300,6 +300,118 @@ func TestPlameModalTrabajadores(t *testing.T) {
 			t.Fatalf("Error ejecutando plame_reasignar_concepto_ui.html: %v", err)
 		}
 		t.Logf("Vista plame_reasignar_concepto_ui.html renderizada con éxito! Longitud: %d bytes", bufReasignar.Len())
+
+		// 13. Probar ObtenerPadronTrabajadores y renderizar plame_padron_trabajadores_ui.html
+		padron, totalPadron, err := plameSvc.ObtenerPadronTrabajadores(planillaID, tenantID, "", 20, 0)
+		if err != nil {
+			t.Fatalf("Error en ObtenerPadronTrabajadores: %v", err)
+		}
+		if totalPadron != 2 || len(padron) != 2 {
+			t.Errorf("Se esperaban 2 trabajadores en el padrón, obtenidos: total=%d, len=%d", totalPadron, len(padron))
+		}
+		paginacion := models.CalcularPaginacion(totalPadron, 1, 20, "/tenant/plame/trabajadores-padron?planilla_id=1", "#contenido-tenant", "")
+		datosPadron := map[string]interface{}{
+			"Planilla":       planilla,
+			"SubTab":         "trabajadores",
+			"Trabajadores":   padron,
+			"TotalRegistros": totalPadron,
+			"TotalDevengado": 6000.00,
+			"TotalPagado":    6000.00,
+			"TotalAjustados": 0,
+			"Query":          "",
+			"Paginacion":     paginacion,
+		}
+
+		tmplPadron, err := template.ParseFiles(
+			"../../ui/templates/tenant/plame_padron_trabajadores_ui.html",
+			"../../ui/templates/components/paginacion.html",
+		)
+		if err != nil {
+			t.Fatalf("Error parseando plantilla plame_padron_trabajadores_ui.html: %v", err)
+		}
+		var bufPadron bytes.Buffer
+		err = tmplPadron.Execute(&bufPadron, datosPadron)
+		if err != nil {
+			t.Fatalf("Error ejecutando plame_padron_trabajadores_ui.html: %v", err)
+		}
+		t.Logf("Vista plame_padron_trabajadores_ui.html renderizada con éxito! Longitud: %d bytes", bufPadron.Len())
+
+		// 14. Probar ObtenerConceptosNomina y renderizar plame_conceptos_nomina_ui.html
+		conceptosNom, err := plameSvc.ObtenerConceptosNomina(planillaID, tenantID)
+		if err != nil {
+			t.Fatalf("Error en ObtenerConceptosNomina: %v", err)
+		}
+		if len(conceptosNom) == 0 {
+			t.Fatalf("Se esperaba al menos 1 concepto de nómina, obtenidos: %d", len(conceptosNom))
+		}
+		t.Logf("Concepto de nómina obtenido: %+v", conceptosNom[0])
+
+		datosConceptosNom := map[string]interface{}{
+			"Planilla":             planilla,
+			"SubTab":               "conceptos",
+			"Conceptos":            conceptosNom,
+			"Maestros":             maestros,
+			"TotalConceptosNomina": len(conceptosNom),
+			"TotalDevengado":       6000.00,
+			"TotalPagado":          6000.00,
+			"TotalAjustados":       0,
+		}
+
+		tmplConceptosNom, err := template.ParseFiles(
+			"../../ui/templates/tenant/plame_conceptos_nomina_ui.html",
+			"../../ui/templates/components/buscador_codigo_sunat_modal.html",
+		)
+		if err != nil {
+			t.Fatalf("Error parseando plantilla plame_conceptos_nomina_ui.html: %v", err)
+		}
+		var bufConceptosNom bytes.Buffer
+		err = tmplConceptosNom.Execute(&bufConceptosNom, datosConceptosNom)
+		if err != nil {
+			t.Fatalf("Error ejecutando plame_conceptos_nomina_ui.html: %v", err)
+		}
+		t.Logf("Vista plame_conceptos_nomina_ui.html renderizada con éxito! Longitud: %d bytes", bufConceptosNom.Len())
+
+		// 15. Probar ActualizarCodigoConceptoNomina masivo (de 0121 a 0122)
+		afectados, err := plameSvc.ActualizarCodigoConceptoNomina(planillaID, tenantID, concTenantID, "Sueldo Básico", "0122", true)
+		if err != nil {
+			t.Fatalf("Error reasignando concepto de nómina masivo: %v", err)
+		}
+		if afectados != 2 {
+			t.Errorf("Se esperaban 2 registros actualizados en el snapshot, se obtuvieron: %d", afectados)
+		}
+
+		// Verificar que al reconsultar, ahora el concepto tiene el código 0122 y ajuste manual activo
+		conceptosPost, err := plameSvc.ObtenerConceptosNomina(planillaID, tenantID)
+		if err != nil {
+			t.Fatalf("Error reconsultando conceptos de nómina: %v", err)
+		}
+		if len(conceptosPost) > 0 {
+			if conceptosPost[0].CodigoSunat != "0122" {
+				t.Errorf("Se esperaba nuevo código SUNAT 0122, se obtuvo: %s", conceptosPost[0].CodigoSunat)
+			}
+			if !conceptosPost[0].TieneAjusteManual {
+				t.Errorf("Se esperaba que TieneAjusteManual fuera true tras la reasignación")
+			}
+		}
+
+		// 16. Probar renderizado de planilla_sunat_codigos_ui.html con el nuevo tab bar
+		datosSunat := map[string]interface{}{
+			"Planilla":            planilla,
+			"SubTab":              "sunat",
+			"Resumen":             nil,
+			"Conceptos":           agrupados,
+			"TieneInconsistencias": false,
+		}
+		tmplSunat, err := template.ParseFiles("../../ui/templates/tenant/planilla_sunat_codigos_ui.html")
+		if err != nil {
+			t.Fatalf("Error parseando plantilla planilla_sunat_codigos_ui.html: %v", err)
+		}
+		var bufSunat bytes.Buffer
+		err = tmplSunat.Execute(&bufSunat, datosSunat)
+		if err != nil {
+			t.Fatalf("Error ejecutando plantilla planilla_sunat_codigos_ui.html: %v", err)
+		}
+		t.Logf("Vista planilla_sunat_codigos_ui.html renderizada con éxito! Longitud: %d bytes", bufSunat.Len())
 	}
 }
 

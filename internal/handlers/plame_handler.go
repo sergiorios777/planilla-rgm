@@ -160,6 +160,7 @@ func (h *PlameHandler) VistaAuditoria(w http.ResponseWriter, r *http.Request) {
 
 	datos := map[string]interface{}{
 		"Planilla":               planilla,
+		"SubTab":                 "sunat",
 		"Conceptos":              conceptos,
 		"Maestros":               maestros,
 		"Incidencias":            listaIncidencias,
@@ -242,6 +243,174 @@ func (h *PlameHandler) VistaConceptoTrabajadores(w http.ResponseWriter, r *http.
 		return
 	}
 	tmpl.Execute(w, datos)
+}
+
+// VistaPadronTrabajadores renderiza el padrón consolidado de colaboradores de la planilla para auditoría
+func (h *PlameHandler) VistaPadronTrabajadores(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("planilla_id"))
+	if planillaID <= 0 {
+		planillaID, _ = strconv.Atoi(r.FormValue("planilla_id"))
+	}
+	if planillaID <= 0 {
+		http.Error(w, "ID de planilla no especificado", http.StatusBadRequest)
+		return
+	}
+
+	planilla, err := h.PlanillaRepo.ObtenerPorID(planillaID, tenantID)
+	if err != nil || planilla == nil {
+		http.Error(w, "Planilla no encontrada", http.StatusNotFound)
+		return
+	}
+
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	if q == "" {
+		q = strings.TrimSpace(r.FormValue("q"))
+	}
+
+	pagina, _ := strconv.Atoi(r.URL.Query().Get("pagina"))
+	if pagina <= 0 {
+		pagina, _ = strconv.Atoi(r.FormValue("pagina"))
+	}
+	if pagina <= 0 {
+		pagina = 1
+	}
+
+	limite := 20
+	offset := (pagina - 1) * limite
+
+	trabajadores, total, err := h.Service.ObtenerPadronTrabajadores(planillaID, tenantID, q, limite, offset)
+	if err != nil {
+		http.Error(w, "Error obteniendo padrón de colaboradores: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var totalDevengado, totalPagado float64
+	var totalAjustados int
+	for _, t := range trabajadores {
+		totalDevengado += t.TotalDevengado
+		totalPagado += t.TotalPagado
+		if t.TieneAjusteManual {
+			totalAjustados++
+		}
+	}
+
+	urlPaginacion := fmt.Sprintf("/tenant/plame/trabajadores-padron?planilla_id=%d&q=%s", planillaID, url.QueryEscape(q))
+	paginacion := models.CalcularPaginacion(total, pagina, limite, urlPaginacion, "#contenido-tenant", "")
+
+	datos := map[string]interface{}{
+		"Planilla":       planilla,
+		"SubTab":         "trabajadores",
+		"Trabajadores":   trabajadores,
+		"TotalRegistros": total,
+		"TotalDevengado": totalDevengado,
+		"TotalPagado":    totalPagado,
+		"TotalAjustados": totalAjustados,
+		"Query":          q,
+		"Paginacion":     paginacion,
+	}
+
+	tmpl, err := template.ParseFiles(
+		"ui/templates/tenant/plame_padron_trabajadores_ui.html",
+		"ui/templates/components/paginacion.html",
+	)
+	if err != nil {
+		http.Error(w, "Error cargando plantilla de padrón de colaboradores: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tmpl.Execute(w, datos)
+}
+
+// VistaConceptosNomina renderiza la auditoría de conceptos institucionales de nómina y su mapeo al snapshot PLAME
+func (h *PlameHandler) VistaConceptosNomina(w http.ResponseWriter, r *http.Request) {
+	tenantID := obtenerTenantID(r)
+	planillaID, _ := strconv.Atoi(r.URL.Query().Get("planilla_id"))
+	if planillaID <= 0 {
+		planillaID, _ = strconv.Atoi(r.FormValue("planilla_id"))
+	}
+	if planillaID <= 0 {
+		http.Error(w, "ID de planilla no especificado", http.StatusBadRequest)
+		return
+	}
+
+	planilla, err := h.PlanillaRepo.ObtenerPorID(planillaID, tenantID)
+	if err != nil || planilla == nil {
+		http.Error(w, "Planilla no encontrada", http.StatusNotFound)
+		return
+	}
+
+	conceptos, err := h.Service.ObtenerConceptosNomina(planillaID, tenantID)
+	if err != nil {
+		http.Error(w, "Error obteniendo conceptos de nómina: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	maestros, err := h.Service.Repo.ObtenerMaestrosSunat()
+	if err != nil {
+		http.Error(w, "Error obteniendo catálogo SUNAT: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var totalDevengado, totalPagado float64
+	var totalAjustados int
+	for _, c := range conceptos {
+		totalDevengado += c.TotalDevengado
+		totalPagado += c.TotalPagado
+		if c.TieneAjusteManual {
+			totalAjustados++
+		}
+	}
+
+	datos := map[string]interface{}{
+		"Planilla":             planilla,
+		"SubTab":               "conceptos",
+		"Conceptos":            conceptos,
+		"Maestros":             maestros,
+		"TotalConceptosNomina": len(conceptos),
+		"TotalDevengado":       totalDevengado,
+		"TotalPagado":          totalPagado,
+		"TotalAjustados":       totalAjustados,
+	}
+
+	tmpl, err := template.ParseFiles(
+		"ui/templates/tenant/plame_conceptos_nomina_ui.html",
+		"ui/templates/components/buscador_codigo_sunat_modal.html",
+	)
+	if err != nil {
+		http.Error(w, "Error cargando plantilla de conceptos de nómina: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tmpl.Execute(w, datos)
+}
+
+// ReasignarConceptoNominaHTMX procesa el cambio de código SUNAT para un concepto institucional en toda la planilla
+func (h *PlameHandler) ReasignarConceptoNominaHTMX(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		return
+	}
+	r.ParseForm()
+	tenantID := obtenerTenantID(r)
+
+	planillaID, _ := strconv.Atoi(r.FormValue("planilla_id"))
+	conceptoTenantID, _ := strconv.Atoi(r.FormValue("concepto_tenant_id"))
+	nombreEnBoleta := strings.TrimSpace(r.FormValue("nombre_en_boleta"))
+	nuevoCodigoSunat := strings.TrimSpace(r.FormValue("nuevo_codigo_sunat"))
+	actualizarDefault := (r.FormValue("actualizar_default") == "true" || r.FormValue("actualizar_default") == "1")
+
+	if planillaID <= 0 || nuevoCodigoSunat == "" || (conceptoTenantID <= 0 && nombreEnBoleta == "") {
+		http.Error(w, "Parámetros incompletos para reasignar concepto de nómina", http.StatusBadRequest)
+		return
+	}
+
+	_, err := h.Service.ActualizarCodigoConceptoNomina(planillaID, tenantID, conceptoTenantID, nombreEnBoleta, nuevoCodigoSunat, actualizarDefault)
+	if err != nil {
+		http.Error(w, "Error reasignando concepto de nómina: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	r.URL.RawQuery = fmt.Sprintf("planilla_id=%d", planillaID)
+	h.VistaConceptosNomina(w, r)
 }
 
 // VistaReasignarConcepto renderiza la vista asistida para reasignar masivamente un código SUNAT
@@ -455,6 +624,11 @@ func (h *PlameHandler) GuardarTrabajadorHTMX(w http.ResponseWriter, r *http.Requ
 	if origenVista == "trabajadores" && codigoSunatFiltro != "" {
 		r.URL.RawQuery = fmt.Sprintf("planilla_id=%d&codigo_sunat=%s", planillaID, url.QueryEscape(codigoSunatFiltro))
 		h.VistaConceptoTrabajadores(w, r)
+		return
+	}
+	if origenVista == "padron" {
+		r.URL.RawQuery = fmt.Sprintf("planilla_id=%d", planillaID)
+		h.VistaPadronTrabajadores(w, r)
 		return
 	}
 

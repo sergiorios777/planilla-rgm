@@ -332,6 +332,33 @@ type PlamePlanillaResumenItem struct {
 	TotalConceptosSunat  int     `json:"total_conceptos_sunat"`
 }
 
+// PlameTrabajadorPadronItem representa un colaborador en el padrón consolidado de auditoría PLAME
+type PlameTrabajadorPadronItem struct {
+	PlanillaDetalleID int     `json:"planilla_detalle_id"`
+	TrabajadorID      int     `json:"trabajador_id"`
+	TipoDocumento     string  `json:"tipo_documento"`
+	NumeroDocumento   string  `json:"numero_documento"`
+	NombreCompleto    string  `json:"nombre_completo"`
+	RegimenNombre     string  `json:"regimen_nombre"`
+	TotalDevengado    float64 `json:"total_devengado"`
+	TotalPagado       float64 `json:"total_pagado"`
+	TotalConceptos    int     `json:"total_conceptos"`
+	TieneAjusteManual bool    `json:"tiene_ajuste_manual"`
+}
+
+// PlameConceptoNominaItem representa un concepto institucional de nómina y su mapeo al snapshot PLAME
+type PlameConceptoNominaItem struct {
+	ConceptoTenantID  int     `json:"concepto_tenant_id"`
+	ConceptoNombre    string  `json:"concepto_nombre"`
+	TipoConcepto      string  `json:"tipo_concepto"`
+	CodigoSunat       string  `json:"codigo_sunat"`
+	DescripcionSunat  string  `json:"descripcion_sunat"`
+	TotalTrabajadores int     `json:"total_trabajadores"`
+	TotalDevengado    float64 `json:"total_devengado"`
+	TotalPagado       float64 `json:"total_pagado"`
+	TieneAjusteManual bool    `json:"tiene_ajuste_manual"`
+}
+
 // PlameHubResumen agrupa los KPIs globales del periodo mensual para el Hub PLAME
 type PlameHubResumen struct {
 	Anio                    int     `json:"anio"`
